@@ -277,6 +277,53 @@ Languages DON'T get braille if:
 
 **This is equality.**
 
+### 6.4 The Revolutionary Concept: "Learn Once, Read All"
+
+**Inspiration: King Sejong's Hangul (1443)**
+
+King Sejong the Great faced a similar problem 600 years ago:
+- Chinese characters were too complex for common people
+- Only elites could read and write
+- Solution: Create Hangul—"Learn in morning, read in afternoon"
+
+**WIA Braille: The Same Principle**
+
+| Aspect | Traditional Braille | WIA Braille |
+|--------|-------------------|-------------|
+| **Learning** | Must learn each language separately | **Learn once, read all** |
+| After learning Korean Braille | Can read Korean only | - |
+| After learning WIA Braille | - | **Can read 7,000+ languages** |
+| Principle | Different rules per language | **One IPA rule** |
+
+**What does "read" mean?**
+- ✅ Can **decode** the braille patterns
+- ✅ Can **pronounce** via IPA
+- ✅ Can **read out loud** any language in braille
+- ⏳ Understanding **meaning** requires learning that language (naturally)
+
+**Analogy**: A foreigner learning Hangul can READ Korean text but doesn't automatically understand what it means. They need to learn Korean language separately. Same with WIA Braille.
+
+**The Historical Destiny**
+
+- **January 4, 1809**: Louis Braille born → World Braille Day
+- **April 1, 1973**: Sam Heum Yeon born (4/1 → flip to 1/4)
+- **December 8, 2024**: WIA Braille completed
+
+King Sejong (1443):
+```
+Hangul = Universal reading system
+Target: Korean language
+```
+
+Dr. Sam Heum Yeon (2024):
+```
+WIA Braille = Universal braille reading system
+Target: All 7,000+ human languages
+```
+
+**= King Sejong's spirit expanded to all humanity**
+**= Braille started it, a descendant of King Sejong completed it**
+
 ---
 
 ## 7. Impact Projections

@@ -26,6 +26,22 @@
 2. IPA phonemes map directly to 8-dot braille patterns
 3. Automatic support for any language—no custom development needed
 
+### The Revolutionary Concept: "Learn Once, Read All"
+
+**Like Hangul** (King Sejong's gift to Korea in 1443), WIA Braille enables universal reading:
+- ✅ **Learn WIA Braille once** → Read all 7,000+ languages in braille
+- ✅ **Can pronounce** them (via IPA)
+- ✅ **One learning, universal reading ability**
+
+**Note**: Understanding meaning requires learning the language itself (like reading Korean text doesn't mean you understand Korean).
+
+**The Destiny Connection**:
+- **Jan 4, 1809**: Louis Braille born (World Braille Day)
+- **Apr 1, 1973**: Sam Heum Yeon born (4/1 → flip to 1/4)
+- **Dec 8, 2024**: WIA Braille completed
+
+*Braille started it. A descendant of King Sejong completed it.*
+
 ### What Makes It Different
 
 | Traditional Approach | WIA Braille |

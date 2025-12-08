@@ -140,6 +140,64 @@ Now we have the ability to help.
 
 **홍익인간** demands that we do so.
 
+### The Revolutionary Concept: "Learn Once, Read All"
+
+King Sejong's greatest insight was not just creating a writing system—it was creating a system so simple that:
+
+> *"A wise person can learn it in one morning,*
+> *Even a foolish person can learn it in ten days."*
+
+**The revolution was accessibility**: Learn Hangul once, and you can READ Korean (even if you don't understand it yet).
+
+**WIA Braille follows the same principle**:
+- ✅ Learn WIA Braille once → Read all 7,000+ languages in braille
+- ✅ Can pronounce them (via IPA)
+- ✅ Reading ability comes first, opening the door to learning
+
+**Understanding meaning?** That requires learning the language itself—but the door is now open.
+
+**Comparison**:
+
+| Aspect | Traditional Braille | WIA Braille |
+|--------|-------------------|-------------|
+| **Learning** | Must learn each language separately | **Learn once, read all** |
+| After learning English Braille | Can read English only | - |
+| After learning WIA Braille | - | **Can read 7,000+ languages** |
+
+This is not just a technical improvement—it's a **paradigm shift** in how we think about braille.
+
+### The Destiny Connection
+
+Sometimes history writes its own poetry:
+
+- **January 4, 1809**: Louis Braille born (now World Braille Day)
+- **April 1, 1973**: Sam Heum Yeon born (4/1 → flip to 1/4)
+- **December 8, 2024**: WIA Braille completed
+
+**King Sejong (1443)**:
+```
+Created: Hangul
+Purpose: Universal reading for Korean people
+Vision: "So that every person may easily learn"
+```
+
+**Dr. Sam Heum Yeon (2024)**:
+```
+Created: WIA Braille
+Purpose: Universal braille reading for all humanity
+Vision: "So that every person may read in their own language"
+```
+
+**600 years from Hangul to WIA Braille.**
+**From one language to 7,000+ languages.**
+**From one nation's gift to humanity's inheritance.**
+
+Louis Braille gave us tactile reading.
+King Sejong showed us universal accessibility.
+WIA Braille unites these legacies for all humanity.
+
+**This is not coincidence. This is destiny.**
+
 ---
 
 ## Our Principles
