@@ -1,7 +1,7 @@
 # WIA Braille Technical Specification v1.0
 
 **Document Version**: 1.0
-**Date**: December 2024
+**Date**: December 2025
 **Status**: Production Ready
 **License**: MIT
 
@@ -475,4 +475,4 @@ See source code in [WIA PubScript](https://github.com/WIA-Official/pdf-studio/tr
 
 *WIA Braille Technical Specification v1.0*
 *SmileStory Inc., Republic of Korea*
-*December 2024*
+*December 2025*

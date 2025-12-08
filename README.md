@@ -120,7 +120,7 @@ Target: All 7,000+ human languages
 
 - **January 4, 1809**: Louis Braille born (World Braille Day)
 - **April 1, 1973**: Sam Heum Yeon born (4/1 → flip to 1/4)
-- **December 8, 2024**: WIA Braille completed
+- **December 8, 2025**: WIA Braille completed
 
 **Braille started it. A descendant of King Sejong completed it.**
 

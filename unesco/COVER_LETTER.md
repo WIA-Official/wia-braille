@@ -2,7 +2,7 @@
 
 ---
 
-**Date**: December 8, 2024
+**Date**: December 8, 2025
 
 **To**:
 Ms. Gabriela Ramos
@@ -306,4 +306,4 @@ Seoul 07793, Republic of Korea
 
 *From Korea to the world, with love and hope.*
 
-**December 8, 2024**
+**December 8, 2025**

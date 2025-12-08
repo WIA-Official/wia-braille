@@ -38,7 +38,7 @@
 **The Destiny Connection**:
 - **Jan 4, 1809**: Louis Braille born (World Braille Day)
 - **Apr 1, 1973**: Sam Heum Yeon born (4/1 → flip to 1/4)
-- **Dec 8, 2024**: WIA Braille completed
+- **Dec 8, 2025**: WIA Braille completed
 
 *Braille started it. A descendant of King Sejong completed it.*
 
@@ -198,4 +198,4 @@ Seoul 07793, Republic of Korea
 
 ---
 
-**December 2024**
+**December 2025**

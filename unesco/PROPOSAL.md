@@ -10,7 +10,7 @@ Dr. Sam Heum Yeon (연삼흠)
 SmileStory Inc. & World Certification Industry Association (WIA)
 Republic of Korea
 
-**Date**: December 8, 2024
+**Date**: December 8, 2025
 
 **Document Version**: 1.0
 
@@ -370,7 +370,7 @@ Target: All 7,000+ human languages
 
 - **January 4, 1809**: Louis Braille born (World Braille Day)
 - **April 1, 1973**: Sam Heum Yeon born (4/1 → flip to 1/4)
-- **December 8, 2024**: WIA Braille completed
+- **December 8, 2025**: WIA Braille completed
 
 **Braille started it. A descendant of King Sejong completed it.**
 
@@ -874,7 +874,7 @@ Seoul 07793, Republic of Korea
 
 ### 11.4 Track Record
 
-**WIA PubScript 1.0** (December 2024):
+**WIA PubScript 1.0** (December 2025):
 - Complete accessible publishing system
 - 5 equal representations (visual, auditory, tactile, spatial, gestural)
 - 56 languages via liblouis
@@ -997,7 +997,7 @@ What we need is UNESCO's global platform to bring this solution to the 30 millio
 *Republic of Korea*
 *To the world, with humility and hope*
 
-**December 8, 2024**
+**December 8, 2025**
 
 ---
 

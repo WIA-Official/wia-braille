@@ -453,4 +453,4 @@ WIA Braille is not trying to "replace" English Braille or other established syst
 **Summary**: Traditional braille serves established languages well. WIA Braille serves ALL languages. Both are needed.
 
 *SmileStory Inc., Republic of Korea*
-*December 2024*
+*December 2025*

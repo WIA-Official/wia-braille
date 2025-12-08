@@ -307,7 +307,7 @@ King Sejong the Great faced a similar problem 600 years ago:
 
 - **January 4, 1809**: Louis Braille born → World Braille Day
 - **April 1, 1973**: Sam Heum Yeon born (4/1 → flip to 1/4)
-- **December 8, 2024**: WIA Braille completed
+- **December 8, 2025**: WIA Braille completed
 
 King Sejong (1443):
 ```
@@ -558,4 +558,4 @@ If **NO** → We accept permanent inequality for 98% of languages.
 **WIA Braille: Because 98% excluded is 98% too many.**
 
 *SmileStory Inc., Republic of Korea*
-*December 2024*
+*December 2025*

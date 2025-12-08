@@ -205,6 +205,6 @@ Seoul 07793, Republic of Korea
 
 ---
 
-**Last Updated**: December 8, 2024
+**Last Updated**: December 8, 2025
 
 *This information is based on publicly available UNESCO contact data and may be subject to change.*
