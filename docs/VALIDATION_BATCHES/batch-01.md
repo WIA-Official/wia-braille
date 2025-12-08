@@ -177,31 +177,40 @@
 ### 5. Taiwan Mandarin (國語)
 
 #### Data
-- **Text**: 你好
-- **IPA**: /ni˥˩ xau˨˩˦/
-- **WIA Braille**: ⠝⠊⠁⠂⠁⠖ ⠭⠁⠥⠁⠢⠁⠆
+- **Text**: 你好嗎
+- **IPA**: /ni˥˩ xau˨˩˦ ma/
+- **WIA Braille**: ⠝⠊⠁⠂⠁⠖ ⠭⠁⠥⠁⠢⠁⠖⠁⠆ ⠍⠁
 - **Source**: Taiwan Ministry of Education Dictionary, Wiktionary
 
 #### Verification Process
-1. ✅ Text: "你好" - Same characters, Traditional Chinese context
-2. ✅ IPA: Taiwan Mandarin pronunciation nearly identical to Standard Mandarin
-   - Minor vowel quality differences in some contexts
-   - "你好" pronunciation essentially the same
-3. ✅ WIA Braille: Same as Mandarin Chinese (phonetically identical for this phrase)
+1. ✅ Text: "你好嗎" - Common Taiwan greeting meaning "How are you?"
+   - 你好 (hello) + 嗎 (question particle)
+   - More conversational than simple 你好
+2. ✅ IPA with tones:
+   - 你 nǐ → /ni˥˩/ (3rd tone: falling-rising)
+   - 好 hǎo → /xau˨˩˦/ (3rd tone)
+   - 嗎 ma → /ma/ (neutral tone - no tone marker)
+3. ✅ WIA Braille mapping verification:
+   - ni˥˩: n → ⠝, i → ⠊, ˥˩ → ⠁⠂⠁⠖
+   - (space)
+   - xau˨˩˦: x → ⠭, a → ⠁, u → ⠥, ˨˩˦ → ⠁⠢⠁⠖⠁⠆
+   - (space)
+   - ma: m → ⠍, a → ⠁ (neutral tone, no marker)
+   - Result: ⠝⠊⠁⠂⠁⠖ ⠭⠁⠥⠁⠢⠁⠖⠁⠆ ⠍⠁ ✓
 4. ✅ Sources: Taiwan MOE Dictionary + Wiktionary
 
 #### Notes
-- Uses Traditional Chinese characters (same for 你好)
-- Pronunciation very similar to Standard Mandarin for common phrases
-- Regional variations exist but not in this greeting
-- Could use different example to show Taiwan-specific features if needed
+- Uses Traditional Chinese characters: 你好嗎
+- Question form more common in Taiwan conversational style
+- 嗎 (ma) uses neutral/light tone
+- Distinct from Mainland 你好 (simpler greeting)
 
 #### PM Review
 - [ ] Text verified
 - [ ] IPA accurate
 - [ ] Braille mapping correct
 - [ ] Source credible
-- **Status**: ⏳ Pending (discuss if different example needed)
+- **Status**: ⏳ Pending - REVISED per PM feedback
 
 ---
 
@@ -277,37 +286,39 @@
 ### 8. Mexican Spanish (Español Mexicano)
 
 #### Data
-- **Text**: ¿Qué onda?
-- **IPA**: /ke onda/
-- **WIA Braille**: ⠅⠑ ⠕⠝⠙⠁
-- **Source**: Diccionario del Español de México (DEM), Wiktionary
+- **Text**: Buenos días
+- **IPA**: /bwenos ˈdias/
+- **WIA Braille**: ⠃⠺⠑⠝⠕⠎ ⠄⠙⠊⠁⠎
+- **Source**: Diccionario del Español de México (DEM), RAE
 
 #### Verification Process
-1. ✅ Text: "¿Qué onda?" - Common Mexican Spanish greeting (informal)
-   - More distinctive than "Hola" which is universal
-   - Shows Mexican Spanish character
-2. ✅ IPA: /ke onda/
-   - qué → /ke/ (unstressed, often loses accent)
-   - onda → /onda/
+1. ✅ Text: "Buenos días" - Standard Mexican Spanish morning greeting
+   - buenos → "good" (masculine plural)
+   - días → "days"
+   - Common formal and informal greeting
+2. ✅ IPA: /bwenos ˈdias/
+   - buenos → /bwenos/ (diphthong /we/)
+   - días → /ˈdias/ (stress on first syllable, /i/ not diphthong in Mexican Spanish)
+   - Note: Mexican Spanish tends to preserve /i.a/ as separate syllables
 3. ✅ WIA Braille mapping verification:
-   - k → ⠅, e → ⠑
+   - buenos: b → ⠃, w → ⠺, e → ⠑, n → ⠝, o → ⠕, s → ⠎
    - (space)
-   - o → ⠕, n → ⠝, d → ⠙, a → ⠁
-   - Result: ⠅⠑ ⠕⠝⠙⠁ ✓
-4. ✅ Sources: DEM (authoritative Mexican Spanish dictionary) + Wiktionary
+   - días: ˈ → ⠄ (stress), d → ⠙, i → ⠊, a → ⠁, s → ⠎
+   - Result: ⠃⠺⠑⠝⠕⠎ ⠄⠙⠊⠁⠎ ✓
+4. ✅ Sources: DEM (authoritative Mexican Spanish dictionary) + RAE
 
 #### Notes
-- Literally "What wave?" - idiomatic greeting
-- Distinctly Mexican, not used in Spain
-- Shows regional variation from es
-- Informal/casual register
+- Universal greeting used throughout Mexico
+- Mexican pronunciation: /i.a/ typically not merged to /ja/
+- Formal enough for all contexts
+- Shows Spanish diphthong /we/ in "buenos"
 
 #### PM Review
 - [ ] Text verified
 - [ ] IPA accurate
 - [ ] Braille mapping correct
 - [ ] Source credible
-- **Status**: ⏳ Pending
+- **Status**: ⏳ Pending - REVISED per PM feedback
 
 ---
 
@@ -398,8 +409,11 @@
 ## Batch Summary
 
 **Completion**: 10/10 languages validated
-**Issues Found**:
-- Taiwan Mandarin: May need different example to show distinctiveness (discuss with PM)
+**PM Feedback Addressed**:
+- ✅ zh-TW: Changed 你好 → 你好嗎 (more distinctive, conversational)
+- ✅ es-MX: Changed ¿Qué onda? → Buenos días (more formal, universal)
+- ✅ IPA recalculated for both languages
+- ✅ WIA Braille remapped for both languages
 - All mappings verified against mapping.json
 - All sources credible and authoritative
 
@@ -411,15 +425,16 @@
 
 **Notes**:
 - First batch includes major world languages
-- Covers diverse phonetic features (tones, nasals, long vowels, affricates)
+- Covers diverse phonetic features (tones, nasals, long vowels, affricates, diphthongs)
 - Demonstrates WIA Braille's capability across different language families
+- REVISED: Incorporated PM feedback for zh-TW and es-MX
 
 ---
 
 ## Next Steps
 
-- [ ] Submit to PM for review
-- [ ] Address any PM feedback
+- [x] Submit to PM for review
+- [x] Address PM feedback (zh-TW, es-MX revised)
 - [ ] Get final approval
 - [ ] Proceed to Batch 02
 
