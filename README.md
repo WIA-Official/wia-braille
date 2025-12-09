@@ -284,12 +284,46 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-## 📜 License
+## 📜 License & Copyright
 
-**MIT License** - Free for all purposes
+### MIT License - Free for All Purposes
+
+**WIA Braille** is open source and free to use for any purpose:
+- ✅ Commercial use
+- ✅ Modification
+- ✅ Distribution
+- ✅ Private use
+
+### ⚠️ Attribution Required
+
+**Important**: While WIA Braille is free to use, **you MUST include attribution** per MIT License:
+
+```
+WIA Braille - Universal Braille System
+Copyright © 2025 SmileStory Inc.
+Created by Dr. Sam Heum Yeon
+Licensed under MIT License
+https://github.com/WIA-Official/wia-braille
+```
+
+### Copyright Information
+
+- **Creator**: Dr. Sam Heum Yeon (샘흠연 박사)
+- **Organization**: SmileStory Inc.
+- **Copyright**: © 2025 SmileStory Inc.
+- **Country**: Republic of Korea
+- **License**: MIT License
+
+**See [COPYRIGHT.md](COPYRIGHT.md) for detailed attribution guidelines.**
+
+### Philosophy
 
 This system is a gift from South Korea to the world.
-Use it freely. Help us improve it. Share it widely.
+**Use it freely. Help us improve it. Share it widely.**
+**But please give credit where credit is due.**
+
+*"누구나 사용할 수 있지만, 만든 사람은 기억해주세요."*
+*"Free to use, but please remember the creator."*
 
 ---
 
