@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제1장: 범용 프로토콜 소개 | WIA-CORE-007</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9;
+            line-height: 1.8;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #1e293b;
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #10b981; border-bottom: 3px solid #6B7280; padding-bottom: 1rem; }
+        h2 { font-size: 2rem; margin: 2rem 0 1rem; color: #6B7280; }
+        h3 { font-size: 1.5rem; margin: 1.5rem 0 1rem; color: #10b981; }
+        p { margin: 1rem 0; font-size: 1.1rem; }
+        code { background: #0f172a; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: Monaco, monospace; color: #10b981; }
+        pre { background: #0f172a; padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; border-left: 4px solid #6B7280; }
+        pre code { background: none; padding: 0; }
+        .nav { margin: 2rem 0; display: flex; justify-content: space-between; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #10b981; text-decoration: none; font-weight: 600; padding: 0.5rem 1rem; border: 2px solid #6B7280; border-radius: 5px; transition: all 0.3s; }
+        .nav a:hover { background: #6B7280; color: white; }
+        .highlight { background: #334155; padding: 1.5rem; border-left: 4px solid #10b981; border-radius: 5px; margin: 1.5rem 0; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; font-size: 1.1rem; }
+        .chapter-meta { opacity: 0.7; font-size: 0.9rem; margin-bottom: 2rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 1rem; text-align: left; border: 1px solid #334155; }
+        th { background: #0f172a; color: #10b981; font-weight: 600; }
+        td { background: #1e293b; }
+        .emoji { font-size: 1.5em; margin-right: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">📡</span>제1장: 범용 프로토콜 소개</h1>
+        <div class="chapter-meta">WIA-CORE-007 | 범용 프로토콜 표준 v1.0</div>
+
+        <h2>1.1 통신의 도전 과제</h2>
+
+        <p>현대 소프트웨어 환경에서 애플리케이션은 더 이상 고립되어 존재하지 않습니다. 데이터베이스, 마이크로서비스, IoT 디바이스, 모바일 앱, 웹 브라우저 및 수많은 다른 시스템과 통신해야 합니다. 전통적으로 이러한 각 통신 시나리오는 서로 다른 접근 방식, 프로토콜 및 구현을 필요로 했습니다.</p>
+
+        <p>일반적인 엔터프라이즈 애플리케이션 아키텍처를 생각해 보십시오:</p>
+
+        <ul>
+            <li>웹 브라우저는 HTTP/REST API를 통해 통신합니다</li>
+            <li>실시간 기능은 WebSocket 연결을 사용합니다</li>
+            <li>마이크로서비스는 내부 통신을 위해 gRPC를 사용할 수 있습니다</li>
+            <li>IoT 디바이스는 MQTT 또는 CoAP를 통해 통신합니다</li>
+            <li>이벤트 주도 아키텍처는 RabbitMQ 또는 Kafka와 같은 메시지 큐에 의존합니다</li>
+            <li>모바일 앱은 효율성을 위해 맞춤형 바이너리 프로토콜을 사용할 수 있습니다</li>
+        </ul>
+
+        <p>이러한 각 통신 패턴은 서로 다른 라이브러리, 서로 다른 코딩 패턴, 서로 다른 배포 구성 및 서로 다른 운영 전문 지식을 필요로 합니다. 이러한 단편화는 다음과 같은 문제를 야기합니다:</p>
+
+        <div class="highlight">
+            <h3>전통적인 접근 방식의 주요 문제점</h3>
+            <ul>
+                <li><strong>개발 시간 증가:</strong> 개발자는 여러 프로토콜을 학습하고 구현해야 합니다</li>
+                <li><strong>코드 중복:</strong> 서로 다른 프로토콜 구현에서 유사한 로직이 반복됩니다</li>
+                <li><strong>유지보수 부담:</strong> 유지보수, 업데이트 및 보안을 위한 여러 코드베이스</li>
+                <li><strong>테스트 복잡성:</strong> 각 프로토콜에 대한 서로 다른 테스트 전략</li>
+                <li><strong>운영 오버헤드:</strong> 여러 모니터링, 로깅 및 디버깅 도구</li>
+                <li><strong>벤더 종속:</strong> 특정 전송 구현에 밀접하게 결합됨</li>
+            </ul>
+        </div>
+
+        <h2>1.2 범용 프로토콜의 비전</h2>
+
+        <p>범용 프로토콜(WIA-CORE-007)은 모든 전송 메커니즘에서 작동하는 단일 통합 추상화 계층을 제공하여 이러한 문제를 해결합니다. "한 번 작성하여 어디서나 실행"이라는 프로세스 간 통신 접근 방식으로 생각하십시오.</p>
+
+        <p>핵심 철학은 간단하면서도 강력합니다:</p>
+
+        <div class="highlight">
+            <p><strong>애플리케이션 코드는 기본 전송 메커니즘에 신경 쓰지 않아야 합니다.</strong></p>
+            <p>HTTP, WebSocket, gRPC, MQTT 또는 사용자 정의 프로토콜을 통해 통신하든 코드는 동일하게 보여야 합니다. 프로토콜은 서로 다른 전송에 투명하게 적응하는 복잡성을 처리합니다.</p>
+        </div>
+
+        <h3>1.2.1 설계 원칙</h3>
+
+        <p>범용 프로토콜은 다섯 가지 기본 원칙을 기반으로 구축됩니다:</p>
+
+        <ol>
+            <li>
+                <strong>전송 불가지론:</strong> 프로토콜은 기본 전송 계층에 관계없이 동일하게 작동해야 합니다. HTTP REST, WebSocket, gRPC, MQTT 또는 사용자 정의 전송을 사용하든 API는 일관성을 유지합니다.
+            </li>
+            <li>
+                <strong>인코딩 유연성:</strong> 애플리케이션 코드를 변경하지 않고 여러 직렬화 형식(JSON, Protocol Buffers, MessagePack, CBOR 등)을 지원합니다.
+            </li>
+            <li>
+                <strong>패턴 완전성:</strong> 모든 일반적인 통신 패턴을 지원합니다:
+                <ul>
+                    <li>요청-응답 (RPC)</li>
+                    <li>단방향 메시징</li>
+                    <li>스트리밍 (단방향 및 양방향)</li>
+                    <li>게시-구독</li>
+                    <li>Fire-and-forget</li>
+                </ul>
+            </li>
+            <li>
+                <strong>타입 안전성:</strong> 동적 시나리오에 대한 유연성을 유지하면서 모든 언어에서 강력한 타이핑 지원을 제공합니다.
+            </li>
+            <li>
+                <strong>확장성:</strong> 개발자가 미들웨어, 사용자 정의 전송 및 애플리케이션별 향상으로 프로토콜을 확장할 수 있도록 합니다.
+            </li>
+        </ol>
+
+        <h2>1.3 범용 프로토콜의 작동 방식</h2>
+
+        <p>핵심적으로 범용 프로토콜은 관심사를 분리하고 최대 유연성을 가능하게 하는 계층화된 아키텍처를 도입합니다:</p>
+
+        <pre><code>┌─────────────────────────────────────────┐
+│      애플리케이션 계층                      │
+│  (비즈니스 로직)                          │
+└─────────────────────────────────────────┘
+            ↕
+┌─────────────────────────────────────────┐
+│    범용 프로토콜 계층                      │
+│  • 메시지 프레이밍                        │
+│  • 패턴 매칭 (RPC, Stream 등)            │
+│  • 오류 처리                             │
+│  • 메타데이터 관리                        │
+└─────────────────────────────────────────┘
+            ↕
+┌─────────────────────────────────────────┐
+│      인코딩 계층                          │
+│  • JSON, Protobuf, MessagePack 등       │
+└─────────────────────────────────────────┘
+            ↕
+┌─────────────────────────────────────────┐
+│      전송 계층                            │
+│  • HTTP, WebSocket, gRPC, MQTT 등       │
+└─────────────────────────────────────────┘</code></pre>
+
+        <h3>1.3.1 범용 메시지 형식</h3>
+
+        <p>범용 프로토콜의 모든 통신은 전송 또는 인코딩에 관계없이 일관된 메시지 형식을 사용합니다:</p>
+
+        <pre><code>{
+  "id": "고유-메시지-ID",
+  "type": "request" | "response" | "stream" | "event",
+  "method": "rpc용.메서드.이름",
+  "payload": { /* 실제 데이터 */ },
+  "metadata": {
+    "timestamp": "2025-12-27T10:30:00Z",
+    "version": "1.0",
+    "encoding": "json",
+    "transport": "websocket"
+  },
+  "error": { /* 오류 발생 시에만 존재 */ }
+}</code></pre>
+
+        <p>이 형식은 선택한 인코딩(JSON, Protobuf 등)을 사용하여 직렬화된 다음 선택한 전송(HTTP, WebSocket 등)을 통해 전송됩니다.</p>
+
+        <h3>1.3.2 간단한 예제: RPC 호출</h3>
+
+        <p>범용 프로토콜을 사용하여 RPC 호출을 수행하는 간단한 예제를 살펴보겠습니다. HTTP, WebSocket 또는 기타 전송을 사용하든 이 코드가 동일하게 작동한다는 점이 아름답습니다:</p>
+
+        <pre><code>import { UniversalProtocol, WebSocketTransport } from '@wia/universal-protocol';
+
+// 프로토콜 초기화
+const protocol = new UniversalProtocol({
+  transport: new WebSocketTransport({
+    url: 'ws://api.example.com'
+  }),
+  encoding: 'json'
+});
+
+// RPC 호출 수행
+const result = await protocol.call('users.getProfile', {
+  userId: '12345'
+});
+
+console.log('사용자 프로필:', result);</code></pre>
+
+        <p>WebSocket에서 HTTP로 전환하려면 한 줄만 변경하면 됩니다:</p>
+
+        <pre><code>// 변경 전:
+const protocol = new UniversalProtocol({
+  transport: new WebSocketTransport({ url: 'ws://api.example.com' }),
+  encoding: 'json'
+});
+
+// 변경 후:
+const protocol = new UniversalProtocol({
+  transport: new HTTPTransport({ url: 'https://api.example.com' }),
+  encoding: 'json'
+});</code></pre>
+
+        <p>나머지는 모두 동일합니다. 비즈니스 로직은 변경되지 않습니다. 오류 처리는 변경되지 않습니다. 테스트는 변경되지 않습니다. 전송 구성만 변경됩니다.</p>
+
+        <h2>1.4 범용 프로토콜을 사용해야 하는 사람</h2>
+
+        <p>범용 프로토콜은 광범위한 사용 사례와 개발자를 위해 설계되었습니다:</p>
+
+        <h3>1.4.1 백엔드 개발자</h3>
+        <ul>
+            <li>유연한 통신 옵션이 필요한 마이크로서비스 구축</li>
+            <li>REST 및 WebSocket 클라이언트를 모두 지원하는 API 생성</li>
+            <li>이벤트 주도 아키텍처 구현</li>
+            <li>여러 전송 프로토콜이 필요한 분산 시스템 구축</li>
+        </ul>
+
+        <h3>1.4.2 프론트엔드 개발자</h3>
+        <ul>
+            <li>실시간 기능이 필요한 웹 애플리케이션 구축</li>
+            <li>온라인 및 오프라인에서 모두 작동하는 애플리케이션 생성</li>
+            <li>서비스 워커를 사용하는 프로그레시브 웹 앱 구현</li>
+            <li>크로스 플랫폼 애플리케이션 구축(웹, 모바일, 데스크톱)</li>
+        </ul>
+
+        <h3>1.4.3 IoT 개발자</h3>
+        <ul>
+            <li>디바이스-클라우드 통신 시스템 생성</li>
+            <li>엣지 컴퓨팅 애플리케이션 구축</li>
+            <li>디바이스 관리 시스템 구현</li>
+            <li>낮은 대역폭, 높은 지연 시간을 허용하는 시스템 생성</li>
+        </ul>
+
+        <h3>1.4.4 플랫폼 엔지니어</h3>
+        <ul>
+            <li>내부 개발자 플랫폼 구축</li>
+            <li>서비스 메시 및 API 게이트웨이 생성</li>
+            <li>크로스 클라우드 통신 시스템 구현</li>
+            <li>프로토콜 변환 계층 구축</li>
+        </ul>
+
+        <h2>1.5 주요 이점</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>이점</th>
+                    <th>설명</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>개발 시간 단축</strong></td>
+                    <td>통신 코드를 한 번 작성하여 모든 곳에서 사용합니다. 각 전송에 대해 다시 구현할 필요가 없습니다.</td>
+                </tr>
+                <tr>
+                    <td><strong>유지보수성 향상</strong></td>
+                    <td>모든 통신 패턴에 대한 단일 코드베이스. 업데이트, 테스트 및 디버그가 더 쉽습니다.</td>
+                </tr>
+                <tr>
+                    <td><strong>미래 지향적 아키텍처</strong></td>
+                    <td>애플리케이션 코드를 변경하지 않고 새로운 전송 또는 인코딩을 쉽게 채택할 수 있습니다.</td>
+                </tr>
+                <tr>
+                    <td><strong>더 나은 테스트</strong></td>
+                    <td>모의 전송을 사용하면 테스트가 간단해집니다. 전송 문제와 독립적으로 로직을 테스트합니다.</td>
+                </tr>
+                <tr>
+                    <td><strong>운영 단순성</strong></td>
+                    <td>모든 통신 채널에서 통합 모니터링, 로깅 및 디버깅.</td>
+                </tr>
+                <tr>
+                    <td><strong>프로토콜 진화</strong></td>
+                    <td>버전 변경 및 프로토콜 마이그레이션을 우아하게 처리합니다.</td>
+                </tr>
+                <tr>
+                    <td><strong>성능 최적화</strong></td>
+                    <td>코드 변경 없이 각 시나리오에 가장 적합한 전송 및 인코딩을 선택합니다.</td>
+                </tr>
+                <tr>
+                    <td><strong>크로스 플랫폼 호환성</strong></td>
+                    <td>99개 이상의 언어 구현으로 코드가 어디서나 작동합니다.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>1.6 실제 사용 사례</h2>
+
+        <h3>1.6.1 전자상거래 플랫폼</h3>
+        <p>전자상거래 회사는 범용 프로토콜을 사용하여 다음을 수행합니다:</p>
+        <ul>
+            <li>웹 프론트엔드용 REST API 제공</li>
+            <li>실시간 주문 추적을 위해 WebSocket 사용</li>
+            <li>MQTT를 통해 창고 시스템과 통신</li>
+            <li>gRPC를 통해 결제 제공업체와 통합</li>
+            <li>데이터 웨어하우스로 분석 이벤트 스트리밍</li>
+        </ul>
+        <p>모두 동일한 프로토콜 구현을 사용하며 서로 다른 전송 구성만 사용합니다.</p>
+
+        <h3>1.6.2 IoT 스마트 홈 시스템</h3>
+        <p>스마트 홈 플랫폼은 범용 프로토콜을 활용하여 다음을 수행합니다:</p>
+        <ul>
+            <li>MQTT를 통해 저전력 디바이스 연결</li>
+            <li>WebSocket을 통해 모바일 앱에 실시간 업데이트 제공</li>
+            <li>타사 통합을 위한 REST API 노출</li>
+            <li>고성능 디바이스-게이트웨이 통신에 gRPC 사용</li>
+            <li>분석 및 모니터링을 위한 이벤트 스트리밍 구현</li>
+        </ul>
+
+        <h3>1.6.3 금융 거래 플랫폼</h3>
+        <p>거래 플랫폼은 다음을 위해 범용 프로토콜을 활용합니다:</p>
+        <ul>
+            <li>초저지연 거래 엔진 통신(사용자 정의 TCP 전송)</li>
+            <li>클라이언트에 실시간 시장 데이터 스트리밍(WebSocket)</li>
+            <li>주문 배치 및 관리(gRPC)</li>
+            <li>과거 데이터 쿼리(HTTP REST)</li>
+            <li>위험 관리 시스템 통합(메시지 큐)</li>
+        </ul>
+
+        <h2>1.7 다음 단계</h2>
+
+        <p>다음 장에서는 범용 프로토콜의 각 측면에 대해 자세히 살펴보겠습니다:</p>
+
+        <ul>
+            <li><strong>제2장:</strong> 핵심 개념 - 메시지 유형, 패턴 및 수명 주기</li>
+            <li><strong>제3장:</strong> 전송 계층 - 전송 이해 및 구현</li>
+            <li><strong>제4장:</strong> 인코딩 및 직렬화 - 인코더 선택 및 사용</li>
+            <li><strong>제5장:</strong> RPC 패턴 - 요청-응답 통신</li>
+            <li><strong>제6장:</strong> 이벤트 스트리밍 - 단방향 및 양방향 스트림</li>
+            <li><strong>제7장:</strong> Pub/Sub 메시징 - 게시-구독 패턴</li>
+            <li><strong>제8장:</strong> 고급 기능 - 미들웨어, 인터셉터 및 확장</li>
+            <li><strong>제9장:</strong> 모범 사례 - 프로덕션 배포 및 최적화</li>
+        </ul>
+
+        <div class="highlight">
+            <h3>시작하기</h3>
+            <p>범용 프로토콜을 사용할 준비가 되셨습니까? 대화형 시뮬레이터에서 작동하는 것을 확인하거나 제2장으로 이동하여 핵심 개념에 대해 알아보십시오.</p>
+        </div>
+
+        <div class="nav">
+            <a href="../index.html">← 홈으로 돌아가기</a>
+            <a href="02-핵심개념.html">다음: 핵심 개념 →</a>
+        </div>
+
+        <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; opacity: 0.7; text-align: center;">
+            <p>&copy; 2025 SmileStory Inc. / WIA</p>
+            <p>弘益人間 (홍익인간) · 널리 인간을 이롭게 하라</p>
+        </footer>
+    </div>
+</body>
+</html>

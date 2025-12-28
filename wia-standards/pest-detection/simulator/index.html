@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-AGRI-013 Pest Detection Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 3px solid #84CC16;
+            padding: 1.5rem 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+        }
+
+        .logo-text h1 {
+            color: #84CC16;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .logo-text p {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin: 2rem 0 1rem 0;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 2px solid #334155;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            background: #334155;
+        }
+
+        .tab-btn.active {
+            background: #84CC16;
+            color: white;
+            border-color: #84CC16;
+        }
+
+        .tab-content {
+            display: none;
+            background: #1e293b;
+            padding: 2rem;
+            border-radius: 0 8px 8px 8px;
+            border: 2px solid #334155;
+            min-height: 600px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-title {
+            color: #84CC16;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #84CC16;
+        }
+
+        .btn {
+            background: #84CC16;
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #65a30d;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(132, 204, 22, 0.4);
+        }
+
+        .btn-secondary {
+            background: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #64748b;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .card {
+            background: #0f172a;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 2px solid #334155;
+        }
+
+        .card h3 {
+            color: #84CC16;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .card p {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+        }
+
+        .result-box {
+            background: #0f172a;
+            padding: 2rem;
+            border-radius: 8px;
+            border-left: 4px solid #84CC16;
+            margin-top: 2rem;
+        }
+
+        .result-box h3 {
+            color: #84CC16;
+            margin-bottom: 1rem;
+        }
+
+        .result-box p {
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: #1e293b;
+            margin: 0.5rem 0;
+            border-radius: 6px;
+        }
+
+        .metric-label {
+            color: #cbd5e1;
+        }
+
+        .metric-value {
+            color: #84CC16;
+            font-weight: 600;
+        }
+
+        .code-block {
+            background: #0f172a;
+            padding: 1.5rem;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            color: #e2e8f0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            background: #0f172a;
+            color: #84CC16;
+            font-weight: 600;
+        }
+
+        td {
+            color: #cbd5e1;
+        }
+
+        tr:hover {
+            background: #0f172a;
+        }
+
+        .alert-box {
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            border-left: 4px solid;
+        }
+
+        .alert-critical {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+            color: #fca5a5;
+        }
+
+        .alert-warning {
+            background: rgba(251, 191, 36, 0.1);
+            border-color: #fbbf24;
+            color: #fcd34d;
+        }
+
+        .alert-info {
+            background: rgba(132, 204, 22, 0.1);
+            border-color: #84CC16;
+            color: #a3e635;
+        }
+
+        .footer {
+            background: #1e293b;
+            border-top: 3px solid #84CC16;
+            padding: 2rem 0;
+            margin-top: 3rem;
+            text-align: center;
+        }
+
+        .philosophy {
+            font-size: 1.3rem;
+            color: #84CC16;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .footer p {
+            color: #94a3b8;
+            margin: 0.25rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <div class="logo-icon">🐛</div>
+                <div class="logo-text">
+                    <h1>WIA-AGRI-013 Pest Detection Simulator</h1>
+                    <p>Interactive tools for AI-powered crop protection</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(0)">📊 Data Format</button>
+            <button class="tab-btn" onclick="switchTab(1)">🔢 Algorithms</button>
+            <button class="tab-btn" onclick="switchTab(2)">📡 Protocol</button>
+            <button class="tab-btn" onclick="switchTab(3)">🔗 Integration</button>
+            <button class="tab-btn" onclick="switchTab(4)">📱 QR & VC</button>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div class="tab-content active" id="tab-0">
+            <h2 class="section-title">📊 Pest & Disease Data Generator</h2>
+            <p style="color: #94a3b8; margin-bottom: 2rem;">
+                Generate standardized pest detection data including species identification, severity, location, and environmental conditions.
+            </p>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label>Pest/Disease Type</label>
+                    <select id="pestType">
+                        <option value="insect">Insect Pest</option>
+                        <option value="fungal">Fungal Disease</option>
+                        <option value="bacterial">Bacterial Disease</option>
+                        <option value="viral">Viral Disease</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Species</label>
+                    <select id="species">
+                        <option value="rice-planthopper">Rice Planthopper (벼멸구)</option>
+                        <option value="stem-borer">Rice Stem Borer (이화명나방)</option>
+                        <option value="powdery-mildew">Powdery Mildew (흰가루병)</option>
+                        <option value="anthracnose">Anthracnose (탄저병)</option>
+                        <option value="aphids">Aphids</option>
+                        <option value="blight">Blight</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Severity Level</label>
+                    <select id="severity">
+                        <option value="low">Low (1-20%)</option>
+                        <option value="medium">Medium (21-50%)</option>
+                        <option value="high">High (51-75%)</option>
+                        <option value="critical">Critical (>75%)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Affected Area (hectares)</label>
+                    <input type="number" id="affectedArea" value="2.5" min="0.1" max="1000" step="0.1">
+                </div>
+            </div>
+
+            <h3 style="color: #84CC16; margin: 2rem 0 1rem 0;">Location & Weather</h3>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="location" value="Jeonbuk Province, Korea" placeholder="Enter location">
+                </div>
+                <div class="form-group">
+                    <label>Temperature (°C)</label>
+                    <input type="number" id="temperature" value="28" min="-10" max="50">
+                </div>
+                <div class="form-group">
+                    <label>Humidity (%)</label>
+                    <input type="number" id="humidity" value="75" min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Recent Rainfall (mm)</label>
+                    <input type="number" id="rainfall" value="45" min="0" max="500">
+                </div>
+            </div>
+
+            <button class="btn" onclick="generatePestData()">Generate Pest Detection Data</button>
+
+            <div id="pestDataResult" style="display: none;">
+                <div class="result-box">
+                    <h3>Generated Pest Detection Data (JSON)</h3>
+                    <div class="code-block">
+                        <pre id="pestDataJSON"></pre>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h3>Detection Summary</h3>
+                        <p id="detectionSummary"></p>
+                    </div>
+                    <div class="card">
+                        <h3>Risk Assessment</h3>
+                        <p id="riskAssessment"></p>
+                    </div>
+                    <div class="card">
+                        <h3>Environmental Factors</h3>
+                        <p id="envFactors"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div class="tab-content" id="tab-1">
+            <h2 class="section-title">🔢 Disease Risk Calculator & IPM Decision Support</h2>
+            <p style="color: #94a3b8; margin-bottom: 2rem;">
+                Calculate disease risk levels and get integrated pest management (IPM) recommendations based on environmental and crop conditions.
+            </p>
+
+            <h3 style="color: #84CC16; margin: 2rem 0 1rem 0;">Risk Calculation Input</h3>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Crop Type</label>
+                    <select id="cropType">
+                        <option value="rice">Rice (벼)</option>
+                        <option value="tomato">Tomato</option>
+                        <option value="corn">Corn</option>
+                        <option value="wheat">Wheat</option>
+                        <option value="apple">Apple</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Growth Stage</label>
+                    <select id="growthStage">
+                        <option value="seedling">Seedling</option>
+                        <option value="vegetative">Vegetative</option>
+                        <option value="flowering">Flowering</option>
+                        <option value="fruiting">Fruiting/Grain Fill</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Days Since Last Treatment</label>
+                    <input type="number" id="daysSinceTreatment" value="14" min="0" max="365">
+                </div>
+                <div class="form-group">
+                    <label>Population Density (per m²)</label>
+                    <input type="number" id="pestDensity" value="15" min="0" max="1000">
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label>Average Temperature (°C)</label>
+                    <input type="number" id="riskTemp" value="27" min="0" max="50">
+                </div>
+                <div class="form-group">
+                    <label>Humidity (%)</label>
+                    <input type="number" id="riskHumidity" value="80" min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Leaf Wetness (hours/day)</label>
+                    <input type="number" id="leafWetness" value="8" min="0" max="24">
+                </div>
+                <div class="form-group">
+                    <label>Nearby Infestation Reported?</label>
+                    <select id="nearbyInfestation">
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn" onclick="calculateRisk()">Calculate Disease Risk</button>
+
+            <div id="riskResult" style="display: none;">
+                <div class="result-box">
+                    <h3>Risk Assessment Results</h3>
+                    <div class="metric">
+                        <span class="metric-label">Overall Risk Score</span>
+                        <span class="metric-value" id="riskScore">0/100</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Risk Level</span>
+                        <span class="metric-value" id="riskLevel">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Economic Threshold</span>
+                        <span class="metric-value" id="economicThreshold">--</span>
+                    </div>
+                </div>
+
+                <div id="ipmRecommendation" class="result-box">
+                    <h3>IPM Treatment Recommendations</h3>
+                    <div id="treatmentSteps"></div>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h3>Biological Control</h3>
+                        <p id="biologicalControl"></p>
+                    </div>
+                    <div class="card">
+                        <h3>Chemical Control</h3>
+                        <p id="chemicalControl"></p>
+                    </div>
+                    <div class="card">
+                        <h3>Cultural Practices</h3>
+                        <p id="culturalPractices"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div class="tab-content" id="tab-2">
+            <h2 class="section-title">📡 Alert Broadcasting Protocol</h2>
+            <p style="color: #94a3b8; margin-bottom: 2rem;">
+                Simulate pest outbreak alert broadcasting and regional notification systems for early warning.
+            </p>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label>Alert Type</label>
+                    <select id="alertType">
+                        <option value="detection">New Detection</option>
+                        <option value="outbreak">Outbreak Warning</option>
+                        <option value="critical">Critical Infestation</option>
+                        <option value="treatment">Treatment Advisory</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Alert Priority</label>
+                    <select id="alertPriority">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Target Region</label>
+                    <input type="text" id="targetRegion" value="Jeonbuk Province" placeholder="Enter region">
+                </div>
+                <div class="form-group">
+                    <label>Radius (km)</label>
+                    <input type="number" id="alertRadius" value="50" min="1" max="500">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Alert Message</label>
+                <textarea id="alertMessage" rows="3" placeholder="Enter alert message">Rice planthopper population has exceeded economic threshold in multiple locations. Immediate monitoring and treatment recommended.</textarea>
+            </div>
+
+            <button class="btn" onclick="generateAlert()">Broadcast Alert</button>
+
+            <div id="alertResult" style="display: none;">
+                <div class="result-box">
+                    <h3>Alert Broadcast Protocol (JSON)</h3>
+                    <div class="code-block">
+                        <pre id="alertJSON"></pre>
+                    </div>
+                </div>
+
+                <div id="alertPreview"></div>
+
+                <div class="result-box">
+                    <h3>Alert Distribution</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Channel</th>
+                                <th>Recipients</th>
+                                <th>Status</th>
+                                <th>Delivery Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="distributionTable">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div class="tab-content" id="tab-3">
+            <h2 class="section-title">🔗 Weather & Service Integration</h2>
+            <p style="color: #94a3b8; margin-bottom: 2rem;">
+                Integrate weather services, pesticide suppliers, and extension services for comprehensive pest management.
+            </p>
+
+            <h3 style="color: #84CC16; margin: 2rem 0 1rem 0;">Weather Service Integration</h3>
+            <div class="form-group">
+                <label>Location</label>
+                <input type="text" id="weatherLocation" value="Jeonbuk, Korea" placeholder="Enter location">
+            </div>
+
+            <button class="btn" onclick="fetchWeatherData()">Fetch Weather Forecast</button>
+
+            <div id="weatherIntResult" style="display: none;">
+                <div class="result-box">
+                    <h3>Weather Data (7-Day Forecast)</h3>
+                    <div class="code-block">
+                        <pre id="weatherIntJSON"></pre>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h3>Pest Risk Forecast</h3>
+                        <p id="pestRiskForecast"></p>
+                    </div>
+                    <div class="card">
+                        <h3>Treatment Window</h3>
+                        <p id="treatmentWindow"></p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: #84CC16; margin: 2rem 0 1rem 0;">Pesticide Supplier Integration</h3>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Pest Target</label>
+                    <input type="text" id="pesticideTarget" value="Rice Planthopper" placeholder="Target pest">
+                </div>
+                <div class="form-group">
+                    <label>Area to Treat (ha)</label>
+                    <input type="number" id="treatmentArea" value="10" min="0.1" max="1000" step="0.1">
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" onclick="findPesticides()">Find Recommended Pesticides</button>
+
+            <div id="pesticideResult" style="display: none;">
+                <div class="result-box">
+                    <h3>Recommended Pesticides</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Active Ingredient</th>
+                                <th>Application Rate</th>
+                                <th>PHI (days)</th>
+                                <th>Supplier</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pesticideTable">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <h3 style="color: #84CC16; margin: 2rem 0 1rem 0;">Extension Service Connection</h3>
+            <button class="btn btn-secondary" onclick="connectExtension()">Connect to Local Extension Service</button>
+
+            <div id="extensionResult" style="display: none;">
+                <div class="result-box">
+                    <h3>Extension Service Information</h3>
+                    <p id="extensionInfo"></p>
+                    <div class="metric">
+                        <span class="metric-label">Korean RDA Pest Monitoring System</span>
+                        <span class="metric-value">농촌진흥청 병해충예찰정보</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: QR & VC -->
+        <div class="tab-content" id="tab-4">
+            <h2 class="section-title">📱 Pest-Free Certification QR & Verifiable Credentials</h2>
+            <p style="color: #94a3b8; margin-bottom: 2rem;">
+                Generate pest-free certification QR codes and verifiable credentials for export compliance and quality assurance.
+            </p>
+
+            <h3 style="color: #84CC16; margin: 2rem 0 1rem 0;">Pest-Free Certificate</h3>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Farm/Producer Name</label>
+                    <input type="text" id="producerName" value="Green Valley Organic Farm" placeholder="Enter name">
+                </div>
+                <div class="form-group">
+                    <label>Crop/Product</label>
+                    <input type="text" id="certCrop" value="Organic Rice" placeholder="Enter crop">
+                </div>
+                <div class="form-group">
+                    <label>Certification Type</label>
+                    <select id="certType">
+                        <option value="pest-free">Pest-Free Certified</option>
+                        <option value="ipm">IPM Compliant</option>
+                        <option value="organic">Organic Certified</option>
+                        <option value="export">Export Phytosanitary</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Production Volume (kg)</label>
+                    <input type="number" id="productionVolume" value="50000" min="0">
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label>Inspection Date</label>
+                    <input type="date" id="inspectionDate" value="">
+                </div>
+                <div class="form-group">
+                    <label>Last Treatment Date</label>
+                    <input type="date" id="lastTreatmentDate" value="">
+                </div>
+                <div class="form-group">
+                    <label>Pesticide Residue (ppm)</label>
+                    <input type="number" id="residueLevel" value="0.05" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Destination Country</label>
+                    <input type="text" id="destinationCountry" value="Japan" placeholder="For export">
+                </div>
+            </div>
+
+            <button class="btn" onclick="generateCertificate()">Generate Pest-Free Certificate</button>
+
+            <div id="certResult" style="display: none;">
+                <div class="result-box">
+                    <h3>Pest-Free Certificate (QR Code Data)</h3>
+                    <div class="code-block">
+                        <pre id="certJSON"></pre>
+                    </div>
+                </div>
+
+                <div class="result-box">
+                    <h3>Verifiable Credential (W3C Format)</h3>
+                    <div class="code-block">
+                        <pre id="vcJSON"></pre>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h3>Certificate Status</h3>
+                        <p id="certStatus"></p>
+                    </div>
+                    <div class="card">
+                        <h3>Compliance</h3>
+                        <p id="complianceStatus"></p>
+                    </div>
+                    <div class="card">
+                        <h3>Blockchain Verification</h3>
+                        <p id="blockchainStatus"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="philosophy">弘益人間 (홍익인간)</div>
+            <p>Benefit All Humanity</p>
+            <p>&copy; 2025 SmileStory Inc. / WIA</p>
+        </div>
+    </footer>
+
+    <script>
+        function switchTab(index) {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+
+            contents.forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+        }
+
+        // Set default dates
+        document.getElementById('inspectionDate').valueAsDate = new Date();
+        const lastTreatment = new Date();
+        lastTreatment.setDate(lastTreatment.getDate() - 30);
+        document.getElementById('lastTreatmentDate').valueAsDate = lastTreatment;
+
+        // Tab 1: Data Format
+        function generatePestData() {
+            const pestType = document.getElementById('pestType').value;
+            const species = document.getElementById('species').value;
+            const severity = document.getElementById('severity').value;
+            const affectedArea = parseFloat(document.getElementById('affectedArea').value);
+            const location = document.getElementById('location').value;
+            const temp = parseFloat(document.getElementById('temperature').value);
+            const humidity = parseFloat(document.getElementById('humidity').value);
+            const rainfall = parseFloat(document.getElementById('rainfall').value);
+
+            const severityMap = {
+                'low': { min: 1, max: 20, score: 25 },
+                'medium': { min: 21, max: 50, score: 50 },
+                'high': { min: 51, max: 75, score: 75 },
+                'critical': { min: 76, max: 95, score: 90 }
+            };
+
+            const infestationPercent = severityMap[severity].min +
+                Math.random() * (severityMap[severity].max - severityMap[severity].min);
+
+            const pestData = {
+                detection_id: `pest-${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                pest_type: pestType,
+                species: species,
+                common_name: document.getElementById('species').options[document.getElementById('species').selectedIndex].text,
+                severity: {
+                    level: severity,
+                    infestation_percent: infestationPercent.toFixed(1),
+                    affected_area_ha: affectedArea
+                },
+                location: {
+                    description: location,
+                    coordinates: {
+                        latitude: 35.8 + Math.random() * 0.5,
+                        longitude: 127.0 + Math.random() * 0.5
+                    }
+                },
+                environmental_conditions: {
+                    temperature_c: temp,
+                    humidity_percent: humidity,
+                    recent_rainfall_mm: rainfall,
+                    favorable_for_pest: (temp > 25 && humidity > 70)
+                },
+                detection_method: "AI Image Recognition",
+                confidence_score: 0.85 + Math.random() * 0.13,
+                images_analyzed: Math.floor(10 + Math.random() * 40)
+            };
+
+            document.getElementById('pestDataJSON').textContent = JSON.stringify(pestData, null, 2);
+
+            document.getElementById('detectionSummary').textContent =
+                `Detected ${pestData.common_name} with ${severity} severity (${infestationPercent.toFixed(1)}% infestation). ` +
+                `Affected area: ${affectedArea} hectares. Confidence: ${(pestData.confidence_score * 100).toFixed(1)}%.`;
+
+            const riskLevel = severityMap[severity].score > 70 ? 'CRITICAL' :
+                            severityMap[severity].score > 50 ? 'HIGH' :
+                            severityMap[severity].score > 30 ? 'MEDIUM' : 'LOW';
+
+            document.getElementById('riskAssessment').textContent =
+                `Risk Level: ${riskLevel}. ` +
+                `Economic threshold ${severity === 'critical' || severity === 'high' ? 'EXCEEDED' : 'not exceeded'}. ` +
+                `Immediate action ${severity === 'critical' ? 'REQUIRED' : 'recommended'}.`;
+
+            document.getElementById('envFactors').textContent =
+                `Temperature: ${temp}°C, Humidity: ${humidity}%, Rainfall: ${rainfall}mm. ` +
+                `Conditions are ${pestData.environmental_conditions.favorable_for_pest ? 'FAVORABLE' : 'unfavorable'} for pest development.`;
+
+            document.getElementById('pestDataResult').style.display = 'block';
+        }
+
+        // Tab 2: Risk Calculator
+        function calculateRisk() {
+            const cropType = document.getElementById('cropType').value;
+            const growthStage = document.getElementById('growthStage').value;
+            const daysSince = parseInt(document.getElementById('daysSinceTreatment').value);
+            const density = parseFloat(document.getElementById('pestDensity').value);
+            const temp = parseFloat(document.getElementById('riskTemp').value);
+            const humidity = parseFloat(document.getElementById('riskHumidity').value);
+            const wetness = parseFloat(document.getElementById('leafWetness').value);
+            const nearby = document.getElementById('nearbyInfestation').value;
+
+            // Risk calculation algorithm
+            let riskScore = 0;
+
+            // Temperature factor (optimal 25-30°C for many pests)
+            if (temp >= 25 && temp <= 30) riskScore += 20;
+            else if (temp >= 20 && temp <= 35) riskScore += 10;
+
+            // Humidity factor
+            if (humidity > 80) riskScore += 20;
+            else if (humidity > 60) riskScore += 10;
+
+            // Leaf wetness
+            riskScore += Math.min(wetness * 1.5, 15);
+
+            // Pest density
+            if (density > 20) riskScore += 20;
+            else if (density > 10) riskScore += 10;
+            else riskScore += 5;
+
+            // Days since treatment
+            if (daysSince > 21) riskScore += 10;
+            else if (daysSince > 14) riskScore += 5;
+
+            // Nearby infestation
+            if (nearby === 'yes') riskScore += 15;
+
+            riskScore = Math.min(riskScore, 100);
+
+            const riskLevel = riskScore > 70 ? 'CRITICAL' :
+                            riskScore > 50 ? 'HIGH' :
+                            riskScore > 30 ? 'MEDIUM' : 'LOW';
+
+            const threshold = density > 15 ? 'EXCEEDED - Treatment Recommended' : 'Not Exceeded - Monitor Closely';
+
+            document.getElementById('riskScore').textContent = `${riskScore}/100`;
+            document.getElementById('riskLevel').textContent = riskLevel;
+            document.getElementById('economicThreshold').textContent = threshold;
+
+            // IPM Recommendations
+            let steps = '';
+            if (riskScore > 70) {
+                steps = `
+                    <div class="alert-box alert-critical">
+                        <strong>CRITICAL RISK - Immediate Action Required</strong>
+                    </div>
+                    <p style="color: #cbd5e1; margin: 1rem 0;">1. Implement chemical control within 24-48 hours</p>
+                    <p style="color: #cbd5e1; margin: 1rem 0;">2. Increase monitoring frequency to daily</p>
+                    <p style="color: #cbd5e1; margin: 1rem 0;">3. Alert neighboring farmers</p>
+                    <p style="color: #cbd5e1; margin: 1rem 0;">4. Consider preventive treatment of adjacent fields</p>
+                `;
+            } else if (riskScore > 50) {
+                steps = `
+                    <div class="alert-box alert-warning">
+                        <strong>HIGH RISK - Treatment Recommended</strong>
+                    </div>
+                    <p style="color: #cbd5e1; margin: 1rem 0;">1. Prepare for treatment within 3-5 days</p>
+                    <p style="color: #cbd5e1; margin: 1rem 0;">2. Monitor population every 2-3 days</p>
+                    <p style="color: #cbd5e1; margin: 1rem 0;">3. Evaluate biological control options</p>
+                `;
+            } else {
+                steps = `
+                    <div class="alert-box alert-info">
+                        <strong>LOW-MEDIUM RISK - Continue Monitoring</strong>
+                    </div>
+                    <p style="color: #cbd5e1; margin: 1rem 0;">1. Continue regular monitoring (weekly)</p>
+                    <p style="color: #cbd5e1; margin: 1rem 0;">2. Implement cultural control practices</p>
+                    <p style="color: #cbd5e1; margin: 1rem 0;">3. Consider preventive biological control</p>
+                `;
+            }
+
+            document.getElementById('treatmentSteps').innerHTML = steps;
+
+            document.getElementById('biologicalControl').textContent =
+                riskScore < 50 ?
+                'Release natural predators (ladybugs, parasitic wasps). Apply Bacillus thuringiensis (Bt). Use pheromone traps for monitoring.' :
+                'Biological control may be supplementary to chemical treatment at this risk level.';
+
+            document.getElementById('chemicalControl').textContent =
+                riskScore > 50 ?
+                'Apply selective insecticide targeting current pest. Rotate active ingredients to prevent resistance. Follow pre-harvest interval (PHI) guidelines.' :
+                'Not recommended at current risk level. Continue monitoring.';
+
+            document.getElementById('culturalPractices').textContent =
+                'Remove crop residue. Maintain field sanitation. Adjust irrigation to reduce humidity. Use resistant varieties in next season.';
+
+            document.getElementById('riskResult').style.display = 'block';
+        }
+
+        // Tab 3: Alert Protocol
+        function generateAlert() {
+            const alertType = document.getElementById('alertType').value;
+            const priority = document.getElementById('alertPriority').value;
+            const region = document.getElementById('targetRegion').value;
+            const radius = parseInt(document.getElementById('alertRadius').value);
+            const message = document.getElementById('alertMessage').value;
+
+            const alert = {
+                alert_id: `alert-${Date.now()}`,
+                standard: "WIA-AGRI-013",
+                alert_type: alertType,
+                priority: priority,
+                timestamp: new Date().toISOString(),
+                target_region: {
+                    name: region,
+                    radius_km: radius,
+                    estimated_farmers: Math.floor(radius * radius / 10)
+                },
+                message: {
+                    en: message,
+                    ko: message.includes('Rice planthopper') ?
+                        '벼멸구 개체수가 다수 지역에서 경제적 피해 수준을 초과했습니다. 즉시 예찰 및 방제를 권장합니다.' :
+                        '병해충 경보가 발령되었습니다.'
+                },
+                recommended_action: priority === 'critical' ? 'immediate_treatment' : 'enhanced_monitoring',
+                expires_at: new Date(Date.now() + 7 * 86400000).toISOString()
+            };
+
+            document.getElementById('alertJSON').textContent = JSON.stringify(alert, null, 2);
+
+            const alertClass = priority === 'critical' ? 'alert-critical' :
+                              priority === 'high' ? 'alert-warning' : 'alert-info';
+
+            document.getElementById('alertPreview').innerHTML = `
+                <div class="alert-box ${alertClass}">
+                    <strong>${alertType.toUpperCase()} - ${priority.toUpperCase()} PRIORITY</strong>
+                    <p style="margin-top: 0.5rem;">${message}</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.9rem;">Region: ${region} (${radius}km radius) | Issued: ${new Date().toLocaleString()}</p>
+                </div>
+            `;
+
+            const channels = [
+                { name: 'SMS', recipients: Math.floor(alert.target_region.estimated_farmers * 0.95), status: 'Delivered', time: '< 1 min' },
+                { name: 'Mobile App', recipients: Math.floor(alert.target_region.estimated_farmers * 0.60), status: 'Delivered', time: '< 1 min' },
+                { name: 'Email', recipients: Math.floor(alert.target_region.estimated_farmers * 0.80), status: 'Sending', time: '2-5 min' },
+                { name: 'Extension Office', recipients: Math.floor(radius / 10), status: 'Delivered', time: '< 1 min' },
+                { name: 'RDA Portal (농진청)', recipients: 1, status: 'Delivered', time: '< 1 min' }
+            ];
+
+            const tableBody = document.getElementById('distributionTable');
+            tableBody.innerHTML = '';
+            channels.forEach(ch => {
+                const row = `<tr>
+                    <td>${ch.name}</td>
+                    <td>${ch.recipients.toLocaleString()}</td>
+                    <td>${ch.status}</td>
+                    <td>${ch.time}</td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+
+            document.getElementById('alertResult').style.display = 'block';
+        }
+
+        // Tab 4: Integration
+        function fetchWeatherData() {
+            const location = document.getElementById('weatherLocation').value;
+
+            const weatherData = {
+                location: location,
+                timestamp: new Date().toISOString(),
+                forecast_7day: [
+                    { day: 1, temp_high: 29, temp_low: 21, humidity: 75, rainfall_mm: 5, pest_risk: 'medium' },
+                    { day: 2, temp_high: 30, temp_low: 22, humidity: 78, rainfall_mm: 12, pest_risk: 'high' },
+                    { day: 3, temp_high: 31, temp_low: 23, humidity: 82, rainfall_mm: 8, pest_risk: 'high' },
+                    { day: 4, temp_high: 28, temp_low: 20, humidity: 70, rainfall_mm: 0, pest_risk: 'medium' },
+                    { day: 5, temp_high: 27, temp_low: 19, humidity: 65, rainfall_mm: 0, pest_risk: 'low' },
+                    { day: 6, temp_high: 28, temp_low: 20, humidity: 68, rainfall_mm: 2, pest_risk: 'medium' },
+                    { day: 7, temp_high: 29, temp_low: 21, humidity: 72, rainfall_mm: 6, pest_risk: 'medium' }
+                ],
+                pest_development_index: 72,
+                disease_pressure_index: 68
+            };
+
+            document.getElementById('weatherIntJSON').textContent = JSON.stringify(weatherData, null, 2);
+
+            document.getElementById('pestRiskForecast').textContent =
+                `High pest risk expected on Days 2-3 (high temp + humidity + rainfall). ` +
+                `Pest Development Index: ${weatherData.pest_development_index}/100. ` +
+                `Disease Pressure Index: ${weatherData.disease_pressure_index}/100.`;
+
+            document.getElementById('treatmentWindow').textContent =
+                `Best treatment window: Day 4-5 (dry conditions, lower humidity). ` +
+                `Avoid treatment on Days 2-3 (rainfall expected). ` +
+                `Wind speed favorable for spraying on Days 4-6.`;
+
+            document.getElementById('weatherIntResult').style.display = 'block';
+        }
+
+        function findPesticides() {
+            const target = document.getElementById('pesticideTarget').value;
+            const area = parseFloat(document.getElementById('treatmentArea').value);
+
+            const pesticides = [
+                { product: 'BioGuard Pro', ingredient: 'Imidacloprid 20%', rate: '1.0 L/ha', phi: 14, supplier: 'AgChem Korea' },
+                { product: 'PlantHopper Shield', ingredient: 'Buprofezin 25%', rate: '0.8 kg/ha', phi: 21, supplier: 'FarmCare Ltd' },
+                { product: 'Organic Neem', ingredient: 'Neem Oil 70%', rate: '2.5 L/ha', phi: 0, supplier: 'EcoAg Solutions' },
+                { product: 'Systemic Guard', ingredient: 'Thiamethoxam 25%', rate: '0.3 kg/ha', phi: 30, supplier: 'CropProtect Inc' }
+            ];
+
+            const tableBody = document.getElementById('pesticideTable');
+            tableBody.innerHTML = '';
+            pesticides.forEach(p => {
+                const row = `<tr>
+                    <td>${p.product}</td>
+                    <td>${p.ingredient}</td>
+                    <td>${p.rate} (${area} ha = ${(parseFloat(p.rate) * area).toFixed(1)} ${p.rate.includes('L') ? 'L' : 'kg'})</td>
+                    <td>${p.phi}</td>
+                    <td>${p.supplier}</td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+
+            document.getElementById('pesticideResult').style.display = 'block';
+        }
+
+        function connectExtension() {
+            document.getElementById('extensionInfo').innerHTML = `
+                <p style="color: #cbd5e1; margin-bottom: 1rem;">
+                    <strong>Rural Development Administration (RDA) - Pest Monitoring System</strong><br>
+                    농촌진흥청 병해충예찰정보시스템
+                </p>
+                <p style="color: #cbd5e1; margin-bottom: 0.5rem;">
+                    • Real-time pest occurrence data across Korea
+                </p>
+                <p style="color: #cbd5e1; margin-bottom: 0.5rem;">
+                    • Regional pest forecasting and alerts (지역별 병해충 발생 예찰)
+                </p>
+                <p style="color: #cbd5e1; margin-bottom: 0.5rem;">
+                    • IPM guidelines and treatment recommendations (종합적 병해충 관리 지침)
+                </p>
+                <p style="color: #cbd5e1; margin-bottom: 0.5rem;">
+                    • Contact: 1544-8572 | Website: ncpms.rda.go.kr
+                </p>
+            `;
+            document.getElementById('extensionResult').style.display = 'block';
+        }
+
+        // Tab 5: QR & VC
+        function generateCertificate() {
+            const producer = document.getElementById('producerName').value;
+            const crop = document.getElementById('certCrop').value;
+            const certType = document.getElementById('certType').value;
+            const volume = parseInt(document.getElementById('productionVolume').value);
+            const inspectionDate = document.getElementById('inspectionDate').value;
+            const treatmentDate = document.getElementById('lastTreatmentDate').value;
+            const residue = parseFloat(document.getElementById('residueLevel').value);
+            const destination = document.getElementById('destinationCountry').value;
+
+            const certificate = {
+                certificate_id: `WIA-AGRI-013-${Date.now()}`,
+                standard: "WIA-AGRI-013",
+                certificate_type: certType,
+                producer: {
+                    name: producer,
+                    location: "Jeonbuk Province, Korea"
+                },
+                product: {
+                    crop: crop,
+                    volume_kg: volume,
+                    production_year: new Date().getFullYear()
+                },
+                pest_status: {
+                    pest_free: true,
+                    inspection_date: inspectionDate,
+                    last_treatment_date: treatmentDate,
+                    pesticide_residue_ppm: residue,
+                    residue_compliant: residue < 0.1
+                },
+                export_info: {
+                    destination_country: destination,
+                    phytosanitary_compliant: true
+                },
+                issue_date: new Date().toISOString().split('T')[0],
+                valid_until: new Date(Date.now() + 180 * 86400000).toISOString().split('T')[0],
+                qr_verification_url: `https://wia.org/verify/pest-free/${Date.now()}`
+            };
+
+            const vc = {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://wia.org/credentials/pest-detection/v1"
+                ],
+                "type": ["VerifiableCredential", "PestFreeCertificate"],
+                "issuer": "did:wia:agricultural-authority",
+                "issuanceDate": new Date().toISOString(),
+                "expirationDate": new Date(Date.now() + 180 * 86400000).toISOString(),
+                "credentialSubject": {
+                    "id": `did:wia:producer:${producer.toLowerCase().replace(/\s+/g, '-')}`,
+                    "producerName": producer,
+                    "product": crop,
+                    "volume": volume,
+                    "pestFree": true,
+                    "certificationType": certType,
+                    "residueLevel": residue,
+                    "destinationCountry": destination,
+                    "standard": "WIA-AGRI-013"
+                },
+                "proof": {
+                    "type": "Ed25519Signature2020",
+                    "created": new Date().toISOString(),
+                    "proofPurpose": "assertionMethod",
+                    "verificationMethod": "did:wia:agricultural-authority#key-1",
+                    "jws": `eyJ0eXAi...${btoa(Date.now().toString()).substring(0, 40)}`
+                }
+            };
+
+            document.getElementById('certJSON').textContent = JSON.stringify(certificate, null, 2);
+            document.getElementById('vcJSON').textContent = JSON.stringify(vc, null, 2);
+
+            document.getElementById('certStatus').textContent =
+                `Certificate Status: VALID. ` +
+                `Type: ${certType.toUpperCase()}. ` +
+                `Valid until: ${certificate.valid_until}. ` +
+                `QR code links to blockchain verification.`;
+
+            const compliant = residue < 0.1 && certificate.pest_status.pest_free;
+            document.getElementById('complianceStatus').textContent =
+                `Export Compliance: ${compliant ? 'PASSED ✓' : 'FAILED ✗'}. ` +
+                `Pesticide Residue: ${residue} ppm (Limit: 0.1 ppm). ` +
+                `Phytosanitary: ${certificate.export_info.phytosanitary_compliant ? 'Compliant' : 'Non-compliant'}.`;
+
+            document.getElementById('blockchainStatus').textContent =
+                `Certificate anchored to blockchain. ` +
+                `Transaction hash: 0x${Date.now().toString(16)}...abc. ` +
+                `Immutable record created. Verification URL: ${certificate.qr_verification_url}`;
+
+            document.getElementById('certResult').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

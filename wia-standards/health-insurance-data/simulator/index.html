@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA Health Insurance Data - Simulator</title>
+    <style>
+        :root {
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .nav-home {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav-home:hover { color: var(--primary); }
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--primary); }
+        .breadcrumb .sep { color: var(--border); }
+        .breadcrumb .current { color: var(--primary); font-weight: 500; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--primary); }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .lang-switch { display: flex; gap: 10px; }
+        .lang-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .lang-btn:hover { border-color: var(--primary); }
+        .hero {
+            text-align: center;
+            padding: 40px 0;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, var(--primary), #60A5FA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; }
+        .tabs {
+            justify-content: center;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 24px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .tab:hover { border-color: var(--primary); }
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid var(--border);
+        }
+        .panel.active { display: block; }
+        .panel h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-center {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .signal-display {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            white-space: pre;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .data-table th {
+            background: var(--bg);
+            color: var(--primary);
+        }
+        .data-table tr:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+        footer {
+            margin-top: 50px;
+            padding: 30px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+        }
+        footer .philosophy {
+            color: #ffd700;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        footer .links {
+            margin-top: 15px;
+        }
+        footer .links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        footer .links a:hover {
+            color: var(--primary);
+        }
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.8rem; }
+            .form-row { grid-template-columns: 1fr; }
+            .tabs { justify-content: center; }
+            .breadcrumb { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-nav">
+            <div class="nav-left">
+                <a href="https://wiastandards.com" class="nav-home" target="_blank">🏥 WIA Standards</a>
+                <div class="breadcrumb">
+                    <a href="https://wiastandards.com" target="_blank">Home</a>
+                    <span class="sep">›</span>
+                    <a href="https://wiastandards.com/#standards" target="_blank">Standards</a>
+                    <span class="sep">›</span>
+                    <span class="current">Health Insurance Data</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 25px;">
+                <nav class="nav-links">
+                    <a href="https://cert.wiastandards.com" target="_blank">🏆 Certification</a>
+                    <a href="https://wiabooks.store/reader/simulators/" target="_blank">🎮 Simulators</a>
+                    <a href="https://wiabooks.store" target="_blank">📚 Ebook</a>
+                    <a href="https://github.com/WIA-Official/wia-standards" target="_blank">GitHub</a>
+                </nav>
+            </div>
+        </div>
+
+        <header>
+            <div class="logo">🏥 WIA Health Insurance Data</div>
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('ko')">KO</button>
+            </div>
+        </header>
+
+        <section class="hero">
+            <h1 data-en="Health Insurance Data Simulator" data-ko="건강보험 데이터 시뮬레이터">Health Insurance Data Simulator</h1>
+            <p data-en="Interactive demo of WIA Health Insurance Data Standard" data-ko="WIA 건강보험 데이터 표준 인터랙티브 데모">Interactive demo of WIA Health Insurance Data Standard</p>
+        </section>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showPanel(0)" data-en="📊 Data Format" data-ko="📊 데이터 형식">📊 Data Format</button>
+            <button class="tab" onclick="showPanel(1)" data-en="🔢 Algorithms" data-ko="🔢 알고리즘">🔢 Algorithms</button>
+            <button class="tab" onclick="showPanel(2)" data-en="📡 Protocol" data-ko="📡 프로토콜">📡 Protocol</button>
+            <button class="tab" onclick="showPanel(3)" data-en="🔗 Integration" data-ko="🔗 통합">🔗 Integration</button>
+            <button class="tab" onclick="showPanel(4)" data-en="🧪 Test" data-ko="🧪 테스트">🧪 Test</button>
+        </div>
+
+        <div class="panel active" id="panel-0">
+            <h2 data-en="📊 Insurance Claim Data Format" data-ko="📊 보험 청구 데이터 형식">📊 Insurance Claim Data Format</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-en="Member ID" data-ko="회원 ID">Member ID</label>
+                    <input type="text" id="memberId" placeholder="MBR-123456" value="MBR-123456">
+                </div>
+                <div class="form-group">
+                    <label data-en="Claim Type" data-ko="청구 유형">Claim Type</label>
+                    <select id="claimType">
+                        <option value="inpatient">Inpatient (입원)</option>
+                        <option value="outpatient">Outpatient (외래)</option>
+                        <option value="pharmacy">Pharmacy (약국)</option>
+                        <option value="emergency">Emergency (응급)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-en="Diagnosis Code (ICD-10)" data-ko="진단 코드 (ICD-10)">Diagnosis Code</label>
+                    <input type="text" id="diagnosisCode" placeholder="J45.9" value="J45.9">
+                </div>
+                <div class="form-group">
+                    <label data-en="Claim Amount" data-ko="청구 금액">Claim Amount</label>
+                    <input type="number" id="claimAmount" value="2500">
+                </div>
+            </div>
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="generateClaimData()">
+                    <span data-en="📊 Generate Claim Data" data-ko="📊 청구 데이터 생성">📊 Generate Claim Data</span>
+                </button>
+            </div>
+            <div class="signal-display" id="dataOutput" style="display: none;"></div>
+        </div>
+
+        <div class="panel" id="panel-1">
+            <h2 data-en="🔢 Coverage Calculator" data-ko="🔢 보장 범위 계산기">🔢 Coverage Calculator</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-en="Annual Deductible" data-ko="연간 공제액">Annual Deductible</label>
+                    <input type="number" id="deductible" value="1000">
+                </div>
+                <div class="form-group">
+                    <label data-en="Coinsurance (%)" data-ko="공동보험 (%)">Coinsurance (%)</label>
+                    <input type="number" id="coinsurance" value="20">
+                </div>
+            </div>
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="calculateCoverage()">
+                    <span data-en="🔢 Calculate Coverage" data-ko="🔢 보장 계산">🔢 Calculate Coverage</span>
+                </button>
+            </div>
+            <div class="signal-display" id="algoOutput" style="display: none;"></div>
+        </div>
+
+        <div class="panel" id="panel-2">
+            <h2 data-en="📡 Claim Submission Protocol" data-ko="📡 청구 제출 프로토콜">📡 Claim Submission Protocol</h2>
+            <p style="margin-bottom: 20px; color: var(--text-muted);" data-en="Submit insurance claims via standardized API" data-ko="표준화된 API를 통해 보험 청구 제출">Submit insurance claims via standardized API</p>
+            <div class="form-group">
+                <label data-en="Provider ID" data-ko="의료 제공자 ID">Provider ID</label>
+                <input type="text" id="providerId" placeholder="PROV-789">
+            </div>
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="submitClaim()">
+                    <span data-en="📡 Submit Claim" data-ko="📡 청구 제출">📡 Submit Claim</span>
+                </button>
+            </div>
+            <div class="signal-display" id="protocolOutput" style="display: none;"></div>
+        </div>
+
+        <div class="panel" id="panel-3">
+            <h2 data-en="🔗 Insurance System Integration" data-ko="🔗 보험 시스템 통합">🔗 Insurance System Integration</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th data-en="System" data-ko="시스템">System</th>
+                        <th data-en="Status" data-ko="상태">Status</th>
+                        <th data-en="Last Sync" data-ko="마지막 동기화">Last Sync</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>EHR Integration</td>
+                        <td style="color: var(--secondary);">✓ Connected</td>
+                        <td>2025-12-26 10:30</td>
+                    </tr>
+                    <tr>
+                        <td>Billing System</td>
+                        <td style="color: var(--secondary);">✓ Connected</td>
+                        <td>2025-12-26 10:25</td>
+                    </tr>
+                    <tr>
+                        <td>Claims Database</td>
+                        <td style="color: var(--secondary);">✓ Connected</td>
+                        <td>2025-12-26 10:20</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="testIntegration()">
+                    <span data-en="🔗 Test Integration" data-ko="🔗 통합 테스트">🔗 Test Integration</span>
+                </button>
+            </div>
+            <div class="signal-display" id="integrationOutput" style="display: none;"></div>
+        </div>
+
+        <div class="panel" id="panel-4">
+            <h2 data-en="🧪 Compliance Test" data-ko="🧪 규정 준수 테스트">🧪 Compliance Test</h2>
+            <div class="form-group">
+                <label data-en="Test Standard" data-ko="테스트 표준">Test Standard</label>
+                <select id="testStandard">
+                    <option value="wia">WIA Health Insurance Data</option>
+                    <option value="hipaa">HIPAA</option>
+                    <option value="hl7">HL7 FHIR</option>
+                </select>
+            </div>
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="runTest()">
+                    <span data-en="🧪 Run Test" data-ko="🧪 테스트 실행">🧪 Run Test</span>
+                </button>
+            </div>
+            <div id="testResults" style="display: none; margin-top: 20px; padding: 20px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--secondary); border-radius: 12px;">
+                <h3 style="color: var(--secondary);">✅ <span data-en="All Tests Passed" data-ko="모든 테스트 통과">All Tests Passed</span></h3>
+                <p style="margin-top: 10px; color: var(--text-muted);">
+                    <span data-en="Data format: Valid ✓" data-ko="데이터 형식: 유효 ✓">Data format: Valid ✓</span><br>
+                    <span data-en="Privacy compliance: Passed ✓" data-ko="개인정보 준수: 통과 ✓">Privacy compliance: Passed ✓</span><br>
+                    <span data-en="Integration: Operational ✓" data-ko="통합: 운영 중 ✓">Integration: Operational ✓</span>
+                </p>
+            </div>
+        </div>
+
+        <footer>
+            <p class="philosophy" data-en="弘益人間 · Benefit All Humanity" data-ko="弘益人間 · 널리 인간을 이롭게 하라">弘益人間 · Benefit All Humanity</p>
+            <p data-en="Secure health insurance data exchange" data-ko="안전한 건강보험 데이터 교환">Secure health insurance data exchange</p>
+            <p style="margin-top: 15px;">WIA - World Certification Industry Association</p>
+            <div class="links">
+                <a href="https://wiastandards.com" target="_blank">🏠 Home</a>
+                <a href="https://wiastandards.com/#standards" target="_blank">📋 Standards</a>
+                <a href="https://wiabooks.store" target="_blank">📚 Ebook</a>
+                <a href="https://github.com/WIA-Official/wia-standards" target="_blank">GitHub</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let currentLang = localStorage.getItem('wiaLang') || 'en';
+
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('wiaLang', lang);
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === lang.toUpperCase()) btn.classList.add('active');
+            });
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const text = el.getAttribute('data-' + lang);
+                if (text) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = text;
+                    } else {
+                        el.textContent = text;
+                    }
+                }
+            });
+        }
+
+        function showPanel(index) {
+            document.querySelectorAll('.panel').forEach((p, i) => {
+                p.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab').forEach((t, i) => {
+                t.classList.toggle('active', i === index);
+            });
+        }
+
+        function generateClaimData() {
+            const data = {
+                format: "WIA-HEALTH-INSURANCE-DATA-v1.0",
+                timestamp: new Date().toISOString(),
+                claim: {
+                    id: "CLM-" + Date.now().toString(36).toUpperCase(),
+                    member_id: document.getElementById('memberId').value,
+                    type: document.getElementById('claimType').value,
+                    diagnosis_code: document.getElementById('diagnosisCode').value,
+                    amount: parseFloat(document.getElementById('claimAmount').value),
+                    currency: "USD"
+                }
+            };
+            document.getElementById('dataOutput').style.display = 'block';
+            document.getElementById('dataOutput').textContent = JSON.stringify(data, null, 2);
+            alert(currentLang === 'en' ? 'Claim data generated!' : '청구 데이터가 생성되었습니다!');
+        }
+
+        function calculateCoverage() {
+            const amount = parseFloat(document.getElementById('claimAmount').value);
+            const deductible = parseFloat(document.getElementById('deductible').value);
+            const coinsurance = parseFloat(document.getElementById('coinsurance').value);
+            const afterDeductible = Math.max(0, amount - deductible);
+            const patientPays = deductible + (afterDeductible * coinsurance / 100);
+            const insurancePays = amount - patientPays;
+
+            const result = {
+                total_claim: amount,
+                deductible: deductible,
+                after_deductible: afterDeductible,
+                patient_responsibility: patientPays.toFixed(2),
+                insurance_pays: insurancePays.toFixed(2)
+            };
+            document.getElementById('algoOutput').style.display = 'block';
+            document.getElementById('algoOutput').textContent = JSON.stringify(result, null, 2);
+            alert(currentLang === 'en' ? `Insurance pays: $${insurancePays.toFixed(2)}` : `보험 지급액: $${insurancePays.toFixed(2)}`);
+        }
+
+        function submitClaim() {
+            const result = {
+                submission_id: "SUB-" + Date.now().toString(36).toUpperCase(),
+                timestamp: new Date().toISOString(),
+                provider_id: document.getElementById('providerId').value,
+                status: "submitted",
+                next_steps: "Awaiting review"
+            };
+            document.getElementById('protocolOutput').style.display = 'block';
+            document.getElementById('protocolOutput').textContent = JSON.stringify(result, null, 2);
+            alert(currentLang === 'en' ? 'Claim submitted successfully!' : '청구가 성공적으로 제출되었습니다!');
+        }
+
+        function testIntegration() {
+            const result = {
+                test_id: "TEST-" + Date.now(),
+                timestamp: new Date().toISOString(),
+                systems: ["EHR", "Billing", "Claims"],
+                status: "all_connected",
+                latency_ms: 42
+            };
+            document.getElementById('integrationOutput').style.display = 'block';
+            document.getElementById('integrationOutput').textContent = JSON.stringify(result, null, 2);
+            alert(currentLang === 'en' ? 'Integration test passed!' : '통합 테스트 통과!');
+        }
+
+        function runTest() {
+            document.getElementById('testResults').style.display = 'block';
+            alert(currentLang === 'en' ? 'Compliance test completed!' : '규정 준수 테스트 완료!');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setLang(currentLang);
+        });
+    </script>
+</body>
+</html>

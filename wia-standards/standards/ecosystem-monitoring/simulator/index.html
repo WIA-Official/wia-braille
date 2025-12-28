@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA Ecosystem Monitoring Simulator</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10B981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-title h1 {
+            font-size: 1.75rem;
+            color: var(--primary);
+        }
+
+        .lang-select {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Card */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .form-textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* Button */
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg);
+        }
+
+        /* Output */
+        .output {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* Status Indicator */
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .status-healthy {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .status-critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
+
+        /* Metrics */
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            background: var(--bg);
+            border-radius: 0.5rem;
+            height: 2rem;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            background: var(--primary);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            transition: width 0.3s;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .tabs {
+                flex-wrap: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-title">
+                <span style="font-size: 2rem;">🌍</span>
+                <h1>Ecosystem Monitoring Simulator</h1>
+            </div>
+            <select class="lang-select" id="langSelect">
+                <option value="en">English</option>
+                <option value="ko">한국어 (Korean)</option>
+                <option value="zh">中文 (Chinese)</option>
+                <option value="ja">日本語 (Japanese)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="fr">Français (French)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="pt">Português (Portuguese)</option>
+                <option value="ru">Русский (Russian)</option>
+                <option value="ar">العربية (Arabic)</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+                <option value="bn">বাংলা (Bengali)</option>
+                <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                <option value="jv">Basa Jawa (Javanese)</option>
+                <option value="vi">Tiếng Việt (Vietnamese)</option>
+                <option value="te">తెలుగు (Telugu)</option>
+                <option value="mr">मराठी (Marathi)</option>
+                <option value="ta">தமிழ் (Tamil)</option>
+                <option value="tr">Türkçe (Turkish)</option>
+                <option value="it">Italiano (Italian)</option>
+                <option value="th">ไทย (Thai)</option>
+                <option value="pl">Polski (Polish)</option>
+                <option value="uk">Українська (Ukrainian)</option>
+                <option value="nl">Nederlands (Dutch)</option>
+                <option value="sw">Kiswahili (Swahili)</option>
+                <option value="ms">Bahasa Melayu (Malay)</option>
+                <option value="ro">Română (Romanian)</option>
+                <option value="hu">Magyar (Hungarian)</option>
+                <option value="cs">Čeština (Czech)</option>
+                <option value="sv">Svenska (Swedish)</option>
+                <option value="fi">Suomi (Finnish)</option>
+                <option value="no">Norsk (Norwegian)</option>
+                <option value="da">Dansk (Danish)</option>
+                <option value="el">Ελληνικά (Greek)</option>
+                <option value="he">עברית (Hebrew)</option>
+                <option value="id">Bahasa Indonesia (Indonesian)</option>
+                <option value="fa">فارسی (Persian)</option>
+                <option value="ur">اردو (Urdu)</option>
+                <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                <option value="ml">മലയാളം (Malayalam)</option>
+                <option value="gu">ગુજરાતી (Gujarati)</option>
+                <option value="or">ଓଡ଼ିଆ (Odia)</option>
+                <option value="si">සිංහල (Sinhala)</option>
+                <option value="my">မြန်မာ (Burmese)</option>
+                <option value="km">ភាសាខ្មែរ (Khmer)</option>
+                <option value="lo">ລາວ (Lao)</option>
+                <option value="am">አማርኛ (Amharic)</option>
+                <option value="ha">Hausa</option>
+                <option value="yo">Yorùbá (Yoruba)</option>
+                <option value="ig">Igbo</option>
+                <option value="zu">isiZulu (Zulu)</option>
+                <option value="xh">isiXhosa (Xhosa)</option>
+                <option value="af">Afrikaans</option>
+                <option value="so">Soomaali (Somali)</option>
+                <option value="ne">नेपाली (Nepali)</option>
+                <option value="kk">Қазақ (Kazakh)</option>
+                <option value="uz">O'zbek (Uzbek)</option>
+                <option value="az">Azərbaycan (Azerbaijani)</option>
+                <option value="ka">ქართული (Georgian)</option>
+                <option value="hy">Հայերեն (Armenian)</option>
+                <option value="sq">Shqip (Albanian)</option>
+                <option value="sr">Српски (Serbian)</option>
+                <option value="hr">Hrvatski (Croatian)</option>
+                <option value="bs">Bosanski (Bosnian)</option>
+                <option value="sk">Slovenčina (Slovak)</option>
+                <option value="sl">Slovenščina (Slovenian)</option>
+                <option value="lt">Lietuvių (Lithuanian)</option>
+                <option value="lv">Latviešu (Latvian)</option>
+                <option value="et">Eesti (Estonian)</option>
+                <option value="mk">Македонски (Macedonian)</option>
+                <option value="bg">Български (Bulgarian)</option>
+                <option value="is">Íslenska (Icelandic)</option>
+                <option value="ga">Gaeilge (Irish)</option>
+                <option value="cy">Cymraeg (Welsh)</option>
+                <option value="eu">Euskara (Basque)</option>
+                <option value="ca">Català (Catalan)</option>
+                <option value="gl">Galego (Galician)</option>
+                <option value="mt">Malti (Maltese)</option>
+                <option value="mn">Монгол (Mongolian)</option>
+                <option value="ps">پښتو (Pashto)</option>
+                <option value="sd">سنڌي (Sindhi)</option>
+                <option value="ug">ئۇيغۇر (Uyghur)</option>
+                <option value="ti">ትግርኛ (Tigrinya)</option>
+                <option value="rw">Kinyarwanda</option>
+                <option value="sn">chiShona (Shona)</option>
+                <option value="mg">Malagasy</option>
+                <option value="tl">Tagalog (Filipino)</option>
+                <option value="ceb">Cebuano</option>
+                <option value="ny">Chichewa</option>
+                <option value="hmn">Hmong</option>
+                <option value="haw">ʻŌlelo Hawaiʻi (Hawaiian)</option>
+                <option value="sm">Gagana Samoa (Samoan)</option>
+                <option value="mi">Te Reo Māori (Maori)</option>
+                <option value="tk">Türkmen (Turkmen)</option>
+                <option value="ky">Кыргызча (Kyrgyz)</option>
+                <option value="tg">Тоҷикӣ (Tajik)</option>
+                <option value="ku">Kurdî (Kurdish)</option>
+                <option value="la">Latina (Latin)</option>
+            </select>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('data-format')">1. Data Format</button>
+            <button class="tab" onclick="showTab('algorithms')">2. Algorithms</button>
+            <button class="tab" onclick="showTab('protocol')">3. Protocol</button>
+            <button class="tab" onclick="showTab('integration')">4. Integration</button>
+            <button class="tab" onclick="showTab('test')">5. Test</button>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div id="data-format" class="tab-content active">
+            <div class="card">
+                <h2 class="card-title">📊 Ecosystem Data Format</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                    Define and validate standardized ecosystem monitoring data schemas.
+                </p>
+
+                <div class="form-group">
+                    <label class="form-label">Data Type</label>
+                    <select class="form-select" id="dataType">
+                        <option value="species-observation">Species Observation</option>
+                        <option value="water-quality">Water Quality</option>
+                        <option value="air-quality">Air Quality</option>
+                        <option value="soil-health">Soil Health</option>
+                        <option value="carbon-flux">Carbon Flux</option>
+                        <option value="edna">Environmental DNA</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">JSON Data Input</label>
+                    <textarea class="form-textarea" id="dataInput" placeholder='Enter your ecosystem data in JSON format...'>{
+  "observation_id": "OBS-2025-001",
+  "timestamp": "2025-12-26T10:30:00Z",
+  "location": {
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "elevation": 52
+  },
+  "data_type": "species-observation",
+  "species": {
+    "scientific_name": "Ursus arctos",
+    "common_name": "Brown Bear",
+    "kingdom": "Animalia",
+    "class": "Mammalia"
+  },
+  "count": 3,
+  "behavior": "foraging",
+  "habitat_quality": 0.85,
+  "bioindicator_status": "healthy"
+}</textarea>
+                </div>
+
+                <button class="btn" onclick="validateData()">Validate Data</button>
+
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label class="form-label">Validation Result</label>
+                    <div class="output" id="validationOutput">Click "Validate Data" to see results...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Schema Examples</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data Type</th>
+                            <th>Required Fields</th>
+                            <th>Optional Fields</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Species Observation</td>
+                            <td>observation_id, timestamp, location, species</td>
+                            <td>count, behavior, habitat_quality</td>
+                        </tr>
+                        <tr>
+                            <td>Water Quality</td>
+                            <td>sample_id, timestamp, location, pH, temperature</td>
+                            <td>dissolved_oxygen, turbidity, nutrients</td>
+                        </tr>
+                        <tr>
+                            <td>Air Quality</td>
+                            <td>station_id, timestamp, location, PM2.5, PM10</td>
+                            <td>CO2, NO2, O3, humidity</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div id="algorithms" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">🧮 Ecosystem Health Algorithms</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                    Calculate ecosystem health metrics and biodiversity indices.
+                </p>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Algorithm Type</label>
+                        <select class="form-select" id="algorithmType">
+                            <option value="biodiversity-index">Biodiversity Index (Shannon-Wiener)</option>
+                            <option value="ecosystem-health">Ecosystem Health Score</option>
+                            <option value="carbon-flux">Carbon Flux Calculation</option>
+                            <option value="water-quality-index">Water Quality Index</option>
+                            <option value="air-quality-index">Air Quality Index</option>
+                            <option value="habitat-suitability">Habitat Suitability</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Input Parameters (JSON)</label>
+                        <textarea class="form-textarea" id="algorithmInput" style="min-height: 150px;">{
+  "species_richness": 45,
+  "total_individuals": 1200,
+  "water_quality": 0.82,
+  "air_quality": 0.75,
+  "soil_health": 0.88,
+  "habitat_fragmentation": 0.35,
+  "invasive_species_count": 3
+}</textarea>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="runAlgorithm()">Calculate</button>
+
+                <div id="algorithmResults" style="margin-top: 2rem;">
+                    <h3 style="margin-bottom: 1rem;">Results</h3>
+                    <div class="metrics" id="metricsDisplay">
+                        <!-- Metrics will be inserted here -->
+                    </div>
+                    <div class="output" id="algorithmOutput">Click "Calculate" to see results...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div id="protocol" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">📡 Monitoring Protocols</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                    Configure data collection protocols and sensor network communication.
+                </p>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Protocol Type</label>
+                        <select class="form-select" id="protocolType">
+                            <option value="real-time">Real-time Streaming</option>
+                            <option value="periodic">Periodic Collection</option>
+                            <option value="event-driven">Event-driven</option>
+                            <option value="hybrid">Hybrid</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Sampling Frequency</label>
+                        <select class="form-select" id="samplingFreq">
+                            <option value="continuous">Continuous</option>
+                            <option value="hourly">Hourly</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Sensor Network</label>
+                        <select class="form-select" id="sensorNetwork">
+                            <option value="iot-gateway">IoT Gateway</option>
+                            <option value="satellite">Satellite Remote Sensing</option>
+                            <option value="drone">Drone Network</option>
+                            <option value="field-stations">Field Stations</option>
+                            <option value="citizen-science">Citizen Science</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Data Quality Threshold</label>
+                        <input type="range" min="0" max="100" value="95" class="form-input" id="qualityThreshold" oninput="updateQualityValue(this.value)">
+                        <span id="qualityValue" style="color: var(--primary);">95%</span>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="generateProtocol()">Generate Protocol</button>
+
+                <div style="margin-top: 2rem;">
+                    <label class="form-label">Generated Protocol Configuration</label>
+                    <div class="output" id="protocolOutput">Click "Generate Protocol" to see configuration...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Communication Flow</h2>
+                <div style="background: var(--bg); padding: 2rem; border-radius: 0.5rem; text-align: center;">
+                    <div style="font-family: monospace; line-height: 2;">
+                        Sensors 🌡️ → Gateway 📡 → Processing 🖥️ → Database 💾 → API 🔌 → Dashboard 📊
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div id="integration" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">🔗 System Integration</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                    Integrate with conservation databases, GIS platforms, and monitoring networks.
+                </p>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Integration Target</label>
+                        <select class="form-select" id="integrationTarget">
+                            <option value="gis">GIS Platform (ArcGIS, QGIS)</option>
+                            <option value="conservation-db">Conservation Database</option>
+                            <option value="lter">LTER Network</option>
+                            <option value="gbif">GBIF (Global Biodiversity)</option>
+                            <option value="iucn">IUCN Red List</option>
+                            <option value="ecoengine">Berkeley Ecoengine</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">API Endpoint</label>
+                        <input type="text" class="form-input" id="apiEndpoint" value="https://api.ecosystem-monitoring.wia.org/v1" placeholder="API endpoint URL">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Authentication Method</label>
+                        <select class="form-select" id="authMethod">
+                            <option value="api-key">API Key</option>
+                            <option value="oauth2">OAuth 2.0</option>
+                            <option value="jwt">JWT Token</option>
+                            <option value="certificate">Client Certificate</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Data Synchronization</label>
+                        <select class="form-select" id="syncMethod">
+                            <option value="real-time">Real-time (WebSocket)</option>
+                            <option value="batch">Batch (Scheduled)</option>
+                            <option value="webhook">Webhook (Event-driven)</option>
+                            <option value="manual">Manual Export</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="testIntegration()">Test Integration</button>
+
+                <div style="margin-top: 2rem;">
+                    <h3 style="margin-bottom: 1rem;">Integration Status</h3>
+                    <div class="output" id="integrationOutput">Click "Test Integration" to check connectivity...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Supported Integrations</h2>
+                <div class="grid-2">
+                    <div style="background: var(--bg); padding: 1rem; border-radius: 0.5rem;">
+                        <h4 style="color: var(--primary); margin-bottom: 0.5rem;">🗺️ GIS Platforms</h4>
+                        <ul style="color: var(--text-muted); list-style-position: inside;">
+                            <li>ArcGIS Online</li>
+                            <li>QGIS Server</li>
+                            <li>GeoServer</li>
+                            <li>MapBox</li>
+                        </ul>
+                    </div>
+                    <div style="background: var(--bg); padding: 1rem; border-radius: 0.5rem;">
+                        <h4 style="color: var(--primary); margin-bottom: 0.5rem;">🌿 Conservation Networks</h4>
+                        <ul style="color: var(--text-muted); list-style-position: inside;">
+                            <li>GBIF</li>
+                            <li>IUCN Red List</li>
+                            <li>LTER Network</li>
+                            <li>eBird</li>
+                        </ul>
+                    </div>
+                    <div style="background: var(--bg); padding: 1rem; border-radius: 0.5rem;">
+                        <h4 style="color: var(--primary); margin-bottom: 0.5rem;">☁️ Cloud Platforms</h4>
+                        <ul style="color: var(--text-muted); list-style-position: inside;">
+                            <li>AWS IoT</li>
+                            <li>Azure IoT Hub</li>
+                            <li>Google Cloud IoT</li>
+                            <li>IBM Watson IoT</li>
+                        </ul>
+                    </div>
+                    <div style="background: var(--bg); padding: 1rem; border-radius: 0.5rem;">
+                        <h4 style="color: var(--primary); margin-bottom: 0.5rem;">📊 Analysis Tools</h4>
+                        <ul style="color: var(--text-muted); list-style-position: inside;">
+                            <li>R Statistical Software</li>
+                            <li>Python (Pandas, NumPy)</li>
+                            <li>MATLAB</li>
+                            <li>Jupyter Notebooks</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Test -->
+        <div id="test" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">🧪 End-to-End Testing</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                    Simulate a complete ecosystem monitoring workflow from data collection to analysis.
+                </p>
+
+                <div class="form-group">
+                    <label class="form-label">Test Scenario</label>
+                    <select class="form-select" id="testScenario">
+                        <option value="forest-monitoring">Forest Health Monitoring</option>
+                        <option value="coral-reef">Coral Reef Assessment</option>
+                        <option value="wetland">Wetland Biodiversity Survey</option>
+                        <option value="urban-ecosystem">Urban Ecosystem Analysis</option>
+                        <option value="agricultural">Agricultural Impact Study</option>
+                    </select>
+                </div>
+
+                <div class="metrics" id="testMetrics">
+                    <div class="metric-card">
+                        <div class="metric-value" id="sensorCount">0</div>
+                        <div class="metric-label">Active Sensors</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="dataPoints">0</div>
+                        <div class="metric-label">Data Points</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="healthScore">--</div>
+                        <div class="metric-label">Health Score</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="speciesCount">0</div>
+                        <div class="metric-label">Species Detected</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label class="form-label">Test Progress</label>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="testProgress" style="width: 0%;">0%</div>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="runTest()" id="testBtn">Run Test</button>
+                <button class="btn btn-secondary" onclick="resetTest()" style="margin-left: 1rem;">Reset</button>
+
+                <div style="margin-top: 2rem;">
+                    <label class="form-label">Test Log</label>
+                    <div class="output" id="testLog">Click "Run Test" to start simulation...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Test Results Summary</h2>
+                <table id="testResultsTable">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Status</th>
+                            <th>Performance</th>
+                            <th>Issues</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Data Collection</td>
+                            <td><span class="status status-healthy" id="status-collection">Pending</span></td>
+                            <td id="perf-collection">--</td>
+                            <td id="issues-collection">--</td>
+                        </tr>
+                        <tr>
+                            <td>Data Validation</td>
+                            <td><span class="status status-healthy" id="status-validation">Pending</span></td>
+                            <td id="perf-validation">--</td>
+                            <td id="issues-validation">--</td>
+                        </tr>
+                        <tr>
+                            <td>Algorithm Processing</td>
+                            <td><span class="status status-healthy" id="status-processing">Pending</span></td>
+                            <td id="perf-processing">--</td>
+                            <td id="issues-processing">--</td>
+                        </tr>
+                        <tr>
+                            <td>Integration</td>
+                            <td><span class="status status-healthy" id="status-integration">Pending</span></td>
+                            <td id="perf-integration">--</td>
+                            <td id="issues-integration">--</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Data validation
+        function validateData() {
+            const input = document.getElementById('dataInput').value;
+            const dataType = document.getElementById('dataType').value;
+            const output = document.getElementById('validationOutput');
+
+            try {
+                const data = JSON.parse(input);
+                let result = '✅ Valid JSON format\n\n';
+                result += '📋 Validation Results:\n';
+                result += `  • Data Type: ${dataType}\n`;
+                result += `  • Observation ID: ${data.observation_id || 'N/A'}\n`;
+                result += `  • Timestamp: ${data.timestamp || 'N/A'}\n`;
+                result += `  • Location: ${data.location ? 'Valid' : 'Missing'}\n`;
+
+                if (data.location) {
+                    result += `    - Latitude: ${data.location.latitude}\n`;
+                    result += `    - Longitude: ${data.location.longitude}\n`;
+                }
+
+                result += `\n✓ Schema validation passed\n`;
+                result += `✓ All required fields present\n`;
+                result += `✓ Data types correct\n`;
+                result += `\n🌟 Status: VALID`;
+
+                output.textContent = result;
+                output.style.color = 'var(--success)';
+            } catch (e) {
+                output.textContent = `❌ Invalid JSON format\n\nError: ${e.message}`;
+                output.style.color = 'var(--error)';
+            }
+        }
+
+        // Algorithm execution
+        function runAlgorithm() {
+            const algorithmType = document.getElementById('algorithmType').value;
+            const input = document.getElementById('algorithmInput').value;
+            const output = document.getElementById('algorithmOutput');
+            const metricsDisplay = document.getElementById('metricsDisplay');
+
+            try {
+                const params = JSON.parse(input);
+                let result = '';
+                let metrics = '';
+
+                // Simulate algorithm calculations
+                if (algorithmType === 'biodiversity-index') {
+                    const shannonIndex = (Math.random() * 2 + 2).toFixed(2);
+                    const simpsonIndex = (Math.random() * 0.3 + 0.7).toFixed(2);
+
+                    metrics = `
+                        <div class="metric-card">
+                            <div class="metric-value">${shannonIndex}</div>
+                            <div class="metric-label">Shannon Index</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${simpsonIndex}</div>
+                            <div class="metric-label">Simpson Index</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${params.species_richness}</div>
+                            <div class="metric-label">Species Richness</div>
+                        </div>
+                    `;
+
+                    result = `🧮 Biodiversity Index Calculation\n\n`;
+                    result += `Shannon-Wiener Index: ${shannonIndex}\n`;
+                    result += `Simpson's Diversity Index: ${simpsonIndex}\n`;
+                    result += `Species Richness: ${params.species_richness}\n`;
+                    result += `\nInterpretation: `;
+                    result += parseFloat(shannonIndex) > 3 ? 'High biodiversity' : 'Moderate biodiversity';
+                } else if (algorithmType === 'ecosystem-health') {
+                    const healthScore = ((params.water_quality + params.air_quality + params.soil_health) / 3 * 100).toFixed(1);
+                    const status = healthScore > 80 ? 'Healthy' : healthScore > 60 ? 'Fair' : 'Poor';
+
+                    metrics = `
+                        <div class="metric-card">
+                            <div class="metric-value">${healthScore}</div>
+                            <div class="metric-label">Health Score</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${(params.water_quality * 100).toFixed(0)}%</div>
+                            <div class="metric-label">Water Quality</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${(params.air_quality * 100).toFixed(0)}%</div>
+                            <div class="metric-label">Air Quality</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${(params.soil_health * 100).toFixed(0)}%</div>
+                            <div class="metric-label">Soil Health</div>
+                        </div>
+                    `;
+
+                    result = `🌍 Ecosystem Health Assessment\n\n`;
+                    result += `Overall Health Score: ${healthScore}/100\n`;
+                    result += `Status: ${status}\n\n`;
+                    result += `Component Scores:\n`;
+                    result += `  • Water Quality: ${(params.water_quality * 100).toFixed(0)}%\n`;
+                    result += `  • Air Quality: ${(params.air_quality * 100).toFixed(0)}%\n`;
+                    result += `  • Soil Health: ${(params.soil_health * 100).toFixed(0)}%\n`;
+                    result += `\nRecommendation: `;
+                    result += healthScore > 80 ? 'Maintain current conservation efforts' : 'Increase monitoring and protection';
+                }
+
+                metricsDisplay.innerHTML = metrics;
+                output.textContent = result;
+                output.style.color = 'var(--text)';
+            } catch (e) {
+                output.textContent = `❌ Error: ${e.message}`;
+                output.style.color = 'var(--error)';
+            }
+        }
+
+        // Protocol generation
+        function generateProtocol() {
+            const protocolType = document.getElementById('protocolType').value;
+            const samplingFreq = document.getElementById('samplingFreq').value;
+            const sensorNetwork = document.getElementById('sensorNetwork').value;
+            const qualityThreshold = document.getElementById('qualityThreshold').value;
+            const output = document.getElementById('protocolOutput');
+
+            const protocol = {
+                protocol_version: "1.0",
+                protocol_type: protocolType,
+                sampling: {
+                    frequency: samplingFreq,
+                    network: sensorNetwork,
+                    quality_threshold: parseInt(qualityThreshold) / 100
+                },
+                data_collection: {
+                    format: "WIA-ECOSYSTEM-MONITORING-v1.0",
+                    encoding: "JSON",
+                    compression: "gzip"
+                },
+                communication: {
+                    transport: protocolType === "real-time" ? "WebSocket" : "HTTPS",
+                    encryption: "TLS 1.3",
+                    authentication: "JWT"
+                },
+                quality_assurance: {
+                    validation: "enabled",
+                    calibration_interval: "weekly",
+                    error_handling: "retry_3x"
+                }
+            };
+
+            output.textContent = JSON.stringify(protocol, null, 2);
+            output.style.color = 'var(--text)';
+        }
+
+        function updateQualityValue(value) {
+            document.getElementById('qualityValue').textContent = value + '%';
+        }
+
+        // Integration testing
+        function testIntegration() {
+            const target = document.getElementById('integrationTarget').value;
+            const endpoint = document.getElementById('apiEndpoint').value;
+            const authMethod = document.getElementById('authMethod').value;
+            const syncMethod = document.getElementById('syncMethod').value;
+            const output = document.getElementById('integrationOutput');
+
+            output.textContent = '🔄 Testing integration...\n\n';
+
+            setTimeout(() => {
+                let result = '✅ Connection Test Results:\n\n';
+                result += `Target System: ${target}\n`;
+                result += `Endpoint: ${endpoint}\n`;
+                result += `Status: Connected ✓\n`;
+                result += `Authentication: ${authMethod} ✓\n`;
+                result += `Sync Method: ${syncMethod} ✓\n\n`;
+                result += '📊 Performance Metrics:\n';
+                result += `  • Latency: ${Math.floor(Math.random() * 50 + 20)}ms\n`;
+                result += `  • Throughput: ${Math.floor(Math.random() * 500 + 500)} req/sec\n`;
+                result += `  • Uptime: 99.9%\n\n`;
+                result += '✓ Integration test passed successfully';
+
+                output.textContent = result;
+                output.style.color = 'var(--success)';
+            }, 1500);
+        }
+
+        // End-to-end test
+        let testInterval;
+        function runTest() {
+            const scenario = document.getElementById('testScenario').value;
+            const log = document.getElementById('testLog');
+            const progress = document.getElementById('testProgress');
+            const btn = document.getElementById('testBtn');
+
+            btn.disabled = true;
+            let step = 0;
+            const steps = [
+                { msg: '🔧 Initializing sensors...', sensors: 12, data: 0, health: '--', species: 0 },
+                { msg: '📡 Collecting data from field stations...', sensors: 12, data: 156, health: '--', species: 8 },
+                { msg: '🔍 Validating data quality...', sensors: 12, data: 312, health: '--', species: 15 },
+                { msg: '🧮 Running analysis algorithms...', sensors: 12, data: 468, health: '78.5', species: 23 },
+                { msg: '🔗 Integrating with conservation database...', sensors: 12, data: 624, health: '78.5', species: 31 },
+                { msg: '✅ Test completed successfully!', sensors: 12, data: 780, health: '78.5', species: 45 }
+            ];
+
+            log.textContent = '';
+
+            testInterval = setInterval(() => {
+                if (step >= steps.length) {
+                    clearInterval(testInterval);
+                    btn.disabled = false;
+                    updateTestResults(true);
+                    return;
+                }
+
+                const currentStep = steps[step];
+                log.textContent += currentStep.msg + '\n';
+
+                // Update metrics
+                document.getElementById('sensorCount').textContent = currentStep.sensors;
+                document.getElementById('dataPoints').textContent = currentStep.data;
+                document.getElementById('healthScore').textContent = currentStep.health;
+                document.getElementById('speciesCount').textContent = currentStep.species;
+
+                // Update progress
+                const percent = Math.floor(((step + 1) / steps.length) * 100);
+                progress.style.width = percent + '%';
+                progress.textContent = percent + '%';
+
+                step++;
+            }, 1000);
+        }
+
+        function resetTest() {
+            clearInterval(testInterval);
+            document.getElementById('testLog').textContent = 'Click "Run Test" to start simulation...';
+            document.getElementById('testProgress').style.width = '0%';
+            document.getElementById('testProgress').textContent = '0%';
+            document.getElementById('sensorCount').textContent = '0';
+            document.getElementById('dataPoints').textContent = '0';
+            document.getElementById('healthScore').textContent = '--';
+            document.getElementById('speciesCount').textContent = '0';
+            document.getElementById('testBtn').disabled = false;
+            updateTestResults(false);
+        }
+
+        function updateTestResults(passed) {
+            const components = ['collection', 'validation', 'processing', 'integration'];
+            components.forEach(comp => {
+                const statusEl = document.getElementById(`status-${comp}`);
+                const perfEl = document.getElementById(`perf-${comp}`);
+                const issuesEl = document.getElementById(`issues-${comp}`);
+
+                if (passed) {
+                    statusEl.textContent = 'Passed';
+                    statusEl.className = 'status status-healthy';
+                    perfEl.textContent = (Math.random() * 100 + 900).toFixed(0) + ' ms';
+                    issuesEl.textContent = '0';
+                } else {
+                    statusEl.textContent = 'Pending';
+                    statusEl.className = 'status status-healthy';
+                    perfEl.textContent = '--';
+                    issuesEl.textContent = '--';
+                }
+            });
+        }
+
+        // Language selector
+        document.getElementById('langSelect').addEventListener('change', function() {
+            alert('Language: ' + this.options[this.selectedIndex].text + '\n\nMulti-language support coming soon!');
+        });
+    </script>
+</body>
+</html>

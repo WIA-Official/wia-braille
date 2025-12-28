@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제5장: 통신 및 운영 프로토콜 | WIA-TIME-001</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #06B6D4; --text: #f1f5f9; --text-dim: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 3rem; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 1rem; border-bottom: 3px solid var(--primary); padding-bottom: 1rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2rem 0 1rem 0; }
+        h3 { color: var(--text); font-size: 1.3rem; margin: 1.5rem 0 0.75rem 0; }
+        p { margin-bottom: 1rem; text-align: justify; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: var(--bg); }
+        th, td { padding: 1rem; text-align: left; border: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        .summary { background: var(--bg); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; }
+        .summary h3 { color: var(--primary); margin-top: 0; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin-bottom: 0.5rem; }
+        .nav-links { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .nav-links a { color: var(--primary); text-decoration: none; padding: 0.75rem 1.5rem; border: 1px solid var(--primary); border-radius: 6px; transition: all 0.3s; }
+        .nav-links a:hover { background: var(--primary); color: white; }
+        code { background: var(--bg); color: var(--primary); padding: 0.2rem 0.4rem; border-radius: 3px; font-family: 'Courier New', monospace; }
+        pre { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; overflow-x: auto; margin: 1.5rem 0; font-family: 'Courier New', monospace; font-size: 0.9rem; color: var(--text); }
+        .callout { background: rgba(6, 182, 212, 0.1); border-left: 4px solid var(--primary); padding: 1rem 1.5rem; margin: 1.5rem 0; }
+        .questions { background: var(--bg); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
+        .state-diagram { background: var(--bg); border: 2px solid var(--border); border-radius: 8px; padding: 2rem; margin: 1.5rem 0; text-align: center; }
+        .state-diagram pre { background: transparent; border: none; text-align: left; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>제5장: 통신 및 운영 프로토콜</h1>
+
+        <p>시간 변위 연구의 운영 안전성은 참여 시스템 간의 엄격한 통신 프로토콜 준수에 달려 있습니다. WIA-TIME-001 3단계 명세는 시간 변위 작업의 전체 수명 주기를 관리하는 메시지 형식, 상태 전이 규칙, 절차적 요구 사항을 정의합니다. 이 장에서는 이러한 프로토콜을 심층적으로 탐구하며, 안전한 시간 변위 작업을 조율하는 통신 아키텍처를 상세히 설명합니다.</p>
+
+        <p>시간 변위 프로토콜의 설계는 항공 우주 산업 및 원자력 발전소에서 수십 년에 걸쳐 개발된 미션 크리티컬 시스템의 검증된 원칙을 따릅니다. 명시적 확인, 상태 추적, 실패 모드 처리의 엄격함이 모든 통신에 적용됩니다. 한국의 우수한 반도체 제조 산업에서 입증된 품질 관리 프로토콜도 이 표준에 통합되었습니다. 이러한 프로토콜은 오류가 발생할 경우에도 시스템이 안전 상태를 유지하도록 보장하며, 시간 변위 작업에서 오류의 결과가 되돌릴 수 없을 수 있으므로 특히 중요합니다.</p>
+
+        <h2>운영 상태 기계</h2>
+
+        <p>WIA-TIME-001 프로토콜의 핵심에는 모든 시간 변위 작업을 관리하는 유한 상태 기계(FSM)가 있습니다. 각 작업은 엄격하게 정의된 상태 시퀀스를 통해 진행되며, 명시적 조건이 충족될 때만 전이가 허용됩니다. 상태 기계 접근 방식은 작업 상태의 모호성을 제거하고 모든 참여자가 현재 운영 맥락을 공유하도록 보장합니다. 이는 조선왕조실록(朝鮮王朝實錄)의 정밀한 기록 전통과 현대 소프트웨어 공학의 결합입니다.</p>
+
+        <div class="state-diagram">
+            <pre>
+    [IDLE] ─── 초기화 ───► [PLANNING]
+       ▲                      │
+       │                  계산 완료
+       │                      ▼
+    중단              [CALCULATED]
+       │                      │
+       │              인과성 승인
+       │                      ▼
+       ├───── 실패 ◄── [APPROVED]
+       │                      │
+       │                 자원 할당
+       │                      ▼
+       ├───── 실패 ◄── [READY]
+       │                      │
+       │                 변위 시작
+       │                      ▼
+       │              [IN_TRANSIT]
+       │                      │
+       │                 완료/귀환
+       │                      ▼
+       └───── 완료 ◄── [COMPLETED]
+            </pre>
+        </div>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 5.1: 운영 상태 정의</caption>
+            <thead>
+                <tr>
+                    <th>상태</th>
+                    <th>설명</th>
+                    <th>허용 전이</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>IDLE</td><td>활성 작업 없음, 시스템 대기 중</td><td>PLANNING</td></tr>
+                <tr><td>PLANNING</td><td>계산 및 경로 계획 진행 중</td><td>CALCULATED, IDLE</td></tr>
+                <tr><td>CALCULATED</td><td>계산 완료, 승인 대기</td><td>APPROVED, IDLE</td></tr>
+                <tr><td>APPROVED</td><td>인과성 승인됨, 자원 준비 중</td><td>READY, IDLE</td></tr>
+                <tr><td>READY</td><td>모든 자원 할당됨, 변위 준비 완료</td><td>IN_TRANSIT, IDLE</td></tr>
+                <tr><td>IN_TRANSIT</td><td>변위 진행 중</td><td>COMPLETED, EMERGENCY</td></tr>
+                <tr><td>COMPLETED</td><td>작업 완료, 정리 중</td><td>IDLE</td></tr>
+                <tr><td>EMERGENCY</td><td>비상 상황, 안전 프로토콜 활성</td><td>IDLE (수동 해제만)</td></tr>
+            </tbody>
+        </table>
+
+        <h2>메시지 프로토콜</h2>
+
+        <p>모든 WIA-TIME-001 통신은 표준화된 메시지 형식을 사용합니다. 각 메시지는 고유 식별자, 타임스탬프, 메시지 유형, 페이로드, 암호화 서명을 포함합니다. 메시지 형식은 시스템 간 명확한 통신을 보장하고 감사 추적을 지원하도록 설계되었습니다.</p>
+
+        <pre>{
+  "messageId": "MSG-2025-001-ALPHA-0001",
+  "timestamp": "2025-01-15T10:30:00.000000Z",
+  "type": "OPERATION_REQUEST",
+  "priority": "NORMAL",
+  "source": {
+    "facilityId": "KR-SEOUL-001",
+    "systemId": "CONTROL-PRIMARY"
+  },
+  "destination": {
+    "facilityId": "KR-SEOUL-001",
+    "systemId": "CALCULATION-ENGINE"
+  },
+  "payload": {
+    /* 작업별 데이터 */
+  },
+  "signature": "HMAC-SHA256:abc123..."
+}</pre>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 5.2: 메시지 유형 및 용도</caption>
+            <thead>
+                <tr>
+                    <th>메시지 유형</th>
+                    <th>용도</th>
+                    <th>응답 필요</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>OPERATION_REQUEST</td><td>새 작업 요청</td><td>예 (ACK/NACK)</td></tr>
+                <tr><td>STATE_UPDATE</td><td>상태 변경 알림</td><td>예 (ACK)</td></tr>
+                <tr><td>CALCULATION_RESULT</td><td>계산 결과 전달</td><td>예 (VERIFY)</td></tr>
+                <tr><td>CAUSALITY_CHECK</td><td>인과성 검증 요청</td><td>예 (APPROVED/DENIED)</td></tr>
+                <tr><td>RESOURCE_ALLOCATION</td><td>자원 할당 확인</td><td>예 (CONFIRMED)</td></tr>
+                <tr><td>DISPLACEMENT_TRIGGER</td><td>변위 시작 명령</td><td>예 (EXECUTING)</td></tr>
+                <tr><td>HEARTBEAT</td><td>연결 상태 확인</td><td>예 (ALIVE)</td></tr>
+                <tr><td>EMERGENCY_ABORT</td><td>비상 중단</td><td>예 (ABORTED)</td></tr>
+            </tbody>
+        </table>
+
+        <h2>확인 프로토콜</h2>
+
+        <p>모든 중요 메시지는 명시적 확인을 필요로 합니다. 확인은 타임아웃 기간 내에 수신되어야 하며, 타임아웃이 발생하면 재전송이 시도됩니다. 세 번의 연속 실패 후에는 통신이 실패로 간주되고 안전 프로토콜이 활성화됩니다. 이 체계는 한국항공우주연구원(KARI)의 위성 통신 프로토콜에서 검증된 신뢰성 패턴을 따릅니다.</p>
+
+        <pre>메시지 확인 시퀀스:
+
+1. 송신자 → 수신자: OPERATION_REQUEST
+2. 수신자 → 송신자: ACK (수신 확인)
+3. 수신자: 요청 처리
+4. 수신자 → 송신자: RESPONSE (처리 결과)
+5. 송신자 → 수신자: ACK (결과 수신 확인)
+
+타임아웃 처리:
+- 1차 타임아웃 (1초): 재전송
+- 2차 타임아웃 (2초): 재전송 + 경고
+- 3차 타임아웃 (4초): 통신 실패 선언</pre>
+
+        <h2>운영 단계별 프로토콜</h2>
+
+        <h3>1단계: 작업 시작 및 계획</h3>
+
+        <p>시간 변위 작업은 운영자가 변위 요청을 제출할 때 시작됩니다. 요청에는 출발지 및 목적지 좌표, 임무 목적, 계획된 행동이 포함됩니다. 제어 시스템은 요청의 기본 유효성을 검증하고 계산 엔진에 경로 및 에너지 계산을 위임합니다.</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 5.3: 계획 단계 체크리스트</caption>
+            <thead>
+                <tr>
+                    <th>항목</th>
+                    <th>검증 내용</th>
+                    <th>실패 시 조치</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>좌표 유효성</td><td>물리적으로 가능한 위치인지</td><td>요청 거부</td></tr>
+                <tr><td>시간 범위</td><td>허용된 변위 범위 내인지</td><td>요청 거부</td></tr>
+                <tr><td>에너지 가용성</td><td>필요 에너지 충족 가능한지</td><td>대안 경로 제안</td></tr>
+                <tr><td>권한 확인</td><td>요청자의 승인 레벨</td><td>상위 승인 요청</td></tr>
+            </tbody>
+        </table>
+
+        <h3>2단계: 인과성 승인</h3>
+
+        <p>계산이 완료되면 인과성 검증 시스템이 계획된 행동을 분석합니다. 이 단계에서는 역설 위험, 타임라인 영향, 예상치 못한 결과의 가능성을 평가합니다. 인과성 승인 없이는 어떤 변위 작업도 진행될 수 없습니다. 이는 因果應報(인과응보)의 원리에 기반한 필수적인 안전 장치입니다.</p>
+
+        <pre>인과성 승인 요청:
+{
+  "type": "CAUSALITY_CHECK",
+  "displacementId": "TD-2025-001-ALPHA",
+  "plannedActions": [
+    { "type": "observation", "target": "historical_event" }
+  ],
+  "requestedBy": "KR-SEOUL-001/OPERATOR-001"
+}
+
+인과성 승인 응답:
+{
+  "type": "CAUSALITY_RESPONSE",
+  "status": "APPROVED",
+  "validityPeriod": 3600,
+  "conditions": [
+    "관측 전용 - 상호작용 금지",
+    "최대 체류 시간: 4시간"
+  ],
+  "approvedBy": "CAUSALITY-ENGINE-PRIMARY"
+}</pre>
+
+        <h3>3단계: 자원 할당</h3>
+
+        <p>인과성 승인 후, 시스템은 필요한 자원을 할당합니다. 에너지원, 변위 장비, 통신 채널, 비상 귀환 시스템이 예약되고 구성됩니다. 자원 할당은 원자적으로 수행되어야 하며, 부분적 할당은 허용되지 않습니다.</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 5.4: 필수 자원 할당</caption>
+            <thead>
+                <tr>
+                    <th>자원 유형</th>
+                    <th>할당 기준</th>
+                    <th>대기 상태</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>주 에너지원</td><td>계산된 에너지 × 1.5</td><td>충전 완료</td></tr>
+                <tr><td>예비 에너지원</td><td>계산된 에너지 × 0.5</td><td>대기</td></tr>
+                <tr><td>변위 장비</td><td>지정된 방법에 따름</td><td>초기화 완료</td></tr>
+                <tr><td>통신 채널</td><td>주 채널 + 백업 2개</td><td>연결 확인</td></tr>
+                <tr><td>비상 귀환 시스템</td><td>항상 필수</td><td>활성화</td></tr>
+            </tbody>
+        </table>
+
+        <h3>4단계: 변위 실행</h3>
+
+        <p>모든 준비가 완료되면 변위 시작 시퀀스가 활성화됩니다. 이 시퀀스는 다중 확인 단계를 포함하며, 각 단계에서 중단이 가능합니다. 최종 확인 후에는 자동 시퀀스가 시작되며, 이 시점 이후에는 비상 중단만 가능합니다.</p>
+
+        <pre>변위 시작 시퀀스:
+
+T-60초: 최종 시스템 점검
+T-30초: 에너지 공급 시작
+T-10초: 변위 장 활성화
+T-5초:  최종 확인 요청 (GO/NO-GO)
+T-0초:  변위 실행
+T+확인: 도착 상태 확인</pre>
+
+        <h2>비상 프로토콜</h2>
+
+        <p>예상치 못한 상황에서는 비상 프로토콜이 활성화됩니다. 비상 프로토콜은 여행자의 안전과 타임라인 무결성을 최우선으로 합니다. 모든 비상 명령은 최고 우선순위를 가지며 다른 모든 작업을 즉시 중단시킵니다.</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 5.5: 비상 상황 분류 및 대응</caption>
+            <thead>
+                <tr>
+                    <th>비상 레벨</th>
+                    <th>상황</th>
+                    <th>자동 대응</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>LEVEL-1 (주의)</td><td>경미한 이상 감지</td><td>강화 모니터링</td></tr>
+                <tr><td>LEVEL-2 (경고)</td><td>시스템 편차</td><td>작업 일시 중지</td></tr>
+                <tr><td>LEVEL-3 (긴급)</td><td>중대한 이상</td><td>안전 귀환 시작</td></tr>
+                <tr><td>LEVEL-4 (위험)</td><td>즉각적 위험</td><td>비상 귀환 강제</td></tr>
+            </tbody>
+        </table>
+
+        <div class="callout">
+            <strong>비상 귀환 프로토콜:</strong> 비상 귀환은 모든 시간 변위 작업에서 항상 활성화되어 있어야 합니다. 이 시스템은 주 변위 시스템과 독립적으로 작동하며, 여행자를 출발 시점으로 안전하게 복귀시킵니다. 비상 귀환 에너지는 별도로 예약되며 다른 목적으로 사용될 수 없습니다.
+        </div>
+
+        <h2>통신 채널 관리</h2>
+
+        <p>WIA-TIME-001 시스템은 다중 통신 채널을 사용하여 신뢰성을 보장합니다. 주 채널 외에 최소 두 개의 백업 채널이 필요합니다. 채널 전환은 자동으로 수행되며, 모든 채널이 실패한 경우에만 통신 두절이 선언됩니다.</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 5.6: 통신 채널 구성</caption>
+            <thead>
+                <tr>
+                    <th>채널</th>
+                    <th>기술</th>
+                    <th>대역폭</th>
+                    <th>지연시간</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>주 채널</td><td>양자 얽힘</td><td>무제한</td><td>0 (즉시)</td></tr>
+                <tr><td>백업 채널 1</td><td>시공간 터널링</td><td>1Gbps</td><td>&lt; 1ms</td></tr>
+                <tr><td>백업 채널 2</td><td>중력파 변조</td><td>100Mbps</td><td>&lt; 10ms</td></tr>
+                <tr><td>비상 채널</td><td>타키온 펄스</td><td>1kbps</td><td>&lt; 1μs</td></tr>
+            </tbody>
+        </table>
+
+        <div class="summary">
+            <h3>장 요약</h3>
+            <p><strong>핵심 내용:</strong></p>
+            <ol>
+                <li>WIA-TIME-001 운영 프로토콜은 유한 상태 기계(FSM)를 사용하여 모든 시간 변위 작업을 관리하며, 각 상태 전이에는 명시적 조건과 확인이 필요합니다.</li>
+                <li>표준화된 메시지 형식은 고유 식별자, 타임스탬프, 암호화 서명을 포함하여 명확한 통신과 감사 추적을 보장합니다.</li>
+                <li>확인 프로토콜은 타임아웃 기반 재전송과 다중 실패 후 안전 프로토콜 활성화를 통해 신뢰성 있는 통신을 보장합니다.</li>
+                <li>운영은 계획, 인과성 승인, 자원 할당, 실행의 명확히 정의된 단계를 따르며, 각 단계에서 중단이 가능합니다.</li>
+                <li>비상 프로토콜은 4단계 레벨 시스템을 사용하며, 비상 귀환 시스템은 모든 작업에서 항상 활성화되어 있어야 합니다.</li>
+                <li>다중 통신 채널과 자동 전환 메커니즘은 통신 신뢰성을 보장하며, 한국의 첨단 통신 인프라가 이를 지원합니다.</li>
+            </ol>
+        </div>
+
+        <div class="questions">
+            <h3>복습 문제</h3>
+            <ol>
+                <li>유한 상태 기계(FSM)가 시간 변위 작업 관리에 적합한 이유를 설명하십시오. 다른 접근 방식과 비교하여 어떤 장점이 있습니까?</li>
+                <li>인과성 승인 단계에서 validityPeriod가 포함되는 이유는 무엇입니까? 이 기간이 만료되면 어떻게 해야 합니까?</li>
+                <li>자원 할당이 원자적으로 수행되어야 하는 이유를 설명하십시오. 부분적 할당이 허용된다면 어떤 문제가 발생할 수 있습니까?</li>
+                <li>변위 시작 시퀀스에서 T-5초에 최종 확인을 요청하는 이유는 무엇입니까? 이 시점 이후에는 왜 비상 중단만 가능합니까?</li>
+                <li>비상 프로토콜 레벨 3과 레벨 4의 차이점을 분석하십시오. 각각 어떤 상황에서 활성화되며 대응이 어떻게 다릅니까?</li>
+                <li>양자 얽힘 통신 채널이 "지연시간 0"인 이유를 물리학적으로 설명하십시오. 이것이 시간 변위 통신에서 왜 중요합니까?</li>
+            </ol>
+        </div>
+
+        <div class="callout">
+            <h3>다음 장 미리보기</h3>
+            <p>제6장에서는 WIA-TIME-001의 보안 및 인증 아키텍처를 검토합니다. 다계층 보안 모델, 암호화 프로토콜, 접근 제어 시스템, 감사 로깅 요구 사항을 포함한 포괄적인 보안 프레임워크를 설명합니다. 보안은 시간 변위 기술의 오용 방지를 위한 핵심 요소입니다.</p>
+        </div>
+
+        <div class="nav-links">
+            <a href="chapter-04.html">← 이전 장</a>
+            <a href="chapter-06.html">다음 장 →</a>
+        </div>
+    </div>
+</body>
+</html>

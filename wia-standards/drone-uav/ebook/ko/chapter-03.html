@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 03: 드론 센서 및 페이로드 | WIA-SPACE-017</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+            background: #1a1a2e; color: #eee; line-height: 1.8; padding: 2rem;
+        }
+        .container {
+            max-width: 900px; margin: 0 auto; background: rgba(255, 255, 255, 0.03);
+            padding: 3rem; border-radius: 12px; border: 1px solid rgba(233, 69, 96, 0.2);
+        }
+        .chapter-header { border-bottom: 3px solid #e94560; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #e94560; font-size: 1rem; font-weight: 600; letter-spacing: 2px; margin-bottom: 0.5rem; }
+        h1 { color: #fff; font-size: 2.5rem; margin-bottom: 1rem; }
+        .chapter-intro { color: #aaa; font-size: 1.1rem; line-height: 1.8; }
+        h2 {
+            color: #e94560; font-size: 1.8rem; margin-top: 3rem; margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem; border-bottom: 2px solid rgba(233, 69, 96, 0.3);
+        }
+        h3 { color: #4ecca3; font-size: 1.4rem; margin-top: 2rem; margin-bottom: 1rem; }
+        p { margin-bottom: 1.5rem; color: #ccc; font-size: 1.05rem; }
+        ul, ol { margin-bottom: 1.5rem; padding-left: 2rem; }
+        li { margin-bottom: 0.8rem; color: #ccc; }
+        .info-box {
+            background: rgba(78, 204, 163, 0.1); border-left: 4px solid #4ecca3;
+            padding: 1.5rem; margin: 2rem 0; border-radius: 6px;
+        }
+        .info-box h4 { color: #4ecca3; margin-bottom: 1rem; font-size: 1.2rem; }
+        .warning-box {
+            background: rgba(233, 69, 96, 0.1); border-left: 4px solid #e94560;
+            padding: 1.5rem; margin: 2rem 0; border-radius: 6px;
+        }
+        .warning-box h4 { color: #e94560; margin-bottom: 1rem; font-size: 1.2rem; }
+        table {
+            width: 100%; border-collapse: collapse; margin: 2rem 0;
+            background: rgba(15, 52, 96, 0.3); border-radius: 6px; overflow: hidden;
+        }
+        th { background: #0f3460; color: #e94560; padding: 1rem; text-align: left; font-weight: 600; }
+        td { padding: 1rem; border-top: 1px solid rgba(233, 69, 96, 0.2); color: #ccc; }
+        tr:hover { background: rgba(233, 69, 96, 0.1); }
+        .nav-buttons {
+            margin-top: 4rem; padding-top: 2rem; border-top: 2px solid rgba(233, 69, 96, 0.3);
+            display: flex; justify-content: space-between; gap: 1rem;
+        }
+        .btn {
+            display: inline-block; background: #e94560; color: white; padding: 1rem 2rem;
+            border-radius: 6px; text-decoration: none; font-weight: 600; transition: all 0.3s ease;
+        }
+        .btn:hover { background: #d63651; transform: translateY(-2px); }
+        .btn-secondary { background: #0f3460; }
+        .btn-secondary:hover { background: #16213e; }
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .container { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            .nav-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 03</div>
+            <h1>📸 드론 센서 및 페이로드</h1>
+            <p class="chapter-intro">
+                드론에 탑재되는 다양한 센서와 페이로드를 살펴봅니다.
+                카메라, 짐벌, LiDAR, 열화상 카메라 등 임무 수행에 필수적인 장비들을 이해합니다.
+            </p>
+        </div>
+
+        <h2>3.1 카메라 시스템</h2>
+
+        <p>
+            카메라는 드론의 가장 일반적인 페이로드로, 촬영, 측량, 점검 등 다양한 용도로 사용됩니다.
+        </p>
+
+        <h3>3.1.1 카메라 유형</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>유형</th>
+                    <th>해상도</th>
+                    <th>용도</th>
+                    <th>특징</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>FPV 카메라</strong></td>
+                    <td>NTSC/PAL (저해상도)</td>
+                    <td>실시간 조종</td>
+                    <td>낮은 지연시간 (5~20ms)</td>
+                </tr>
+                <tr>
+                    <td><strong>액션 카메라</strong></td>
+                    <td>1080p~4K</td>
+                    <td>POV 촬영, 레이싱</td>
+                    <td>GoPro, DJI Action, Insta360</td>
+                </tr>
+                <tr>
+                    <td><strong>짐벌 카메라</strong></td>
+                    <td>4K~8K</td>
+                    <td>전문 촬영</td>
+                    <td>3축 안정화, 부드러운 영상</td>
+                </tr>
+                <tr>
+                    <td><strong>시네마 카메라</strong></td>
+                    <td>6K~8K RAW</td>
+                    <td>영화 제작</td>
+                    <td>대형 센서, RED, ARRI</td>
+                </tr>
+                <tr>
+                    <td><strong>측량용 카메라</strong></td>
+                    <td>고해상도</td>
+                    <td>매핑, 포토그래메트리</td>
+                    <td>정밀 렌즈, 지오태깅</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>3.1.2 카메라 사양</h3>
+
+        <ul>
+            <li><strong>센서 크기</strong>: 1/2.3", 1", APS-C, Full Frame</li>
+            <li><strong>해상도</strong>: 메가픽셀 (MP), 동영상 해상도 (4K, 6K, 8K)</li>
+            <li><strong>프레임 레이트</strong>: 24fps (시네마틱), 60fps (부드러움), 120fps+ (슬로우모션)</li>
+            <li><strong>FOV (Field of View)</strong>: 광각 (120°~150°), 표준 (80°~100°)</li>
+            <li><strong>비트레이트</strong>: 100Mbps (일반), 200Mbps+ (고품질)</li>
+            <li><strong>코덱</strong>: H.264, H.265/HEVC, ProRes, RAW</li>
+        </ul>
+
+        <div class="info-box">
+            <h4>💡 센서 크기가 중요한 이유</h4>
+            <p>
+                큰 센서는 더 많은 빛을 받아들여 저조도 성능이 우수하고,
+                얕은 피사계 심도(배경 흐림)를 만들 수 있습니다.
+                하지만 무게와 비용이 증가합니다.
+            </p>
+        </div>
+
+        <h3>3.1.3 FPV 카메라</h3>
+
+        <p>
+            FPV(First Person View) 카메라는 조종자에게 실시간 영상을 전송합니다:
+        </p>
+
+        <ul>
+            <li><strong>아날로그 FPV</strong>: NTSC/PAL, 낮은 지연 (5~20ms), 저해상도</li>
+            <li><strong>디지털 FPV (DJI, Walksnail, HDZero)</strong>: 고해상도 (720p~1080p), 약간 높은 지연 (20~40ms)</li>
+            <li><strong>CMOS 센서</strong>: CCD 대비 우수한 WDR (Wide Dynamic Range)</li>
+            <li><strong>렌즈 FOV</strong>: 2.1mm (초광각), 2.5mm (표준)</li>
+        </ul>
+
+        <h2>3.2 짐벌 (Gimbal)</h2>
+
+        <p>
+            짐벌은 카메라를 안정화시켜 부드러운 영상을 촬영할 수 있게 해주는 장치입니다.
+        </p>
+
+        <h3>3.2.1 짐벌 축 (Axis)</h3>
+
+        <ul>
+            <li><strong>1축 짐벌</strong>: Tilt만 안정화 (위아래)</li>
+            <li><strong>2축 짐벌</strong>: Tilt + Roll 안정화</li>
+            <li><strong>3축 짐벌</strong>: Tilt + Roll + Pan - 완전한 안정화</li>
+        </ul>
+
+        <h3>3.2.2 짐벌 유형</h3>
+
+        <ul>
+            <li><strong>기계식 짐벌</strong>: 브러시리스 모터로 물리적 회전</li>
+            <li><strong>전자식 안정화 (EIS)</strong>: 소프트웨어로 영상 안정화 (크롭 발생)</li>
+            <li><strong>하이브리드</strong>: 기계식 + EIS 조합</li>
+        </ul>
+
+        <h3>3.2.3 짐벌 컨트롤러</h3>
+
+        <p>
+            짐벌은 자체 컨트롤러(IMU, MCU)를 가지고 비행 컨트롤러와 독립적으로 작동합니다:
+        </p>
+
+        <ul>
+            <li><strong>SimpleBGC</strong>: 가장 널리 사용되는 오픈소스 짐벌 컨트롤러</li>
+            <li><strong>DJI Ronin 시리즈</strong>: 전문가용 짐벌</li>
+            <li><strong>MAVLink 통합</strong>: FC와 통신하여 카메라 방향 제어</li>
+        </ul>
+
+        <h2>3.3 LiDAR (Light Detection and Ranging)</h2>
+
+        <p>
+            LiDAR는 레이저 펄스를 발사하여 거리를 측정하는 센서로,
+            3D 지형 데이터를 고정밀도로 수집할 수 있습니다.
+        </p>
+
+        <h3>3.3.1 LiDAR 작동 원리</h3>
+
+        <ol>
+            <li>레이저 펄스 발사 (일반적으로 적외선)</li>
+            <li>물체에서 반사되어 돌아오는 시간 측정 (ToF: Time of Flight)</li>
+            <li>거리 계산: 거리 = (빛의 속도 × 시간) / 2</li>
+            <li>GPS/IMU와 결합하여 3D 포인트 클라우드 생성</li>
+        </ol>
+
+        <h3>3.3.2 드론 LiDAR 응용</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>분야</th>
+                    <th>응용</th>
+                    <th>정확도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>측량</strong></td>
+                    <td>지형 모델링, 토공량 계산</td>
+                    <td>수 cm</td>
+                </tr>
+                <tr>
+                    <td><strong>산림</strong></td>
+                    <td>수목 높이, 밀도, 바이오매스 추정</td>
+                    <td>10~20cm</td>
+                </tr>
+                <tr>
+                    <td><strong>도시</strong></td>
+                    <td>3D 도시 모델, 건물 측량</td>
+                    <td>5~10cm</td>
+                </tr>
+                <tr>
+                    <td><strong>인프라</strong></td>
+                    <td>송전선, 철로, 도로 점검</td>
+                    <td>2~5cm</td>
+                </tr>
+                <tr>
+                    <td><strong>고고학</strong></td>
+                    <td>지표면 아래 구조물 탐지</td>
+                    <td>10~30cm</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>3.3.3 LiDAR vs 포토그래메트리</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>특성</th>
+                    <th>LiDAR</th>
+                    <th>포토그래메트리</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>데이터 타입</td>
+                    <td>3D 포인트 클라우드</td>
+                    <td>RGB 이미지 → 3D 모델</td>
+                </tr>
+                <tr>
+                    <td>정확도</td>
+                    <td>매우 높음 (cm 단위)</td>
+                    <td>높음 (5~10cm)</td>
+                </tr>
+                <tr>
+                    <td>식생 투과</td>
+                    <td>가능 (나뭇잎 통과)</td>
+                    <td>불가능</td>
+                </tr>
+                <tr>
+                    <td>색상 정보</td>
+                    <td>없음 (강도만)</td>
+                    <td>RGB 텍스처</td>
+                </tr>
+                <tr>
+                    <td>비용</td>
+                    <td>매우 비쌈</td>
+                    <td>저렴</td>
+                </tr>
+                <tr>
+                    <td>조명 의존성</td>
+                    <td>없음 (야간 가능)</td>
+                    <td>높음 (주간 필요)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>3.3.4 상용 드론 LiDAR 시스템</h3>
+
+        <ul>
+            <li><strong>Velodyne VLP-16</strong>: 16채널, 100m 범위, 약 300,000 pts/s</li>
+            <li><strong>Livox Mid-40</strong>: 260m 범위, 100,000 pts/s, 저렴</li>
+            <li><strong>YellowScan Surveyor</strong>: 드론 전용 매핑 LiDAR</li>
+            <li><strong>DJI Zenmuse L1</strong>: DJI Matrice 300 RTK 통합형</li>
+        </ul>
+
+        <h2>3.4 열화상 카메라 (Thermal Camera)</h2>
+
+        <p>
+            열화상 카메라는 적외선 복사를 감지하여 온도 분포를 시각화합니다.
+        </p>
+
+        <h3>3.4.1 열화상 원리</h3>
+
+        <ul>
+            <li><strong>장파 적외선 (LWIR)</strong>: 8~14μm, 일반적인 열화상 카메라</li>
+            <li><strong>중파 적외선 (MWIR)</strong>: 3~5μm, 군사/고급 응용</li>
+            <li><strong>비냉각형 (Uncooled)</strong>: 마이크로볼로미터 센서, 드론용</li>
+            <li><strong>냉각형 (Cooled)</strong>: 극저온 냉각, 고감도, 비쌈</li>
+        </ul>
+
+        <h3>3.4.2 열화상 드론 응용</h3>
+
+        <ul>
+            <li><strong>수색 구조 (SAR)</strong>: 야간 실종자 수색, 체온 감지</li>
+            <li><strong>소방</strong>: 화재 열원 탐지, 구조 대상자 위치 파악</li>
+            <li><strong>태양광 점검</strong>: 고장난 패널 (hot spot) 탐지</li>
+            <li><strong>건물 진단</strong>: 단열 불량, 누수 지점 발견</li>
+            <li><strong>송전선 점검</strong>: 과열 접속부 탐지</li>
+            <li><strong>농업</strong>: 작물 수분 스트레스 모니터링</li>
+            <li><strong>야생동물 조사</strong>: 야간 동물 개체 수 조사</li>
+        </ul>
+
+        <h3>3.4.3 상용 열화상 카메라</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>모델</th>
+                    <th>해상도</th>
+                    <th>온도 범위</th>
+                    <th>용도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>FLIR Vue TZ20</td>
+                    <td>640×512</td>
+                    <td>-40°C ~ 550°C</td>
+                    <td>산업 점검</td>
+                </tr>
+                <tr>
+                    <td>DJI Zenmuse H20T</td>
+                    <td>640×512</td>
+                    <td>-40°C ~ 500°C</td>
+                    <td>공공 안전</td>
+                </tr>
+                <tr>
+                    <td>Autel EVO II Dual 640T</td>
+                    <td>640×512</td>
+                    <td>-20°C ~ 150°C</td>
+                    <td>다목적</td>
+                </tr>
+                <tr>
+                    <td>FLIR Duo Pro R</td>
+                    <td>336×256 + RGB</td>
+                    <td>-20°C ~ 120°C</td>
+                    <td>소형 드론</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="warning-box">
+            <h4>⚠️ 열화상 해상도</h4>
+            <p>
+                열화상 카메라의 해상도는 일반 카메라보다 훨씬 낮습니다 (640×512가 고급).
+                이는 적외선 센서 제작의 어려움 때문입니다. 따라서 충분히 낮은 고도에서 촬영해야 합니다.
+            </p>
+        </div>
+
+        <h2>3.5 다중 스펙트럼 및 초분광 카메라</h2>
+
+        <p>
+            농업 및 환경 모니터링에 특화된 카메라로, 가시광선 이상의 파장을 촬영합니다.
+        </p>
+
+        <h3>3.5.1 다중 스펙트럼 (Multispectral)</h3>
+
+        <p>
+            3~10개의 특정 파장 대역을 촬영합니다:
+        </p>
+
+        <ul>
+            <li><strong>Blue (450nm)</strong>: 수질, 토양 분석</li>
+            <li><strong>Green (560nm)</strong>: 식물 건강</li>
+            <li><strong>Red (650nm)</strong>: 식물 성장</li>
+            <li><strong>Red Edge (730nm)</strong>: 클로로필 함량</li>
+            <li><strong>Near-Infrared (840nm)</strong>: 식물 바이오매스</li>
+        </ul>
+
+        <h3>3.5.2 NDVI (Normalized Difference Vegetation Index)</h3>
+
+        <p>
+            식물의 건강 상태를 나타내는 지수로, 다음과 같이 계산됩니다:
+        </p>
+
+        <ul>
+            <li><strong>NDVI = (NIR - Red) / (NIR + Red)</strong></li>
+            <li>값 범위: -1 ~ +1</li>
+            <li>건강한 식물: 0.6 ~ 0.9</li>
+            <li>스트레스 받은 식물: 0.2 ~ 0.4</li>
+            <li>토양/물: 0 이하</li>
+        </ul>
+
+        <h3>3.5.3 상용 다중 스펙트럼 카메라</h3>
+
+        <ul>
+            <li><strong>MicaSense RedEdge-MX</strong>: 5개 밴드, 3.2MP, 농업 표준</li>
+            <li><strong>Parrot Sequoia+</strong>: 4개 밴드 + RGB, 저렴</li>
+            <li><strong>Sentera 6X</strong>: 6개 밴드, 고해상도</li>
+            <li><strong>DJI P4 Multispectral</strong>: 일체형 드론, 편리</li>
+        </ul>
+
+        <h2>3.6 기타 센서</h2>
+
+        <h3>3.6.1 가스 탐지 센서</h3>
+
+        <ul>
+            <li><strong>메탄 (CH₄)</strong>: 가스 파이프라인 누출 감지</li>
+            <li><strong>이산화탄소 (CO₂)</strong>: 화산, 산업 배출 모니터링</li>
+            <li><strong>VOC</strong>: 휘발성 유기 화합물 탐지</li>
+        </ul>
+
+        <h3>3.6.2 방사선 센서</h3>
+
+        <ul>
+            <li>원자력 시설 점검</li>
+            <li>재난 지역 방사능 측정</li>
+            <li>체르노빌, 후쿠시마 모니터링 사례</li>
+        </ul>
+
+        <h3>3.6.3 수질 센서</h3>
+
+        <ul>
+            <li>pH, 탁도, 용존 산소 측정</li>
+            <li>수상 드론(USV)과 결합</li>
+        </ul>
+
+        <h3>3.6.4 음향 센서 (마이크로폰 어레이)</h3>
+
+        <ul>
+            <li>야생동물 울음 소리 녹음</li>
+            <li>인프라 이상음 탐지 (송전선 코로나 방전)</li>
+        </ul>
+
+        <h2>3.7 페이로드 통합 고려사항</h2>
+
+        <h3>3.7.1 무게 및 밸런스</h3>
+
+        <ul>
+            <li><strong>무게 중심 (CG)</strong>: 드론 중앙에 페이로드 배치</li>
+            <li><strong>최대 이륙 중량 (MTOW)</strong>: 규제 준수</li>
+            <li><strong>비행 시간 감소</strong>: 무거운 페이로드는 배터리 소모 증가</li>
+        </ul>
+
+        <h3>3.7.2 전원 공급</h3>
+
+        <ul>
+            <li><strong>전압 요구사항</strong>: 5V, 12V, 24V 등 센서별 상이</li>
+            <li><strong>전류 소비</strong>: 총 전류 소비량 계산</li>
+            <li><strong>BEC 또는 별도 레귤레이터</strong>: 안정적인 전원 공급</li>
+        </ul>
+
+        <h3>3.7.3 데이터 기록</h3>
+
+        <ul>
+            <li><strong>온보드 저장</strong>: SD 카드, SSD</li>
+            <li><strong>실시간 전송</strong>: 4G/5G, 장거리 WiFi</li>
+            <li><strong>지오태깅</strong>: GPS 좌표 메타데이터 저장</li>
+        </ul>
+
+        <h3>3.7.4 진동 절연</h3>
+
+        <ul>
+            <li><strong>댐퍼 마운트</strong>: 고무, 실리콘 댐퍼로 진동 흡수</li>
+            <li><strong>소프트 마운팅</strong>: 카메라와 프레임 사이 진동 차단</li>
+            <li><strong>프로펠러 밸런싱</strong>: 진동 원천 제거</li>
+        </ul>
+
+        <h2>3.8 요약</h2>
+
+        <p>
+            드론 센서와 페이로드는 임무 목적에 따라 다양합니다.
+            일반 촬영에는 RGB 카메라와 짐벌이면 충분하지만,
+            측량에는 고해상도 카메라나 LiDAR,
+            정밀 농업에는 다중 스펙트럼 카메라,
+            수색 구조에는 열화상 카메라가 필수적입니다.
+        </p>
+
+        <p>
+            페이로드를 선택할 때는 드론의 탑재 능력, 비행 시간, 데이터 처리 요구사항을
+            종합적으로 고려해야 합니다. 무거운 페이로드는 더 큰 드론과 강력한 모터를 요구하며,
+            비용과 운용 복잡도를 증가시킵니다.
+        </p>
+
+        <p>
+            다음 챕터에서는 드론의 두뇌인 비행 제어 시스템을 자세히 살펴보겠습니다.
+        </p>
+
+        <div class="nav-buttons">
+            <a href="chapter-02.html" class="btn btn-secondary">← 이전: 드론 하드웨어</a>
+            <a href="chapter-04.html" class="btn">다음: 비행 제어 →</a>
+        </div>
+    </div>
+</body>
+</html>

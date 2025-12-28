@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5장: 데이터 암호화 - WIA 의료 데이터 프라이버시 표준</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        header { padding: 2rem 0; border-bottom: 2px solid #14B8A6; margin-bottom: 2rem; }
+        .chapter-number { font-size: 1rem; color: #14B8A6; font-weight: 600; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #f8fafc; margin-bottom: 1rem; }
+        h2 { color: #14B8A6; font-size: 1.8rem; margin: 2.5rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(20, 184, 166, 0.3); }
+        h3 { color: #14B8A6; font-size: 1.3rem; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.2rem; color: #cbd5e1; }
+        .chapter-nav { background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .nav-button { padding: 0.75rem 1.5rem; background: #334155; color: #14B8A6; text-decoration: none; border-radius: 6px; transition: all 0.3s ease; border: 1px solid #14B8A6; }
+        .nav-button:hover { background: #14B8A6; color: #0f172a; transform: translateY(-2px); }
+        .highlight-box { background: rgba(20, 184, 166, 0.1); border-left: 4px solid #14B8A6; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: #1e293b; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #14B8A6; color: #0f172a; font-weight: 600; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #334155; }
+        .code-block { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto; }
+        .code-header { color: #14B8A6; font-size: 0.9rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #334155; }
+        pre { margin: 0; color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; }
+        ul, ol { margin: 1rem 0 1rem 2rem; color: #cbd5e1; }
+        li { margin-bottom: 0.5rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0; }
+        .stat-card { background: #1e293b; padding: 1.5rem; border-radius: 8px; border: 1px solid #334155; text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #14B8A6; margin-bottom: 0.5rem; }
+        .stat-label { color: #94a3b8; font-size: 0.9rem; }
+        footer { margin-top: 4rem; padding: 2rem 0; text-align: center; border-top: 2px solid #334155; color: #64748b; }
+        .footer-tagline { font-size: 1.1rem; color: #14B8A6; margin-bottom: 0.5rem; }
+        .warning-box { background: rgba(251, 191, 36, 0.1); border-left: 4px solid #fbbf24; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        .info-box { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        @media (max-width: 768px) { h1 { font-size: 2rem; } .container { padding: 1rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-number">5장</div>
+            <h1>데이터 암호화</h1>
+        </header>
+
+        <div class="chapter-nav">
+            <a href="chapter-04.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">목차</a>
+            <a href="chapter-06.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <div class="highlight-box">
+            <strong>장 개요:</strong> 이 장에서는 저장 데이터(data at rest)와 전송 데이터(data in transit) 암호화, 키 관리 전략, 암호화 알고리즘 선택, 그리고 의료 환경에서의 실무 적용 방법을 다룹니다.
+        </div>
+
+        <h2>암호화의 중요성</h2>
+
+        <p>암호화는 의료 데이터 보호의 마지막 방어선입니다. 다른 모든 보안 조치가 실패하더라도 암호화된 데이터는 키 없이 읽을 수 없습니다. HIPAA Security Rule과 GDPR 모두 암호화를 강력히 권장하며, 많은 규정에서 사실상 필수 요구사항으로 간주됩니다.</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">256-bit</div>
+                <div class="stat-label">AES 권장 키 길이</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">TLS 1.3</div>
+                <div class="stat-label">전송 암호화 표준</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">90일</div>
+                <div class="stat-label">키 순환 권장 주기</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">50%</div>
+                <div class="stat-label">암호화로 인한 위반 벌금 감소</div>
+            </div>
+        </div>
+
+        <h2>저장 데이터 암호화 (Encryption at Rest)</h2>
+
+        <p>저장 데이터 암호화는 데이터베이스, 파일 시스템, 백업, 이동식 매체에 저장된 데이터를 보호합니다.</p>
+
+        <h3>AES (Advanced Encryption Standard)</h3>
+
+        <p>AES는 의료 데이터 암호화의 사실상 표준입니다:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>키 크기</th>
+                    <th>보안 수준</th>
+                    <th>권장 용도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>AES-128</td>
+                    <td>높음</td>
+                    <td>일반 PHI</td>
+                </tr>
+                <tr>
+                    <td>AES-192</td>
+                    <td>매우 높음</td>
+                    <td>민감 PHI</td>
+                </tr>
+                <tr>
+                    <td>AES-256</td>
+                    <td>최고</td>
+                    <td>고도 민감 데이터, 장기 보관</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>암호화 모드</h3>
+
+        <ul>
+            <li><strong>CBC (Cipher Block Chaining):</strong> 널리 사용되나 패딩 오라클 공격에 취약</li>
+            <li><strong>GCM (Galois/Counter Mode):</strong> 인증 암호화 제공, 권장</li>
+            <li><strong>XTS:</strong> 디스크 전체 암호화에 최적화</li>
+        </ul>
+
+        <div class="code-block">
+            <div class="code-header">AES-256-GCM 암호화 예시 (Python)</div>
+            <pre>
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+import os
+
+class MedicalDataEncryption:
+    def __init__(self, key: bytes):
+        """
+        key: 32바이트 (256비트) AES 키
+        """
+        self.aesgcm = AESGCM(key)
+
+    @staticmethod
+    def generate_key() -> bytes:
+        """안전한 랜덤 키 생성"""
+        return AESGCM.generate_key(bit_length=256)
+
+    def encrypt(self, plaintext: bytes, associated_data: bytes = None) -> tuple:
+        """
+        데이터 암호화
+        
+        Args:
+            plaintext: 암호화할 데이터
+            associated_data: 인증할 추가 데이터 (환자 ID 등)
+        
+        Returns:
+            (nonce, ciphertext) 튜플
+        """
+        nonce = os.urandom(12)  # 96비트 nonce
+        ciphertext = self.aesgcm.encrypt(nonce, plaintext, associated_data)
+        return (nonce, ciphertext)
+
+    def decrypt(self, nonce: bytes, ciphertext: bytes, 
+                associated_data: bytes = None) -> bytes:
+        """데이터 복호화"""
+        return self.aesgcm.decrypt(nonce, ciphertext, associated_data)
+
+# 사용 예시
+key = MedicalDataEncryption.generate_key()
+encryptor = MedicalDataEncryption(key)
+
+# 환자 데이터 암호화
+patient_data = b"Patient: John Doe, Diagnosis: Diabetes, HbA1c: 7.2%"
+patient_id = b"P-2024-001234"
+
+nonce, ciphertext = encryptor.encrypt(patient_data, associated_data=patient_id)
+
+print(f"Nonce: {nonce.hex()}")
+print(f"Ciphertext: {ciphertext.hex()}")
+
+# 복호화
+decrypted = encryptor.decrypt(nonce, ciphertext, associated_data=patient_id)
+print(f"Decrypted: {decrypted.decode()}")
+</pre>
+        </div>
+
+        <h2>전송 데이터 암호화 (Encryption in Transit)</h2>
+
+        <p>네트워크를 통해 전송되는 모든 PHI는 암호화되어야 합니다.</p>
+
+        <h3>TLS (Transport Layer Security)</h3>
+
+        <p>TLS는 웹 통신, API 호출, 데이터베이스 연결 등을 보호하는 표준 프로토콜입니다:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>버전</th>
+                    <th>상태</th>
+                    <th>권장사항</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>SSL 2.0/3.0</td>
+                    <td>폐기</td>
+                    <td>사용 금지</td>
+                </tr>
+                <tr>
+                    <td>TLS 1.0/1.1</td>
+                    <td>폐기</td>
+                    <td>사용 금지 (2020년 이후)</td>
+                </tr>
+                <tr>
+                    <td>TLS 1.2</td>
+                    <td>허용</td>
+                    <td>최소 요구사항</td>
+                </tr>
+                <tr>
+                    <td>TLS 1.3</td>
+                    <td>권장</td>
+                    <td>새 시스템에 사용</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>TLS 1.3의 장점</h3>
+
+        <ul>
+            <li><strong>향상된 보안:</strong> 취약한 암호 스위트 제거</li>
+            <li><strong>빠른 핸드셰이크:</strong> 1-RTT, 0-RTT 지원</li>
+            <li><strong>전방향 보안:</strong> 모든 핸드셰이크에서 강제</li>
+            <li><strong>간소화:</strong> 복잡성 감소로 구현 오류 최소화</li>
+        </ul>
+
+        <div class="info-box">
+            <strong>실무 적용:</strong> 웹 서버, 로드 밸런서, API 게이트웨이, 데이터베이스 연결, 내부 마이크로서비스 통신 등 모든 네트워크 통신에 TLS 1.2 이상 적용하세요.
+        </div>
+
+        <h2>키 관리 전략</h2>
+
+        <p>암호화 키 관리는 암호화 시스템의 가장 중요하고 어려운 부분입니다. 키가 유출되면 암호화가 무의미해집니다.</p>
+
+        <h3>키 생명주기</h3>
+
+        <ol>
+            <li><strong>생성 (Generation):</strong>
+                <ul>
+                    <li>암호학적으로 안전한 난수 생성기 사용 (CSPRNG)</li>
+                    <li>충분한 엔트로피 확보</li>
+                    <li>키 생성 이벤트 로깅</li>
+                </ul>
+            </li>
+
+            <li><strong>배포 (Distribution):</strong>
+                <ul>
+                    <li>안전한 채널을 통한 키 전송</li>
+                    <li>키 래핑 (Key Wrapping) 사용</li>
+                    <li>대역 외(out-of-band) 검증</li>
+                </ul>
+            </li>
+
+            <li><strong>저장 (Storage):</strong>
+                <ul>
+                    <li>HSM (Hardware Security Module) 또는 KMS (Key Management Service) 사용</li>
+                    <li>키는 절대 평문으로 저장하지 않음</li>
+                    <li>마스터 키와 데이터 암호화 키 분리</li>
+                </ul>
+            </li>
+
+            <li><strong>사용 (Usage):</strong>
+                <ul>
+                    <li>최소 권한 원칙</li>
+                    <li>키 사용 감사 로깅</li>
+                    <li>키 분리 (암호화/복호화 키 분리 가능 시)</li>
+                </ul>
+            </li>
+
+            <li><strong>순환 (Rotation):</strong>
+                <ul>
+                    <li>정기적 키 교체 (90-180일)</li>
+                    <li>키 유출 의심 시 즉시 순환</li>
+                    <li>자동화된 순환 프로세스</li>
+                </ul>
+            </li>
+
+            <li><strong>폐기 (Destruction):</strong>
+                <ul>
+                    <li>안전한 키 삭제 프로토콜</li>
+                    <li>복구 불가능한 방식으로 삭제</li>
+                    <li>폐기 기록 유지</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h3>키 계층 구조</h3>
+
+        <div class="code-block">
+            <div class="code-header">키 계층 구조 (Envelope Encryption)</div>
+            <pre>
+┌─────────────────────────────────────────────────┐
+│         Master Key (Root Key)                   │
+│         • HSM 또는 KMS에 저장                    │
+│         • 거의 사용하지 않음                      │
+│         • 엄격한 접근 제어                        │
+└────────────────┬────────────────────────────────┘
+                 │ 암호화
+                 ▼
+┌─────────────────────────────────────────────────┐
+│    Key Encryption Key (KEK)                     │
+│    • 마스터 키로 암호화됨                         │
+│    • 데이터 키를 암호화하는데 사용                │
+│    • 중간 계층                                    │
+└────────────────┬────────────────────────────────┘
+                 │ 암호화
+                 ▼
+┌─────────────────────────────────────────────────┐
+│    Data Encryption Key (DEK)                    │
+│    • KEK로 암호화되어 저장                       │
+│    • 실제 데이터 암호화에 사용                    │
+│    • 데이터와 함께 저장 (암호화된 형태로)          │
+└────────────────┬────────────────────────────────┘
+                 │ 암호화
+                 ▼
+┌─────────────────────────────────────────────────┐
+│         Encrypted Patient Data                  │
+└─────────────────────────────────────────────────┘
+</pre>
+        </div>
+
+        <h2>데이터베이스 암호화</h2>
+
+        <h3>암호화 수준 선택</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>수준</th>
+                    <th>장점</th>
+                    <th>단점</th>
+                    <th>적용 예</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>디스크 암호화</strong></td>
+                    <td>구현 간단, 성능 영향 적음</td>
+                    <td>메모리에서는 평문, DB 관리자 접근 가능</td>
+                    <td>물리적 도난 방지</td>
+                </tr>
+                <tr>
+                    <td><strong>파일 암호화</strong></td>
+                    <td>개별 파일 보호</td>
+                    <td>파일 시스템 수준 공격 취약</td>
+                    <td>백업 파일</td>
+                </tr>
+                <tr>
+                    <td><strong>TDE (Transparent Data Encryption)</strong></td>
+                    <td>애플리케이션 변경 불필요, DB 전체 보호</td>
+                    <td>DB 관리자 접근 가능, 세분화 어려움</td>
+                    <td>규정 준수</td>
+                </tr>
+                <tr>
+                    <td><strong>컬럼 암호화</strong></td>
+                    <td>세분화된 보호, 선택적 암호화</td>
+                    <td>애플리케이션 변경 필요, 성능 영향</td>
+                    <td>민감 필드 (SSN, 진단명)</td>
+                </tr>
+                <tr>
+                    <td><strong>애플리케이션 암호화</strong></td>
+                    <td>최고 보안, DB 관리자도 접근 불가</td>
+                    <td>복잡한 구현, 큰 성능 영향</td>
+                    <td>고도 민감 데이터</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>클라우드 환경 암호화</h2>
+
+        <p>클라우드 서비스 사용 시 암호화는 더욱 중요합니다:</p>
+
+        <h3>클라우드 암호화 모델</h3>
+
+        <ul>
+            <li><strong>서버측 암호화 (CSP 관리 키):</strong>
+                <ul>
+                    <li>간편한 구현</li>
+                    <li>CSP가 키 관리</li>
+                    <li>규정 준수 제한적</li>
+                </ul>
+            </li>
+
+            <li><strong>서버측 암호화 (고객 관리 키):</strong>
+                <ul>
+                    <li>고객이 키 제어</li>
+                    <li>KMS 통합 필요</li>
+                    <li>권장 방식</li>
+                </ul>
+            </li>
+
+            <li><strong>클라이언트측 암호화:</strong>
+                <ul>
+                    <li>클라우드 업로드 전 암호화</li>
+                    <li>최고 보안</li>
+                    <li>복잡한 구현</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>AWS KMS 예시</h3>
+
+        <div class="code-block">
+            <div class="code-header">AWS KMS를 사용한 암호화</div>
+            <pre>
+import boto3
+import base64
+
+class AWSKMSEncryption:
+    def __init__(self, key_id: str, region: str = 'us-east-1'):
+        self.kms_client = boto3.client('kms', region_name=region)
+        self.key_id = key_id
+
+    def encrypt(self, plaintext: str, context: dict = None) -> str:
+        """
+        KMS를 사용하여 데이터 암호화
+        
+        Args:
+            plaintext: 암호화할 데이터
+            context: 암호화 컨텍스트 (환자 ID 등)
+        
+        Returns:
+            Base64 인코딩된 암호문
+        """
+        params = {
+            'KeyId': self.key_id,
+            'Plaintext': plaintext.encode()
+        }
+        if context:
+            params['EncryptionContext'] = context
+
+        response = self.kms_client.encrypt(**params)
+        ciphertext = response['CiphertextBlob']
+        return base64.b64encode(ciphertext).decode()
+
+    def decrypt(self, ciphertext_b64: str, context: dict = None) -> str:
+        """KMS를 사용하여 데이터 복호화"""
+        ciphertext = base64.b64decode(ciphertext_b64)
+        
+        params = {'CiphertextBlob': ciphertext}
+        if context:
+            params['EncryptionContext'] = context
+
+        response = self.kms_client.decrypt(**params)
+        return response['Plaintext'].decode()
+
+# 사용 예시
+kms_enc = AWSKMSEncryption(key_id='arn:aws:kms:us-east-1:123456789:key/...')
+
+patient_data = "Patient: Jane Doe, Blood Type: O+, Allergies: Penicillin"
+encryption_context = {
+    'PatientID': 'P-2024-567890',
+    'Department': 'Cardiology'
+}
+
+# 암호화
+encrypted = kms_enc.encrypt(patient_data, context=encryption_context)
+print(f"Encrypted: {encrypted}")
+
+# 복호화 (동일한 컨텍스트 필요)
+decrypted = kms_enc.decrypt(encrypted, context=encryption_context)
+print(f"Decrypted: {decrypted}")
+</pre>
+        </div>
+
+        <h2>암호화 모범 사례</h2>
+
+        <ol>
+            <li><strong>심층 방어:</strong> 여러 계층에서 암호화 적용 (디스크, 파일, 컬럼, 전송)</li>
+            <li><strong>강력한 알고리즘:</strong> AES-256, RSA-2048 이상 사용</li>
+            <li><strong>키 분리:</strong> 암호화 키와 데이터를 다른 위치에 저장</li>
+            <li><strong>정기 순환:</strong> 암호화 키 정기적 교체</li>
+            <li><strong>HSM/KMS 사용:</strong> 전문 키 관리 솔루션 활용</li>
+            <li><strong>전송 암호화:</strong> 모든 네트워크 통신에 TLS 1.2+ 적용</li>
+            <li><strong>백업 암호화:</strong> 백업 데이터도 암호화</li>
+            <li><strong>이동식 매체:</strong> USB, 노트북 등 전체 디스크 암호화</li>
+            <li><strong>폐기 프로토콜:</strong> 하드웨어 폐기 시 암호학적 삭제</li>
+            <li><strong>성능 테스트:</strong> 암호화로 인한 성능 영향 평가 및 최적화</li>
+        </ol>
+
+        <h2>암호화 성능 최적화</h2>
+
+        <ul>
+            <li><strong>하드웨어 가속:</strong> AES-NI 등 CPU 암호화 명령어 활용</li>
+            <li><strong>비동기 처리:</strong> 암호화 작업을 백그라운드 스레드에서 수행</li>
+            <li><strong>캐싱:</strong> 복호화된 데이터를 메모리에 일시 캐싱 (보안 고려)</li>
+            <li><strong>배치 처리:</strong> 대량 데이터 암호화 시 배치로 처리</li>
+            <li><strong>선택적 암호화:</strong> 모든 데이터가 아닌 민감 데이터만 암호화</li>
+        </ul>
+
+        <h2>결론</h2>
+
+        <p>암호화는 의료 데이터 보호의 필수 요소입니다. 적절한 암호화 알고리즘 선택, 안전한 키 관리, 그리고 저장 및 전송 데이터 모두에 대한 암호화 적용이 중요합니다. 클라우드 환경에서는 고객 관리 키를 사용하여 데이터 통제권을 유지하세요.</p>
+
+        <p>다음 장에서는 접근 제어와 인증 메커니즘을 살펴보겠습니다.</p>
+
+        <div class="chapter-nav" style="margin-top: 3rem;">
+            <a href="chapter-04.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">목차</a>
+            <a href="chapter-06.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <footer>
+            <p class="footer-tagline">弘益人間 · 널리 인간을 이롭게 하라</p>
+            <p>WIA (World Certification Industry Association)</p>
+            <p>© 2025 MIT License</p>
+        </footer>
+    </div>
+</body>
+</html>

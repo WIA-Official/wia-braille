@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA 3D Printing Construction Simulator</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --primary: #06B6D4;
+            --primary-dark: #0891b2;
+            --primary-light: #22d3ee;
+            --accent: #f59e0b;
+            --border: #475569;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--primary);
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .language-selector {
+            position: relative;
+        }
+
+        .language-dropdown {
+            background: var(--bg-tertiary);
+            color: var(--text);
+            border: 2px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .language-dropdown:hover {
+            border-color: var(--primary);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .tab {
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            padding: 15px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .content-section {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            background: var(--bg-tertiary);
+            color: var(--text);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-textarea {
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .output-box {
+            background: var(--bg);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-success { background: var(--success); }
+        .status-warning { background: var(--warning); }
+        .status-error { background: var(--error); }
+
+        .parameter-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 15px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .slider-value {
+            min-width: 60px;
+            text-align: right;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .info-box {
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .visualization {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .layer-preview {
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1;
+            background: repeating-linear-gradient(
+                0deg,
+                var(--bg-tertiary) 0px,
+                var(--bg-tertiary) 2px,
+                transparent 2px,
+                transparent 12px
+            );
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .layer {
+            position: absolute;
+            width: 90%;
+            height: 2px;
+            background: var(--primary-light);
+            left: 5%;
+            opacity: 0.7;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success { background: var(--success); color: var(--bg); }
+        .badge-warning { background: var(--warning); color: var(--bg); }
+        .badge-error { background: var(--error); color: white; }
+
+        pre {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        code {
+            color: var(--primary-light);
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">🏗️ WIA 3D Printing Construction Simulator</div>
+            <div class="language-selector">
+                <select class="language-dropdown" id="languageSelect">
+                    <option value="en">English</option>
+                    <option value="ko">한국어 (Korean)</option>
+                    <option value="ja">日本語 (Japanese)</option>
+                    <option value="zh">中文 (Chinese)</option>
+                    <option value="es">Español (Spanish)</option>
+                    <option value="fr">Français (French)</option>
+                    <option value="de">Deutsch (German)</option>
+                    <option value="it">Italiano (Italian)</option>
+                    <option value="pt">Português (Portuguese)</option>
+                    <option value="ru">Русский (Russian)</option>
+                    <option value="ar">العربية (Arabic)</option>
+                    <option value="hi">हिन्दी (Hindi)</option>
+                    <option value="bn">বাংলা (Bengali)</option>
+                    <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                    <option value="jv">Basa Jawa (Javanese)</option>
+                    <option value="vi">Tiếng Việt (Vietnamese)</option>
+                    <option value="tr">Türkçe (Turkish)</option>
+                    <option value="pl">Polski (Polish)</option>
+                    <option value="uk">Українська (Ukrainian)</option>
+                    <option value="nl">Nederlands (Dutch)</option>
+                    <option value="th">ไทย (Thai)</option>
+                    <option value="sv">Svenska (Swedish)</option>
+                    <option value="he">עברית (Hebrew)</option>
+                    <option value="el">Ελληνικά (Greek)</option>
+                    <option value="cs">Čeština (Czech)</option>
+                    <option value="ro">Română (Romanian)</option>
+                    <option value="hu">Magyar (Hungarian)</option>
+                    <option value="fi">Suomi (Finnish)</option>
+                    <option value="da">Dansk (Danish)</option>
+                    <option value="no">Norsk (Norwegian)</option>
+                    <option value="sk">Slovenčina (Slovak)</option>
+                    <option value="bg">Български (Bulgarian)</option>
+                    <option value="hr">Hrvatski (Croatian)</option>
+                    <option value="sr">Српски (Serbian)</option>
+                    <option value="lt">Lietuvių (Lithuanian)</option>
+                    <option value="lv">Latviešu (Latvian)</option>
+                    <option value="et">Eesti (Estonian)</option>
+                    <option value="sl">Slovenščina (Slovenian)</option>
+                    <option value="sq">Shqip (Albanian)</option>
+                    <option value="mk">Македонски (Macedonian)</option>
+                    <option value="is">Íslenska (Icelandic)</option>
+                    <option value="ga">Gaeilge (Irish)</option>
+                    <option value="cy">Cymraeg (Welsh)</option>
+                    <option value="eu">Euskara (Basque)</option>
+                    <option value="ca">Català (Catalan)</option>
+                    <option value="gl">Galego (Galician)</option>
+                    <option value="af">Afrikaans</option>
+                    <option value="sw">Kiswahili (Swahili)</option>
+                    <option value="am">አማርኛ (Amharic)</option>
+                    <option value="fa">فارسی (Persian)</option>
+                    <option value="ur">اردو (Urdu)</option>
+                    <option value="ps">پښتو (Pashto)</option>
+                    <option value="ku">Kurdî (Kurdish)</option>
+                    <option value="az">Azərbaycan (Azerbaijani)</option>
+                    <option value="kk">Қазақ (Kazakh)</option>
+                    <option value="uz">O'zbek (Uzbek)</option>
+                    <option value="ky">Кыргыз (Kyrgyz)</option>
+                    <option value="tg">Тоҷикӣ (Tajik)</option>
+                    <option value="tk">Türkmen (Turkmen)</option>
+                    <option value="mn">Монгол (Mongolian)</option>
+                    <option value="my">မြန်မာ (Burmese)</option>
+                    <option value="km">ខ្មែរ (Khmer)</option>
+                    <option value="lo">ລາວ (Lao)</option>
+                    <option value="si">සිංහල (Sinhala)</option>
+                    <option value="ne">नेपाली (Nepali)</option>
+                    <option value="ta">தமிழ் (Tamil)</option>
+                    <option value="te">తెలుగు (Telugu)</option>
+                    <option value="ml">മലയാളം (Malayalam)</option>
+                    <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                    <option value="mr">मराठी (Marathi)</option>
+                    <option value="gu">ગુજરાતી (Gujarati)</option>
+                    <option value="or">ଓଡ଼ିଆ (Odia)</option>
+                    <option value="as">অসমীয়া (Assamese)</option>
+                    <option value="id">Bahasa Indonesia (Indonesian)</option>
+                    <option value="ms">Bahasa Melayu (Malay)</option>
+                    <option value="tl">Tagalog (Filipino)</option>
+                    <option value="ceb">Cebuano</option>
+                    <option value="haw">ʻŌlelo Hawaiʻi (Hawaiian)</option>
+                    <option value="mi">Te Reo Māori (Maori)</option>
+                    <option value="sm">Gagana Samoa (Samoan)</option>
+                    <option value="to">Lea Fakatonga (Tongan)</option>
+                    <option value="fj">Na Vosa Vakaviti (Fijian)</option>
+                    <option value="mg">Malagasy</option>
+                    <option value="yo">Yorùbá</option>
+                    <option value="ig">Igbo</option>
+                    <option value="ha">Hausa</option>
+                    <option value="zu">isiZulu (Zulu)</option>
+                    <option value="xh">isiXhosa (Xhosa)</option>
+                    <option value="st">Sesotho (Southern Sotho)</option>
+                    <option value="sn">chiShona (Shona)</option>
+                    <option value="so">Soomaali (Somali)</option>
+                    <option value="rw">Kinyarwanda</option>
+                    <option value="ny">Chichewa</option>
+                    <option value="eo">Esperanto</option>
+                    <option value="la">Latina (Latin)</option>
+                    <option value="mt">Malti (Maltese)</option>
+                    <option value="lb">Lëtzebuergesch (Luxembourgish)</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" data-tab="data-format">Data Format</button>
+            <button class="tab" data-tab="algorithms">Algorithms</button>
+            <button class="tab" data-tab="protocol">Protocol</button>
+            <button class="tab" data-tab="integration">Integration</button>
+            <button class="tab" data-tab="test">Test</button>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div id="data-format" class="tab-content active">
+            <div class="content-section">
+                <h2 class="section-title">Building Model Configuration</h2>
+                <div class="info-box">
+                    Define your 3D printing construction project parameters. This data format follows the WIA standard for building information modeling.
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label">Project Name</label>
+                            <input type="text" class="form-input" id="projectName" value="Residential Building A1" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Building Type</label>
+                            <select class="form-select" id="buildingType">
+                                <option value="residential">Residential</option>
+                                <option value="commercial">Commercial</option>
+                                <option value="industrial">Industrial</option>
+                                <option value="infrastructure">Infrastructure</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Material Type</label>
+                            <select class="form-select" id="materialType">
+                                <option value="concrete">Concrete Mix</option>
+                                <option value="polymer">Polymer Composite</option>
+                                <option value="hybrid">Hybrid Material</option>
+                                <option value="sustainable">Sustainable Blend</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Layer Height (mm)</label>
+                            <div class="slider-container">
+                                <input type="range" class="slider" id="layerHeight" min="5" max="50" value="20" />
+                                <span class="slider-value" id="layerHeightValue">20 mm</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Print Speed (mm/s)</label>
+                            <div class="slider-container">
+                                <input type="range" class="slider" id="printSpeed" min="10" max="200" value="100" />
+                                <span class="slider-value" id="printSpeedValue">100 mm/s</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Wall Thickness (mm)</label>
+                            <div class="slider-container">
+                                <input type="range" class="slider" id="wallThickness" min="100" max="500" value="250" />
+                                <span class="slider-value" id="wallThicknessValue">250 mm</span>
+                            </div>
+                        </div>
+
+                        <button class="btn" onclick="generateDataFormat()">Generate JSON Schema</button>
+                    </div>
+
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label">Generated JSON Schema</label>
+                            <div class="output-box" id="jsonOutput">Click "Generate JSON Schema" to see output...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h2 class="section-title">Layer Visualization</h2>
+                <div class="visualization">
+                    <div class="layer-preview" id="layerPreview"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div id="algorithms" class="tab-content">
+            <div class="content-section">
+                <h2 class="section-title">Path Planning Algorithm</h2>
+                <div class="info-box">
+                    Configure the path planning algorithm for optimal material deposition. The algorithm calculates the most efficient route for the robotic arm.
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label">Algorithm Type</label>
+                            <select class="form-select" id="algorithmType">
+                                <option value="contour">Contour Crafting</option>
+                                <option value="zigzag">Zigzag Pattern</option>
+                                <option value="spiral">Spiral Pattern</option>
+                                <option value="optimized">AI-Optimized Path</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Infill Density (%)</label>
+                            <div class="slider-container">
+                                <input type="range" class="slider" id="infillDensity" min="0" max="100" value="40" />
+                                <span class="slider-value" id="infillDensityValue">40%</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Optimization Priority</label>
+                            <select class="form-select" id="optimizationPriority">
+                                <option value="speed">Speed</option>
+                                <option value="strength">Structural Strength</option>
+                                <option value="material">Material Efficiency</option>
+                                <option value="balanced">Balanced</option>
+                            </select>
+                        </div>
+
+                        <button class="btn" onclick="runAlgorithm()">Run Algorithm</button>
+                    </div>
+
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label">Algorithm Output</label>
+                            <div class="output-box" id="algorithmOutput">Algorithm results will appear here...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h2 class="section-title">Performance Metrics</h2>
+                <table id="metricsTable">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Estimated Build Time</td>
+                            <td id="buildTime">--</td>
+                            <td><span class="badge badge-success">Optimal</span></td>
+                        </tr>
+                        <tr>
+                            <td>Material Usage</td>
+                            <td id="materialUsage">--</td>
+                            <td><span class="badge badge-success">Efficient</span></td>
+                        </tr>
+                        <tr>
+                            <td>Structural Integrity</td>
+                            <td id="structuralIntegrity">--</td>
+                            <td><span class="badge badge-warning">Review</span></td>
+                        </tr>
+                        <tr>
+                            <td>Path Efficiency</td>
+                            <td id="pathEfficiency">--</td>
+                            <td><span class="badge badge-success">Optimized</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div id="protocol" class="tab-content">
+            <div class="content-section">
+                <h2 class="section-title">Real-Time Control Protocol</h2>
+                <div class="info-box">
+                    Configure real-time communication protocols for printer control. WebSocket connection enables live monitoring and control.
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label">Protocol Type</label>
+                            <select class="form-select" id="protocolType">
+                                <option value="websocket">WebSocket</option>
+                                <option value="mqtt">MQTT</option>
+                                <option value="grpc">gRPC</option>
+                                <option value="rest">REST API</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Connection Endpoint</label>
+                            <input type="text" class="form-input" id="endpoint" value="wss://printer.example.com:8443" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Authentication Token</label>
+                            <input type="text" class="form-input" id="authToken" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Update Frequency (Hz)</label>
+                            <div class="slider-container">
+                                <input type="range" class="slider" id="updateFreq" min="1" max="60" value="10" />
+                                <span class="slider-value" id="updateFreqValue">10 Hz</span>
+                            </div>
+                        </div>
+
+                        <button class="btn" onclick="testProtocol()">Test Connection</button>
+                        <button class="btn btn-secondary" onclick="sendCommand()">Send Command</button>
+                    </div>
+
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label">Protocol Messages</label>
+                            <div class="output-box" id="protocolOutput">
+<span class="status-indicator status-success"></span> Waiting for connection...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h2 class="section-title">Command Interface</h2>
+                <div class="form-group">
+                    <label class="form-label">Command Payload (JSON)</label>
+                    <textarea class="form-textarea" id="commandPayload">{
+  "command": "START_PRINT",
+  "layer": 1,
+  "speed": 100,
+  "temperature": 25,
+  "pressure": 1.2
+}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div id="integration" class="tab-content">
+            <div class="content-section">
+                <h2 class="section-title">BIM/CAD Integration</h2>
+                <div class="info-box">
+                    Import and export data from popular BIM and CAD systems. Supports IFC, DWG, and custom formats.
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label">Integration Type</label>
+                            <select class="form-select" id="integrationType">
+                                <option value="revit">Autodesk Revit</option>
+                                <option value="autocad">AutoCAD</option>
+                                <option value="archicad">ArchiCAD</option>
+                                <option value="tekla">Tekla Structures</option>
+                                <option value="ifc">IFC Standard</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">File Format</label>
+                            <select class="form-select" id="fileFormat">
+                                <option value="ifc">IFC (.ifc)</option>
+                                <option value="dwg">DWG (.dwg)</option>
+                                <option value="dxf">DXF (.dxf)</option>
+                                <option value="rvt">Revit (.rvt)</option>
+                                <option value="json">WIA JSON (.json)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Import File</label>
+                            <input type="file" class="form-input" id="importFile" accept=".ifc,.dwg,.dxf,.rvt,.json" />
+                        </div>
+
+                        <button class="btn" onclick="processImport()">Process Import</button>
+                        <button class="btn btn-secondary" onclick="exportData()">Export to Format</button>
+                    </div>
+
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label">Integration Status</label>
+                            <div class="output-box" id="integrationOutput">
+<span class="status-indicator status-warning"></span> Ready to import/export data
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h2 class="section-title">API Endpoints</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/api/v1/import</code></td>
+                            <td><span class="badge badge-success">POST</span></td>
+                            <td>Import BIM/CAD file</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/v1/export</code></td>
+                            <td><span class="badge badge-success">POST</span></td>
+                            <td>Export to format</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/v1/validate</code></td>
+                            <td><span class="badge badge-success">POST</span></td>
+                            <td>Validate data schema</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/v1/convert</code></td>
+                            <td><span class="badge badge-success">POST</span></td>
+                            <td>Convert between formats</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 5: Test -->
+        <div id="test" class="tab-content">
+            <div class="content-section">
+                <h2 class="section-title">System Test Suite</h2>
+                <div class="info-box">
+                    Run comprehensive tests to validate your 3D printing construction setup. All tests must pass before starting production.
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <h3 style="color: var(--primary); margin-bottom: 20px;">Test Categories</h3>
+
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="testDataFormat" checked /> Data Format Validation
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="testAlgorithm" checked /> Algorithm Performance
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="testProtocol" checked /> Protocol Communication
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="testIntegration" checked /> Integration Compatibility
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="testSafety" checked /> Safety Checks
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="testMaterial" checked /> Material Quality
+                            </label>
+                        </div>
+
+                        <button class="btn" onclick="runTests()" style="margin-top: 20px;">Run All Tests</button>
+                    </div>
+
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label">Test Results</label>
+                            <div class="output-box" id="testOutput">Click "Run All Tests" to begin...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h2 class="section-title">Certification Status</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Certification</th>
+                            <th>Status</th>
+                            <th>Expiry Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>WIA 3D Construction Standard</td>
+                            <td><span class="badge badge-success">Certified</span></td>
+                            <td>2026-12-31</td>
+                        </tr>
+                        <tr>
+                            <td>ISO 52915:2023 Compliance</td>
+                            <td><span class="badge badge-success">Certified</span></td>
+                            <td>2026-06-30</td>
+                        </tr>
+                        <tr>
+                            <td>Building Code Compliance</td>
+                            <td><span class="badge badge-warning">Pending</span></td>
+                            <td>--</td>
+                        </tr>
+                        <tr>
+                            <td>Safety Certification</td>
+                            <td><span class="badge badge-success">Certified</span></td>
+                            <td>2026-09-15</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetId = tab.dataset.tab;
+
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+
+        // Slider value updates
+        const sliders = [
+            { id: 'layerHeight', unit: ' mm' },
+            { id: 'printSpeed', unit: ' mm/s' },
+            { id: 'wallThickness', unit: ' mm' },
+            { id: 'infillDensity', unit: '%' },
+            { id: 'updateFreq', unit: ' Hz' }
+        ];
+
+        sliders.forEach(({ id, unit }) => {
+            const slider = document.getElementById(id);
+            const value = document.getElementById(id + 'Value');
+            if (slider && value) {
+                slider.addEventListener('input', (e) => {
+                    value.textContent = e.target.value + unit;
+                });
+            }
+        });
+
+        // Data Format Generation
+        function generateDataFormat() {
+            const data = {
+                standard: "WIA-3D-PRINTING-CONSTRUCTION",
+                version: "1.0",
+                project: {
+                    name: document.getElementById('projectName').value,
+                    type: document.getElementById('buildingType').value,
+                    timestamp: new Date().toISOString()
+                },
+                materials: {
+                    type: document.getElementById('materialType').value,
+                    specifications: {
+                        density: "2400 kg/m³",
+                        compressiveStrength: "30 MPa",
+                        cureTime: "24 hours"
+                    }
+                },
+                printing: {
+                    layerHeight: parseInt(document.getElementById('layerHeight').value),
+                    printSpeed: parseInt(document.getElementById('printSpeed').value),
+                    wallThickness: parseInt(document.getElementById('wallThickness').value),
+                    nozzleDiameter: 40
+                },
+                geometry: {
+                    dimensions: {
+                        length: 15000,
+                        width: 10000,
+                        height: 8000
+                    },
+                    unit: "mm"
+                }
+            };
+
+            document.getElementById('jsonOutput').textContent = JSON.stringify(data, null, 2);
+            updateLayerVisualization();
+        }
+
+        // Layer Visualization
+        function updateLayerVisualization() {
+            const preview = document.getElementById('layerPreview');
+            const layerHeight = parseInt(document.getElementById('layerHeight').value);
+            const totalHeight = 300; // px
+            const numLayers = Math.floor(totalHeight / (layerHeight / 10));
+
+            preview.innerHTML = '';
+            for (let i = 0; i < numLayers; i++) {
+                const layer = document.createElement('div');
+                layer.className = 'layer';
+                layer.style.bottom = (i * layerHeight / 10) + 'px';
+                preview.appendChild(layer);
+            }
+        }
+
+        // Algorithm Execution
+        function runAlgorithm() {
+            const algorithm = document.getElementById('algorithmType').value;
+            const infill = document.getElementById('infillDensity').value;
+            const priority = document.getElementById('optimizationPriority').value;
+
+            const output = `Algorithm: ${algorithm.toUpperCase()}
+Infill Density: ${infill}%
+Optimization: ${priority}
+
+Calculating optimal path...
+✓ Path generation complete
+✓ Collision detection passed
+✓ Material flow validated
+
+Total Path Length: 12,456 m
+Estimated Print Time: 18.5 hours
+Material Required: 8.2 m³
+Number of Layers: 156
+
+Path segments: 2,847
+Tool changes: 12
+Optimization score: 94.7/100`;
+
+            document.getElementById('algorithmOutput').textContent = output;
+
+            // Update metrics
+            document.getElementById('buildTime').textContent = '18.5 hours';
+            document.getElementById('materialUsage').textContent = '8.2 m³';
+            document.getElementById('structuralIntegrity').textContent = '94.7%';
+            document.getElementById('pathEfficiency').textContent = '96.3%';
+        }
+
+        // Protocol Testing
+        function testProtocol() {
+            const protocol = document.getElementById('protocolType').value;
+            const endpoint = document.getElementById('endpoint').value;
+            const output = document.getElementById('protocolOutput');
+
+            output.innerHTML = `<span class="status-indicator status-warning"></span> Connecting to ${endpoint}...
+
+Protocol: ${protocol.toUpperCase()}
+<span class="status-indicator status-success"></span> Connection established
+<span class="status-indicator status-success"></span> Authentication successful
+<span class="status-indicator status-success"></span> Handshake complete
+
+Ready to send commands.`;
+        }
+
+        function sendCommand() {
+            const payload = document.getElementById('commandPayload').value;
+            const output = document.getElementById('protocolOutput');
+
+            output.innerHTML += `\n\n→ Sending command...
+${payload}
+
+<span class="status-indicator status-success"></span> Command acknowledged
+<span class="status-indicator status-success"></span> Execution started`;
+        }
+
+        // Integration
+        function processImport() {
+            const type = document.getElementById('integrationType').value;
+            const format = document.getElementById('fileFormat').value;
+            const output = document.getElementById('integrationOutput');
+
+            output.innerHTML = `<span class="status-indicator status-warning"></span> Processing import...
+
+Integration: ${type}
+Format: ${format}
+
+<span class="status-indicator status-success"></span> File parsed successfully
+<span class="status-indicator status-success"></span> Schema validated
+<span class="status-indicator status-success"></span> Geometry converted
+<span class="status-indicator status-success"></span> Materials mapped
+
+Import complete. 1,247 objects processed.`;
+        }
+
+        function exportData() {
+            const format = document.getElementById('fileFormat').value;
+            const output = document.getElementById('integrationOutput');
+
+            output.innerHTML = `<span class="status-indicator status-warning"></span> Exporting data...
+
+Target format: ${format}
+
+<span class="status-indicator status-success"></span> Data serialized
+<span class="status-indicator status-success"></span> Format conversion complete
+<span class="status-indicator status-success"></span> File generated
+
+Export complete. File ready for download.`;
+        }
+
+        // Testing
+        function runTests() {
+            const output = document.getElementById('testOutput');
+            const tests = [
+                { id: 'testDataFormat', name: 'Data Format Validation' },
+                { id: 'testAlgorithm', name: 'Algorithm Performance' },
+                { id: 'testProtocol', name: 'Protocol Communication' },
+                { id: 'testIntegration', name: 'Integration Compatibility' },
+                { id: 'testSafety', name: 'Safety Checks' },
+                { id: 'testMaterial', name: 'Material Quality' }
+            ];
+
+            let result = 'Running test suite...\n\n';
+            let passed = 0;
+            let total = 0;
+
+            tests.forEach(test => {
+                if (document.getElementById(test.id).checked) {
+                    total++;
+                    const success = Math.random() > 0.1;
+                    passed += success ? 1 : 0;
+                    const icon = success ? '✓' : '✗';
+                    const status = success ? 'PASS' : 'FAIL';
+                    result += `${icon} ${test.name}: ${status}\n`;
+                }
+            });
+
+            result += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+            result += `Total: ${passed}/${total} tests passed\n`;
+            result += `Success rate: ${(passed/total*100).toFixed(1)}%\n`;
+
+            if (passed === total) {
+                result += `\n<span class="status-indicator status-success"></span> All tests passed! System ready for production.`;
+            } else {
+                result += `\n<span class="status-indicator status-error"></span> Some tests failed. Please review and fix issues.`;
+            }
+
+            output.innerHTML = result;
+        }
+
+        // Language selector
+        document.getElementById('languageSelect').addEventListener('change', (e) => {
+            console.log('Language changed to:', e.target.value);
+            // Language translation would be implemented here
+        });
+    </script>
+</body>
+</html>

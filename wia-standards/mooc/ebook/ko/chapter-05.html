@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>제5장: 구현 가이드 - WIA-EDU-023</title>
+    <style>
+        :root { --primary: #3B82F6; --primary-dark: #2563EB; --secondary: #10b981; --bg: #0f172a; --bg-card: #1e293b; --text: #f8fafc; --text-muted: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 40px 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: var(--primary); margin-bottom: 30px; font-size: 2.2rem; border-bottom: 3px solid var(--primary); padding-bottom: 15px; }
+        h2 { color: var(--primary); margin: 40px 0 20px; }
+        h3 { color: var(--secondary); margin: 30px 0 15px; }
+        p { margin: 15px 0; color: var(--text-muted); }
+        a { color: var(--primary); text-decoration: none; }
+        blockquote { border-left: 4px solid #ffd700; padding: 20px; margin: 30px 0; background: var(--bg-card); border-radius: 0 8px 8px 0; }
+        blockquote p { color: var(--text); margin: 5px 0; }
+        pre { background: var(--bg-card); padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; border: 1px solid var(--border); }
+        code { font-family: 'Monaco', monospace; font-size: 0.9rem; color: var(--secondary); }
+        pre code { color: var(--text); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border: 1px solid var(--border); }
+        th { background: var(--bg-card); color: var(--primary); }
+        td { color: var(--text-muted); }
+        ul, ol { margin: 15px 0; padding-left: 30px; color: var(--text-muted); }
+        li { margin: 8px 0; }
+        hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+        .nav { display: flex; justify-content: space-between; margin-bottom: 30px; flex-wrap: wrap; gap: 10px; }
+        .nav a { color: var(--text-muted); padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; }
+        .chapter-nav { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 30px; border-top: 1px solid var(--border); }
+        .footer { text-align: center; margin-top: 60px; padding-top: 30px; border-top: 1px solid var(--border); }
+        .footer .philosophy { color: #ffd700; font-size: 1.1rem; margin-bottom: 10px; }
+        .info-box { background: var(--bg-card); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid var(--primary); }
+        .warning-box { background: rgba(245, 158, 11, 0.1); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="chapter-04.html">← 제4장</a>
+            <a href="index.html">목차</a>
+            <a href="chapter-06.html">제6장 →</a>
+        </div>
+
+        <h1>🛠️ 제5장: 구현 가이드</h1>
+
+        <blockquote>
+            <p><strong>실전 구현</strong></p>
+            <p>이 장에서는 WIA-EDU-023 MOOC 표준을 실제로 구현하는 방법을 단계별로 안내합니다.</p>
+        </blockquote>
+
+        <hr>
+
+        <h2>5.1 플랫폼 구현 로드맵</h2>
+
+        <h3>5.1.1 4단계 구현 전략</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>단계</th>
+                    <th>기간</th>
+                    <th>핵심 기능</th>
+                    <th>성과 지표</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Phase 1: MVP</strong></td>
+                    <td>3개월</td>
+                    <td>강좌 등록, 비디오 재생, 기본 진도 추적</td>
+                    <td>100명 베타 사용자</td>
+                </tr>
+                <tr>
+                    <td><strong>Phase 2: Core</strong></td>
+                    <td>6개월</td>
+                    <td>퀴즈/과제, 채점, 토론 포럼</td>
+                    <td>1,000명 활성 학습자</td>
+                </tr>
+                <tr>
+                    <td><strong>Phase 3: Scale</strong></td>
+                    <td>9개월</td>
+                    <td>학습 분석, 개인화, 인증서</td>
+                    <td>10,000명 동시 사용자</td>
+                </tr>
+                <tr>
+                    <td><strong>Phase 4: Advanced</strong></td>
+                    <td>12개월</td>
+                    <td>AI 추천, VR/AR, 블록체인</td>
+                    <td>100,000명+ 글로벌 확장</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>5.1.2 기술 스택 추천</h3>
+
+        <p><strong>프론트엔드:</strong></p>
+        <ul>
+            <li><strong>Framework:</strong> React.js 또는 Next.js</li>
+            <li><strong>상태 관리:</strong> Redux Toolkit 또는 Zustand</li>
+            <li><strong>UI 라이브러리:</strong> Tailwind CSS, Material-UI</li>
+            <li><strong>비디오 플레이어:</strong> Video.js, Plyr</li>
+            <li><strong>차트:</strong> Recharts, Chart.js</li>
+        </ul>
+
+        <p><strong>백엔드:</strong></p>
+        <ul>
+            <li><strong>API 서버:</strong> Node.js (Express) 또는 Python (FastAPI)</li>
+            <li><strong>데이터베이스:</strong> PostgreSQL (관계형), MongoDB (문서형)</li>
+            <li><strong>캐시:</strong> Redis</li>
+            <li><strong>검색:</strong> Elasticsearch</li>
+            <li><strong>메시지 큐:</strong> RabbitMQ, Apache Kafka</li>
+        </ul>
+
+        <p><strong>인프라:</strong></p>
+        <ul>
+            <li><strong>클라우드:</strong> AWS, Google Cloud, Azure</li>
+            <li><strong>컨테이너:</strong> Docker, Kubernetes</li>
+            <li><strong>CDN:</strong> Cloudflare, AWS CloudFront</li>
+            <li><strong>모니터링:</strong> Prometheus, Grafana</li>
+        </ul>
+
+        <hr>
+
+        <h2>5.2 비디오 스트리밍 최적화</h2>
+
+        <h3>5.2.1 비디오 인코딩 파이프라인</h3>
+
+        <pre><code>// FFmpeg를 사용한 HLS 인코딩 예제
+const encodeVideo = async (inputFile, outputDir) => {
+  const qualities = [
+    { resolution: '1920x1080', bitrate: '5000k', name: '1080p' },
+    { resolution: '1280x720', bitrate: '2500k', name: '720p' },
+    { resolution: '854x480', bitrate: '1000k', name: '480p' },
+    { resolution: '640x360', bitrate: '500k', name: '360p' }
+  ];
+
+  // 각 품질별 인코딩
+  for (const quality of qualities) {
+    await exec(`ffmpeg -i ${inputFile} \\
+      -c:v libx264 -profile:v main -level 4.0 \\
+      -vf scale=${quality.resolution} \\
+      -b:v ${quality.bitrate} -maxrate ${quality.bitrate} \\
+      -bufsize ${parseInt(quality.bitrate) * 2}k \\
+      -c:a aac -b:a 128k -ac 2 \\
+      -hls_time 6 -hls_playlist_type vod \\
+      -hls_segment_filename ${outputDir}/${quality.name}_%03d.ts \\
+      ${outputDir}/${quality.name}.m3u8`);
+  }
+
+  // 마스터 플레이리스트 생성
+  await createMasterPlaylist(outputDir, qualities);
+};
+
+// 마스터 플레이리스트
+const createMasterPlaylist = (outputDir, qualities) => {
+  let masterContent = '#EXTM3U\n#EXT-X-VERSION:3\n';
+
+  for (const quality of qualities) {
+    const bandwidth = parseInt(quality.bitrate) * 1000;
+    const [width, height] = quality.resolution.split('x');
+    masterContent += `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${quality.resolution}\n`;
+    masterContent += `${quality.name}.m3u8\n`;
+  }
+
+  fs.writeFileSync(`${outputDir}/master.m3u8`, masterContent);
+};</code></pre>
+
+        <h3>5.2.2 CDN 설정 및 캐싱</h3>
+
+        <pre><code>// Cloudflare Workers를 사용한 엣지 캐싱
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request));
+});
+
+async function handleRequest(request) {
+  const url = new URL(request.url);
+  const cache = caches.default;
+
+  // 캐시 확인
+  let response = await cache.match(request);
+
+  if (!response) {
+    // 원본 서버에서 가져오기
+    response = await fetch(request);
+
+    // 비디오 세그먼트는 1시간 캐싱
+    if (url.pathname.endsWith('.ts') || url.pathname.endsWith('.m3u8')) {
+      const headers = new Headers(response.headers);
+      headers.set('Cache-Control', 'public, max-age=3600');
+      response = new Response(response.body, {
+        status: response.status,
+        headers: headers
+      });
+
+      // 캐시에 저장
+      event.waitUntil(cache.put(request, response.clone()));
+    }
+  }
+
+  return response;
+}</code></pre>
+
+        <hr>
+
+        <h2>5.3 적응형 학습 경로</h2>
+
+        <h3>5.3.1 학습 스타일 탐지</h3>
+
+        <pre><code>// 학습자 행동 기반 학습 스타일 분석
+class LearningStyleDetector {
+  constructor(learnerId) {
+    this.learnerId = learnerId;
+  }
+
+  async detectStyle() {
+    const activities = await this.getUserActivities();
+
+    const videoTime = this.calculateVideoTime(activities);
+    const readingTime = this.calculateReadingTime(activities);
+    const practiceTime = this.calculatePracticeTime(activities);
+
+    const total = videoTime + readingTime + practiceTime;
+
+    const profile = {
+      visual: videoTime / total * 100,
+      reading: readingTime / total * 100,
+      kinesthetic: practiceTime / total * 100
+    };
+
+    // 주요 학습 스타일 결정
+    const dominant = Object.keys(profile).reduce((a, b) =>
+      profile[a] > profile[b] ? a : b
+    );
+
+    return {
+      profile,
+      dominant,
+      recommendations: this.getRecommendations(dominant)
+    };
+  }
+
+  getRecommendations(style) {
+    const recommendations = {
+      visual: [
+        'More video content',
+        'Infographics and diagrams',
+        'Visual demonstrations'
+      ],
+      reading: [
+        'Text-based tutorials',
+        'Research papers',
+        'Written case studies'
+      ],
+      kinesthetic: [
+        'Hands-on projects',
+        'Interactive simulations',
+        'Coding exercises'
+      ]
+    };
+
+    return recommendations[style];
+  }
+}</code></pre>
+
+        <h3>5.3.2 난이도 적응 알고리즘</h3>
+
+        <pre><code>// 학습자 성과에 따른 난이도 조정
+class AdaptiveDifficulty {
+  async adjustDifficulty(learnerId, courseId) {
+    const performance = await this.getRecentPerformance(learnerId);
+
+    // 최근 5개 퀴즈의 평균 점수
+    const avgScore = performance.reduce((sum, score) => sum + score, 0)
+                    / performance.length;
+
+    // 난이도 조정
+    if (avgScore > 90) {
+      return {
+        level: 'advanced',
+        action: 'skip_basics',
+        message: 'You\'re doing great! Moving to advanced topics.'
+      };
+    } else if (avgScore > 70) {
+      return {
+        level: 'intermediate',
+        action: 'maintain',
+        message: 'Keep up the good work!'
+      };
+    } else if (avgScore > 50) {
+      return {
+        level: 'beginner',
+        action: 'add_support',
+        message: 'We\'ll provide additional resources to help you.'
+      };
+    } else {
+      return {
+        level: 'struggling',
+        action: 'intervention',
+        message: 'Let\'s review the basics together.'
+      };
+    }
+  }
+}</code></pre>
+
+        <hr>
+
+        <h2>5.4 동료 학습 기능</h2>
+
+        <h3>5.4.1 토론 포럼 구현</h3>
+
+        <pre><code>// MongoDB 스키마 예제
+const ThreadSchema = new mongoose.Schema({
+  thread_id: { type: String, required: true, unique: true },
+  course_id: { type: String, required: true, index: true },
+  module_id: { type: String, index: true },
+  author: {
+    learner_id: String,
+    name: String,
+    avatar_url: String
+  },
+  title: { type: String, required: true },
+  content: { type: String, required: true },
+  type: {
+    type: String,
+    enum: ['question', 'discussion', 'announcement'],
+    default: 'discussion'
+  },
+  tags: [String],
+  votes: { type: Number, default: 0 },
+  view_count: { type: Number, default: 0 },
+  replies_count: { type: Number, default: 0 },
+  is_pinned: { type: Boolean, default: false },
+  is_answered: { type: Boolean, default: false },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+});
+
+// 전체 텍스트 검색 인덱스
+ThreadSchema.index({ title: 'text', content: 'text' });
+
+// 답변 스키마
+const ReplySchema = new mongoose.Schema({
+  reply_id: { type: String, required: true, unique: true },
+  thread_id: { type: String, required: true, index: true },
+  author: {
+    learner_id: String,
+    name: String,
+    role: String  // 'learner', 'instructor', 'ta'
+  },
+  content: { type: String, required: true },
+  votes: { type: Number, default: 0 },
+  is_accepted: { type: Boolean, default: false },
+  created_at: { type: Date, default: Date.now }
+});</code></pre>
+
+        <h3>5.4.2 동료 평가 시스템</h3>
+
+        <pre><code>// 동료 평가 로직
+class PeerReview {
+  async assignReviewers(assignmentSubmission) {
+    const { submission_id, learner_id, course_id } = assignmentSubmission;
+
+    // 같은 강좌의 다른 학습자 3명 무작위 선택
+    const reviewers = await this.selectReviewers(
+      course_id,
+      learner_id,
+      3
+    );
+
+    // 각 평가자에게 과제 할당
+    for (const reviewer of reviewers) {
+      await this.createReviewTask({
+        reviewer_id: reviewer.learner_id,
+        submission_id,
+        rubric: assignmentSubmission.rubric,
+        due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7일
+      });
+    }
+
+    return {
+      reviewers_assigned: reviewers.length,
+      review_due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    };
+  }
+
+  async calculateFinalScore(submission_id) {
+    const reviews = await this.getReviews(submission_id);
+
+    if (reviews.length < 3) {
+      return { status: 'pending', reviews_received: reviews.length };
+    }
+
+    // 각 평가 기준별 점수 계산
+    const scores = {};
+    for (const criterion of reviews[0].rubric) {
+      const criterionScores = reviews.map(r =>
+        r.scores[criterion.id]
+      );
+
+      // 이상치 제거 (최고/최저 제외)
+      if (criterionScores.length > 3) {
+        criterionScores.sort((a, b) => a - b);
+        criterionScores.shift();  // 최저 제거
+        criterionScores.pop();    // 최고 제거
+      }
+
+      // 평균 계산
+      scores[criterion.id] = criterionScores.reduce((sum, s) => sum + s, 0)
+                           / criterionScores.length;
+    }
+
+    return {
+      status: 'graded',
+      final_scores: scores,
+      overall_score: Object.values(scores).reduce((sum, s) => sum + s, 0)
+                    / Object.keys(scores).length
+    };
+  }
+}</code></pre>
+
+        <hr>
+
+        <h2>5.5 오프라인 지원</h2>
+
+        <h3>5.5.1 Service Worker 구현</h3>
+
+        <pre><code>// service-worker.js
+const CACHE_NAME = 'mooc-v1';
+const OFFLINE_URL = '/offline.html';
+
+// 설치 시 오프라인 페이지 캐싱
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll([
+        OFFLINE_URL,
+        '/css/main.css',
+        '/js/app.js',
+        '/images/logo.png'
+      ]);
+    })
+  );
+});
+
+// 네트워크 요청 가로채기
+self.addEventListener('fetch', event => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match(OFFLINE_URL);
+      })
+    );
+  } else {
+    event.respondWith(
+      caches.match(event.request).then(response => {
+        return response || fetch(event.request);
+      })
+    );
+  }
+});
+
+// 비디오 다운로드 처리
+self.addEventListener('message', event => {
+  if (event.data.action === 'download-video') {
+    const { videoId, segments } = event.data;
+
+    caches.open(`video-${videoId}`).then(cache => {
+      return cache.addAll(segments);
+    }).then(() => {
+      self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'download-complete',
+            videoId: videoId
+          });
+        });
+      });
+    });
+  }
+});</code></pre>
+
+        <hr>
+
+        <h2>5.6 다국어 지원</h2>
+
+        <h3>5.6.1 자동 번역 통합</h3>
+
+        <pre><code>// Google Cloud Translation API 활용
+const { Translate } = require('@google-cloud/translate').v2;
+const translate = new Translate();
+
+async function translateCourse(courseId, targetLanguages) {
+  const course = await getCourseContent(courseId);
+
+  for (const lang of targetLanguages) {
+    // 강좌 제목 번역
+    const [titleTranslation] = await translate.translate(
+      course.title,
+      lang
+    );
+
+    // 강좌 설명 번역
+    const [descTranslation] = await translate.translate(
+      course.description,
+      lang
+    );
+
+    // 번역된 내용 저장
+    await saveCourseTranslation(courseId, lang, {
+      title: titleTranslation,
+      description: descTranslation
+    });
+  }
+}
+
+// 자막 자동 생성 및 번역
+async function generateMultilingualCaptions(videoId) {
+  // 1. 음성을 텍스트로 변환 (Speech-to-Text)
+  const transcript = await speechToText(videoId);
+
+  // 2. 타임스탬프와 함께 VTT 생성
+  const vtt = generateVTT(transcript);
+
+  // 3. 여러 언어로 번역
+  const languages = ['ko', 'es', 'zh', 'ar', 'fr'];
+  for (const lang of languages) {
+    const translatedVTT = await translateVTT(vtt, lang);
+    await saveCaptions(videoId, lang, translatedVTT);
+  }
+}</code></pre>
+
+        <hr>
+
+        <h2>5.7 모바일 최적화</h2>
+
+        <h3>5.7.1 반응형 비디오 플레이어</h3>
+
+        <pre><code>// React Native 비디오 플레이어 예제
+import Video from 'react-native-video';
+
+const MoocVideoPlayer = ({ videoUrl, onProgress }) => {
+  const [paused, setPaused] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  return (
+    <Video
+      source={{ uri: videoUrl }}
+      style={styles.video}
+      paused={paused}
+      resizeMode="contain"
+      onProgress={({ currentTime }) => {
+        setCurrentTime(currentTime);
+        onProgress(currentTime);
+      }}
+      onEnd={() => {
+        // 비디오 완료 처리
+        markVideoComplete();
+      }}
+      controls={true}
+      // 모바일 데이터 절약
+      preferredForwardBufferDuration={30}
+      maxBitRate={1000000}  // 1 Mbps
+    />
+  );
+};</code></pre>
+
+        <hr>
+
+        <h2>5.8 장 요약</h2>
+
+        <div class="info-box">
+            <p><strong>핵심 내용:</strong></p>
+            <ol style="color: var(--text);">
+                <li><strong>구현 로드맵:</strong> 4단계 점진적 확장 전략</li>
+                <li><strong>기술 스택:</strong> 프론트엔드, 백엔드, 인프라 권장사항</li>
+                <li><strong>비디오 스트리밍:</strong> FFmpeg 인코딩, CDN 캐싱</li>
+                <li><strong>적응형 학습:</strong> 학습 스타일 탐지, 난이도 조정</li>
+                <li><strong>동료 학습:</strong> 토론 포럼, 동료 평가 시스템</li>
+                <li><strong>오프라인 지원:</strong> Service Worker, 비디오 다운로드</li>
+                <li><strong>다국어:</strong> 자동 번역, 다국어 자막</li>
+                <li><strong>모바일:</strong> 반응형 디자인, 데이터 절약</li>
+            </ol>
+        </div>
+
+        <p>다음 장에서는 보안 및 프라이버시 구현을 다룹니다.</p>
+
+        <div class="chapter-nav">
+            <a href="chapter-04.html">← 제4장</a>
+            <a href="index.html">목차</a>
+            <a href="chapter-06.html">제6장: 보안 및 프라이버시 →</a>
+        </div>
+
+        <div class="footer">
+            <p class="philosophy">弘益人間 · 널리 인간을 이롭게 하라</p>
+            <p>WIA - 세계인증산업협회</p>
+            <p><a href="https://wiastandards.com" target="_blank">wiastandards.com</a></p>
+        </div>
+    </div>
+</body>
+</html>

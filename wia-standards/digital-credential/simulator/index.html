@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Credential Simulator 🎓</title>
+    <style>
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg) 100%);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Language Toggle */
+        .lang-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .lang-btn:hover {
+            color: var(--text);
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            padding: 0 10px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .tab:hover {
+            border-color: var(--primary);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Panels */
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin: 20px 0;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .panel h2 {
+            color: var(--primary);
+            margin-bottom: 25px;
+            font-size: 2rem;
+        }
+
+        .panel h3 {
+            color: var(--primary);
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin: 20px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        input[type="url"],
+        input[type="date"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Buttons */
+        .btn-center {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .btn {
+            padding: 14px 40px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Output */
+        .output {
+            background: var(--bg);
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border: 1px solid var(--border);
+        }
+
+        .output h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        pre {
+            background: #000;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .credential-card {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            padding: 30px;
+            border-radius: 12px;
+            color: white;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .credential-card h3 {
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .credential-field {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+        }
+
+        .qr-code {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            margin-top: 60px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .philosophy {
+            color: var(--primary);
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+
+            .panel {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Language Toggle -->
+    <div class="lang-switch">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('ko')">KO</button>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <h1>🎓 Digital Credential Simulator</h1>
+        <p class="subtitle" data-en="Experience blockchain-based verifiable credentials" data-ko="블록체인 기반 검증 가능한 자격증을 체험하세요">Experience blockchain-based verifiable credentials</p>
+    </header>
+
+    <div class="container">
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('issue')" data-en="🎓 Issue Credential" data-ko="🎓 자격증 발급">🎓 Issue Credential</div>
+            <div class="tab" onclick="showTab('verify')" data-en="✅ Verify Credential" data-ko="✅자격증 검증">✅ Verify Credential</div>
+            <div class="tab" onclick="showTab('wallet')" data-en="💼 Credential Wallet" data-ko="💼 자격증 지갑">💼 Credential Wallet</div>
+            <div class="tab" onclick="showTab('blockchain')" data-en="⛓️ Blockchain Record" data-ko="⛓️ 블록체인 기록">⛓️ Blockchain Record</div>
+        </div>
+
+        <!-- Issue Credential Panel -->
+        <div id="issue" class="panel active">
+            <h2 data-en="Issue Digital Credential" data-ko="디지털 자격증 발급">Issue Digital Credential</h2>
+
+            <div class="form-group">
+                <label data-en="Credential Type" data-ko="자격증 종류">Credential Type</label>
+                <select id="credType">
+                    <option value="degree">Bachelor's Degree</option>
+                    <option value="master">Master's Degree</option>
+                    <option value="phd">Doctoral Degree</option>
+                    <option value="certificate">Professional Certificate</option>
+                    <option value="diploma">Diploma</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Recipient Name" data-ko="수령인 이름">Recipient Name</label>
+                <input type="text" id="recipientName" placeholder="John Doe" value="John Doe">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Recipient Email" data-ko="수령인 이메일">Recipient Email</label>
+                <input type="email" id="recipientEmail" placeholder="john@example.com" value="john@example.com">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Issuing Institution" data-ko="발급 기관">Issuing Institution</label>
+                <input type="text" id="institution" placeholder="University Name" value="MIT">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Field of Study" data-ko="전공">Field of Study</label>
+                <input type="text" id="fieldOfStudy" placeholder="Computer Science" value="Computer Science">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Issue Date" data-ko="발급일">Issue Date</label>
+                <input type="date" id="issueDate" value="2025-06-15">
+            </div>
+
+            <div class="form-group">
+                <label data-en="GPA / Grade" data-ko="학점 / 성적">GPA / Grade</label>
+                <input type="text" id="gpa" placeholder="3.85 / 4.0" value="3.85">
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="issueCredential()" data-en="🎓 Issue Credential" data-ko="🎓 자격증 발급">🎓 Issue Credential</button>
+            </div>
+
+            <div id="issueOutput" class="output" style="display:none;">
+                <h3 data-en="Credential Issued Successfully" data-ko="자격증이 성공적으로 발급되었습니다">Credential Issued Successfully</h3>
+                <div id="credentialCard"></div>
+                <pre id="vcOutput"></pre>
+            </div>
+        </div>
+
+        <!-- Verify Credential Panel -->
+        <div id="verify" class="panel">
+            <h2 data-en="Verify Digital Credential" data-ko="디지털 자격증 검증">Verify Digital Credential</h2>
+
+            <div class="form-group">
+                <label data-en="Credential ID or DID" data-ko="자격증 ID 또는 DID">Credential ID or DID</label>
+                <input type="text" id="credentialId" placeholder="did:wia:edu:abc123...">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Or Upload Credential File" data-ko="또는 자격증 파일 업로드">Or Upload Credential File</label>
+                <input type="file" id="credFile" accept=".json,.vc">
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="verifyCredential()" data-en="✅ Verify Credential" data-ko="✅ 자격증 검증">✅ Verify Credential</button>
+            </div>
+
+            <div id="verifyOutput" class="output" style="display:none;">
+                <h3 data-en="Verification Result" data-ko="검증 결과">Verification Result</h3>
+                <pre id="verifyResult"></pre>
+            </div>
+        </div>
+
+        <!-- Wallet Panel -->
+        <div id="wallet" class="panel">
+            <h2 data-en="Credential Wallet" data-ko="자격증 지갑">Credential Wallet</h2>
+            <p data-en="Manage all your verifiable credentials in one place" data-ko="모든 검증 가능한 자격증을 한 곳에서 관리하세요">Manage all your verifiable credentials in one place</p>
+
+            <div class="btn-center">
+                <button class="btn" onclick="loadWallet()" data-en="💼 Load My Credentials" data-ko="💼 내 자격증 불러오기">💼 Load My Credentials</button>
+            </div>
+
+            <div id="walletOutput" class="output" style="display:none;">
+                <h3 data-en="My Credentials" data-ko="내 자격증">My Credentials</h3>
+                <div id="walletList"></div>
+            </div>
+        </div>
+
+        <!-- Blockchain Panel -->
+        <div id="blockchain" class="panel">
+            <h2 data-en="Blockchain Record" data-ko="블록체인 기록">Blockchain Record</h2>
+
+            <div class="form-group">
+                <label data-en="Transaction Hash" data-ko="트랜잭션 해시">Transaction Hash</label>
+                <input type="text" id="txHash" placeholder="0x...">
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="checkBlockchain()" data-en="⛓️ Check Blockchain" data-ko="⛓️ 블록체인 확인">⛓️ Check Blockchain</button>
+            </div>
+
+            <div id="blockchainOutput" class="output" style="display:none;">
+                <h3 data-en="Blockchain Record" data-ko="블록체인 기록">Blockchain Record</h3>
+                <pre id="blockchainData"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p class="philosophy" data-en="弘益人間 · Benefit All Humanity" data-ko="弘益人間 · 널리 인간을 이롭게 하라">弘益人間 · Benefit All Humanity</p>
+        <p>WIA-EDU-011 Digital Credential Standard</p>
+        <p>© 2025 MIT License</p>
+    </footer>
+
+    <script>
+        let currentLang = localStorage.getItem('wiaLang') || 'en';
+
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('wiaLang', lang);
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const content = el.getAttribute('data-' + lang);
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    el.placeholder = content;
+                } else {
+                    el.textContent = content;
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function issueCredential() {
+            const credType = document.getElementById('credType').value;
+            const recipientName = document.getElementById('recipientName').value;
+            const recipientEmail = document.getElementById('recipientEmail').value;
+            const institution = document.getElementById('institution').value;
+            const fieldOfStudy = document.getElementById('fieldOfStudy').value;
+            const issueDate = document.getElementById('issueDate').value;
+            const gpa = document.getElementById('gpa').value;
+
+            const credentialId = 'did:wia:edu:' + Math.random().toString(36).substr(2, 9);
+
+            const vc = {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://wia.org/credentials/education/v1"
+                ],
+                "id": credentialId,
+                "type": ["VerifiableCredential", "EducationCredential"],
+                "issuer": {
+                    "id": "did:wia:edu:" + institution.toLowerCase().replace(/\s/g, ''),
+                    "name": institution
+                },
+                "issuanceDate": new Date(issueDate).toISOString(),
+                "credentialSubject": {
+                    "id": "did:wia:student:" + recipientEmail.split('@')[0],
+                    "name": recipientName,
+                    "email": recipientEmail,
+                    "degree": {
+                        "type": credType,
+                        "name": fieldOfStudy,
+                        "gpa": gpa
+                    }
+                },
+                "proof": {
+                    "type": "Ed25519Signature2020",
+                    "created": new Date().toISOString(),
+                    "verificationMethod": credentialId + "#key-1",
+                    "proofPurpose": "assertionMethod",
+                    "proofValue": "z" + Math.random().toString(36).substr(2, 64)
+                }
+            };
+
+            // Display credential card
+            const cardHTML = `
+                <div class="credential-card">
+                    <h3>🎓 ${institution}</h3>
+                    <div class="credential-field"><strong>Recipient:</strong> ${recipientName}</div>
+                    <div class="credential-field"><strong>Degree:</strong> ${credType}</div>
+                    <div class="credential-field"><strong>Field:</strong> ${fieldOfStudy}</div>
+                    <div class="credential-field"><strong>GPA:</strong> ${gpa}</div>
+                    <div class="credential-field"><strong>Issue Date:</strong> ${issueDate}</div>
+                    <div class="credential-field"><strong>Credential ID:</strong> ${credentialId}</div>
+                    <div class="qr-code">📱 QR Code: ${credentialId.substr(-8)}</div>
+                </div>
+            `;
+
+            document.getElementById('credentialCard').innerHTML = cardHTML;
+            document.getElementById('vcOutput').textContent = JSON.stringify(vc, null, 2);
+            document.getElementById('issueOutput').style.display = 'block';
+        }
+
+        function verifyCredential() {
+            const credentialId = document.getElementById('credentialId').value;
+
+            const result = {
+                "verified": true,
+                "credentialId": credentialId || "did:wia:edu:abc123xyz",
+                "status": "VALID",
+                "issuer": "Massachusetts Institute of Technology",
+                "issuerVerified": true,
+                "blockchainRecord": {
+                    "network": "Ethereum",
+                    "txHash": "0x" + Math.random().toString(16).substr(2, 64),
+                    "blockNumber": 18234567,
+                    "timestamp": new Date().toISOString()
+                },
+                "revocationStatus": "NOT_REVOKED",
+                "checks": [
+                    { "name": "Signature Verification", "status": "✅ PASSED" },
+                    { "name": "Issuer DID Resolution", "status": "✅ PASSED" },
+                    { "name": "Blockchain Anchoring", "status": "✅ PASSED" },
+                    { "name": "Revocation Check", "status": "✅ PASSED" },
+                    { "name": "Expiration Check", "status": "✅ PASSED" }
+                ]
+            };
+
+            document.getElementById('verifyResult').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('verifyOutput').style.display = 'block';
+        }
+
+        function loadWallet() {
+            const credentials = [
+                {
+                    institution: "MIT",
+                    degree: "Bachelor of Science",
+                    field: "Computer Science",
+                    date: "2023-06-15",
+                    id: "did:wia:edu:mit001"
+                },
+                {
+                    institution: "Stanford University",
+                    degree: "Master of Science",
+                    field: "Artificial Intelligence",
+                    date: "2024-06-15",
+                    id: "did:wia:edu:stanford002"
+                },
+                {
+                    institution: "Coursera",
+                    degree: "Professional Certificate",
+                    field: "Machine Learning",
+                    date: "2024-03-20",
+                    id: "did:wia:edu:coursera003"
+                }
+            ];
+
+            let html = '';
+            credentials.forEach(cred => {
+                html += `
+                    <div class="credential-card">
+                        <h3>🎓 ${cred.institution}</h3>
+                        <div class="credential-field"><strong>Degree:</strong> ${cred.degree}</div>
+                        <div class="credential-field"><strong>Field:</strong> ${cred.field}</div>
+                        <div class="credential-field"><strong>Date:</strong> ${cred.date}</div>
+                        <div class="credential-field"><strong>ID:</strong> ${cred.id}</div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('walletList').innerHTML = html;
+            document.getElementById('walletOutput').style.display = 'block';
+        }
+
+        function checkBlockchain() {
+            const txHash = document.getElementById('txHash').value || "0x" + Math.random().toString(16).substr(2, 64);
+
+            const blockchainData = {
+                "transactionHash": txHash,
+                "blockNumber": 18234567,
+                "timestamp": new Date().toISOString(),
+                "network": "Ethereum Mainnet",
+                "from": "0x" + Math.random().toString(16).substr(2, 40),
+                "to": "0x" + Math.random().toString(16).substr(2, 40),
+                "credentialHash": "0x" + Math.random().toString(16).substr(2, 64),
+                "status": "CONFIRMED",
+                "confirmations": 1523,
+                "gasUsed": "42156",
+                "smartContract": "WIAEducationRegistry",
+                "event": "CredentialIssued",
+                "data": {
+                    "credentialType": "BachelorDegree",
+                    "institution": "MIT",
+                    "recipient": "did:wia:student:john",
+                    "issuanceDate": "2025-06-15"
+                }
+            };
+
+            document.getElementById('blockchainData').textContent = JSON.stringify(blockchainData, null, 2);
+            document.getElementById('blockchainOutput').style.display = 'block';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setLang(currentLang);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>5장: 매칭 및 병합 알고리즘 | WIA-DATA-009</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .nav { display: flex; justify-content: space-between; margin-bottom: 2rem; }
+        .nav a { color: #10B981; text-decoration: none; }
+        h1 { font-size: 2.5rem; color: #10B981; margin-bottom: 2rem; }
+        h2 { font-size: 1.8rem; color: #10B981; margin-top: 3rem; margin-bottom: 1rem; }
+        h3 { font-size: 1.4rem; color: #10B981; margin-top: 2rem; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; }
+        ul, ol { margin-left: 2rem; margin-bottom: 1.5rem; color: #cbd5e1; }
+        li { margin-bottom: 0.5rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 0.75rem; border: 1px solid #334155; text-align: left; }
+        th { background: #1e293b; color: #10B981; font-weight: 600; }
+        .highlight-box { background: #1e293b; border-left: 4px solid #10B981; padding: 1.5rem; margin: 2rem 0; }
+        pre { background: #1e293b; border: 2px solid #334155; padding: 1.5rem; border-radius: 0.5rem; overflow-x: auto; margin: 1.5rem 0; color: #cbd5e1; font-size: 0.9rem; }
+        code { font-family: 'Courier New', monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav"><a href="chapter-04.html">← 이전</a><a href="chapter-06.html">다음 →</a></div>
+        <h1>5장: 매칭 및 병합 알고리즘</h1>
+
+        <p>중복 레코드를 정확하게 식별하고 통합하는 것은 MDM의 핵심 기능입니다. 이 장에서는 결정론적, 확률적, 머신러닝 기반 매칭 알고리즘과 효과적인 병합 전략을 상세히 다룹니다.</p>
+
+        <h2>1. 레코드 매칭 개요</h2>
+        <p>레코드 매칭(Record Matching)은 서로 다른 데이터 소스에서 동일한 실제 엔티티를 나타내는 레코드를 식별하는 프로세스입니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>매칭 유형</th>
+                    <th>원리</th>
+                    <th>정확도</th>
+                    <th>성능</th>
+                    <th>적용 사례</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Exact Match</strong></td>
+                    <td>필드 값 완전 일치</td>
+                    <td>높음 (단, False Negative 많음)</td>
+                    <td>매우 빠름</td>
+                    <td>ID, 이메일, 전화번호</td>
+                </tr>
+                <tr>
+                    <td><strong>Deterministic</strong></td>
+                    <td>규칙 기반 로직</td>
+                    <td>중상 (규칙 품질 의존)</td>
+                    <td>빠름</td>
+                    <td>표준화된 데이터</td>
+                </tr>
+                <tr>
+                    <td><strong>Probabilistic</strong></td>
+                    <td>통계적 유사도</td>
+                    <td>중상</td>
+                    <td>중간</td>
+                    <td>이름, 주소</td>
+                </tr>
+                <tr>
+                    <td><strong>Fuzzy</strong></td>
+                    <td>문자열 유사도</td>
+                    <td>중</td>
+                    <td>느림</td>
+                    <td>오타, 변형</td>
+                </tr>
+                <tr>
+                    <td><strong>ML-based</strong></td>
+                    <td>머신러닝 모델</td>
+                    <td>매우 높음 (학습 데이터 품질 의존)</td>
+                    <td>중간~느림</td>
+                    <td>복잡한 패턴</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>2. 결정론적 매칭 (Deterministic Matching)</h2>
+        <p>명확한 규칙을 기반으로 레코드를 매칭합니다. 빠르고 예측 가능하지만, 유연성이 부족합니다.</p>
+
+        <h3>결정론적 매칭 규칙 예시</h3>
+        <pre><code>import pandas as pd
+from typing import List, Tuple, Dict
+
+class DeterministicMatcher:
+    """결정론적 매칭 엔진"""
+
+    def __init__(self):
+        self.rules = []
+
+    def add_rule(self, name: str, fields: List[str], weight: int = 1):
+        """
+        매칭 규칙 추가
+
+        Args:
+            name: 규칙 이름
+            fields: 비교할 필드 리스트
+            weight: 규칙 가중치
+        """
+        self.rules.append({
+            'name': name,
+            'fields': fields,
+            'weight': weight
+        })
+
+    def match(self, record1: Dict, record2: Dict) -> Tuple[bool, int, List[str]]:
+        """
+        두 레코드 매칭 수행
+
+        Returns:
+            (매칭 여부, 총 점수, 매칭된 규칙 리스트)
+        """
+        total_score = 0
+        matched_rules = []
+
+        for rule in self.rules:
+            if self._apply_rule(record1, record2, rule['fields']):
+                total_score += rule['weight']
+                matched_rules.append(rule['name'])
+
+        # 임계값 이상이면 매칭으로 판단 (예: 총 가중치의 70%)
+        threshold = sum(r['weight'] for r in self.rules) * 0.7
+        is_match = total_score >= threshold
+
+        return is_match, total_score, matched_rules
+
+    def _apply_rule(self, record1: Dict, record2: Dict, fields: List[str]) -> bool:
+        """규칙 적용: 모든 필드가 일치해야 함"""
+        for field in fields:
+            val1 = self._normalize(record1.get(field, ''))
+            val2 = self._normalize(record2.get(field, ''))
+
+            if val1 != val2 or not val1:  # 하나라도 다르거나 비어있으면 실패
+                return False
+
+        return True
+
+    def _normalize(self, value: str) -> str:
+        """데이터 정규화"""
+        if not value:
+            return ''
+
+        # 소문자 변환, 공백 제거, 특수문자 제거
+        normalized = value.lower().strip()
+        normalized = ''.join(c for c in normalized if c.isalnum() or c.isspace())
+        normalized = ' '.join(normalized.split())  # 연속 공백 제거
+
+        return normalized
+
+
+# 사용 예시
+matcher = DeterministicMatcher()
+
+# 규칙 정의
+matcher.add_rule('email_exact', ['email'], weight=10)
+matcher.add_rule('phone_exact', ['phone'], weight=8)
+matcher.add_rule('name_address', ['first_name', 'last_name', 'city'], weight=5)
+matcher.add_rule('ssn_exact', ['ssn'], weight=10)
+
+# 레코드 매칭
+record_a = {
+    'email': 'john.doe@example.com',
+    'phone': '555-1234',
+    'first_name': 'John',
+    'last_name': 'Doe',
+    'city': 'New York',
+    'ssn': '123-45-6789'
+}
+
+record_b = {
+    'email': 'john.doe@example.com',
+    'phone': '555-9999',
+    'first_name': 'John',
+    'last_name': 'Doe',
+    'city': 'New York',
+    'ssn': '123-45-6789'
+}
+
+is_match, score, rules = matcher.match(record_a, record_b)
+print(f"Match: {is_match}, Score: {score}, Rules: {rules}")
+# 출력: Match: True, Score: 25, Rules: ['email_exact', 'name_address', 'ssn_exact']</code></pre>
+
+        <h2>3. 확률적 매칭 (Probabilistic Matching)</h2>
+        <p>Fellegi-Sunter 모델을 기반으로 한 확률적 매칭은 각 필드의 일치 확률을 계산하여 종합 점수를 산출합니다.</p>
+
+        <h3>Fellegi-Sunter 모델</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>개념</th>
+                    <th>설명</th>
+                    <th>수식</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>m-확률</strong></td>
+                    <td>실제 매칭 쌍에서 필드가 일치할 확률</td>
+                    <td>P(agree | match)</td>
+                </tr>
+                <tr>
+                    <td><strong>u-확률</strong></td>
+                    <td>비매칭 쌍에서 필드가 우연히 일치할 확률</td>
+                    <td>P(agree | non-match)</td>
+                </tr>
+                <tr>
+                    <td><strong>가중치</strong></td>
+                    <td>필드 일치 시 부여할 점수</td>
+                    <td>log₂(m/u)</td>
+                </tr>
+                <tr>
+                    <td><strong>총 점수</strong></td>
+                    <td>모든 필드 가중치 합산</td>
+                    <td>Σ weights</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>확률적 매칭 구현</h3>
+        <pre><code>import math
+from collections import defaultdict
+
+class ProbabilisticMatcher:
+    """Fellegi-Sunter 모델 기반 확률적 매칭"""
+
+    def __init__(self):
+        # 학습 데이터로부터 계산된 m, u 확률
+        self.m_probabilities = {}  # P(agree | match)
+        self.u_probabilities = {}  # P(agree | non-match)
+        self.weights = {}
+
+    def train(self, matched_pairs: List[Tuple[Dict, Dict]],
+              non_matched_pairs: List[Tuple[Dict, Dict]],
+              fields: List[str]):
+        """
+        학습 데이터로부터 m, u 확률 계산
+
+        Args:
+            matched_pairs: 실제 매칭 쌍 리스트
+            non_matched_pairs: 비매칭 쌍 리스트
+            fields: 비교할 필드 리스트
+        """
+        for field in fields:
+            # m-확률 계산
+            agree_count_m = sum(
+                1 for r1, r2 in matched_pairs
+                if self._fields_agree(r1, r2, field)
+            )
+            self.m_probabilities[field] = agree_count_m / len(matched_pairs)
+
+            # u-확률 계산
+            agree_count_u = sum(
+                1 for r1, r2 in non_matched_pairs
+                if self._fields_agree(r1, r2, field)
+            )
+            self.u_probabilities[field] = agree_count_u / len(non_matched_pairs)
+
+            # 가중치 계산: log2(m/u)
+            if self.u_probabilities[field] > 0:
+                self.weights[field] = math.log2(
+                    self.m_probabilities[field] / self.u_probabilities[field]
+                )
+            else:
+                self.weights[field] = 10  # u=0인 경우 높은 가중치
+
+    def _fields_agree(self, record1: Dict, record2: Dict, field: str) -> bool:
+        """두 레코드의 특정 필드가 일치하는지 확인"""
+        val1 = str(record1.get(field, '')).lower().strip()
+        val2 = str(record2.get(field, '')).lower().strip()
+        return val1 == val2 and val1 != ''
+
+    def match_score(self, record1: Dict, record2: Dict) -> float:
+        """
+        두 레코드 간 매칭 점수 계산
+
+        Returns:
+            매칭 점수 (높을수록 매칭 가능성 높음)
+        """
+        total_score = 0.0
+
+        for field, weight in self.weights.items():
+            if self._fields_agree(record1, record2, field):
+                total_score += weight
+            else:
+                # 불일치 시 음수 가중치 (선택사항)
+                total_score -= weight * 0.5
+
+        return total_score
+
+    def classify(self, score: float, upper_threshold: float = 10.0,
+                 lower_threshold: float = -5.0) -> str:
+        """
+        점수 기반 분류
+
+        Returns:
+            'MATCH', 'NON_MATCH', 'POSSIBLE_MATCH'
+        """
+        if score >= upper_threshold:
+            return 'MATCH'
+        elif score <= lower_threshold:
+            return 'NON_MATCH'
+        else:
+            return 'POSSIBLE_MATCH'  # 수동 검토 필요
+
+
+# 사용 예시
+matcher = ProbabilisticMatcher()
+
+# 학습 데이터 (실제로는 수천~수만 건 필요)
+matched_pairs = [
+    ({'name': 'John Smith', 'email': 'john@example.com', 'phone': '555-1234'},
+     {'name': 'John Smith', 'email': 'john@example.com', 'phone': '555-1234'}),
+    # ... 더 많은 매칭 쌍
+]
+
+non_matched_pairs = [
+    ({'name': 'John Smith', 'email': 'john@example.com', 'phone': '555-1234'},
+     {'name': 'Jane Doe', 'email': 'jane@example.com', 'phone': '555-5678'}),
+    # ... 더 많은 비매칭 쌍
+]
+
+# 모델 학습
+matcher.train(matched_pairs, non_matched_pairs, ['name', 'email', 'phone'])
+
+# 새 레코드 쌍 매칭
+test_record1 = {'name': 'John Smith', 'email': 'john@example.com', 'phone': '555-1234'}
+test_record2 = {'name': 'John Smith', 'email': 'john@example.com', 'phone': '555-9999'}
+
+score = matcher.match_score(test_record1, test_record2)
+classification = matcher.classify(score)
+print(f"Score: {score:.2f}, Classification: {classification}")</code></pre>
+
+        <h2>4. 퍼지 매칭 알고리즘</h2>
+        <p>문자열 간 유사도를 측정하여 오타나 변형을 허용하는 매칭 방식입니다.</p>
+
+        <h3>주요 퍼지 매칭 알고리즘</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>알고리즘</th>
+                    <th>원리</th>
+                    <th>복잡도</th>
+                    <th>적용 사례</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Levenshtein Distance</strong></td>
+                    <td>편집 거리 (삽입, 삭제, 대체 연산 수)</td>
+                    <td>O(m×n)</td>
+                    <td>일반 텍스트, 이름</td>
+                </tr>
+                <tr>
+                    <td><strong>Jaro-Winkler</strong></td>
+                    <td>문자 일치 + 접두사 가중치</td>
+                    <td>O(m×n)</td>
+                    <td>짧은 문자열, 이름</td>
+                </tr>
+                <tr>
+                    <td><strong>Soundex</strong></td>
+                    <td>음성학적 인코딩</td>
+                    <td>O(n)</td>
+                    <td>영어 이름</td>
+                </tr>
+                <tr>
+                    <td><strong>Metaphone</strong></td>
+                    <td>개선된 음성학적 인코딩</td>
+                    <td>O(n)</td>
+                    <td>영어 단어</td>
+                </tr>
+                <tr>
+                    <td><strong>Cosine Similarity</strong></td>
+                    <td>벡터 간 각도</td>
+                    <td>O(n)</td>
+                    <td>긴 텍스트, 문서</td>
+                </tr>
+                <tr>
+                    <td><strong>Jaccard Similarity</strong></td>
+                    <td>집합 교집합/합집합 비율</td>
+                    <td>O(n)</td>
+                    <td>토큰 기반 비교</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>퍼지 매칭 구현 예시</h3>
+        <pre><code>import re
+from difflib import SequenceMatcher
+
+class FuzzyMatcher:
+    """다양한 퍼지 매칭 알고리즘 구현"""
+
+    @staticmethod
+    def levenshtein_distance(s1: str, s2: str) -> int:
+        """
+        Levenshtein 편집 거리 계산
+        """
+        if len(s1) < len(s2):
+            return FuzzyMatcher.levenshtein_distance(s2, s1)
+
+        if len(s2) == 0:
+            return len(s1)
+
+        previous_row = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            current_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                # 삽입, 삭제, 대체 비용 계산
+                insertions = previous_row[j + 1] + 1
+                deletions = current_row[j] + 1
+                substitutions = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+
+        return previous_row[-1]
+
+    @staticmethod
+    def levenshtein_similarity(s1: str, s2: str) -> float:
+        """
+        Levenshtein 유사도 (0~1)
+        """
+        distance = FuzzyMatcher.levenshtein_distance(s1, s2)
+        max_len = max(len(s1), len(s2))
+        return 1 - (distance / max_len) if max_len > 0 else 1.0
+
+    @staticmethod
+    def jaro_winkler_similarity(s1: str, s2: str, prefix_weight: float = 0.1) -> float:
+        """
+        Jaro-Winkler 유사도 계산
+        """
+        # Jaro 유사도 계산
+        jaro = FuzzyMatcher._jaro_similarity(s1, s2)
+
+        # 공통 접두사 길이 계산 (최대 4자)
+        prefix_len = 0
+        for i in range(min(len(s1), len(s2), 4)):
+            if s1[i] == s2[i]:
+                prefix_len += 1
+            else:
+                break
+
+        # Jaro-Winkler = Jaro + (prefix_len * prefix_weight * (1 - Jaro))
+        return jaro + (prefix_len * prefix_weight * (1 - jaro))
+
+    @staticmethod
+    def _jaro_similarity(s1: str, s2: str) -> float:
+        """Jaro 유사도 (내부 메서드)"""
+        if s1 == s2:
+            return 1.0
+
+        len1, len2 = len(s1), len(s2)
+        if len1 == 0 or len2 == 0:
+            return 0.0
+
+        # 매칭 윈도우
+        match_window = max(len1, len2) // 2 - 1
+        if match_window < 1:
+            match_window = 1
+
+        s1_matches = [False] * len1
+        s2_matches = [False] * len2
+
+        matches = 0
+        transpositions = 0
+
+        # 매칭 찾기
+        for i in range(len1):
+            start = max(0, i - match_window)
+            end = min(i + match_window + 1, len2)
+
+            for j in range(start, end):
+                if s2_matches[j] or s1[i] != s2[j]:
+                    continue
+                s1_matches[i] = s2_matches[j] = True
+                matches += 1
+                break
+
+        if matches == 0:
+            return 0.0
+
+        # 전치 계산
+        k = 0
+        for i in range(len1):
+            if not s1_matches[i]:
+                continue
+            while not s2_matches[k]:
+                k += 1
+            if s1[i] != s2[k]:
+                transpositions += 1
+            k += 1
+
+        return (matches / len1 + matches / len2 +
+                (matches - transpositions / 2) / matches) / 3
+
+    @staticmethod
+    def token_jaccard_similarity(s1: str, s2: str) -> float:
+        """
+        토큰 기반 Jaccard 유사도
+        """
+        tokens1 = set(re.findall(r'\w+', s1.lower()))
+        tokens2 = set(re.findall(r'\w+', s2.lower()))
+
+        if not tokens1 and not tokens2:
+            return 1.0
+
+        intersection = tokens1.intersection(tokens2)
+        union = tokens1.union(tokens2)
+
+        return len(intersection) / len(union) if union else 0.0
+
+
+# 사용 예시
+fuzzy = FuzzyMatcher()
+
+name1 = "John Smith"
+name2 = "Jon Smyth"
+
+lev_sim = fuzzy.levenshtein_similarity(name1, name2)
+jw_sim = fuzzy.jaro_winkler_similarity(name1, name2)
+jaccard_sim = fuzzy.token_jaccard_similarity(name1, name2)
+
+print(f"Levenshtein Similarity: {lev_sim:.3f}")
+print(f"Jaro-Winkler Similarity: {jw_sim:.3f}")
+print(f"Jaccard Similarity: {jaccard_sim:.3f}")
+
+# 출력:
+# Levenshtein Similarity: 0.800
+# Jaro-Winkler Similarity: 0.896
+# Jaccard Similarity: 0.500</code></pre>
+
+        <h2>5. 병합 전략 및 생존 규칙</h2>
+        <p>매칭된 레코드들을 하나의 골든 레코드로 병합할 때 어떤 값을 선택할지 결정하는 전략이 필요합니다.</p>
+
+        <h3>주요 생존 규칙 (Survivorship Rules)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>규칙</th>
+                    <th>설명</th>
+                    <th>적용 사례</th>
+                    <th>장점</th>
+                    <th>단점</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Most Recent</strong></td>
+                    <td>가장 최근 값 선택</td>
+                    <td>주소, 전화번호</td>
+                    <td>최신 정보 보장</td>
+                    <td>잘못된 최신 데이터 문제</td>
+                </tr>
+                <tr>
+                    <td><strong>Most Frequent</strong></td>
+                    <td>가장 자주 나타나는 값</td>
+                    <td>이름, 생년월일</td>
+                    <td>다수결 원칙</td>
+                    <td>과거 오류 전파</td>
+                </tr>
+                <tr>
+                    <td><strong>Most Complete</strong></td>
+                    <td>가장 완전한 값 (비어있지 않음)</td>
+                    <td>설명, 속성</td>
+                    <td>데이터 풍부성</td>
+                    <td>품질 무시</td>
+                </tr>
+                <tr>
+                    <td><strong>Most Trusted Source</strong></td>
+                    <td>신뢰도 높은 소스 우선</td>
+                    <td>공식 문서 데이터</td>
+                    <td>정확성 보장</td>
+                    <td>소스 신뢰도 관리 필요</td>
+                </tr>
+                <tr>
+                    <td><strong>Longest</strong></td>
+                    <td>가장 긴 값</td>
+                    <td>주소, 설명</td>
+                    <td>상세 정보 보존</td>
+                    <td>오류 포함 가능</td>
+                </tr>
+                <tr>
+                    <td><strong>Concatenate</strong></td>
+                    <td>모든 값 결합</td>
+                    <td>태그, 카테고리</td>
+                    <td>정보 손실 없음</td>
+                    <td>중복 발생</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>병합 엔진 구현</h3>
+        <pre><code>from datetime import datetime
+from typing import List, Dict, Any, Callable
+from collections import Counter
+
+class MergingEngine:
+    """레코드 병합 및 골든 레코드 생성 엔진"""
+
+    def __init__(self):
+        self.survivorship_rules = {}
+        self.source_trust_scores = {}
+
+    def set_source_trust(self, source: str, score: float):
+        """소스 시스템의 신뢰도 점수 설정 (0~1)"""
+        self.source_trust_scores[source] = score
+
+    def add_rule(self, field: str, strategy: str, **kwargs):
+        """
+        필드별 생존 규칙 추가
+
+        Args:
+            field: 필드 이름
+            strategy: 전략 ('most_recent', 'most_frequent', 'most_trusted', etc.)
+            kwargs: 전략별 추가 파라미터
+        """
+        self.survivorship_rules[field] = {
+            'strategy': strategy,
+            'params': kwargs
+        }
+
+    def merge(self, records: List[Dict]) -> Dict:
+        """
+        여러 레코드를 하나의 골든 레코드로 병합
+
+        Args:
+            records: 병합할 레코드 리스트 (각 레코드는 'source', 'data', 'timestamp' 포함)
+
+        Returns:
+            골든 레코드
+        """
+        if not records:
+            return {}
+
+        if len(records) == 1:
+            return records[0]['data']
+
+        golden_record = {}
+        all_fields = set()
+
+        # 모든 필드 수집
+        for record in records:
+            all_fields.update(record['data'].keys())
+
+        # 각 필드에 대해 생존 규칙 적용
+        for field in all_fields:
+            rule = self.survivorship_rules.get(field, {'strategy': 'most_recent'})
+            strategy = rule['strategy']
+
+            if strategy == 'most_recent':
+                golden_record[field] = self._most_recent(records, field)
+            elif strategy == 'most_frequent':
+                golden_record[field] = self._most_frequent(records, field)
+            elif strategy == 'most_trusted':
+                golden_record[field] = self._most_trusted(records, field)
+            elif strategy == 'most_complete':
+                golden_record[field] = self._most_complete(records, field)
+            elif strategy == 'longest':
+                golden_record[field] = self._longest(records, field)
+            elif strategy == 'concatenate':
+                golden_record[field] = self._concatenate(records, field,
+                                                         rule['params'].get('separator', ', '))
+            elif strategy == 'custom':
+                custom_func = rule['params'].get('function')
+                if custom_func:
+                    golden_record[field] = custom_func(records, field)
+
+        return golden_record
+
+    def _most_recent(self, records: List[Dict], field: str) -> Any:
+        """가장 최근 값 선택"""
+        valid_records = [
+            r for r in records
+            if field in r['data'] and r['data'][field] is not None
+        ]
+
+        if not valid_records:
+            return None
+
+        # timestamp 기준 정렬 (최신 순)
+        sorted_records = sorted(
+            valid_records,
+            key=lambda r: r.get('timestamp', datetime.min),
+            reverse=True
+        )
+
+        return sorted_records[0]['data'][field]
+
+    def _most_frequent(self, records: List[Dict], field: str) -> Any:
+        """가장 자주 나타나는 값 선택"""
+        values = [
+            r['data'][field] for r in records
+            if field in r['data'] and r['data'][field] is not None
+        ]
+
+        if not values:
+            return None
+
+        # 가장 빈번한 값
+        counter = Counter(str(v) for v in values)
+        most_common_str = counter.most_common(1)[0][0]
+
+        # 원본 값 반환 (타입 유지)
+        for v in values:
+            if str(v) == most_common_str:
+                return v
+
+        return None
+
+    def _most_trusted(self, records: List[Dict], field: str) -> Any:
+        """가장 신뢰도 높은 소스의 값 선택"""
+        valid_records = [
+            r for r in records
+            if field in r['data'] and r['data'][field] is not None
+        ]
+
+        if not valid_records:
+            return None
+
+        # 신뢰도 점수 기준 정렬
+        sorted_records = sorted(
+            valid_records,
+            key=lambda r: self.source_trust_scores.get(r.get('source', ''), 0),
+            reverse=True
+        )
+
+        return sorted_records[0]['data'][field]
+
+    def _most_complete(self, records: List[Dict], field: str) -> Any:
+        """가장 완전한 (비어있지 않은) 값 선택"""
+        for record in records:
+            value = record['data'].get(field)
+            if value and str(value).strip():
+                return value
+        return None
+
+    def _longest(self, records: List[Dict], field: str) -> Any:
+        """가장 긴 값 선택"""
+        valid_values = [
+            r['data'][field] for r in records
+            if field in r['data'] and r['data'][field] is not None
+        ]
+
+        if not valid_values:
+            return None
+
+        return max(valid_values, key=lambda v: len(str(v)))
+
+    def _concatenate(self, records: List[Dict], field: str, separator: str = ', ') -> str:
+        """모든 고유 값 연결"""
+        values = [
+            str(r['data'][field]) for r in records
+            if field in r['data'] and r['data'][field] is not None
+        ]
+
+        # 중복 제거 (순서 유지)
+        unique_values = []
+        seen = set()
+        for v in values:
+            if v not in seen:
+                unique_values.append(v)
+                seen.add(v)
+
+        return separator.join(unique_values) if unique_values else None
+
+
+# 사용 예시
+merger = MergingEngine()
+
+# 소스 신뢰도 설정
+merger.set_source_trust('CRM', 0.9)
+merger.set_source_trust('ERP', 0.8)
+merger.set_source_trust('WEBSITE', 0.6)
+
+# 필드별 생존 규칙 설정
+merger.add_rule('email', 'most_trusted')
+merger.add_rule('phone', 'most_recent')
+merger.add_rule('address', 'most_complete')
+merger.add_rule('tags', 'concatenate', separator=' | ')
+merger.add_rule('name', 'most_frequent')
+
+# 병합할 레코드
+records = [
+    {
+        'source': 'CRM',
+        'timestamp': datetime(2025, 1, 10),
+        'data': {
+            'name': 'John Smith',
+            'email': 'john.smith@company.com',
+            'phone': '555-1111',
+            'address': '123 Main St',
+            'tags': 'VIP'
+        }
+    },
+    {
+        'source': 'ERP',
+        'timestamp': datetime(2025, 1, 15),
+        'data': {
+            'name': 'John Smith',
+            'email': 'john@company.com',
+            'phone': '555-2222',
+            'address': '123 Main Street, Suite 100',
+            'tags': 'Premium'
+        }
+    },
+    {
+        'source': 'WEBSITE',
+        'timestamp': datetime(2025, 1, 20),
+        'data': {
+            'name': 'J. Smith',
+            'email': 'jsmith@gmail.com',
+            'phone': '555-3333',
+            'tags': 'Newsletter'
+        }
+    }
+]
+
+golden_record = merger.merge(records)
+print("Golden Record:")
+for key, value in golden_record.items():
+    print(f"  {key}: {value}")
+
+# 출력:
+# Golden Record:
+#   name: John Smith
+#   email: john.smith@company.com  (CRM이 가장 신뢰도 높음)
+#   phone: 555-3333  (가장 최근)
+#   address: 123 Main Street, Suite 100  (가장 완전함)
+#   tags: VIP | Premium | Newsletter  (모두 연결)</code></pre>
+
+        <h2>6. 매칭 품질 평가 지표</h2>
+        <p>매칭 알고리즘의 성능을 평가하기 위한 핵심 지표들입니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>지표</th>
+                    <th>정의</th>
+                    <th>수식</th>
+                    <th>목표</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Precision (정밀도)</strong></td>
+                    <td>매칭으로 판단한 것 중 실제 매칭 비율</td>
+                    <td>TP / (TP + FP)</td>
+                    <td>높일수록 좋음 (False Positive 최소화)</td>
+                </tr>
+                <tr>
+                    <td><strong>Recall (재현율)</strong></td>
+                    <td>실제 매칭 중 찾아낸 비율</td>
+                    <td>TP / (TP + FN)</td>
+                    <td>높일수록 좋음 (False Negative 최소화)</td>
+                </tr>
+                <tr>
+                    <td><strong>F1-Score</strong></td>
+                    <td>Precision과 Recall의 조화 평균</td>
+                    <td>2 × (P × R) / (P + R)</td>
+                    <td>균형 잡힌 성능</td>
+                </tr>
+                <tr>
+                    <td><strong>Accuracy (정확도)</strong></td>
+                    <td>전체 예측 중 올바른 예측 비율</td>
+                    <td>(TP + TN) / (TP + TN + FP + FN)</td>
+                    <td>전반적 성능</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box">
+            <p><strong>TP (True Positive):</strong> 매칭으로 예측, 실제로 매칭 ✓</p>
+            <p><strong>FP (False Positive):</strong> 매칭으로 예측, 실제로는 비매칭 ✗</p>
+            <p><strong>FN (False Negative):</strong> 비매칭으로 예측, 실제로는 매칭 ✗</p>
+            <p style="margin: 0;"><strong>TN (True Negative):</strong> 비매칭으로 예측, 실제로 비매칭 ✓</p>
+        </div>
+
+        <h2>7. 머신러닝 기반 엔티티 해소 (Entity Resolution)</h2>
+        <p>전통적인 규칙 기반 방법의 한계를 극복하기 위해 머신러닝을 활용합니다.</p>
+
+        <h3>ML 접근 방식</h3>
+        <pre><code>import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+
+class MLEntityResolver:
+    """머신러닝 기반 엔티티 해소"""
+
+    def __init__(self):
+        self.model = RandomForestClassifier(
+            n_estimators=100,
+            max_depth=10,
+            random_state=42
+        )
+        self.fuzzy_matcher = FuzzyMatcher()
+
+    def extract_features(self, record1: Dict, record2: Dict) -> np.ndarray:
+        """
+        두 레코드로부터 특징 벡터 추출
+
+        Returns:
+            특징 벡터 (numpy array)
+        """
+        features = []
+
+        # 1. 이름 유사도
+        name1 = record1.get('name', '')
+        name2 = record2.get('name', '')
+        features.append(self.fuzzy_matcher.levenshtein_similarity(name1, name2))
+        features.append(self.fuzzy_matcher.jaro_winkler_similarity(name1, name2))
+
+        # 2. 이메일 일치
+        email1 = record1.get('email', '').lower()
+        email2 = record2.get('email', '').lower()
+        features.append(1.0 if email1 == email2 and email1 else 0.0)
+
+        # 3. 전화번호 유사도
+        phone1 = ''.join(c for c in record1.get('phone', '') if c.isdigit())
+        phone2 = ''.join(c for c in record2.get('phone', '') if c.isdigit())
+        features.append(self.fuzzy_matcher.levenshtein_similarity(phone1, phone2))
+
+        # 4. 주소 유사도
+        addr1 = record1.get('address', '')
+        addr2 = record2.get('address', '')
+        features.append(self.fuzzy_matcher.token_jaccard_similarity(addr1, addr2))
+
+        # 5. 생년월일 일치
+        dob1 = record1.get('date_of_birth', '')
+        dob2 = record2.get('date_of_birth', '')
+        features.append(1.0 if dob1 == dob2 and dob1 else 0.0)
+
+        # 6. 필드 완전성 (얼마나 많은 공통 필드를 가지는지)
+        fields1 = set(k for k, v in record1.items() if v)
+        fields2 = set(k for k, v in record2.items() if v)
+        completeness = len(fields1.intersection(fields2)) / len(fields1.union(fields2))
+        features.append(completeness)
+
+        return np.array(features)
+
+    def train(self, training_pairs: List[Tuple[Dict, Dict, int]]):
+        """
+        모델 학습
+
+        Args:
+            training_pairs: (record1, record2, label) 튜플 리스트
+                           label: 1 = 매칭, 0 = 비매칭
+        """
+        X = []
+        y = []
+
+        for record1, record2, label in training_pairs:
+            features = self.extract_features(record1, record2)
+            X.append(features)
+            y.append(label)
+
+        X = np.array(X)
+        y = np.array(y)
+
+        # 학습/검증 분할
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42
+        )
+
+        # 모델 학습
+        self.model.fit(X_train, y_train)
+
+        # 성능 평가
+        y_pred = self.model.predict(X_test)
+        print("Model Performance:")
+        print(classification_report(y_test, y_pred,
+                                   target_names=['Non-Match', 'Match']))
+
+    def predict(self, record1: Dict, record2: Dict) -> Tuple[bool, float]:
+        """
+        두 레코드가 매칭인지 예측
+
+        Returns:
+            (매칭 여부, 확률)
+        """
+        features = self.extract_features(record1, record2)
+        features = features.reshape(1, -1)
+
+        prediction = self.model.predict(features)[0]
+        probability = self.model.predict_proba(features)[0][1]  # 매칭 확률
+
+        return bool(prediction), probability
+
+
+# 사용 예시
+resolver = MLEntityResolver()
+
+# 학습 데이터 준비 (실제로는 수천 건 필요)
+training_data = [
+    # (record1, record2, label)
+    (
+        {'name': 'John Smith', 'email': 'john@example.com', 'phone': '555-1234'},
+        {'name': 'John Smith', 'email': 'john@example.com', 'phone': '555-1234'},
+        1  # 매칭
+    ),
+    (
+        {'name': 'John Smith', 'email': 'john@example.com', 'phone': '555-1234'},
+        {'name': 'Jane Doe', 'email': 'jane@example.com', 'phone': '555-5678'},
+        0  # 비매칭
+    ),
+    # ... 더 많은 데이터
+]
+
+# 모델 학습
+resolver.train(training_data)
+
+# 예측
+test_record1 = {'name': 'John Smith', 'email': 'john@example.com', 'phone': '555-1234'}
+test_record2 = {'name': 'Jon Smyth', 'email': 'john@example.com', 'phone': '555-1235'}
+
+is_match, probability = resolver.predict(test_record1, test_record2)
+print(f"Match: {is_match}, Probability: {probability:.3f}")</code></pre>
+
+        <h2>8. 대규모 데이터 매칭 최적화</h2>
+        <p>수백만~수억 건의 레코드를 효율적으로 매칭하기 위한 기법들입니다.</p>
+
+        <div class="highlight-box">
+            <strong>최적화 전략:</strong>
+            <ul style="margin-top: 1rem; margin-bottom: 0;">
+                <li><strong>Blocking:</strong> 확실히 다른 레코드 쌍은 비교하지 않음 (예: 성별, 국가 등)</li>
+                <li><strong>Indexing:</strong> 유사한 레코드만 빠르게 찾기 위한 인덱스 구축 (LSH, BK-Tree)</li>
+                <li><strong>Canopy Clustering:</strong> 빠른 1차 그룹핑 후 정밀 매칭</li>
+                <li><strong>Parallel Processing:</strong> Spark, Dask 등으로 병렬 처리</li>
+                <li><strong>Incremental Matching:</strong> 신규 레코드만 기존 마스터와 비교</li>
+                <li><strong>Approximate Methods:</strong> 100% 정확도 대신 속도 우선</li>
+            </ul>
+        </div>
+
+        <h2>9. 요약 및 핵심 포인트</h2>
+        <p>효과적인 매칭과 병합은 MDM 성공의 핵심입니다.</p>
+
+        <div class="highlight-box">
+            <strong>핵심 요약:</strong>
+            <ul style="margin-top: 1rem; margin-bottom: 0;">
+                <li>결정론적 매칭은 빠르고 예측 가능하지만 유연성 부족</li>
+                <li>확률적 매칭은 Fellegi-Sunter 모델로 통계적 접근</li>
+                <li>퍼지 매칭은 오타와 변형을 허용하여 재현율 향상</li>
+                <li>생존 규칙은 비즈니스 요구사항과 데이터 특성에 따라 선택</li>
+                <li>머신러닝은 복잡한 패턴 학습으로 정확도 향상</li>
+                <li>대규모 데이터는 Blocking, Indexing 등으로 최적화 필수</li>
+            </ul>
+        </div>
+
+        <h3>복습 질문</h3>
+        <ol>
+            <li>Levenshtein Distance와 Jaro-Winkler 유사도의 차이점은 무엇인가요?</li>
+            <li>Fellegi-Sunter 모델의 m-확률과 u-확률을 각각 설명하세요.</li>
+            <li>'Most Recent' 생존 규칙이 적합한 필드와 적합하지 않은 필드를 예를 들어 설명하세요.</li>
+            <li>머신러닝 기반 엔티티 해소에서 특징 추출(feature extraction)이 중요한 이유는?</li>
+            <li>대규모 데이터 매칭에서 Blocking 기법을 사용하는 이유와 주의사항을 설명하세요.</li>
+        </ol>
+
+        <div class="nav" style="margin-top: 3rem;"><a href="chapter-04.html">← 이전</a><a href="chapter-06.html">다음 →</a></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 6: Consent Protocol (PHASE 3) | WIA-CORE-002</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Georgia, serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 800px; margin: 0 auto; }
+        header { border-bottom: 3px solid #334155; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #6B7280; font-size: 1rem; font-weight: 600; letter-spacing: 2px; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #f1f5f9; margin-bottom: 1rem; }
+        .chapter-intro { font-size: 1.2rem; color: #94a3b8; font-style: italic; margin-top: 1rem; }
+        h2 { font-size: 1.8rem; color: #6B7280; margin: 3rem 0 1.5rem 0; }
+        h3 { font-size: 1.4rem; color: #9CA3AF; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; text-align: justify; }
+        .highlight { background: #1e293b; padding: 1.5rem; border-left: 4px solid #6B7280; margin: 2rem 0; border-radius: 8px; }
+        ul, ol { margin: 1.5rem 0; padding-left: 2rem; color: #cbd5e1; }
+        li { margin-bottom: 0.75rem; }
+        .code-block { background: #1e293b; padding: 1.5rem; border-radius: 8px; margin: 2rem 0; font-family: 'Courier New', monospace; font-size: 0.9rem; overflow-x: auto; color: #cbd5e1; }
+        .nav { display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #6B7280; text-decoration: none; padding: 0.75rem 1.5rem; border: 2px solid #6B7280; border-radius: 8px; transition: all 0.3s; }
+        .nav a:hover { background: #6B7280; color: white; }
+        footer { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; color: #64748b; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-number">CHAPTER 06 · PHASE 3</div>
+            <h1>Consent Protocol</h1>
+            <p class="chapter-intro">
+                Understanding consent propagation protocols, synchronization mechanisms, inter-system
+                communication, and real-time consent verification across organizational boundaries.
+            </p>
+        </header>
+        <article>
+            <h2>Beyond Single Systems: The Protocol Layer</h2>
+            <p>
+                Phase 3 addresses a critical challenge: how does consent flow between systems, across organizational
+                boundaries, and throughout complex technology ecosystems? While Phases 1 and 2 established data
+                formats and APIs for individual systems, Phase 3 defines the communication protocols that enable
+                consent to propagate, synchronize, and verify across the entire digital landscape.
+            </p>
+            <h2>The Consent Propagation Challenge</h2>
+            <p>Modern organizations operate in complex ecosystems:</p>
+            <ul>
+                <li>Multiple internal systems (CRM, marketing automation, analytics, support)</li>
+                <li>Cloud service providers (AWS, Azure, Google Cloud)</li>
+                <li>SaaS platforms (Salesforce, HubSpot, Zendesk)</li>
+                <li>Advertising networks and DSPs</li>
+                <li>Data brokers and third-party partners</li>
+                <li>Consent management platforms (OneTrust, TrustArc)</li>
+            </ul>
+            <p>
+                When a user updates their consent preferences, that change must propagate to every system
+                processing their data—often in real-time to maintain compliance. Phase 3 protocols make
+                this possible.
+            </p>
+            <h2>Core Protocol Components</h2>
+            <h3>1. Consent Synchronization Protocol</h3>
+            <p>
+                Ensures consent state remains consistent across distributed systems through event-driven
+                synchronization:
+            </p>
+            <div class="code-block">// Publisher (Consent Management System)
+POST https://subscriber.example.com/wia/consent/sync
+Content-Type: application/json
+X-WIA-Signature: sha256=...
+X-WIA-Event-ID: evt-abc123
+X-WIA-Timestamp: 2025-06-20T14:22:00Z
+
+{
+  "event": "consent.updated",
+  "consentId": "consent-550e8400...",
+  "userId": "user-789012",
+  "timestamp": "2025-06-20T14:22:00Z",
+  "changes": {
+    "purposes.marketing-email.granted": {
+      "old": true,
+      "new": false
+    }
+  },
+  "metadata": {
+    "source": "preference-center",
+    "ipAddress": "192.0.2.1"
+  }
+}
+
+// Subscriber Response
+{
+  "received": true,
+  "processedAt": "2025-06-20T14:22:01Z",
+  "affectedRecords": 3,
+  "status": "success"
+}</div>
+            <h3>2. Third-Party Consent Verification</h3>
+            <p>
+                Enables organizations to verify consent before processing data, even when the data originated
+                from a third party:
+            </p>
+            <div class="code-block">POST https://consent-authority.example.com/api/v1/verify
+Authorization: Bearer {api_key}
+Content-Type: application/json
+
+{
+  "userId": "user-789012",
+  "purposeId": "marketing-email",
+  "requestingParty": "partner-company-xyz",
+  "context": {
+    "dataSource": "shared-customer-list",
+    "timestamp": "2025-06-20T14:30:00Z"
+  }
+}
+
+Response:
+{
+  "isValid": true,
+  "consentId": "consent-550e8400...",
+  "grantedAt": "2025-01-15T10:30:00Z",
+  "expiresAt": "2026-01-15T10:30:00Z",
+  "scope": ["marketing-email"],
+  "thirdPartyAllowed": true,
+  "verificationToken": "verify-xyz789...",
+  "validUntil": "2025-06-20T15:30:00Z"
+}</div>
+            <h3>3. Consent Delegation Protocol</h3>
+            <p>
+                Allows data controllers to delegate consent verification to processors while maintaining
+                accountability:
+            </p>
+            <div class="code-block">{
+  "delegationId": "deleg-abc123",
+  "delegator": "controller.example.com",
+  "delegate": "processor.example.com",
+  "purposes": ["analytics", "personalization"],
+  "validFrom": "2025-01-15T00:00:00Z",
+  "validUntil": "2026-01-15T00:00:00Z",
+  "restrictions": {
+    "jurisdictions": ["EU", "EEA"],
+    "dataCategories": ["behavioral", "preferences"],
+    "operations": ["read", "aggregate"]
+  },
+  "auditRequired": true,
+  "signature": "..."
+}</div>
+            <h3>4. Consent Receipt Protocol</h3>
+            <p>
+                Provides users with cryptographically verifiable receipts of their consent decisions:
+            </p>
+            <div class="code-block">{
+  "receiptId": "receipt-xyz789",
+  "consentId": "consent-550e8400...",
+  "userId": "user-789012",
+  "timestamp": "2025-01-15T10:30:00Z",
+  "purposes": [
+    {
+      "purposeId": "marketing-email",
+      "granted": true,
+      "description": "Receive promotional emails..."
+    }
+  ],
+  "organization": {
+    "name": "Example Corp",
+    "jurisdiction": "EU",
+    "privacyOfficer": "privacy@example.com"
+  },
+  "userRights": [
+    "You may withdraw consent at any time",
+    "You have the right to access your data",
+    "You have the right to data portability"
+  ],
+  "signature": {
+    "algorithm": "RS256",
+    "value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "certificate": "-----BEGIN CERTIFICATE-----..."
+  }
+}</div>
+            <h2>Real-Time Consent Verification</h2>
+            <p>
+                For applications requiring immediate consent checks (e.g., before sending an email or
+                displaying personalized content), the protocol supports low-latency verification:
+            </p>
+            <div class="code-block">// Distributed consent cache with TTL
+GET /api/v1/consents/verify/user-789012/marketing-email
+Authorization: Bearer {api_key}
+Cache-Control: max-age=300
+
+Response:
+{
+  "isValid": true,
+  "cachedAt": "2025-06-20T14:20:00Z",
+  "expiresAt": "2025-06-20T14:25:00Z"
+}</div>
+            <h2>Cross-Organization Consent Exchange</h2>
+            <p>
+                When organizations merge, acquire, or partner, consent must be transferred with proper
+                authorization:
+            </p>
+            <div class="code-block">{
+  "transferId": "xfer-abc123",
+  "source": "company-a.example.com",
+  "destination": "company-b.example.com",
+  "timestamp": "2025-06-20T14:30:00Z",
+  "legalBasis": "merger",
+  "userNotification": {
+    "required": true,
+    "method": "email",
+    "template": "merger-notification-v2"
+  },
+  "consents": [
+    {
+      "consentId": "consent-550e8400...",
+      "userId": "user-789012",
+      "transferAuthorization": "auth-xyz789..."
+    }
+  ],
+  "auditTrail": true,
+  "regulatoryApproval": "approval-ref-123"
+}</div>
+            <h2>Consent Conflict Resolution</h2>
+            <p>
+                When multiple systems have conflicting consent states, the protocol defines resolution rules:
+            </p>
+            <ul>
+                <li><strong>Most Restrictive Wins:</strong> If one system shows consent revoked, all systems treat it as revoked</li>
+                <li><strong>Timestamp Priority:</strong> Most recent update takes precedence</li>
+                <li><strong>User Intent Priority:</strong> Direct user actions override automated processes</li>
+                <li><strong>Audit and Alert:</strong> All conflicts logged and investigated</li>
+            </ul>
+            <h2>Consent Status Broadcasting</h2>
+            <p>
+                For real-time applications, the protocol supports pub/sub broadcasting of consent status:
+            </p>
+            <div class="code-block">// WebSocket connection
+wss://consent-stream.example.com/subscribe
+Authorization: Bearer {api_key}
+
+Subscribe Message:
+{
+  "action": "subscribe",
+  "userIds": ["user-789012", "user-456789"],
+  "purposes": ["marketing-email", "analytics"]
+}
+
+Broadcast Message:
+{
+  "event": "consent.updated",
+  "userId": "user-789012",
+  "purposeId": "marketing-email",
+  "granted": false,
+  "timestamp": "2025-06-20T14:22:00Z"
+}</div>
+            <h2>Security and Trust</h2>
+            <p>Phase 3 protocols include robust security measures:</p>
+            <ul>
+                <li><strong>Mutual TLS:</strong> Both parties authenticate with certificates</li>
+                <li><strong>Request Signing:</strong> HMAC-SHA256 signatures prevent tampering</li>
+                <li><strong>Replay Prevention:</strong> Nonces and timestamps prevent replay attacks</li>
+                <li><strong>Encryption:</strong> All data encrypted in transit and at rest</li>
+                <li><strong>Audit Logging:</strong> Complete audit trail of all protocol interactions</li>
+            </ul>
+            <h2>Protocol Extensions</h2>
+            <p>Organizations can extend the protocol for specialized use cases:</p>
+            <div class="code-block">{
+  "event": "consent.custom.geofence-entered",
+  "userId": "user-789012",
+  "customData": {
+    "location": "EU",
+    "previousLocation": "US",
+    "action": "apply-eu-consent-rules"
+  }
+}</div>
+            <h2>Implementation Checklist</h2>
+            <ol>
+                <li>Identify all systems that process user data</li>
+                <li>Map data flows and consent dependencies</li>
+                <li>Implement consent synchronization endpoints</li>
+                <li>Set up webhook listeners for consent events</li>
+                <li>Configure consent verification caching</li>
+                <li>Implement third-party verification flows</li>
+                <li>Set up monitoring for synchronization failures</li>
+                <li>Test cross-organization consent exchanges</li>
+                <li>Implement conflict resolution logic</li>
+                <li>Conduct end-to-end protocol testing</li>
+            </ol>
+            <h2>Chapter Summary</h2>
+            <p>
+                Phase 3 extends consent management beyond individual systems to enable true ecosystem-wide
+                consent coordination. Through standardized protocols for synchronization, verification,
+                delegation, and exchange, organizations can ensure consent is respected across all systems
+                and partners.
+            </p>
+            <div class="nav">
+                <a href="chapter5.html">← Chapter 5</a>
+                <a href="chapter7.html">Chapter 7 →</a>
+            </div>
+        </article>
+        <footer>
+            <p>WIA-CORE-002: Universal Consent Management Standard</p>
+            <p>© 2025 SmileStory Inc. / WIA · 弘益人間 (Benefit All Humanity)</p>
+        </footer>
+    </div>
+</body>
+</html>

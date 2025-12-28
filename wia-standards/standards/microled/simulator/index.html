@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MicroLED Simulator | WIA-SEMI-010</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #06B6D4;
+            --primary-dark: #0891b2;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: var(--bg-card);
+            border-bottom: 2px solid var(--primary);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        .lang-selector {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .lang-selector:hover {
+            border-color: var(--primary);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            font-size: 1rem;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel h2 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .result-box {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .result-box h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: var(--text-muted);
+        }
+
+        .metric-value {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .info-card {
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .info-card h4 {
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .info-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .success {
+            color: var(--success);
+        }
+
+        .warning {
+            color: var(--warning);
+        }
+
+        .error {
+            color: var(--error);
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-wrap: nowrap;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>🔆 MicroLED Simulator - WIA-SEMI-010</h1>
+                <select class="lang-selector" id="langSelect" onchange="changeLanguage()">
+                    <option value="en">English</option>
+                    <option value="ko">한국어</option>
+                    <option value="ja">日本語</option>
+                    <option value="zh-CN">简体中文</option>
+                    <option value="zh-TW">繁體中文</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="it">Italiano</option>
+                    <option value="pt">Português</option>
+                    <option value="ru">Русский</option>
+                    <option value="ar">العربية</option>
+                    <option value="hi">हिन्दी</option>
+                    <option value="bn">বাংলা</option>
+                    <option value="pa">ਪੰਜਾਬੀ</option>
+                    <option value="jv">Basa Jawa</option>
+                    <option value="vi">Tiếng Việt</option>
+                    <option value="th">ไทย</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="pl">Polski</option>
+                    <option value="uk">Українська</option>
+                    <option value="ro">Română</option>
+                    <option value="nl">Nederlands</option>
+                    <option value="el">Ελληνικά</option>
+                    <option value="cs">Čeština</option>
+                    <option value="sv">Svenska</option>
+                    <option value="hu">Magyar</option>
+                    <option value="fi">Suomi</option>
+                    <option value="no">Norsk</option>
+                    <option value="da">Dansk</option>
+                    <option value="he">עברית</option>
+                    <option value="id">Bahasa Indonesia</option>
+                    <option value="ms">Bahasa Melayu</option>
+                    <option value="tl">Filipino</option>
+                    <option value="sw">Kiswahili</option>
+                    <option value="af">Afrikaans</option>
+                    <option value="sq">Shqip</option>
+                    <option value="am">አማርኛ</option>
+                    <option value="hy">Հայերեն</option>
+                    <option value="az">Azərbaycan</option>
+                    <option value="eu">Euskara</option>
+                    <option value="be">Беларуская</option>
+                    <option value="bs">Bosanski</option>
+                    <option value="bg">Български</option>
+                    <option value="ca">Català</option>
+                    <option value="hr">Hrvatski</option>
+                    <option value="et">Eesti</option>
+                    <option value="fa">فارسی</option>
+                    <option value="gl">Galego</option>
+                    <option value="ka">ქართული</option>
+                    <option value="gu">ગુજરાતી</option>
+                    <option value="ht">Kreyòl Ayisyen</option>
+                    <option value="ha">Hausa</option>
+                    <option value="is">Íslenska</option>
+                    <option value="ig">Igbo</option>
+                    <option value="ga">Gaeilge</option>
+                    <option value="kn">ಕನ್ನಡ</option>
+                    <option value="kk">Қазақ</option>
+                    <option value="km">ខ្មែរ</option>
+                    <option value="rw">Kinyarwanda</option>
+                    <option value="ku">Kurdî</option>
+                    <option value="ky">Кыргызча</option>
+                    <option value="lo">ລາວ</option>
+                    <option value="la">Latina</option>
+                    <option value="lv">Latviešu</option>
+                    <option value="lt">Lietuvių</option>
+                    <option value="lb">Lëtzebuergesch</option>
+                    <option value="mk">Македонски</option>
+                    <option value="mg">Malagasy</option>
+                    <option value="ml">മലയാളം</option>
+                    <option value="mt">Malti</option>
+                    <option value="mi">Māori</option>
+                    <option value="mr">मराठी</option>
+                    <option value="mn">Монгол</option>
+                    <option value="my">မြန်မာ</option>
+                    <option value="ne">नेपाली</option>
+                    <option value="ny">Chichewa</option>
+                    <option value="or">ଓଡ଼ିଆ</option>
+                    <option value="ps">پښتو</option>
+                    <option value="si">සිංහල</option>
+                    <option value="sk">Slovenčina</option>
+                    <option value="sl">Slovenščina</option>
+                    <option value="so">Soomaali</option>
+                    <option value="sr">Српски</option>
+                    <option value="st">Sesotho</option>
+                    <option value="su">Basa Sunda</option>
+                    <option value="ta">தமிழ்</option>
+                    <option value="te">తెలుగు</option>
+                    <option value="tg">Тоҷикӣ</option>
+                    <option value="ur">اردو</option>
+                    <option value="uz">O'zbek</option>
+                    <option value="cy">Cymraeg</option>
+                    <option value="xh">isiXhosa</option>
+                    <option value="yi">ייִדיש</option>
+                    <option value="yo">Yorùbá</option>
+                    <option value="zu">isiZulu</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="showTab(0)">📊 <span class="tab-label">Chip Specs</span></button>
+            <button class="tab" onclick="showTab(1)">🔢 <span class="tab-label">Yield Calculator</span></button>
+            <button class="tab" onclick="showTab(2)">📡 <span class="tab-label">Mass Transfer</span></button>
+            <button class="tab" onclick="showTab(3)">🔗 <span class="tab-label">Display Assembly</span></button>
+            <button class="tab" onclick="showTab(4)">🧪 <span class="tab-label">Defect Analysis</span></button>
+        </div>
+
+        <!-- Tab 1: Chip Specifications -->
+        <div class="tab-content active" id="tab0">
+            <div class="panel">
+                <h2 class="section-title">MicroLED Chip Specifications</h2>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="chipSize">Chip Size (μm):</label>
+                        <input type="number" id="chipSize" value="30" min="5" max="100" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="wavelength">Peak Wavelength (nm):</label>
+                        <input type="number" id="wavelength" value="525" min="400" max="700" step="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="efficiency">Quantum Efficiency (%):</label>
+                        <input type="number" id="efficiency" value="85" min="0" max="100" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="brightness">Luminous Intensity (mcd):</label>
+                        <input type="number" id="brightness" value="150" min="10" max="500" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="chipType">Chip Type:</label>
+                        <select id="chipType">
+                            <option value="rgb">RGB (3 chips)</option>
+                            <option value="blue-cc">Blue + Color Conversion</option>
+                            <option value="uv-cc">UV + Color Conversion</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="substrate">Substrate Material:</label>
+                        <select id="substrate">
+                            <option value="sapphire">Sapphire</option>
+                            <option value="sic">Silicon Carbide (SiC)</option>
+                            <option value="gan">GaN-on-GaN</option>
+                            <option value="silicon">Silicon</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn" onclick="calculateChipMetrics()"><span class="btn-text">Calculate Chip Metrics</span></button>
+                <div id="chipResults" class="result-box" style="display:none;">
+                    <h3 class="result-title">Chip Performance Metrics</h3>
+                    <div class="metric">
+                        <span class="metric-label">Chip Area:</span>
+                        <span class="metric-value" id="chipArea"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Chips per Wafer (8-inch):</span>
+                        <span class="metric-value" id="chipsPerWafer"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Power Consumption (per chip):</span>
+                        <span class="metric-value" id="powerPerChip"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Efficacy:</span>
+                        <span class="metric-value" id="efficacy"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="info-card">
+                    <h4>Chip Size Considerations</h4>
+                    <p>Smaller chips (&lt;20μm) enable higher pixel density and resolution but require more precise transfer technology. Larger chips (40-50μm) are easier to handle with higher manufacturing yield.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Color Conversion vs RGB</h4>
+                    <p>Blue+CC approach uses single blue LED with quantum dot or phosphor conversion layer. RGB uses three separate LED chips. CC offers simpler assembly but lower color purity than native RGB.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Yield Calculator -->
+        <div class="tab-content" id="tab1">
+            <div class="panel">
+                <h2 class="section-title">Transfer Yield & Efficiency Calculator</h2>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="totalChips">Total Chips to Transfer:</label>
+                        <input type="number" id="totalChips" value="1000000" min="1000" step="1000">
+                    </div>
+                    <div class="form-group">
+                        <label for="transferYield">Transfer Yield (%):</label>
+                        <input type="number" id="transferYield" value="99.95" min="90" max="100" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="placementAccuracy">Placement Accuracy (μm):</label>
+                        <input type="number" id="placementAccuracy" value="2" min="0.1" max="10" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="transferMethod">Transfer Method:</label>
+                        <select id="transferMethod">
+                            <option value="elastomer">Elastomer Stamp Transfer</option>
+                            <option value="lift">Laser-Induced Forward Transfer (LIFT)</option>
+                            <option value="fluidic">Fluidic Self-Assembly</option>
+                            <option value="pick">Pick-and-Place</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cycleTime">Cycle Time (seconds):</label>
+                        <input type="number" id="cycleTime" value="60" min="1" max="300" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="chipsPerCycle">Chips per Cycle:</label>
+                        <input type="number" id="chipsPerCycle" value="10000" min="100" step="100">
+                    </div>
+                </div>
+                <button class="btn" onclick="calculateYield()"><span class="btn-text">Calculate Yield Metrics</span></button>
+                <div id="yieldResults" class="result-box" style="display:none;">
+                    <h3 class="result-title">Transfer Performance</h3>
+                    <div class="metric">
+                        <span class="metric-label">Successfully Transferred:</span>
+                        <span class="metric-value" id="successfulChips"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Failed/Missing Chips:</span>
+                        <span class="metric-value error" id="failedChips"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total Process Time:</span>
+                        <span class="metric-value" id="processTime"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Throughput:</span>
+                        <span class="metric-value" id="throughput"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Defect Rate:</span>
+                        <span class="metric-value" id="defectRate"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Mass Transfer Protocols -->
+        <div class="tab-content" id="tab2">
+            <div class="panel">
+                <h2 class="section-title">Mass Transfer Protocol Simulator</h2>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="displaySize">Display Size (inches):</label>
+                        <input type="number" id="displaySize" value="110" min="1" max="300" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="pixelPitch">Pixel Pitch (mm):</label>
+                        <input type="number" id="pixelPitch" value="0.9" min="0.1" max="5" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="subpixels">Subpixels per Pixel:</label>
+                        <select id="subpixels">
+                            <option value="3">3 (RGB)</option>
+                            <option value="4">4 (RGBW)</option>
+                            <option value="1">1 (Blue+CC)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="stampSize">Stamp Size (mm × mm):</label>
+                        <input type="number" id="stampSize" value="100" min="10" max="300" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="transferTemp">Transfer Temperature (°C):</label>
+                        <input type="number" id="transferTemp" value="150" min="20" max="300" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="bondingForce">Bonding Force (N):</label>
+                        <input type="number" id="bondingForce" value="500" min="10" max="2000" step="10">
+                    </div>
+                </div>
+                <button class="btn" onclick="calculateTransfer()"><span class="btn-text">Simulate Transfer Process</span></button>
+                <div id="transferResults" class="result-box" style="display:none;">
+                    <h3 class="result-title">Transfer Protocol Results</h3>
+                    <div class="metric">
+                        <span class="metric-label">Total LEDs Required:</span>
+                        <span class="metric-value" id="totalLEDs"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Transfer Cycles:</span>
+                        <span class="metric-value" id="transferCycles"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Estimated Process Time:</span>
+                        <span class="metric-value" id="transferTime"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Resolution:</span>
+                        <span class="metric-value" id="resolution"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="info-card">
+                    <h4>Elastomer Stamp Transfer</h4>
+                    <p>Most widely used for large-area displays. PDMS stamp picks up thousands of chips simultaneously from donor wafer and transfers to TFT backplane. Yield typically 99.9%+.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Laser-Induced Forward Transfer (LIFT)</h4>
+                    <p>Laser pulse vaporizes sacrificial layer, propelling chip to target substrate. Highly accurate (±1μm) but slower throughput. Best for ultra-fine pitch displays.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Display Assembly -->
+        <div class="tab-content" id="tab3">
+            <div class="panel">
+                <h2 class="section-title">Display Assembly Integration</h2>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="moduleWidth">Module Width (mm):</label>
+                        <input type="number" id="moduleWidth" value="600" min="100" max="2000" step="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="moduleHeight">Module Height (mm):</label>
+                        <input type="number" id="moduleHeight" value="337.5" min="100" max="2000" step="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="tftType">TFT Backplane Type:</label>
+                        <select id="tftType">
+                            <option value="ltps">LTPS (Low-Temp Polysilicon)</option>
+                            <option value="oxide">Oxide TFT</option>
+                            <option value="cmos">CMOS Silicon</option>
+                            <option value="ltpo">LTPO</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="driverIC">Driver IC Type:</label>
+                        <select id="driverIC">
+                            <option value="cof">COF (Chip-on-Film)</option>
+                            <option value="cog">COG (Chip-on-Glass)</option>
+                            <option value="integrated">Integrated into TFT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="colorLayer">Color Conversion Layer:</label>
+                        <select id="colorLayer">
+                            <option value="none">None (Native RGB)</option>
+                            <option value="qd">Quantum Dot</option>
+                            <option value="phosphor">Phosphor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="numModules">Number of Modules:</label>
+                        <input type="number" id="numModules" value="4" min="1" max="100" step="1">
+                    </div>
+                </div>
+                <button class="btn" onclick="calculateAssembly()"><span class="btn-text">Calculate Assembly Specs</span></button>
+                <div id="assemblyResults" class="result-box" style="display:none;">
+                    <h3 class="result-title">Assembly Specifications</h3>
+                    <div class="metric">
+                        <span class="metric-label">Total Display Area:</span>
+                        <span class="metric-value" id="totalArea"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Display Diagonal:</span>
+                        <span class="metric-value" id="diagonal"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total Power (estimated):</span>
+                        <span class="metric-value" id="totalPower"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Module Configuration:</span>
+                        <span class="metric-value" id="moduleConfig"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Defect Detection & Repair -->
+        <div class="tab-content" id="tab4">
+            <div class="panel">
+                <h2 class="section-title">Defect Detection & Repair Analysis</h2>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="totalPixels">Total Pixels:</label>
+                        <input type="number" id="totalPixels" value="8294400" min="1000" step="1000">
+                    </div>
+                    <div class="form-group">
+                        <label for="initialDefectRate">Initial Defect Rate (ppm):</label>
+                        <input type="number" id="initialDefectRate" value="500" min="0" max="10000" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="repairMethod">Repair Method:</label>
+                        <select id="repairMethod">
+                            <option value="laser">Laser Repair</option>
+                            <option value="redundancy">Redundant Pixel Activation</option>
+                            <option value="replacement">Individual Chip Replacement</option>
+                            <option value="none">No Repair</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="repairYield">Repair Success Rate (%):</label>
+                        <input type="number" id="repairYield" value="95" min="0" max="100" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="inspectionMethod">Inspection Method:</label>
+                        <select id="inspectionMethod">
+                            <option value="aoi">AOI (Automated Optical Inspection)</option>
+                            <option value="electro">Electro-Optical Testing</option>
+                            <option value="camera">High-Res Camera Array</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="defectTypes">Defect Type:</label>
+                        <select id="defectTypes">
+                            <option value="dead">Dead Pixel</option>
+                            <option value="stuck">Stuck Pixel</option>
+                            <option value="misaligned">Misaligned Chip</option>
+                            <option value="brightness">Brightness Non-Uniformity</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn" onclick="calculateDefects()"><span class="btn-text">Analyze Defect Profile</span></button>
+                <div id="defectResults" class="result-box" style="display:none;">
+                    <h3 class="result-title">Defect Analysis Results</h3>
+                    <div class="metric">
+                        <span class="metric-label">Initial Defective Pixels:</span>
+                        <span class="metric-value error" id="initialDefects"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Pixels Repaired:</span>
+                        <span class="metric-value success" id="repairedPixels"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Remaining Defects:</span>
+                        <span class="metric-value" id="remainingDefects"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Final Yield:</span>
+                        <span class="metric-value success" id="finalYield"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Quality Grade:</span>
+                        <span class="metric-value" id="qualityGrade"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="info-card">
+                    <h4>Laser Repair Technology</h4>
+                    <p>Uses focused laser to remove defective LED and activate redundant pixel. Can fix dead pixels and some stuck pixels. Success rate 90-95%.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Redundant Pixel Design</h4>
+                    <p>Extra LEDs fabricated in each pixel cluster. When primary LED fails, redundant LED is activated electronically. Increases manufacturing yield from 95% to 99%+.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                tabs: ['Chip Specs', 'Yield Calculator', 'Mass Transfer', 'Display Assembly', 'Defect Analysis'],
+                sectionTitles: ['MicroLED Chip Specifications', 'Transfer Yield & Efficiency Calculator', 'Mass Transfer Protocol Simulator', 'Display Assembly Integration', 'Defect Detection & Repair Analysis'],
+                btnText: ['Calculate Chip Metrics', 'Calculate Yield Metrics', 'Simulate Transfer Process', 'Calculate Assembly Specs', 'Analyze Defect Profile'],
+                resultTitles: ['Chip Performance Metrics', 'Transfer Performance', 'Transfer Protocol Results', 'Assembly Specifications', 'Defect Analysis Results']
+            },
+            ko: {
+                tabs: ['칩 사양', '수율 계산', '대량 전사', '디스플레이 조립', '결함 분석'],
+                sectionTitles: ['마이크로LED 칩 사양', '전사 수율 및 효율 계산기', '대량 전사 프로토콜 시뮬레이터', '디스플레이 조립 통합', '결함 검출 및 수리 분석'],
+                btnText: ['칩 메트릭 계산', '수율 메트릭 계산', '전사 프로세스 시뮬레이션', '조립 사양 계산', '결함 프로필 분석'],
+                resultTitles: ['칩 성능 메트릭', '전사 성능', '전사 프로토콜 결과', '조립 사양', '결함 분석 결과']
+            },
+            ja: {
+                tabs: ['チップ仕様', '歩留まり計算', '大量転写', 'ディスプレイ組立', '欠陥分析'],
+                sectionTitles: ['マイクロLEDチップ仕様', '転写歩留まりと効率計算機', '大量転写プロトコルシミュレータ', 'ディスプレイ組立統合', '欠陥検出と修理分析'],
+                btnText: ['チップメトリクス計算', '歩留まりメトリクス計算', '転写プロセスシミュレート', '組立仕様計算', '欠陥プロファイル分析'],
+                resultTitles: ['チップ性能メトリクス', '転写性能', '転写プロトコル結果', '組立仕様', '欠陥分析結果']
+            },
+            'zh-CN': {
+                tabs: ['芯片规格', '良率计算', '大规模转移', '显示器组装', '缺陷分析'],
+                sectionTitles: ['微LED芯片规格', '转移良率和效率计算器', '大规模转移协议模拟器', '显示器组装集成', '缺陷检测和修复分析'],
+                btnText: ['计算芯片指标', '计算良率指标', '模拟转移过程', '计算组装规格', '分析缺陷概况'],
+                resultTitles: ['芯片性能指标', '转移性能', '转移协议结果', '组装规格', '缺陷分析结果']
+            },
+            'zh-TW': {
+                tabs: ['晶片規格', '良率計算', '大規模轉移', '顯示器組裝', '缺陷分析'],
+                sectionTitles: ['微LED晶片規格', '轉移良率和效率計算器', '大規模轉移協議模擬器', '顯示器組裝集成', '缺陷檢測和修復分析'],
+                btnText: ['計算晶片指標', '計算良率指標', '模擬轉移過程', '計算組裝規格', '分析缺陷概況'],
+                resultTitles: ['晶片性能指標', '轉移性能', '轉移協議結果', '組裝規格', '缺陷分析結果']
+            }
+        };
+
+        function showTab(index) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+
+            contents.forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+        }
+
+        function changeLanguage() {
+            const lang = document.getElementById('langSelect').value;
+            const t = translations[lang] || translations.en;
+
+            document.querySelectorAll('.tab-label').forEach((el, i) => {
+                if (t.tabs[i]) el.textContent = t.tabs[i];
+            });
+
+            document.querySelectorAll('.section-title').forEach((el, i) => {
+                if (t.sectionTitles[i]) el.textContent = t.sectionTitles[i];
+            });
+
+            document.querySelectorAll('.btn-text').forEach((el, i) => {
+                if (t.btnText[i]) el.textContent = t.btnText[i];
+            });
+
+            document.querySelectorAll('.result-title').forEach((el, i) => {
+                if (t.resultTitles[i]) el.textContent = t.resultTitles[i];
+            });
+        }
+
+        function calculateChipMetrics() {
+            const size = parseFloat(document.getElementById('chipSize').value);
+            const efficiency = parseFloat(document.getElementById('efficiency').value);
+            const brightness = parseFloat(document.getElementById('brightness').value);
+
+            const area = (size * size).toFixed(2);
+            const waferDiameter = 8 * 25.4 * 1000; // 8 inch in μm
+            const waferArea = Math.PI * (waferDiameter / 2) ** 2;
+            const chipsPerWafer = Math.floor(waferArea / (size * size) * 0.7);
+            const power = (brightness / efficiency * 3.3).toFixed(3);
+            const efficacy = (brightness / parseFloat(power) * 1000).toFixed(1);
+
+            document.getElementById('chipArea').textContent = area + ' μm²';
+            document.getElementById('chipsPerWafer').textContent = chipsPerWafer.toLocaleString();
+            document.getElementById('powerPerChip').textContent = power + ' mW';
+            document.getElementById('efficacy').textContent = efficacy + ' lm/W';
+            document.getElementById('chipResults').style.display = 'block';
+        }
+
+        function calculateYield() {
+            const total = parseInt(document.getElementById('totalChips').value);
+            const yieldPct = parseFloat(document.getElementById('transferYield').value);
+            const cycleTime = parseInt(document.getElementById('cycleTime').value);
+            const chipsPerCycle = parseInt(document.getElementById('chipsPerCycle').value);
+
+            const successful = Math.floor(total * yieldPct / 100);
+            const failed = total - successful;
+            const cycles = Math.ceil(total / chipsPerCycle);
+            const totalTime = cycles * cycleTime;
+            const hours = Math.floor(totalTime / 3600);
+            const minutes = Math.floor((totalTime % 3600) / 60);
+            const throughput = (chipsPerCycle / cycleTime * 3600).toFixed(0);
+            const defectRate = ((1 - yieldPct / 100) * 1000000).toFixed(0);
+
+            document.getElementById('successfulChips').textContent = successful.toLocaleString();
+            document.getElementById('failedChips').textContent = failed.toLocaleString();
+            document.getElementById('processTime').textContent = hours + 'h ' + minutes + 'm';
+            document.getElementById('throughput').textContent = parseInt(throughput).toLocaleString() + ' chips/hour';
+            document.getElementById('defectRate').textContent = defectRate + ' ppm';
+            document.getElementById('yieldResults').style.display = 'block';
+        }
+
+        function calculateTransfer() {
+            const displaySize = parseFloat(document.getElementById('displaySize').value);
+            const pixelPitch = parseFloat(document.getElementById('pixelPitch').value);
+            const subpixels = parseInt(document.getElementById('subpixels').value);
+            const stampSize = parseFloat(document.getElementById('stampSize').value);
+
+            const diagonal = displaySize * 25.4; // inches to mm
+            const width = diagonal * 16 / Math.sqrt(16*16 + 9*9);
+            const height = diagonal * 9 / Math.sqrt(16*16 + 9*9);
+            const pixelsH = Math.floor(width / pixelPitch);
+            const pixelsV = Math.floor(height / pixelPitch);
+            const totalPixels = pixelsH * pixelsV;
+            const totalLEDs = totalPixels * subpixels;
+
+            const ledsPerStamp = Math.floor((stampSize / pixelPitch) ** 2 * subpixels);
+            const cycles = Math.ceil(totalLEDs / ledsPerStamp);
+            const timePerCycle = 60; // seconds
+            const totalTime = cycles * timePerCycle;
+            const hours = Math.floor(totalTime / 3600);
+
+            document.getElementById('totalLEDs').textContent = totalLEDs.toLocaleString();
+            document.getElementById('transferCycles').textContent = cycles.toLocaleString();
+            document.getElementById('transferTime').textContent = hours + ' hours';
+            document.getElementById('resolution').textContent = pixelsH + ' × ' + pixelsV;
+            document.getElementById('transferResults').style.display = 'block';
+        }
+
+        function calculateAssembly() {
+            const width = parseFloat(document.getElementById('moduleWidth').value);
+            const height = parseFloat(document.getElementById('moduleHeight').value);
+            const numModules = parseInt(document.getElementById('numModules').value);
+
+            const totalArea = width * height * numModules / 1000000; // m²
+            const diagonal = Math.sqrt(width * width + height * height) * Math.sqrt(numModules) / 25.4;
+            const power = totalArea * 300; // W/m²
+            const rows = Math.ceil(Math.sqrt(numModules));
+            const cols = Math.ceil(numModules / rows);
+
+            document.getElementById('totalArea').textContent = totalArea.toFixed(2) + ' m²';
+            document.getElementById('diagonal').textContent = diagonal.toFixed(1) + ' inches';
+            document.getElementById('totalPower').textContent = power.toFixed(0) + ' W';
+            document.getElementById('moduleConfig').textContent = rows + ' × ' + cols + ' modules';
+            document.getElementById('assemblyResults').style.display = 'block';
+        }
+
+        function calculateDefects() {
+            const totalPixels = parseInt(document.getElementById('totalPixels').value);
+            const defectRate = parseFloat(document.getElementById('initialDefectRate').value);
+            const repairYield = parseFloat(document.getElementById('repairYield').value);
+
+            const initialDefects = Math.floor(totalPixels * defectRate / 1000000);
+            const repaired = Math.floor(initialDefects * repairYield / 100);
+            const remaining = initialDefects - repaired;
+            const finalYieldPct = ((totalPixels - remaining) / totalPixels * 100).toFixed(4);
+
+            let grade = 'Premium';
+            if (remaining / totalPixels > 0.00001) grade = 'Standard';
+            if (remaining / totalPixels > 0.0001) grade = 'Commercial';
+            if (remaining / totalPixels > 0.001) grade = 'Industrial';
+
+            document.getElementById('initialDefects').textContent = initialDefects.toLocaleString();
+            document.getElementById('repairedPixels').textContent = repaired.toLocaleString();
+            document.getElementById('remainingDefects').textContent = remaining.toLocaleString();
+            document.getElementById('finalYield').textContent = finalYieldPct + '%';
+            document.getElementById('qualityGrade').textContent = grade;
+            document.getElementById('defectResults').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

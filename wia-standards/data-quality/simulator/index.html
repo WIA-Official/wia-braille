@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-DATA-005 Simulator - Data Quality ✅</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-bottom: 3px solid #10B981;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #10B981;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .subtitle {
+            color: #94a3b8;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            background: #1e293b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            border-color: #10B981;
+        }
+
+        .tab.active {
+            background: #10B981;
+            color: #0f172a;
+            border-color: #10B981;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .panel {
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel h2 {
+            color: #10B981;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .panel h3 {
+            color: #10B981;
+            margin: 1.5rem 0 0.5rem 0;
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 0.5rem;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #10B981;
+        }
+
+        textarea {
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+        }
+
+        button {
+            padding: 0.75rem 2rem;
+            background: #10B981;
+            color: #0f172a;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .result {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #0f172a;
+            border-radius: 0.5rem;
+            border-left: 4px solid #10B981;
+        }
+
+        .result pre {
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .metric-card {
+            background: #0f172a;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #10B981;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            color: #10B981;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .metric-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .quality-bar {
+            height: 30px;
+            background: #334155;
+            border-radius: 1rem;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .quality-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10B981, #059669);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .issue-list {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .issue-item {
+            background: #0f172a;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #ef4444;
+        }
+
+        .issue-item.warning {
+            border-left-color: #f59e0b;
+        }
+
+        .issue-item.success {
+            border-left-color: #10B981;
+        }
+
+        .code-block {
+            background: #0f172a;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+
+        .code-block code {
+            color: #10B981;
+            font-family: 'Courier New', monospace;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            background: #0f172a;
+            color: #10B981;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background: #0f172a;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: #10B981;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 2px solid #10B981;
+            border-radius: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            background: #10B981;
+            color: #0f172a;
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>✅ WIA-DATA-005 Interactive Simulator</h1>
+        <p class="subtitle">Data Quality Standards - Test and Validate Your Data</p>
+    </div>
+
+    <div class="container">
+        <a href="../" class="back-link">← Back to Main</a>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('profiling')">📊 Data Profiling</div>
+            <div class="tab" onclick="switchTab('validation')">🔍 Validation Rules</div>
+            <div class="tab" onclick="switchTab('monitoring')">📈 Quality Monitoring</div>
+            <div class="tab" onclick="switchTab('cleansing')">🧹 Data Cleansing</div>
+            <div class="tab" onclick="switchTab('testing')">🎯 Great Expectations</div>
+        </div>
+
+        <!-- Tab 1: Data Profiling -->
+        <div id="profiling" class="tab-content active">
+            <div class="panel">
+                <h2>📊 Data Profiling</h2>
+                <p>Analyze data structure, patterns, and statistics to understand data quality.</p>
+
+                <div class="form-group">
+                    <label for="dataset">Paste Your Dataset (CSV format):</label>
+                    <textarea id="dataset" placeholder="name,age,email,salary&#10;John Doe,30,john@example.com,50000&#10;Jane Smith,25,jane@example.com,60000&#10;Bob Johnson,35,,70000&#10;Alice Brown,28,alice@example.com,55000">name,age,email,salary
+John Doe,30,john@example.com,50000
+Jane Smith,25,jane@example.com,60000
+Bob Johnson,35,,70000
+Alice Brown,28,alice@example.com,55000
+Charlie Wilson,45,charlie@example.com,80000
+Diana Lee,,diana@example.com,65000
+Eve Davis,32,eve@example.com,58000</textarea>
+                </div>
+
+                <button onclick="profileData()">Profile Data</button>
+
+                <div id="profileResult" class="result" style="display: none;">
+                    <h3>Profile Results</h3>
+                    <div id="profileOutput"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Validation Rules -->
+        <div id="validation" class="tab-content">
+            <div class="panel">
+                <h2>🔍 Validation Rules</h2>
+                <p>Define and test data validation rules for quality assurance.</p>
+
+                <div class="form-group">
+                    <label for="validationData">Test Data (JSON format):</label>
+                    <textarea id="validationData" placeholder='{"email": "test@example.com", "age": 25}'>{"email": "john@example.com", "age": 30, "salary": 50000, "phone": "123-456-7890"}</textarea>
+                </div>
+
+                <h3>Validation Rules</h3>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="rule1" checked> Email must be valid format
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="rule2" checked> Age must be between 18 and 100
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="rule3" checked> Salary must be positive
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="rule4" checked> Phone must match pattern
+                    </label>
+                </div>
+
+                <button onclick="validateData()">Validate Data</button>
+
+                <div id="validationResult" class="result" style="display: none;">
+                    <h3>Validation Results</h3>
+                    <div id="validationOutput"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Quality Monitoring -->
+        <div id="monitoring" class="tab-content">
+            <div class="panel">
+                <h2>📈 Quality Monitoring Dashboard</h2>
+                <p>Real-time monitoring of data quality metrics and KPIs.</p>
+
+                <button onclick="generateMetrics()">Generate Quality Metrics</button>
+
+                <div id="metricsResult" class="result" style="display: none;">
+                    <h3>Data Quality Dimensions</h3>
+                    <div class="grid-2">
+                        <div class="metric-card">
+                            <div class="metric-label">Accuracy Score</div>
+                            <div class="metric-value" id="accuracyScore">--</div>
+                            <div class="quality-bar">
+                                <div class="quality-bar-fill" id="accuracyBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Completeness Score</div>
+                            <div class="metric-value" id="completenessScore">--</div>
+                            <div class="quality-bar">
+                                <div class="quality-bar-fill" id="completenessBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Consistency Score</div>
+                            <div class="metric-value" id="consistencyScore">--</div>
+                            <div class="quality-bar">
+                                <div class="quality-bar-fill" id="consistencyBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Validity Score</div>
+                            <div class="metric-value" id="validityScore">--</div>
+                            <div class="quality-bar">
+                                <div class="quality-bar-fill" id="validityBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Timeliness Score</div>
+                            <div class="metric-value" id="timelinessScore">--</div>
+                            <div class="quality-bar">
+                                <div class="quality-bar-fill" id="timelinessBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Uniqueness Score</div>
+                            <div class="metric-value" id="uniquenessScore">--</div>
+                            <div class="quality-bar">
+                                <div class="quality-bar-fill" id="uniquenessBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 2rem;">Overall Quality Score</h3>
+                    <div class="metric-card">
+                        <div class="metric-value" id="overallScore" style="font-size: 3.5rem;">--</div>
+                        <div class="quality-bar" style="height: 40px;">
+                            <div class="quality-bar-fill" id="overallBar" style="width: 0%; font-size: 1.2rem;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Data Cleansing -->
+        <div id="cleansing" class="tab-content">
+            <div class="panel">
+                <h2>🧹 Data Cleansing</h2>
+                <p>Detect and correct data quality issues automatically.</p>
+
+                <div class="form-group">
+                    <label for="dirtyData">Dirty Data (JSON Array):</label>
+                    <textarea id="dirtyData">[
+  {"name": "  John Doe  ", "email": "JOHN@EXAMPLE.COM", "age": "30", "salary": "$50,000"},
+  {"name": "jane smith", "email": "jane@example", "age": "25", "salary": "60000"},
+  {"name": "Bob", "email": "bob@example.com", "age": "", "salary": "invalid"},
+  {"name": "Alice Brown", "email": "alice@example.com", "age": "28", "salary": "55000"}
+]</textarea>
+                </div>
+
+                <h3>Cleansing Rules</h3>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="clean1" checked> Trim whitespace
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="clean2" checked> Normalize case (proper case for names)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="clean3" checked> Standardize email (lowercase)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="clean4" checked> Convert data types
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="clean5" checked> Remove invalid values
+                    </label>
+                </div>
+
+                <button onclick="cleanseData()">Cleanse Data</button>
+
+                <div id="cleansingResult" class="result" style="display: none;">
+                    <h3>Cleansing Results</h3>
+                    <div id="cleansingOutput"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Great Expectations -->
+        <div id="testing" class="tab-content">
+            <div class="panel">
+                <h2>🎯 Great Expectations Testing</h2>
+                <p>Define expectations and validate data against them.</p>
+
+                <div class="form-group">
+                    <label for="testData">Test Dataset (CSV):</label>
+                    <textarea id="testData">user_id,username,email,age,signup_date
+1,john_doe,john@example.com,30,2024-01-15
+2,jane_smith,jane@example.com,25,2024-01-16
+3,bob_j,bob@example.com,35,2024-01-17
+4,alice_b,alice@example.com,28,2024-01-18
+5,charlie_w,charlie@example.com,45,2024-01-19</textarea>
+                </div>
+
+                <h3>Great Expectations Suite</h3>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="expect1" checked> expect_column_values_to_not_be_null (user_id)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="expect2" checked> expect_column_values_to_be_unique (user_id)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="expect3" checked> expect_column_values_to_match_regex (email)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="expect4" checked> expect_column_values_to_be_between (age, 18-100)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="expect5" checked> expect_column_values_to_match_strftime_format (signup_date)
+                    </label>
+                </div>
+
+                <button onclick="runExpectations()">Run Expectations</button>
+
+                <div id="expectationResult" class="result" style="display: none;">
+                    <h3>Test Results</h3>
+                    <div id="expectationOutput"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            // Deactivate all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Activate selected tab
+            event.target.classList.add('active');
+        }
+
+        function profileData() {
+            const dataset = document.getElementById('dataset').value;
+            const lines = dataset.trim().split('\n');
+
+            if (lines.length < 2) {
+                alert('Please provide at least header and one data row');
+                return;
+            }
+
+            const headers = lines[0].split(',');
+            const rows = lines.slice(1).map(line => line.split(','));
+
+            let profile = {
+                totalRows: rows.length,
+                totalColumns: headers.length,
+                columns: {}
+            };
+
+            headers.forEach((header, idx) => {
+                const values = rows.map(row => row[idx]);
+                const nullCount = values.filter(v => !v || v.trim() === '').length;
+                const uniqueValues = new Set(values.filter(v => v && v.trim() !== '')).size;
+
+                profile.columns[header.trim()] = {
+                    nullCount: nullCount,
+                    nullPercentage: ((nullCount / rows.length) * 100).toFixed(2) + '%',
+                    uniqueValues: uniqueValues,
+                    completeness: (((rows.length - nullCount) / rows.length) * 100).toFixed(2) + '%'
+                };
+            });
+
+            // Display results
+            let output = `<div class="grid-2">
+                <div class="metric-card">
+                    <div class="metric-label">Total Rows</div>
+                    <div class="metric-value">${profile.totalRows}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Total Columns</div>
+                    <div class="metric-value">${profile.totalColumns}</div>
+                </div>
+            </div>`;
+
+            output += '<h3 style="margin-top: 1.5rem;">Column Profiles</h3><table><thead><tr><th>Column</th><th>Null Count</th><th>Null %</th><th>Unique Values</th><th>Completeness</th></tr></thead><tbody>';
+
+            Object.entries(profile.columns).forEach(([col, stats]) => {
+                output += `<tr>
+                    <td>${col}</td>
+                    <td>${stats.nullCount}</td>
+                    <td>${stats.nullPercentage}</td>
+                    <td>${stats.uniqueValues}</td>
+                    <td>${stats.completeness}</td>
+                </tr>`;
+            });
+
+            output += '</tbody></table>';
+
+            document.getElementById('profileOutput').innerHTML = output;
+            document.getElementById('profileResult').style.display = 'block';
+        }
+
+        function validateData() {
+            try {
+                const data = JSON.parse(document.getElementById('validationData').value);
+                const issues = [];
+
+                if (document.getElementById('rule1').checked) {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (data.email && !emailRegex.test(data.email)) {
+                        issues.push({type: 'error', message: 'Email format is invalid'});
+                    } else if (data.email) {
+                        issues.push({type: 'success', message: 'Email format is valid'});
+                    }
+                }
+
+                if (document.getElementById('rule2').checked) {
+                    if (data.age && (data.age < 18 || data.age > 100)) {
+                        issues.push({type: 'error', message: 'Age must be between 18 and 100'});
+                    } else if (data.age) {
+                        issues.push({type: 'success', message: 'Age is within valid range'});
+                    }
+                }
+
+                if (document.getElementById('rule3').checked) {
+                    if (data.salary && data.salary <= 0) {
+                        issues.push({type: 'error', message: 'Salary must be positive'});
+                    } else if (data.salary) {
+                        issues.push({type: 'success', message: 'Salary is positive'});
+                    }
+                }
+
+                if (document.getElementById('rule4').checked) {
+                    const phoneRegex = /^\d{3}-\d{3}-\d{4}$/;
+                    if (data.phone && !phoneRegex.test(data.phone)) {
+                        issues.push({type: 'warning', message: 'Phone format should be XXX-XXX-XXXX'});
+                    } else if (data.phone) {
+                        issues.push({type: 'success', message: 'Phone format is valid'});
+                    }
+                }
+
+                let output = '<ul class="issue-list">';
+                issues.forEach(issue => {
+                    output += `<li class="issue-item ${issue.type}">${issue.type.toUpperCase()}: ${issue.message}</li>`;
+                });
+                output += '</ul>';
+
+                const passedCount = issues.filter(i => i.type === 'success').length;
+                const totalChecks = issues.length;
+                output = `<p>Validation Score: ${passedCount}/${totalChecks} checks passed</p>` + output;
+
+                document.getElementById('validationOutput').innerHTML = output;
+                document.getElementById('validationResult').style.display = 'block';
+            } catch (e) {
+                alert('Invalid JSON format: ' + e.message);
+            }
+        }
+
+        function generateMetrics() {
+            const metrics = {
+                accuracy: Math.floor(Math.random() * 20) + 80,
+                completeness: Math.floor(Math.random() * 20) + 75,
+                consistency: Math.floor(Math.random() * 20) + 85,
+                validity: Math.floor(Math.random() * 20) + 80,
+                timeliness: Math.floor(Math.random() * 20) + 70,
+                uniqueness: Math.floor(Math.random() * 15) + 85
+            };
+
+            const overall = Math.round(
+                (metrics.accuracy + metrics.completeness + metrics.consistency +
+                 metrics.validity + metrics.timeliness + metrics.uniqueness) / 6
+            );
+
+            // Update metrics
+            updateMetric('accuracy', metrics.accuracy);
+            updateMetric('completeness', metrics.completeness);
+            updateMetric('consistency', metrics.consistency);
+            updateMetric('validity', metrics.validity);
+            updateMetric('timeliness', metrics.timeliness);
+            updateMetric('uniqueness', metrics.uniqueness);
+
+            document.getElementById('overallScore').textContent = overall + '%';
+            setTimeout(() => {
+                const bar = document.getElementById('overallBar');
+                bar.style.width = overall + '%';
+                bar.textContent = overall + '%';
+            }, 100);
+
+            document.getElementById('metricsResult').style.display = 'block';
+        }
+
+        function updateMetric(name, value) {
+            document.getElementById(name + 'Score').textContent = value + '%';
+            setTimeout(() => {
+                const bar = document.getElementById(name + 'Bar');
+                bar.style.width = value + '%';
+                bar.textContent = value + '%';
+            }, 100);
+        }
+
+        function cleanseData() {
+            try {
+                const data = JSON.parse(document.getElementById('dirtyData').value);
+                const cleaned = data.map(record => {
+                    let cleaned = {...record};
+
+                    if (document.getElementById('clean1').checked) {
+                        Object.keys(cleaned).forEach(key => {
+                            if (typeof cleaned[key] === 'string') {
+                                cleaned[key] = cleaned[key].trim();
+                            }
+                        });
+                    }
+
+                    if (document.getElementById('clean2').checked && cleaned.name) {
+                        cleaned.name = cleaned.name.toLowerCase()
+                            .split(' ')
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ');
+                    }
+
+                    if (document.getElementById('clean3').checked && cleaned.email) {
+                        cleaned.email = cleaned.email.toLowerCase();
+                    }
+
+                    if (document.getElementById('clean4').checked) {
+                        if (cleaned.age && cleaned.age !== '') {
+                            cleaned.age = parseInt(cleaned.age) || null;
+                        }
+                        if (cleaned.salary) {
+                            cleaned.salary = parseInt(cleaned.salary.toString().replace(/[^0-9]/g, '')) || null;
+                        }
+                    }
+
+                    if (document.getElementById('clean5').checked) {
+                        Object.keys(cleaned).forEach(key => {
+                            if (cleaned[key] === '' || cleaned[key] === null || cleaned[key] === 'invalid') {
+                                cleaned[key] = null;
+                            }
+                        });
+                    }
+
+                    return cleaned;
+                });
+
+                let output = '<h4>Original Data:</h4>';
+                output += '<div class="code-block"><code>' + JSON.stringify(data, null, 2) + '</code></div>';
+                output += '<h4 style="margin-top: 1.5rem;">Cleaned Data:</h4>';
+                output += '<div class="code-block"><code>' + JSON.stringify(cleaned, null, 2) + '</code></div>';
+
+                document.getElementById('cleansingOutput').innerHTML = output;
+                document.getElementById('cleansingResult').style.display = 'block';
+            } catch (e) {
+                alert('Invalid JSON format: ' + e.message);
+            }
+        }
+
+        function runExpectations() {
+            const dataset = document.getElementById('testData').value;
+            const lines = dataset.trim().split('\n');
+
+            if (lines.length < 2) {
+                alert('Please provide at least header and one data row');
+                return;
+            }
+
+            const headers = lines[0].split(',');
+            const rows = lines.slice(1).map(line => line.split(','));
+
+            const results = [];
+
+            if (document.getElementById('expect1').checked) {
+                const userIdIdx = headers.indexOf('user_id');
+                const hasNulls = rows.some(row => !row[userIdIdx] || row[userIdIdx].trim() === '');
+                results.push({
+                    expectation: 'expect_column_values_to_not_be_null',
+                    column: 'user_id',
+                    passed: !hasNulls,
+                    message: hasNulls ? 'Found null values in user_id' : 'All values are non-null'
+                });
+            }
+
+            if (document.getElementById('expect2').checked) {
+                const userIdIdx = headers.indexOf('user_id');
+                const values = rows.map(row => row[userIdIdx]);
+                const isUnique = new Set(values).size === values.length;
+                results.push({
+                    expectation: 'expect_column_values_to_be_unique',
+                    column: 'user_id',
+                    passed: isUnique,
+                    message: isUnique ? 'All values are unique' : 'Found duplicate values'
+                });
+            }
+
+            if (document.getElementById('expect3').checked) {
+                const emailIdx = headers.indexOf('email');
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const allValid = rows.every(row => emailRegex.test(row[emailIdx]));
+                results.push({
+                    expectation: 'expect_column_values_to_match_regex',
+                    column: 'email',
+                    passed: allValid,
+                    message: allValid ? 'All emails match pattern' : 'Some emails do not match pattern'
+                });
+            }
+
+            if (document.getElementById('expect4').checked) {
+                const ageIdx = headers.indexOf('age');
+                const allInRange = rows.every(row => {
+                    const age = parseInt(row[ageIdx]);
+                    return age >= 18 && age <= 100;
+                });
+                results.push({
+                    expectation: 'expect_column_values_to_be_between',
+                    column: 'age',
+                    passed: allInRange,
+                    message: allInRange ? 'All ages are between 18-100' : 'Some ages are out of range'
+                });
+            }
+
+            if (document.getElementById('expect5').checked) {
+                const dateIdx = headers.indexOf('signup_date');
+                const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+                const allValid = rows.every(row => dateRegex.test(row[dateIdx]));
+                results.push({
+                    expectation: 'expect_column_values_to_match_strftime_format',
+                    column: 'signup_date',
+                    passed: allValid,
+                    message: allValid ? 'All dates match YYYY-MM-DD format' : 'Some dates do not match format'
+                });
+            }
+
+            const passedCount = results.filter(r => r.passed).length;
+            const totalCount = results.length;
+
+            let output = `<p style="font-size: 1.2rem; margin-bottom: 1rem;">
+                <strong>Test Suite Results: ${passedCount}/${totalCount} expectations passed</strong>
+            </p>`;
+
+            output += '<table><thead><tr><th>Expectation</th><th>Column</th><th>Status</th><th>Message</th></tr></thead><tbody>';
+
+            results.forEach(result => {
+                const status = result.passed ? '✅ PASS' : '❌ FAIL';
+                const rowClass = result.passed ? 'success' : '';
+                output += `<tr class="${rowClass}">
+                    <td>${result.expectation}</td>
+                    <td>${result.column}</td>
+                    <td>${status}</td>
+                    <td>${result.message}</td>
+                </tr>`;
+            });
+
+            output += '</tbody></table>';
+
+            document.getElementById('expectationOutput').innerHTML = output;
+            document.getElementById('expectationResult').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Implementation Guide and Best Practices</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #8B5CF6;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 3rem;
+        }
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 1rem;
+        }
+        h2 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin: 2rem 0 1rem 0;
+        }
+        h3 {
+            color: var(--text);
+            font-size: 1.3rem;
+            margin: 1.5rem 0 0.75rem 0;
+        }
+        p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg);
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+        th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+        .summary {
+            background: var(--bg);
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        .summary h3 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+        li {
+            margin-bottom: 0.5rem;
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+        .nav-links a {
+            color: var(--primary);
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        .nav-links a:hover {
+            background: var(--primary);
+            color: white;
+        }
+        code {
+            background: var(--bg);
+            color: var(--primary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: var(--text);
+        }
+        .callout {
+            background: rgba(139, 92, 246, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+        }
+        .questions {
+            background: var(--bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        .questions ol {
+            margin-left: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chapter 4: Implementation Guide and Best Practices</h1>
+
+        <p>Implementing manufacturing automation systems requires careful planning, systematic development, rigorous testing, and strategic deployment. This chapter provides comprehensive guidance for engineering teams undertaking manufacturing automation projects, from initial system design through commissioning and ongoing optimization. Following the WIA Manufacturing Automation Standard ensures successful implementations that deliver reliability, maintainability, and long-term value.</p>
+
+        <h2>Implementation Lifecycle Overview</h2>
+
+        <p>Manufacturing automation projects follow a structured lifecycle that balances agile development practices with the rigorous validation requirements of industrial systems. Unlike conventional IT projects where rapid iteration and "move fast and break things" mentalities may prove acceptable, manufacturing automation demands careful planning and thorough testing—production line downtime can cost thousands of dollars per minute.</p>
+
+        <p>The implementation lifecycle consists of distinct phases, each with specific deliverables and validation criteria:</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">Table 4.1: Manufacturing Automation Implementation Phases</caption>
+            <thead>
+                <tr>
+                    <th>Phase</th>
+                    <th>Duration</th>
+                    <th>Key Activities</th>
+                    <th>Critical Deliverables</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Requirements</td>
+                    <td>2-4 weeks</td>
+                    <td>Stakeholder interviews, process analysis, capacity planning</td>
+                    <td>Requirements specification, system architecture</td>
+                </tr>
+                <tr>
+                    <td>Design</td>
+                    <td>3-6 weeks</td>
+                    <td>Component selection, network design, software architecture</td>
+                    <td>Detailed design documents, BOM, network diagrams</td>
+                </tr>
+                <tr>
+                    <td>Development</td>
+                    <td>8-16 weeks</td>
+                    <td>PLC programming, HMI development, integration coding</td>
+                    <td>PLC programs, HMI screens, integration modules</td>
+                </tr>
+                <tr>
+                    <td>Factory Testing</td>
+                    <td>2-4 weeks</td>
+                    <td>Unit testing, integration testing, safety validation</td>
+                    <td>Test reports, safety certification</td>
+                </tr>
+                <tr>
+                    <td>Site Installation</td>
+                    <td>2-6 weeks</td>
+                    <td>Equipment installation, wiring, network setup</td>
+                    <td>Installation documentation, as-built drawings</td>
+                </tr>
+                <tr>
+                    <td>Commissioning</td>
+                    <td>2-4 weeks</td>
+                    <td>System startup, calibration, performance validation</td>
+                    <td>Commissioning reports, performance benchmarks</td>
+                </tr>
+                <tr>
+                    <td>Production Ramp</td>
+                    <td>4-8 weeks</td>
+                    <td>Operator training, process optimization, tuning</td>
+                    <td>Training records, optimization reports</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Requirements Engineering for Manufacturing Systems</h2>
+
+        <p>Effective requirements engineering establishes the foundation for successful implementation. Manufacturing automation requirements span multiple categories including functional capabilities, performance specifications, safety requirements, reliability targets, and maintainability considerations.</p>
+
+        <h3>Functional Requirements</h3>
+
+        <p>Functional requirements describe what the system must do—the specific operations, processes, and capabilities required to meet production objectives. Well-written functional requirements use active voice, avoid ambiguity, and include measurable acceptance criteria.</p>
+
+        <p>Example functional requirements for a robotic assembly cell:</p>
+
+        <ul>
+            <li><strong>FR-001:</strong> The system shall pick components from specified bin locations using vision-guided robot positioning with ±0.5mm accuracy.</li>
+            <li><strong>FR-002:</strong> The system shall verify correct component selection using part number verification before proceeding with assembly operations.</li>
+            <li><strong>FR-003:</strong> The system shall apply fasteners with specified torque values (±5% accuracy) while recording torque data for each fastener in the traceability database.</li>
+            <li><strong>FR-004:</strong> The system shall perform quality inspection using 3D vision scanning and shall reject assemblies with defects exceeding specified tolerances.</li>
+            <li><strong>FR-005:</strong> The system shall support product changeover within 15 minutes through automated recipe selection and tool changing.</li>
+        </ul>
+
+        <h3>Performance Requirements</h3>
+
+        <p>Performance requirements specify quantitative targets for throughput, cycle time, availability, and efficiency. These requirements directly impact equipment selection, system architecture, and return on investment calculations.</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">Table 4.2: Key Performance Indicators and Targets</caption>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Definition</th>
+                    <th>Typical Target</th>
+                    <th>Measurement Method</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Cycle Time</td>
+                    <td>Time to complete one production cycle</td>
+                    <td>&lt; 45 seconds</td>
+                    <td>PLC timestamping</td>
+                </tr>
+                <tr>
+                    <td>Throughput</td>
+                    <td>Units produced per hour</td>
+                    <td>&gt; 80 units/hour</td>
+                    <td>Production counter</td>
+                </tr>
+                <tr>
+                    <td>Availability</td>
+                    <td>Percentage of scheduled time operational</td>
+                    <td>&gt; 90%</td>
+                    <td>OEE calculation</td>
+                </tr>
+                <tr>
+                    <td>Quality Rate</td>
+                    <td>Percentage of units passing inspection</td>
+                    <td>&gt; 99.5%</td>
+                    <td>Quality system</td>
+                </tr>
+                <tr>
+                    <td>MTBF</td>
+                    <td>Mean Time Between Failures</td>
+                    <td>&gt; 500 hours</td>
+                    <td>Maintenance log analysis</td>
+                </tr>
+                <tr>
+                    <td>MTTR</td>
+                    <td>Mean Time To Repair</td>
+                    <td>&lt; 30 minutes</td>
+                    <td>Downtime tracking</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>System Architecture and Design</h2>
+
+        <p>System architecture decisions profoundly impact implementation complexity, long-term maintainability, and system flexibility. The WIA Manufacturing Automation Standard promotes modular, layered architectures that separate concerns and enable independent evolution of system components.</p>
+
+        <h3>Control Architecture Design</h3>
+
+        <p>Modern manufacturing systems typically employ hierarchical control architectures with clearly defined responsibilities at each level. This separation enables specialized optimization at each level while maintaining overall system coordination.</p>
+
+        <div class="callout">
+            <strong>ISA-95 Automation Pyramid:</strong> The ISA-95 standard defines five levels of manufacturing automation: Level 0 (Physical Process), Level 1 (Sensing and Manipulation), Level 2 (Monitoring and Control), Level 3 (Manufacturing Operations Management), and Level 4 (Business Planning and Logistics). This hierarchical model guides system architecture decisions and defines interfaces between levels.
+        </div>
+
+        <p>Key architectural considerations include:</p>
+
+        <ul>
+            <li><strong>Centralized vs. Distributed Control:</strong> Centralized control uses a single PLC managing all operations, providing simpler programming and coordination but creating a single point of failure. Distributed control employs multiple PLCs coordinating through network communication, offering better fault isolation and scalability at the cost of increased complexity.</li>
+
+            <li><strong>Deterministic vs. Event-Driven:</strong> Deterministic control executes fixed-cycle programs ensuring predictable timing for real-time operations. Event-driven control responds to asynchronous events, suitable for supervisory functions and IT integration where strict timing requirements don't apply.</li>
+
+            <li><strong>Edge vs. Cloud Processing:</strong> Edge computing processes data locally near equipment for real-time response and reduced network dependency. Cloud processing aggregates data from multiple sites for advanced analytics and machine learning, accepting higher latency.</li>
+        </ul>
+
+        <h3>Network Architecture Design</h3>
+
+        <p>Industrial networks must balance performance, reliability, and security requirements. The WIA Manufacturing Automation Standard recommends defense-in-depth network architectures with multiple security layers.</p>
+
+        <pre><code>Manufacturing Network Architecture:
+
+┌─────────────────────────────────────────────────────────┐
+│                  Enterprise Network (Level 4)            │
+│              ERP, PLM, Business Intelligence             │
+└──────────────────────┬──────────────────────────────────┘
+                       │ Firewall
+┌──────────────────────┴──────────────────────────────────┐
+│                   DMZ (Manufacturing)                    │
+│           MES Server, Data Historian, SCADA             │
+└──────────────────────┬──────────────────────────────────┘
+                       │ Industrial Firewall
+┌──────────────────────┴──────────────────────────────────┐
+│              Supervisory Network (Level 3)               │
+│          HMI Stations, Engineering Workstations          │
+└──────────────────────┬──────────────────────────────────┘
+                       │ Managed Switch
+┌──────────────────────┴──────────────────────────────────┐
+│               Control Network (Level 2)                  │
+│                 PLCs, Robot Controllers                  │
+└──────────────────────┬──────────────────────────────────┘
+                       │ Industrial Ethernet
+┌──────────────────────┴──────────────────────────────────┐
+│               Device Network (Level 1)                   │
+│          Sensors, Actuators, I/O Modules                │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+
+        <h2>PLC Programming Best Practices</h2>
+
+        <p>PLC (Programmable Logic Controller) programming forms the core of most manufacturing automation implementations. Following structured programming practices improves code quality, maintainability, and reduces commissioning time.</p>
+
+        <h3>Programming Languages and Standards</h3>
+
+        <p>IEC 61131-3 defines five standardized PLC programming languages: Ladder Diagram (LD), Function Block Diagram (FBD), Structured Text (ST), Instruction List (IL), and Sequential Function Chart (SFC). Each language suits different programming scenarios and engineer preferences.</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">Table 4.3: IEC 61131-3 Programming Languages</caption>
+            <thead>
+                <tr>
+                    <th>Language</th>
+                    <th>Best Use Case</th>
+                    <th>Advantages</th>
+                    <th>Learning Curve</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Ladder Diagram (LD)</td>
+                    <td>Discrete logic, interlocks</td>
+                    <td>Intuitive for electricians</td>
+                    <td>Low</td>
+                </tr>
+                <tr>
+                    <td>Function Block (FBD)</td>
+                    <td>Process control, signal flow</td>
+                    <td>Visual data flow representation</td>
+                    <td>Medium</td>
+                </tr>
+                <tr>
+                    <td>Structured Text (ST)</td>
+                    <td>Complex algorithms, calculations</td>
+                    <td>Powerful, resembles Pascal</td>
+                    <td>Medium-High</td>
+                </tr>
+                <tr>
+                    <td>Sequential Function Chart (SFC)</td>
+                    <td>State machines, batch processes</td>
+                    <td>Clear sequential logic</td>
+                    <td>Medium</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Code Organization and Structure</h3>
+
+        <p>Well-organized PLC code follows consistent patterns that improve readability and maintainability:</p>
+
+        <pre><code>// Structured Text Example: Robot Control Module
+
+FUNCTION_BLOCK FB_RobotControl
+VAR_INPUT
+    i_bStart        : BOOL;    // Start command
+    i_bStop         : BOOL;    // Stop command
+    i_bReset        : BOOL;    // Reset command
+    i_nTargetPos    : INT;     // Target position (1-10)
+END_VAR
+
+VAR_OUTPUT
+    o_bBusy         : BOOL;    // Operation in progress
+    o_bDone         : BOOL;    // Operation completed
+    o_bError        : BOOL;    // Error condition
+    o_nErrorCode    : INT;     // Error code
+END_VAR
+
+VAR
+    eState          : E_RobotState;  // State machine state
+    tTimeout        : TON;           // Timeout timer
+    nCurrentPos     : INT;           // Current position
+END_VAR
+
+// State machine logic
+CASE eState OF
+    E_RobotState.IDLE:
+        o_bBusy := FALSE;
+        o_bDone := FALSE;
+        IF i_bStart THEN
+            eState := E_RobotState.MOVING;
+            o_bBusy := TRUE;
+            tTimeout(IN := TRUE, PT := T#30s);
+        END_IF
+
+    E_RobotState.MOVING:
+        // Execute motion command
+        IF nCurrentPos = i_nTargetPos THEN
+            eState := E_RobotState.DONE;
+            tTimeout(IN := FALSE);
+        ELSIF tTimeout.Q THEN
+            eState := E_RobotState.ERROR;
+            o_nErrorCode := 100;  // Timeout error
+        END_IF
+
+    E_RobotState.DONE:
+        o_bDone := TRUE;
+        o_bBusy := FALSE;
+        IF i_bReset THEN
+            eState := E_RobotState.IDLE;
+            o_bDone := FALSE;
+        END_IF
+
+    E_RobotState.ERROR:
+        o_bError := TRUE;
+        o_bBusy := FALSE;
+        IF i_bReset THEN
+            eState := E_RobotState.IDLE;
+            o_bError := FALSE;
+            o_nErrorCode := 0;
+        END_IF
+END_CASE
+</code></pre>
+
+        <h2>Robot Programming and Integration</h2>
+
+        <p>Industrial robot programming requires understanding coordinate systems, motion planning, and safety considerations. Modern robots support multiple programming methods including teach pendants, offline programming, and direct API control.</p>
+
+        <h3>Coordinate Systems and Transformations</h3>
+
+        <p>Robots operate in multiple coordinate frames requiring transformations between reference frames:</p>
+
+        <ul>
+            <li><strong>Joint Space:</strong> Represents robot configuration as six joint angles. Joint space moves prove simplest to calculate but don't guarantee straight-line tool paths.</li>
+            <li><strong>Cartesian Space:</strong> Specifies tool position and orientation in world coordinates (X, Y, Z, Roll, Pitch, Yaw). Cartesian moves ensure straight-line paths but may encounter singularities.</li>
+            <li><strong>Tool Frame:</strong> Coordinate system attached to robot tool, simplifying motion commands relative to the tool.</li>
+            <li><strong>Work Object Frame:</strong> Coordinate system attached to workpiece, enabling identical programs for parts in different locations.</li>
+        </ul>
+
+        <h3>Motion Planning and Trajectory Generation</h3>
+
+        <p>Robot motion commands specify target positions, but robot controllers generate smooth trajectories considering velocity, acceleration, and jerk limits to prevent mechanical stress and ensure precise positioning.</p>
+
+        <pre><code>// TypeScript Example: Robot Motion API
+
+class RobotController {
+    async moveLinear(target: CartesianPose, speed: number): Promise&lt;void&gt; {
+        // Linear movement with specified tool speed
+        const command = {
+            type: 'moveL',
+            target: target,
+            velocity: speed,      // mm/s
+            acceleration: 1200,   // mm/s²
+            blending: 0          // 0 = precise positioning
+        };
+
+        await this.sendCommand(command);
+        await this.waitForCompletion();
+    }
+
+    async moveJoint(joints: JointAngles, speed: number): Promise&lt;void&gt; {
+        // Joint space movement
+        const command = {
+            type: 'moveJ',
+            joints: joints,
+            velocity: speed,      // % of max speed
+            acceleration: 100     // % of max acceleration
+        };
+
+        await this.sendCommand(command);
+        await this.waitForCompletion();
+    }
+
+    async pickAndPlace(pickPose: CartesianPose, placePose: CartesianPose): Promise&lt;void&gt; {
+        // Composite operation
+        await this.moveLinear(pickPose.approach, 500);
+        await this.moveLinear(pickPose.grasp, 100);
+        await this.gripper.close(50); // 50N force
+        await this.delay(200);  // Settle time
+        await this.moveLinear(pickPose.approach, 500);
+
+        await this.moveLinear(placePose.approach, 500);
+        await this.moveLinear(placePose.release, 100);
+        await this.gripper.open();
+        await this.delay(200);
+        await this.moveLinear(placePose.approach, 500);
+    }
+}
+</code></pre>
+
+        <h2>Testing and Validation Strategies</h2>
+
+        <p>Rigorous testing validates that implemented systems meet requirements and perform safely and reliably. Manufacturing automation testing spans multiple levels from individual component testing through full system validation.</p>
+
+        <h3>Factory Acceptance Testing (FAT)</h3>
+
+        <p>Factory Acceptance Testing validates system functionality in controlled factory environments before shipping to customer sites. FAT identifies and resolves issues when engineering resources remain readily available and corrections don't disrupt customer operations.</p>
+
+        <p>FAT procedures typically include:</p>
+
+        <ul>
+            <li><strong>Safety System Testing:</strong> Verify emergency stops, light curtains, safety interlocks, and protective devices function correctly under all conditions including fault scenarios.</li>
+            <li><strong>Communication Testing:</strong> Validate network connectivity, protocol implementations, and data exchange between all system components.</li>
+            <li><strong>Functional Testing:</strong> Execute all system functions verifying correct operation against specifications.</li>
+            <li><strong>Performance Testing:</strong> Measure cycle times, throughput rates, positioning accuracy, and other performance metrics.</li>
+            <li><strong>Stress Testing:</strong> Operate system continuously for extended periods (24-72 hours) validating reliability and identifying memory leaks or degradation.</li>
+        </ul>
+
+        <h3>Site Acceptance Testing (SAT)</h3>
+
+        <p>Site Acceptance Testing validates system performance in actual production environments. SAT procedures mirror FAT but add environmental factors, integration with existing equipment, and operator validation.</p>
+
+        <div class="callout">
+            <strong>Commissioning Best Practice:</strong> Develop detailed test scripts specifying step-by-step procedures, expected results, and pass/fail criteria. Document all test results with timestamps, operator signatures, and photographic evidence. This documentation provides legal protection and valuable troubleshooting reference.
+        </div>
+
+        <h2>Deployment and Commissioning</h2>
+
+        <p>Successful deployment requires detailed planning, coordination with production schedules, and systematic startup procedures that minimize risk and disruption.</p>
+
+        <h3>Deployment Planning</h3>
+
+        <p>Deployment plans account for equipment delivery, installation sequencing, utility requirements, and production schedule coordination. Key planning considerations include:</p>
+
+        <ul>
+            <li><strong>Production Impact Minimization:</strong> Schedule installations during planned shutdowns, coordinate phased deployments that maintain partial production, and prepare rollback procedures if issues arise.</li>
+            <li><strong>Resource Coordination:</strong> Ensure availability of skilled technicians, specialized tools, lifting equipment, and vendor support during critical installation periods.</li>
+            <li><strong>Risk Mitigation:</strong> Identify potential failure modes, prepare contingency plans, maintain backup equipment for critical components, and establish clear escalation procedures.</li>
+        </ul>
+
+        <h3>Commissioning Procedures</h3>
+
+        <p>Systematic commissioning progresses through stages validating increasing levels of system integration:</p>
+
+        <ol>
+            <li><strong>Pre-Startup Inspection:</strong> Verify mechanical installation, electrical connections, pneumatic/hydraulic systems, and safety devices before applying power.</li>
+            <li><strong>Dry Run Testing:</strong> Test system operation without products using simulation or dummy materials to verify motion sequences and system coordination.</li>
+            <li><strong>Production Trial:</strong> Process actual products at reduced speeds validating quality and making final adjustments.</li>
+            <li><strong>Performance Validation:</strong> Run at full production speed measuring performance against specifications.</li>
+            <li><strong>Production Ramp:</strong> Gradually increase production volumes while monitoring quality and reliability, training operators, and optimizing parameters.</li>
+        </ol>
+
+        <h2>Maintenance and Long-Term Support</h2>
+
+        <p>Long-term system success requires proactive maintenance strategies, continuous monitoring, and systematic improvement processes.</p>
+
+        <h3>Preventive Maintenance Programs</h3>
+
+        <p>Scheduled maintenance prevents failures and extends equipment life. Effective maintenance programs balance maintenance costs against reliability benefits:</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">Table 4.4: Typical Maintenance Intervals</caption>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Task</th>
+                    <th>Interval</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Robot</td>
+                    <td>Grease joints, check bolts</td>
+                    <td>3 months</td>
+                    <td>2 hours</td>
+                </tr>
+                <tr>
+                    <td>PLC Battery</td>
+                    <td>Replace backup battery</td>
+                    <td>2 years</td>
+                    <td>1 hour</td>
+                </tr>
+                <tr>
+                    <td>Vision System</td>
+                    <td>Clean lenses, calibrate</td>
+                    <td>1 month</td>
+                    <td>1 hour</td>
+                </tr>
+                <tr>
+                    <td>Conveyor</td>
+                    <td>Lubricate bearings, tension chains</td>
+                    <td>1 month</td>
+                    <td>3 hours</td>
+                </tr>
+                <tr>
+                    <td>Safety Devices</td>
+                    <td>Test emergency stops, light curtains</td>
+                    <td>1 week</td>
+                    <td>0.5 hours</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Predictive Maintenance and Condition Monitoring</h3>
+
+        <p>Advanced systems employ predictive maintenance using sensor data and machine learning to identify impending failures before they occur. Vibration analysis, thermal imaging, and power consumption monitoring detect abnormal conditions indicating maintenance needs.</p>
+
+        <div class="summary">
+            <h3>Chapter Summary</h3>
+            <p><strong>Key Takeaways:</strong></p>
+            <ol>
+                <li>Manufacturing automation implementation follows structured lifecycles balancing agile development with rigorous validation, progressing through requirements, design, development, testing, installation, commissioning, and production ramp phases.</li>
+                <li>Effective requirements engineering captures functional capabilities, performance specifications, safety requirements, and reliability targets with measurable acceptance criteria that guide implementation and validation.</li>
+                <li>System architecture decisions regarding centralized vs. distributed control, deterministic vs. event-driven processing, and edge vs. cloud computing profoundly impact implementation complexity, maintainability, and long-term flexibility.</li>
+                <li>PLC programming following IEC 61131-3 standards with well-organized code structure, state machines, and proper error handling improves reliability, maintainability, and reduces commissioning time.</li>
+                <li>Comprehensive testing strategies including Factory Acceptance Testing (FAT) and Site Acceptance Testing (SAT) validate system functionality, safety, and performance before production deployment.</li>
+                <li>Successful deployment requires detailed planning, systematic commissioning procedures, and proactive maintenance strategies including both preventive schedules and predictive condition monitoring.</li>
+            </ol>
+        </div>
+
+        <div class="questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>Compare and contrast centralized and distributed control architectures for manufacturing automation. What factors should influence the choice between these approaches for a specific application?</li>
+                <li>Explain the ISA-95 automation pyramid and its five levels. How does this hierarchical model guide system architecture decisions and interface definitions?</li>
+                <li>What are the five IEC 61131-3 PLC programming languages? Describe the best use case for each language and explain why multiple languages exist rather than a single universal language.</li>
+                <li>Describe the difference between Joint Space and Cartesian Space robot motion commands. When would you choose each motion type, and what are the advantages and limitations of each approach?</li>
+                <li>What is the purpose of Factory Acceptance Testing (FAT) and how does it differ from Site Acceptance Testing (SAT)? Why are both testing phases necessary for manufacturing automation projects?</li>
+                <li>Explain the concept of Tool Center Point (TCP) in robot programming. Why is TCP configuration important, and what parameters must be specified to properly configure a TCP?</li>
+                <li>Describe a typical network architecture for manufacturing automation systems including multiple security layers. Why is defense-in-depth important for industrial networks?</li>
+                <li>What is predictive maintenance and how does it differ from preventive maintenance? Provide examples of sensor data and analysis techniques used for predictive maintenance in manufacturing.</li>
+            </ol>
+        </div>
+
+        <div class="callout">
+            <h3>Looking Ahead</h3>
+            <p>Chapter 5 examines industrial communication protocols and networking in depth, covering protocol specifications, real-time performance requirements, and advanced networking technologies including Time-Sensitive Networking (TSN) and 5G industrial applications.</p>
+        </div>
+
+        <div class="nav-links">
+            <a href="chapter-03.html">← Previous Chapter</a>
+            <a href="index.html">Table of Contents</a>
+            <a href="chapter-05.html">Next Chapter →</a>
+        </div>
+    </div>
+</body>
+</html>

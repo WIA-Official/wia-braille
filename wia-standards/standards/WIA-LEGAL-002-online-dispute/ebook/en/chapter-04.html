@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Data Format Specifications | WIA-LEGAL-002</title>
+    <style>
+        :root { --bg: #0f172a; --bg-card: #1e293b; --text: #f8fafc; --text-secondary: #cbd5e1; --legal-color: #7C3AED; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 40px 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-card); padding: 60px; border-radius: 16px; }
+        h1 { font-size: 2.5rem; color: var(--legal-color); margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--legal-color); }
+        h2 { font-size: 1.8rem; color: var(--legal-color); margin: 40px 0 20px; }
+        h3 { font-size: 1.3rem; color: var(--legal-color); margin: 30px 0 15px; }
+        p { margin: 15px 0; text-align: justify; }
+        .highlight { background: var(--bg); padding: 20px; border-left: 4px solid var(--legal-color); margin: 20px 0; border-radius: 8px; }
+        .navigation { display: flex; justify-content: space-between; margin-top: 60px; padding-top: 30px; border-top: 2px solid var(--border); }
+        .nav-btn { padding: 12px 24px; background: var(--legal-color); color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s; }
+        .nav-btn:hover { background: var(--legal-color-dark); transform: translateY(-2px); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg); color: var(--legal-color); font-weight: 600; }
+        ul, ol { margin: 15px 0 15px 30px; }
+        li { margin: 8px 0; }
+        .summary-box { background: var(--bg); padding: 30px; border-radius: 12px; margin: 40px 0; border: 2px solid var(--legal-color); }
+        .summary-box h3 { margin-top: 0; }
+        code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-family: 'Courier New', monospace; color: var(--legal-color); font-size: 0.9em; }
+        pre { background: var(--bg); padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border); margin: 20px 0; }
+        pre code { padding: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chapter 4: Data Format Specifications</h1>
+
+        <h2>4.1 Introduction to ODR Data Standards</h2>
+
+        <p>
+            Phase 1 of the WIA-LEGAL-002 standard defines the data formats that enable interoperability across different
+            ODR platforms. These standardized schemas ensure that dispute information can be exchanged, archived, and
+            processed consistently regardless of the underlying platform technology.
+        </p>
+
+        <p>
+            The data format specifications cover four primary areas: dispute case records, settlement agreements,
+            communication logs, and evidence metadata. Each schema is designed using JSON (JavaScript Object Notation)
+            for maximum compatibility with modern web and mobile applications, with provisions for XML transformation
+            when required for legacy system integration.
+        </p>
+
+        <div class="highlight">
+            <strong>Design Principle:</strong> All data schemas follow the principle of "minimal required, maximal optional"
+            to ensure basic interoperability while allowing platforms to extend schemas with additional fields for
+            specialized use cases.
+        </div>
+
+        <h2>4.2 Dispute Case Schema</h2>
+
+        <h3>4.2.1 Core Dispute Object</h3>
+
+        <p>
+            The dispute case is the fundamental unit of ODR data. Every dispute, regardless of resolution method,
+            contains a standardized set of core fields:
+        </p>
+
+        <pre><code>{
+  "disputeId": "ODR-2025-00012345",
+  "platformId": "example-odr-platform-v1",
+  "version": "1.0",
+  "createdAt": "2025-01-15T10:30:00Z",
+  "updatedAt": "2025-01-20T14:45:00Z",
+  "status": "IN_MEDIATION",
+  
+  "parties": {
+    "claimant": {
+      "partyId": "party-789abc",
+      "type": "INDIVIDUAL",
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com",
+      "phone": "+1-555-0123",
+      "address": {
+        "street": "123 Main St",
+        "city": "Springfield",
+        "state": "IL",
+        "postalCode": "62701",
+        "country": "US"
+      },
+      "language": "en-US",
+      "timezone": "America/Chicago"
+    },
+    "respondent": {
+      "partyId": "party-456def",
+      "type": "BUSINESS",
+      "name": "Acme Corporation",
+      "businessName": "Acme Corp",
+      "registrationNumber": "US-IL-123456789",
+      "email": "disputes@acme.example",
+      "phone": "+1-555-9999",
+      "address": {
+        "street": "456 Corporate Blvd",
+        "city": "Chicago",
+        "state": "IL",
+        "postalCode": "60601",
+        "country": "US"
+      },
+      "language": "en-US",
+      "timezone": "America/Chicago"
+    }
+  },
+  
+  "dispute": {
+    "category": "ECOMMERCE",
+    "subcategory": "PRODUCT_DEFECT",
+    "amount": {
+      "value": 1250.00,
+      "currency": "USD"
+    },
+    "transactionId": "TXN-2024-12345",
+    "transactionDate": "2024-12-15",
+    "description": "Product received was damaged and not as described",
+    "desiredOutcome": "Full refund plus shipping costs"
+  },
+  
+  "resolutionMethod": "MEDIATION",
+  "jurisdiction": "US-IL",
+  "governingLaw": "Illinois Consumer Protection Act",
+  
+  "metadata": {
+    "source": "PLATFORM_FILING",
+    "referenceNumber": "REF-2025-ABC123",
+    "tags": ["consumer", "ecommerce", "product-quality"],
+    "priority": "NORMAL"
+  }
+}</code></pre>
+
+        <h3>4.2.2 Field Specifications</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>disputeId</code></td>
+                    <td>String</td>
+                    <td>Yes</td>
+                    <td>Unique identifier following ODR-YYYY-XXXXXXXX format</td>
+                </tr>
+                <tr>
+                    <td><code>platformId</code></td>
+                    <td>String</td>
+                    <td>Yes</td>
+                    <td>Identifier of the ODR platform managing the dispute</td>
+                </tr>
+                <tr>
+                    <td><code>status</code></td>
+                    <td>Enum</td>
+                    <td>Yes</td>
+                    <td>SUBMITTED | ACKNOWLEDGED | IN_NEGOTIATION | IN_MEDIATION | IN_ARBITRATION | SETTLED | CLOSED</td>
+                </tr>
+                <tr>
+                    <td><code>parties</code></td>
+                    <td>Object</td>
+                    <td>Yes</td>
+                    <td>Claimant and respondent information</td>
+                </tr>
+                <tr>
+                    <td><code>dispute</code></td>
+                    <td>Object</td>
+                    <td>Yes</td>
+                    <td>Dispute details including category, amount, description</td>
+                </tr>
+                <tr>
+                    <td><code>resolutionMethod</code></td>
+                    <td>Enum</td>
+                    <td>Yes</td>
+                    <td>NEGOTIATION | MEDIATION | ARBITRATION | HYBRID</td>
+                </tr>
+                <tr>
+                    <td><code>jurisdiction</code></td>
+                    <td>String</td>
+                    <td>No</td>
+                    <td>ISO 3166-2 code for jurisdiction (e.g., US-CA, GB-ENG)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>4.3 Settlement Agreement Schema</h2>
+
+        <h3>4.3.1 Settlement Document Structure</h3>
+
+        <p>
+            When parties reach agreement through negotiation or mediation, or when an arbitrator issues an award,
+            the outcome is recorded in a standardized settlement agreement format:
+        </p>
+
+        <pre><code>{
+  "settlementId": "SETTLE-2025-789456",
+  "disputeId": "ODR-2025-00012345",
+  "settlementType": "MEDIATED_AGREEMENT",
+  "createdAt": "2025-01-20T16:30:00Z",
+  
+  "terms": {
+    "monetaryTerms": [
+      {
+        "type": "PAYMENT",
+        "payer": "party-456def",
+        "payee": "party-789abc",
+        "amount": {
+          "value": 1100.00,
+          "currency": "USD"
+        },
+        "dueDate": "2025-02-05",
+        "paymentMethod": "BANK_TRANSFER",
+        "installments": 1
+      }
+    ],
+    "nonMonetaryTerms": [
+      {
+        "type": "ACTION",
+        "responsibleParty": "party-456def",
+        "description": "Issue formal apology letter",
+        "dueDate": "2025-01-25"
+      },
+      {
+        "type": "OBLIGATION",
+        "responsibleParty": "party-789abc",
+        "description": "Return damaged product within 7 days of payment receipt"
+      }
+    ],
+    "confidentialityClause": {
+      "isConfidential": true,
+      "exceptions": ["legal obligations", "tax reporting"],
+      "duration": "PERPETUAL"
+    },
+    "releaseClause": {
+      "mutualRelease": true,
+      "scope": "All claims arising from transaction TXN-2024-12345"
+    }
+  },
+  
+  "signatures": [
+    {
+      "partyId": "party-789abc",
+      "signedAt": "2025-01-20T16:45:00Z",
+      "signatureMethod": "ESIGN_QUALIFIED",
+      "signatureHash": "sha256:a3d5f8e9...",
+      "certificateId": "CERT-2025-ABC123"
+    },
+    {
+      "partyId": "party-456def",
+      "signedAt": "2025-01-20T17:00:00Z",
+      "signatureMethod": "ESIGN_QUALIFIED",
+      "signatureHash": "sha256:b4e6g9f1...",
+      "certificateId": "CERT-2025-DEF456"
+    }
+  ],
+  
+  "mediator": {
+    "mediatorId": "MED-2025-123",
+    "name": "Robert Johnson",
+    "certification": "WIA-CERTIFIED-MEDIATOR-2024",
+    "signedAt": "2025-01-20T17:15:00Z"
+  },
+  
+  "blockchain": {
+    "network": "ethereum-mainnet",
+    "transactionHash": "0x7f8d9e3a...",
+    "blockNumber": 18934567,
+    "timestamp": "2025-01-20T17:20:00Z",
+    "documentHash": "sha256:c5f7h2j3..."
+  }
+}</code></pre>
+
+        <h3>4.3.2 Settlement Types</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Settlement Type</th>
+                    <th>Description</th>
+                    <th>Binding</th>
+                    <th>Enforceable</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>NEGOTIATED_AGREEMENT</code></td>
+                    <td>Direct agreement between parties</td>
+                    <td>Yes</td>
+                    <td>Contract law</td>
+                </tr>
+                <tr>
+                    <td><code>MEDIATED_AGREEMENT</code></td>
+                    <td>Agreement reached with mediator facilitation</td>
+                    <td>Yes</td>
+                    <td>Contract law</td>
+                </tr>
+                <tr>
+                    <td><code>ARBITRAL_AWARD</code></td>
+                    <td>Binding decision by arbitrator</td>
+                    <td>Yes</td>
+                    <td>Arbitration law + New York Convention</td>
+                </tr>
+                <tr>
+                    <td><code>CONSENT_ORDER</code></td>
+                    <td>Court-approved settlement</td>
+                    <td>Yes</td>
+                    <td>Court enforcement</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>4.4 Communication Log Schema</h2>
+
+        <h3>4.4.1 Message Exchange Records</h3>
+
+        <p>
+            All communications between parties, mediators, and arbitrators are logged using a standardized format
+            that preserves the audit trail while protecting confidentiality where required:
+        </p>
+
+        <pre><code>{
+  "messageId": "MSG-2025-987654",
+  "disputeId": "ODR-2025-00012345",
+  "timestamp": "2025-01-18T14:30:00Z",
+  
+  "sender": {
+    "partyId": "party-789abc",
+    "role": "CLAIMANT"
+  },
+  
+  "recipients": [
+    {
+      "partyId": "MED-2025-123",
+      "role": "MEDIATOR",
+      "deliveryStatus": "DELIVERED",
+      "readAt": "2025-01-18T14:32:00Z"
+    }
+  ],
+  
+  "messageType": "CAUCUS_COMMUNICATION",
+  "confidential": true,
+  "subject": "Revised settlement proposal",
+  
+  "content": {
+    "format": "TEXT",
+    "body": "I would be willing to accept $1100 plus return shipping costs...",
+    "language": "en-US"
+  },
+  
+  "attachments": [
+    {
+      "attachmentId": "ATT-2025-555",
+      "filename": "revised-proposal.pdf",
+      "mimeType": "application/pdf",
+      "size": 245678,
+      "hash": "sha256:d6g8i3k4..."
+    }
+  ],
+  
+  "metadata": {
+    "channel": "SECURE_PLATFORM",
+    "encrypted": true,
+    "retentionPeriod": "P7Y"
+  }
+}</code></pre>
+
+        <h2>4.5 Evidence Metadata Schema</h2>
+
+        <h3>4.5.1 Digital Evidence Records</h3>
+
+        <p>
+            Evidence submitted in ODR cases uses standardized metadata to ensure authenticity, chain of custody,
+            and admissibility:
+        </p>
+
+        <pre><code>{
+  "evidenceId": "EVD-2025-246810",
+  "disputeId": "ODR-2025-00012345",
+  "submittedBy": "party-789abc",
+  "submittedAt": "2025-01-16T09:15:00Z",
+  
+  "description": "Photos of damaged product showing defects",
+  "evidenceType": "PHOTOGRAPHIC",
+  "relevance": "Demonstrates product condition upon receipt",
+  
+  "files": [
+    {
+      "fileId": "FILE-2025-111",
+      "filename": "product-damage-1.jpg",
+      "mimeType": "image/jpeg",
+      "size": 2457890,
+      "created": "2024-12-16T15:30:00Z",
+      "hash": "sha256:e7h9j4l5...",
+      "virusScanStatus": "CLEAN",
+      "virusScanDate": "2025-01-16T09:16:00Z"
+    },
+    {
+      "fileId": "FILE-2025-112",
+      "filename": "product-damage-2.jpg",
+      "mimeType": "image/jpeg",
+      "size": 2198765,
+      "created": "2024-12-16T15:31:00Z",
+      "hash": "sha256:f8i0k5m6...",
+      "virusScanStatus": "CLEAN",
+      "virusScanDate": "2025-01-16T09:16:00Z"
+    }
+  ],
+  
+  "chainOfCustody": [
+    {
+      "timestamp": "2025-01-16T09:15:00Z",
+      "action": "UPLOADED",
+      "actor": "party-789abc",
+      "location": "https://odr-platform.example/upload",
+      "hash": "sha256:e7h9j4l5..."
+    },
+    {
+      "timestamp": "2025-01-16T09:16:00Z",
+      "action": "VERIFIED",
+      "actor": "SYSTEM",
+      "verification": "Hash verified, virus scan clean"
+    },
+    {
+      "timestamp": "2025-01-16T09:17:00Z",
+      "action": "DISCLOSED",
+      "actor": "party-456def",
+      "note": "Evidence shared with respondent"
+    }
+  ],
+  
+  "blockchain": {
+    "anchored": true,
+    "network": "ethereum-mainnet",
+    "transactionHash": "0x8g9e4b5c...",
+    "blockNumber": 18923456,
+    "timestamp": "2025-01-16T09:20:00Z"
+  }
+}</code></pre>
+
+        <h2>4.6 Dispute Category Taxonomy</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Subcategories</th>
+                    <th>Typical Amount Range</th>
+                    <th>Recommended Method</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>ECOMMERCE</strong></td>
+                    <td>PRODUCT_DEFECT, NOT_AS_DESCRIBED, NON_DELIVERY, UNAUTHORIZED_CHARGE</td>
+                    <td>$10 - $10,000</td>
+                    <td>Negotiation → Mediation</td>
+                </tr>
+                <tr>
+                    <td><strong>SERVICES</strong></td>
+                    <td>QUALITY_DISPUTE, NON_PERFORMANCE, OVERCHARGE, DELAY</td>
+                    <td>$100 - $50,000</td>
+                    <td>Mediation</td>
+                </tr>
+                <tr>
+                    <td><strong>EMPLOYMENT</strong></td>
+                    <td>WAGES, DISCRIMINATION, TERMINATION, HARASSMENT</td>
+                    <td>$1,000 - $500,000</td>
+                    <td>Mediation → Arbitration</td>
+                </tr>
+                <tr>
+                    <td><strong>REAL_ESTATE</strong></td>
+                    <td>LANDLORD_TENANT, PROPERTY_DAMAGE, LEASE_DISPUTE</td>
+                    <td>$500 - $100,000</td>
+                    <td>Mediation</td>
+                </tr>
+                <tr>
+                    <td><strong>COMMERCIAL</strong></td>
+                    <td>CONTRACT_BREACH, PAYMENT_DISPUTE, PARTNERSHIP</td>
+                    <td>$5,000 - $10,000,000</td>
+                    <td>Mediation → Arbitration</td>
+                </tr>
+                <tr>
+                    <td><strong>INSURANCE</strong></td>
+                    <td>CLAIM_DENIAL, COVERAGE_DISPUTE, VALUATION</td>
+                    <td>$1,000 - $1,000,000</td>
+                    <td>Mediation → Arbitration</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>4.7 Data Validation and Quality</h2>
+
+        <h3>4.7.1 Required Field Validation</h3>
+
+        <p>
+            WIA-LEGAL-002 compliant platforms must validate all required fields before accepting dispute submissions.
+            The validation rules ensure data quality and completeness:
+        </p>
+
+        <ul>
+            <li><strong>Email addresses:</strong> Must conform to RFC 5322 format</li>
+            <li><strong>Phone numbers:</strong> Must include country code in E.164 format</li>
+            <li><strong>Currency amounts:</strong> Must specify ISO 4217 currency code</li>
+            <li><strong>Dates:</strong> Must use ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)</li>
+            <li><strong>Country codes:</strong> Must use ISO 3166-1 alpha-2 format</li>
+            <li><strong>Language codes:</strong> Must use BCP 47 format (e.g., en-US, es-MX)</li>
+        </ul>
+
+        <h3>4.7.2 Data Retention and Privacy</h3>
+
+        <p>
+            Data retention policies must balance legal requirements with privacy rights:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Data Type</th>
+                    <th>Minimum Retention</th>
+                    <th>Maximum Retention</th>
+                    <th>Privacy Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Dispute Cases</td>
+                    <td>7 years</td>
+                    <td>Indefinite (anonymized)</td>
+                    <td>PII must be redacted after retention period</td>
+                </tr>
+                <tr>
+                    <td>Settlement Agreements</td>
+                    <td>10 years</td>
+                    <td>Indefinite</td>
+                    <td>Legally binding documents, extended retention</td>
+                </tr>
+                <tr>
+                    <td>Communication Logs</td>
+                    <td>3 years</td>
+                    <td>7 years</td>
+                    <td>Confidential caucus communications may be deleted earlier</td>
+                </tr>
+                <tr>
+                    <td>Evidence Files</td>
+                    <td>7 years</td>
+                    <td>10 years</td>
+                    <td>Hash anchors retained permanently even if files deleted</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="summary-box">
+            <h3>Chapter Summary</h3>
+            <p><strong>Key Concepts:</strong></p>
+            <ul>
+                <li>WIA-LEGAL-002 defines standardized JSON schemas for dispute cases, settlements, communications, and evidence</li>
+                <li>The dispute case schema captures all parties, dispute details, and resolution method in a uniform format</li>
+                <li>Settlement agreements include monetary and non-monetary terms, signatures, and blockchain anchoring</li>
+                <li>Communication logs provide complete audit trails while preserving confidentiality</li>
+                <li>Evidence metadata ensures chain of custody and admissibility</li>
+                <li>Comprehensive validation rules ensure data quality and compliance</li>
+                <li>Data retention policies balance legal requirements with privacy rights</li>
+            </ul>
+        </div>
+
+        <div class="summary-box">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>What are the four primary data schemas defined in WIA-LEGAL-002?</li>
+                <li>Why does the standard use JSON as the primary format instead of XML?</li>
+                <li>Explain the purpose of the blockchain anchoring in settlement agreements and evidence records.</li>
+                <li>What information must be included in the chain of custody for digital evidence?</li>
+                <li>How does the standard handle confidential mediation communications in the communication log schema?</li>
+                <li>What validation rules apply to currency amounts and why are they important?</li>
+                <li>Compare the retention periods for different data types and explain the rationale for the differences.</li>
+            </ol>
+        </div>
+
+        <div class="summary-box">
+            <h3>Looking Ahead</h3>
+            <p>
+                In Chapter 5, we'll explore Phase 2: API Design. You'll learn the RESTful and GraphQL APIs that enable
+                platforms to submit disputes, match mediators, process settlements, and track case status. We'll provide
+                complete endpoint specifications, request/response examples, and authentication methods.
+            </p>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-03.html" class="nav-btn">← Previous Chapter</a>
+            <a href="chapter-05.html" class="nav-btn">Next Chapter →</a>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid var(--border); color: var(--legal-color);">
+            <p><strong>弘益人間 (Hongik Ingan) - Benefit All Humanity</strong></p>
+            <p style="color: var(--text-secondary); margin-top: 10px;">© 2025 WIA - World Certification Industry Association</p>
+        </div>
+    </div>
+</body>
+</html>

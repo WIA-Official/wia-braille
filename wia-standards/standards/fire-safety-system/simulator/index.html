@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fire Safety System Simulator | WIA Standard</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #EF4444;
+            --primary-dark: #DC2626;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        select, button {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 1rem 2rem;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .card h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-normal { background: var(--success); }
+        .status-warning { background: var(--warning); }
+        .status-alarm { background: var(--primary); animation: blink 1s infinite; }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .sensor {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .sensor:hover {
+            transform: scale(1.05);
+        }
+
+        .sensor.active {
+            border-color: var(--primary);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .log {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        .log-entry {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .log-alarm { color: var(--primary); }
+        .log-warning { color: var(--warning); }
+        .log-info { color: var(--success); }
+
+        pre {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        code {
+            color: var(--success);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg);
+            color: var(--primary);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+
+        .btn-alarm {
+            background: var(--primary);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-alarm:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .metric {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .metric-label {
+            color: var(--text-dim);
+            font-size: 0.875rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 1rem 0;
+        }
+
+        .protocol-flow {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .flow-step {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .flow-arrow {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔥 Fire Safety System Simulator</h1>
+            <div class="controls">
+                <select id="languageSelect" onchange="changeLanguage()">
+                    <option value="en">English</option>
+                    <option value="ko">한국어</option>
+                    <option value="ja">日本語</option>
+                    <option value="zh">中文</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="it">Italiano</option>
+                    <option value="pt">Português</option>
+                    <option value="ru">Русский</option>
+                    <option value="ar">العربية</option>
+                    <option value="hi">हिन्दी</option>
+                    <option value="bn">বাংলা</option>
+                    <option value="vi">Tiếng Việt</option>
+                    <option value="th">ไทย</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="pl">Polski</option>
+                    <option value="nl">Nederlands</option>
+                    <option value="sv">Svenska</option>
+                    <option value="no">Norsk</option>
+                    <option value="da">Dansk</option>
+                    <option value="fi">Suomi</option>
+                    <option value="el">Ελληνικά</option>
+                    <option value="he">עברית</option>
+                    <option value="id">Bahasa Indonesia</option>
+                    <option value="ms">Bahasa Melayu</option>
+                    <option value="tl">Filipino</option>
+                    <option value="cs">Čeština</option>
+                    <option value="hu">Magyar</option>
+                    <option value="ro">Română</option>
+                    <option value="uk">Українська</option>
+                    <option value="fa">فارسی</option>
+                    <option value="ur">اردو</option>
+                    <option value="sw">Kiswahili</option>
+                    <option value="am">አማርኛ</option>
+                    <option value="ne">नेपाली</option>
+                    <option value="si">සිංහල</option>
+                    <option value="my">မြန်မာ</option>
+                    <option value="km">ខ្មែរ</option>
+                    <option value="lo">ລາວ</option>
+                    <option value="ka">ქართული</option>
+                    <option value="hy">Հայերեն</option>
+                    <option value="az">Azərbaycan</option>
+                    <option value="kk">Қазақ</option>
+                    <option value="uz">Oʻzbek</option>
+                    <option value="mn">Монгол</option>
+                    <option value="ta">தமிழ்</option>
+                    <option value="te">తెలుగు</option>
+                    <option value="ml">മലയാളം</option>
+                    <option value="kn">ಕನ್ನಡ</option>
+                    <option value="mr">मराठी</option>
+                    <option value="gu">ગુજરાતી</option>
+                    <option value="pa">ਪੰਜਾਬੀ</option>
+                    <option value="or">ଓଡ଼ିଆ</option>
+                    <option value="as">অসমীয়া</option>
+                    <option value="sd">سنڌي</option>
+                    <option value="ps">پښتو</option>
+                    <option value="ku">Kurdî</option>
+                    <option value="so">Soomaali</option>
+                    <option value="mg">Malagasy</option>
+                    <option value="ha">Hausa</option>
+                    <option value="yo">Yorùbá</option>
+                    <option value="ig">Igbo</option>
+                    <option value="zu">isiZulu</option>
+                    <option value="xh">isiXhosa</option>
+                    <option value="af">Afrikaans</option>
+                    <option value="sq">Shqip</option>
+                    <option value="bs">Bosanski</option>
+                    <option value="hr">Hrvatski</option>
+                    <option value="sr">Српски</option>
+                    <option value="mk">Македонски</option>
+                    <option value="bg">Български</option>
+                    <option value="sk">Slovenčina</option>
+                    <option value="sl">Slovenščina</option>
+                    <option value="et">Eesti</option>
+                    <option value="lv">Latviešu</option>
+                    <option value="lt">Lietuvių</option>
+                    <option value="is">Íslenska</option>
+                    <option value="ga">Gaeilge</option>
+                    <option value="cy">Cymraeg</option>
+                    <option value="mt">Malti</option>
+                    <option value="lb">Lëtzebuergesch</option>
+                    <option value="fo">Føroyskt</option>
+                    <option value="gd">Gàidhlig</option>
+                    <option value="br">Brezhoneg</option>
+                    <option value="eu">Euskara</option>
+                    <option value="ca">Català</option>
+                    <option value="gl">Galego</option>
+                    <option value="oc">Occitan</option>
+                    <option value="co">Corsu</option>
+                    <option value="sc">Sardu</option>
+                    <option value="la">Latina</option>
+                    <option value="eo">Esperanto</option>
+                    <option value="jv">Basa Jawa</option>
+                    <option value="su">Basa Sunda</option>
+                    <option value="ceb">Cebuano</option>
+                    <option value="hmn">Hmong</option>
+                    <option value="haw">ʻŌlelo Hawaiʻi</option>
+                    <option value="mi">Te Reo Māori</option>
+                    <option value="sm">Gagana Samoa</option>
+                    <option value="to">Lea Faka-Tonga</option>
+                </select>
+                <button onclick="resetSystem()">Reset System</button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('data')">Data Format</div>
+            <div class="tab" onclick="switchTab('algorithms')">Algorithms</div>
+            <div class="tab" onclick="switchTab('protocol')">Protocol</div>
+            <div class="tab" onclick="switchTab('integration')">Integration</div>
+            <div class="tab" onclick="switchTab('test')">Test</div>
+        </div>
+
+        <!-- DATA FORMAT TAB -->
+        <div id="data" class="tab-content active">
+            <h2>Fire Safety Data Formats</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Sensor Data Schema</h3>
+                    <pre><code>{
+  "sensorId": "SMOKE-001-FL03",
+  "type": "photoelectric_smoke",
+  "location": {
+    "building": "Tower A",
+    "floor": 3,
+    "zone": "East Wing",
+    "coordinates": {"x": 45.2, "y": 78.5}
+  },
+  "status": "normal",
+  "readings": {
+    "obscuration": 2.5,
+    "temperature": 22.3,
+    "batteryLevel": 87
+  },
+  "timestamp": "2025-12-27T10:30:00Z",
+  "lastMaintenance": "2025-11-15"
+}</code></pre>
+                </div>
+                <div class="card">
+                    <h3>Alarm Signal Format</h3>
+                    <pre><code>{
+  "alarmId": "ALM-2025-0127-001",
+  "priority": "critical",
+  "type": "fire_detected",
+  "source": {
+    "sensorId": "SMOKE-001-FL03",
+    "deviceType": "smoke_detector"
+  },
+  "location": {
+    "building": "Tower A",
+    "floor": 3,
+    "zone": "East Wing"
+  },
+  "triggeredAt": "2025-12-27T10:30:15Z",
+  "status": "active",
+  "notified": ["building_control", "fire_dept"]
+}</code></pre>
+                </div>
+                <div class="card">
+                    <h3>Device Status Format</h3>
+                    <pre><code>{
+  "deviceId": "FACP-MAIN-001",
+  "type": "fire_alarm_control_panel",
+  "status": "operational",
+  "connectedDevices": 247,
+  "activeAlarms": 0,
+  "systemHealth": {
+    "powerSupply": "normal",
+    "batteryBackup": "charged",
+    "networkStatus": "connected"
+  },
+  "lastCheck": "2025-12-27T10:00:00Z"
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Suppression System Data</h3>
+                <pre><code>{
+  "systemId": "SPRINKLER-ZONE-A3",
+  "type": "wet_pipe_sprinkler",
+  "status": "standby",
+  "waterSupply": {
+    "pressure": 85.5,
+    "unit": "psi",
+    "flowRate": 0,
+    "valveStatus": "closed"
+  },
+  "coverage": {
+    "area": 5000,
+    "unit": "sqft",
+    "headCount": 42,
+    "activeHeads": []
+  },
+  "lastInspection": "2025-12-01",
+  "nextInspectionDue": "2026-01-01"
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- ALGORITHMS TAB -->
+        <div id="algorithms" class="tab-content">
+            <h2>Fire Detection Algorithms</h2>
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-value" id="smokeLevel">0%</div>
+                    <div class="metric-label">Smoke Obscuration</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="tempLevel">22°C</div>
+                    <div class="metric-label">Temperature</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="riseRate">0°C/min</div>
+                    <div class="metric-label">Rate of Rise</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="confidence">0%</div>
+                    <div class="metric-label">Fire Confidence</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Smoke Detection Algorithm</h3>
+                <label>Obscuration Level: <span id="obscValue">2.5%</span></label>
+                <input type="range" id="obscSlider" min="0" max="10" step="0.1" value="2.5" oninput="updateSmoke(this.value)">
+                <div style="margin-top: 1rem;">
+                    <strong>Algorithm:</strong>
+                    <ul>
+                        <li>Threshold: 4.0% obscuration/ft</li>
+                        <li>Pre-alarm: 3.0% obscuration/ft</li>
+                        <li>Compensation for dust/humidity</li>
+                        <li>Multi-sensor verification</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Heat Detection Algorithm</h3>
+                <label>Temperature: <span id="tempValue">22°C</span></label>
+                <input type="range" id="tempSlider" min="15" max="100" step="0.5" value="22" oninput="updateTemp(this.value)">
+                <div style="margin-top: 1rem;">
+                    <strong>Detection Methods:</strong>
+                    <ul>
+                        <li>Fixed Temperature: 57°C (135°F)</li>
+                        <li>Rate of Rise: >8°C/min (>15°F/min)</li>
+                        <li>Combined detection for reliability</li>
+                        <li>Adaptive thresholds by zone type</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Multi-Criteria Algorithm</h3>
+                <pre><code>function detectFire(sensors) {
+  let confidence = 0;
+  
+  // Smoke detection
+  if (sensors.smoke.obscuration > 4.0) {
+    confidence += 40;
+  } else if (sensors.smoke.obscuration > 3.0) {
+    confidence += 20;
+  }
+  
+  // Heat detection
+  if (sensors.heat.temperature > 57) {
+    confidence += 40;
+  } else if (sensors.heat.rateOfRise > 8) {
+    confidence += 30;
+  }
+  
+  // CO detection
+  if (sensors.co.ppm > 50) {
+    confidence += 20;
+  }
+  
+  // Multi-sensor correlation
+  if (confidence > 60 && 
+      sensors.smoke.obscuration > 2.0 && 
+      sensors.heat.temperature > 30) {
+    confidence += 20;
+  }
+  
+  return {
+    confidence: Math.min(confidence, 100),
+    alarm: confidence >= 70,
+    preAlarm: confidence >= 50
+  };
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- PROTOCOL TAB -->
+        <div id="protocol" class="tab-content">
+            <h2>Fire Safety Protocols</h2>
+            
+            <div class="card">
+                <h3>Detection & Response Protocol Flow</h3>
+                <div class="protocol-flow">
+                    <div class="flow-step">
+                        <strong>1. Detection</strong>
+                        <p>Sensor triggers</p>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <strong>2. Verification</strong>
+                        <p>&lt;3s multi-sensor</p>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <strong>3. Alert</strong>
+                        <p>Local + Central</p>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <strong>4. Suppress</strong>
+                        <p>Auto activation</p>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <strong>5. Evacuate</strong>
+                        <p>Voice + Visual</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <h3>NFPA 72 Compliance</h3>
+                    <table>
+                        <tr>
+                            <th>Requirement</th>
+                            <th>Status</th>
+                        </tr>
+                        <tr>
+                            <td>Addressable devices</td>
+                            <td><span class="status-indicator status-normal"></span>OK</td>
+                        </tr>
+                        <tr>
+                            <td>Supervision 24/7</td>
+                            <td><span class="status-indicator status-normal"></span>OK</td>
+                        </tr>
+                        <tr>
+                            <td>Backup power 24h</td>
+                            <td><span class="status-indicator status-normal"></span>OK</td>
+                        </tr>
+                        <tr>
+                            <td>Annual testing</td>
+                            <td><span class="status-indicator status-normal"></span>OK</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="card">
+                    <h3>EN 54 Compliance</h3>
+                    <table>
+                        <tr>
+                            <th>Standard</th>
+                            <th>Status</th>
+                        </tr>
+                        <tr>
+                            <td>EN 54-2 (Control panel)</td>
+                            <td><span class="status-indicator status-normal"></span>OK</td>
+                        </tr>
+                        <tr>
+                            <td>EN 54-5 (Heat detector)</td>
+                            <td><span class="status-indicator status-normal"></span>OK</td>
+                        </tr>
+                        <tr>
+                            <td>EN 54-7 (Smoke detector)</td>
+                            <td><span class="status-indicator status-normal"></span>OK</td>
+                        </tr>
+                        <tr>
+                            <td>EN 54-10 (Flame detector)</td>
+                            <td><span class="status-indicator status-normal"></span>OK</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Emergency Communication Protocol</h3>
+                <pre><code>// EVAC Sequence
+1. PRE-ALERT (T+0s)
+   - Silent notification to security/management
+   - Camera activation in alert zones
+   
+2. ZONE ALERT (T+30s)
+   - Audible alarm in affected zones
+   - Visual strobes activated
+   - Voice message: "Alert. Please stand by."
+   
+3. FULL EVACUATION (T+60s)
+   - Building-wide alarm
+   - Voice message: "Fire alarm. Evacuate now."
+   - Emergency lighting activated
+   - Elevator recall
+   - Door unlock/access control override
+   
+4. EMERGENCY SERVICES (T+0s)
+   - Auto-dial fire department
+   - Location data transmitted
+   - Building plans/hazmat info sent
+   - Video feed access granted</code></pre>
+            </div>
+        </div>
+
+        <!-- INTEGRATION TAB -->
+        <div id="integration" class="tab-content">
+            <h2>System Integration</h2>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>Building Management System</h3>
+                    <ul>
+                        <li><span class="status-indicator status-normal"></span> HVAC Control Integration</li>
+                        <li><span class="status-indicator status-normal"></span> Smoke damper activation</li>
+                        <li><span class="status-indicator status-normal"></span> Pressurization systems</li>
+                        <li><span class="status-indicator status-normal"></span> Emergency power switching</li>
+                        <li><span class="status-indicator status-normal"></span> Lighting control</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Access Control Integration</h3>
+                    <ul>
+                        <li><span class="status-indicator status-normal"></span> Automatic door unlock</li>
+                        <li><span class="status-indicator status-normal"></span> Turnstile release</li>
+                        <li><span class="status-indicator status-normal"></span> Elevator recall</li>
+                        <li><span class="status-indicator status-normal"></span> Emergency exit monitoring</li>
+                        <li><span class="status-indicator status-normal"></span> Occupancy tracking</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Public Safety Integration</h3>
+                    <ul>
+                        <li><span class="status-indicator status-normal"></span> Fire department notification</li>
+                        <li><span class="status-indicator status-normal"></span> 911 auto-dial</li>
+                        <li><span class="status-indicator status-normal"></span> Building information sharing</li>
+                        <li><span class="status-indicator status-normal"></span> Video surveillance feed</li>
+                        <li><span class="status-indicator status-normal"></span> Two-way communication</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Integration API Example</h3>
+                <pre><code>// Fire alarm event triggers BMS actions
+POST /api/v1/fire-event
+{
+  "eventId": "FIRE-2025-0127-001",
+  "location": {"building": "A", "floor": 3},
+  "actions": {
+    "hvac": {
+      "shutdown": ["zone_A3_supply", "zone_A3_return"],
+      "activate": ["smoke_exhaust_A3"]
+    },
+    "access": {
+      "unlock": ["all_exits"],
+      "recall": ["elevators_all"]
+    },
+    "lighting": {
+      "activate": ["emergency_lights_all"],
+      "strobe": ["exit_signs_all"]
+    },
+    "communication": {
+      "evac_message": "floor_3_all_zones",
+      "notify": ["fire_dept", "security", "facilities"]
+    }
+  }
+}
+
+// Response from integrated systems
+{
+  "status": "executed",
+  "timestamp": "2025-12-27T10:30:17Z",
+  "confirmations": {
+    "hvac": "shutdown_complete",
+    "access": "unlocked",
+    "lighting": "activated",
+    "notification": "sent"
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- TEST TAB -->
+        <div id="test" class="tab-content">
+            <h2>Interactive Testing</h2>
+            
+            <div class="card">
+                <h3>Fire Detection Simulator</h3>
+                <p>Click on sensors to trigger fire detection</p>
+                <div class="sensor-grid">
+                    <div class="sensor" onclick="toggleSensor(this, 'SMOKE-001')">
+                        <div>🔍</div>
+                        <div>SMOKE-001</div>
+                    </div>
+                    <div class="sensor" onclick="toggleSensor(this, 'HEAT-002')">
+                        <div>🌡️</div>
+                        <div>HEAT-002</div>
+                    </div>
+                    <div class="sensor" onclick="toggleSensor(this, 'FLAME-003')">
+                        <div>🔥</div>
+                        <div>FLAME-003</div>
+                    </div>
+                    <div class="sensor" onclick="toggleSensor(this, 'SMOKE-004')">
+                        <div>🔍</div>
+                        <div>SMOKE-004</div>
+                    </div>
+                    <div class="sensor" onclick="toggleSensor(this, 'HEAT-005')">
+                        <div>🌡️</div>
+                        <div>HEAT-005</div>
+                    </div>
+                    <div class="sensor" onclick="toggleSensor(this, 'CO-006')">
+                        <div>💨</div>
+                        <div>CO-006</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn-alarm" onclick="triggerAlarm()">Trigger Fire Alarm</button>
+                <button onclick="activateSprinkler()">Activate Sprinkler</button>
+                <button onclick="evacuationAlert()">Start Evacuation</button>
+                <button onclick="clearAlarms()">Clear All Alarms</button>
+            </div>
+
+            <div class="card">
+                <h3>System Event Log</h3>
+                <div class="log" id="eventLog">
+                    <div class="log-entry log-info">[10:00:00] System initialized - All sensors normal</div>
+                    <div class="log-entry log-info">[10:15:30] Routine system check completed</div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <h3>Active Alarms</h3>
+                    <div id="activeAlarms">
+                        <p style="color: var(--text-dim)">No active alarms</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>System Status</h3>
+                    <ul>
+                        <li><span class="status-indicator status-normal"></span> Fire Control Panel: Operational</li>
+                        <li><span class="status-indicator status-normal"></span> Sensors: 247 online</li>
+                        <li><span class="status-indicator status-normal"></span> Suppression: Standby</li>
+                        <li><span class="status-indicator status-normal"></span> Communication: Connected</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let activeAlarms = [];
+        let logEntries = [];
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function changeLanguage() {
+            const lang = document.getElementById('languageSelect').value;
+            addLog('System language changed to: ' + lang, 'info');
+        }
+
+        function resetSystem() {
+            activeAlarms = [];
+            document.querySelectorAll('.sensor').forEach(s => s.classList.remove('active'));
+            document.getElementById('activeAlarms').innerHTML = '<p style="color: var(--text-dim)">No active alarms</p>';
+            addLog('System reset completed', 'info');
+        }
+
+        function updateSmoke(value) {
+            document.getElementById('obscValue').textContent = value + '%';
+            document.getElementById('smokeLevel').textContent = value + '%';
+            updateFireConfidence();
+        }
+
+        function updateTemp(value) {
+            document.getElementById('tempValue').textContent = value + '°C';
+            document.getElementById('tempLevel').textContent = value + '°C';
+            updateFireConfidence();
+        }
+
+        function updateFireConfidence() {
+            const smoke = parseFloat(document.getElementById('obscSlider').value);
+            const temp = parseFloat(document.getElementById('tempSlider').value);
+            let confidence = 0;
+            
+            if (smoke > 4.0) confidence += 40;
+            else if (smoke > 3.0) confidence += 20;
+            
+            if (temp > 57) confidence += 40;
+            else if (temp > 40) confidence += 20;
+            
+            document.getElementById('confidence').textContent = Math.min(confidence, 100) + '%';
+            
+            if (confidence >= 70) {
+                addLog('FIRE DETECTED - High confidence: ' + confidence + '%', 'alarm');
+            }
+        }
+
+        function toggleSensor(element, sensorId) {
+            element.classList.toggle('active');
+            if (element.classList.contains('active')) {
+                addLog('Sensor activated: ' + sensorId, 'warning');
+            } else {
+                addLog('Sensor deactivated: ' + sensorId, 'info');
+            }
+        }
+
+        function triggerAlarm() {
+            const alarmId = 'ALM-' + Date.now();
+            activeAlarms.push(alarmId);
+            addLog('🚨 FIRE ALARM TRIGGERED - ' + alarmId, 'alarm');
+            addLog('Emergency services notified', 'alarm');
+            addLog('Building evacuation initiated', 'alarm');
+            updateActiveAlarms();
+        }
+
+        function activateSprinkler() {
+            addLog('💧 Sprinkler system activated', 'warning');
+            addLog('Water flow detected in Zone A3', 'warning');
+        }
+
+        function evacuationAlert() {
+            addLog('📢 EVACUATION ALERT - All occupants evacuate immediately', 'alarm');
+            addLog('Emergency exits unlocked', 'info');
+            addLog('Elevators recalled to ground floor', 'info');
+        }
+
+        function clearAlarms() {
+            activeAlarms = [];
+            updateActiveAlarms();
+            addLog('All alarms cleared by operator', 'info');
+        }
+
+        function addLog(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const entry = `<div class="log-entry log-${type}">[${time}] ${message}</div>`;
+            const log = document.getElementById('eventLog');
+            log.innerHTML = entry + log.innerHTML;
+        }
+
+        function updateActiveAlarms() {
+            const container = document.getElementById('activeAlarms');
+            if (activeAlarms.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-dim)">No active alarms</p>';
+            } else {
+                container.innerHTML = activeAlarms.map(id => 
+                    `<div><span class="status-indicator status-alarm"></span>${id}</div>`
+                ).join('');
+            }
+        }
+    </script>
+</body>
+</html>

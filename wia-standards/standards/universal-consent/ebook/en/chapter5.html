@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 5: Consent API Interface (PHASE 2) | WIA-CORE-002</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Georgia, serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 800px; margin: 0 auto; }
+        header { border-bottom: 3px solid #334155; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #6B7280; font-size: 1rem; font-weight: 600; letter-spacing: 2px; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #f1f5f9; margin-bottom: 1rem; }
+        .chapter-intro { font-size: 1.2rem; color: #94a3b8; font-style: italic; margin-top: 1rem; }
+        h2 { font-size: 1.8rem; color: #6B7280; margin: 3rem 0 1.5rem 0; }
+        h3 { font-size: 1.4rem; color: #9CA3AF; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; text-align: justify; }
+        .highlight { background: #1e293b; padding: 1.5rem; border-left: 4px solid #6B7280; margin: 2rem 0; border-radius: 8px; }
+        ul, ol { margin: 1.5rem 0; padding-left: 2rem; color: #cbd5e1; }
+        li { margin-bottom: 0.75rem; }
+        .code-block { background: #1e293b; padding: 1.5rem; border-radius: 8px; margin: 2rem 0; font-family: 'Courier New', monospace; font-size: 0.9rem; overflow-x: auto; color: #cbd5e1; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #1e293b; color: #6B7280; font-weight: 600; }
+        td { color: #cbd5e1; }
+        .nav { display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #6B7280; text-decoration: none; padding: 0.75rem 1.5rem; border: 2px solid #6B7280; border-radius: 8px; transition: all 0.3s; }
+        .nav a:hover { background: #6B7280; color: white; }
+        footer { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; color: #64748b; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-number">CHAPTER 05 · PHASE 2</div>
+            <h1>Consent API Interface</h1>
+            <p class="chapter-intro">
+                Complete API reference for consent operations: creation, retrieval, updates, revocation,
+                and verification with comprehensive code examples.
+            </p>
+        </header>
+        <article>
+            <h2>From Data to Action: The API Layer</h2>
+            <p>
+                Phase 1 established the consent data format—the "what" of consent management. Phase 2 defines
+                the "how": standardized APIs that enable systems to create, read, update, delete, and verify
+                consent records programmatically. These APIs form the operational backbone of WIA-CORE-002,
+                enabling real-world consent management at scale.
+            </p>
+            <h2>API Design Principles</h2>
+            <p>The WIA-CORE-002 API is designed around several key principles:</p>
+            <ul>
+                <li><strong>RESTful Architecture:</strong> Uses standard HTTP methods (GET, POST, PUT, PATCH, DELETE) with predictable URL patterns</li>
+                <li><strong>GraphQL Support:</strong> Alternative query interface for efficient, flexible data retrieval</li>
+                <li><strong>Idempotency:</strong> Safe retry behavior for operations</li>
+                <li><strong>Versioning:</strong> API versioning through URL path for backward compatibility</li>
+                <li><strong>Authentication:</strong> OAuth 2.0 and API key support</li>
+                <li><strong>Rate Limiting:</strong> Protection against abuse with clear rate limit headers</li>
+                <li><strong>Pagination:</strong> Cursor-based pagination for large result sets</li>
+                <li><strong>Error Handling:</strong> Standardized error responses with detailed error codes</li>
+            </ul>
+            <h2>Core API Endpoints</h2>
+            <h3>1. Create Consent</h3>
+            <div class="code-block">POST /api/v1/consents
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{
+  "userId": "user-789012",
+  "purposes": [
+    {
+      "purposeId": "marketing-email",
+      "granted": true
+    }
+  ],
+  "jurisdiction": "EU",
+  "metadata": {
+    "source": "web-signup",
+    "ipAddress": "192.0.2.1"
+  }
+}
+
+Response 201 Created:
+{
+  "consentId": "consent-550e8400...",
+  "status": "active",
+  "createdAt": "2025-01-15T10:30:00Z",
+  ...
+}</div>
+            <h3>2. Retrieve Consent</h3>
+            <div class="code-block">GET /api/v1/consents/{consentId}
+Authorization: Bearer {access_token}
+
+Response 200 OK:
+{
+  "consentId": "consent-550e8400...",
+  "userId": "user-789012",
+  "status": "active",
+  ...
+}</div>
+            <h3>3. List User Consents</h3>
+            <div class="code-block">GET /api/v1/users/{userId}/consents?status=active&limit=50
+Authorization: Bearer {access_token}
+
+Response 200 OK:
+{
+  "data": [
+    { "consentId": "consent-1...", ... },
+    { "consentId": "consent-2...", ... }
+  ],
+  "pagination": {
+    "cursor": "eyJpZCI6MTIzfQ==",
+    "hasMore": true
+  }
+}</div>
+            <h3>4. Update Consent</h3>
+            <div class="code-block">PATCH /api/v1/consents/{consentId}
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{
+  "purposes": [
+    {
+      "purposeId": "marketing-email",
+      "granted": false
+    }
+  ]
+}
+
+Response 200 OK:
+{
+  "consentId": "consent-550e8400...",
+  "status": "active",
+  "updatedAt": "2025-06-20T14:22:00Z",
+  ...
+}</div>
+            <h3>5. Revoke Consent</h3>
+            <div class="code-block">POST /api/v1/consents/{consentId}/revoke
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{
+  "reason": "User requested via preference center",
+  "revokeAll": false
+}
+
+Response 200 OK:
+{
+  "consentId": "consent-550e8400...",
+  "status": "revoked",
+  "revokedAt": "2025-12-01T09:15:00Z"
+}</div>
+            <h3>6. Verify Consent</h3>
+            <div class="code-block">POST /api/v1/consents/verify
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{
+  "userId": "user-789012",
+  "purposeId": "marketing-email"
+}
+
+Response 200 OK:
+{
+  "isValid": true,
+  "consentId": "consent-550e8400...",
+  "grantedAt": "2025-01-15T10:30:00Z",
+  "expiresAt": "2026-01-15T10:30:00Z"
+}</div>
+            <h2>Batch Operations</h2>
+            <p>For high-volume scenarios, batch endpoints enable processing multiple operations in a single request:</p>
+            <div class="code-block">POST /api/v1/consents/batch
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{
+  "operations": [
+    {
+      "operation": "create",
+      "data": { "userId": "user-1", ... }
+    },
+    {
+      "operation": "update",
+      "consentId": "consent-abc...",
+      "data": { "purposes": [...] }
+    }
+  ]
+}
+
+Response 200 OK:
+{
+  "results": [
+    { "success": true, "consentId": "consent-new..." },
+    { "success": true, "consentId": "consent-abc..." }
+  ],
+  "summary": {
+    "total": 2,
+    "successful": 2,
+    "failed": 0
+  }
+}</div>
+            <h2>GraphQL Interface</h2>
+            <p>For applications requiring flexible queries, WIA-CORE-002 provides a GraphQL endpoint:</p>
+            <div class="code-block">POST /api/v1/graphql
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{
+  "query": "query GetUserConsents($userId: ID!) {
+    user(id: $userId) {
+      consents(status: ACTIVE) {
+        consentId
+        purposes {
+          purposeId
+          purposeName
+          granted
+        }
+        createdAt
+      }
+    }
+  }",
+  "variables": {
+    "userId": "user-789012"
+  }
+}</div>
+            <h2>Webhooks and Event Streaming</h2>
+            <p>Real-time consent change notifications via webhooks:</p>
+            <div class="code-block">POST https://your-app.com/webhooks/consent
+Content-Type: application/json
+X-WIA-Signature: sha256=...
+
+{
+  "eventId": "evt-123...",
+  "eventType": "consent.updated",
+  "timestamp": "2025-06-20T14:22:00Z",
+  "data": {
+    "consentId": "consent-550e8400...",
+    "userId": "user-789012",
+    "changes": {
+      "purposes.marketing-email.granted": {
+        "old": true,
+        "new": false
+      }
+    }
+  }
+}</div>
+            <h2>Error Handling</h2>
+            <p>Standardized error responses ensure consistent error handling across implementations:</p>
+            <div class="code-block">Response 400 Bad Request:
+{
+  "error": {
+    "code": "INVALID_PURPOSE_ID",
+    "message": "The purpose ID 'invalid-id' is not recognized",
+    "details": {
+      "field": "purposes[0].purposeId",
+      "value": "invalid-id",
+      "validValues": ["marketing-email", "analytics", ...]
+    }
+  }
+}</div>
+            <h2>Security and Authentication</h2>
+            <p>All API requests must be authenticated using OAuth 2.0 bearer tokens or API keys:</p>
+            <ul>
+                <li>TLS 1.3 required for all connections</li>
+                <li>OAuth 2.0 with appropriate scopes (consents.read, consents.write, consents.admin)</li>
+                <li>API key authentication for server-to-server integrations</li>
+                <li>Request signing for webhook verification</li>
+                <li>IP whitelisting for sensitive operations</li>
+                <li>Rate limiting: 1000 requests/hour per API key (adjustable)</li>
+            </ul>
+            <h2>SDK Libraries</h2>
+            <p>Official SDKs simplify integration:</p>
+            <div class="code-block">// TypeScript/JavaScript
+import { WIAConsent } from '@wia/consent-sdk';
+
+const client = new WIAConsent({
+  apiKey: process.env.WIA_API_KEY
+});
+
+const consent = await client.consents.create({
+  userId: 'user-789012',
+  purposes: [{ purposeId: 'marketing-email', granted: true }],
+  jurisdiction: 'EU'
+});
+
+console.log('Consent created:', consent.consentId);</div>
+            <p>SDKs available for: TypeScript/JavaScript, Python, Java, Go, Ruby, PHP, .NET</p>
+            <h2>Implementation Checklist</h2>
+            <ol>
+                <li>Choose deployment model (self-hosted vs. managed service)</li>
+                <li>Set up authentication (OAuth 2.0 or API keys)</li>
+                <li>Implement core CRUD endpoints</li>
+                <li>Add batch operation support for high-volume scenarios</li>
+                <li>Configure webhooks for real-time notifications</li>
+                <li>Implement rate limiting and security controls</li>
+                <li>Set up monitoring and logging</li>
+                <li>Test with SDK libraries</li>
+                <li>Document custom extensions</li>
+                <li>Conduct security audit</li>
+            </ol>
+            <h2>Chapter Summary</h2>
+            <p>
+                Phase 2 brings consent data to life through standardized APIs. Organizations can now programmatically
+                manage consent across systems, integrate with third-party tools, and respond to consent changes in
+                real-time. The API layer enables the technical foundation for universal consent management.
+            </p>
+            <div class="nav">
+                <a href="chapter4.html">← Chapter 4</a>
+                <a href="chapter6.html">Chapter 6 →</a>
+            </div>
+        </article>
+        <footer>
+            <p>WIA-CORE-002: Universal Consent Management Standard</p>
+            <p>© 2025 SmileStory Inc. / WIA · 弘益人間 (Benefit All Humanity)</p>
+        </footer>
+    </div>
+</body>
+</html>

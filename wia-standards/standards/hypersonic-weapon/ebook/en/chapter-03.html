@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: Control Systems and API Interfaces | WIA-DEF-008</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --primary: #8B5CF6;
+            --text: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #475569;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-secondary); padding: 3rem; border-radius: 10px; box-shadow: 0 0 40px rgba(139, 92, 246, 0.1); }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: var(--bg-tertiary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .warning-box { background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: var(--bg); }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--primary); font-weight: bold; }
+        tr:hover { background: var(--bg-tertiary); }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: 5px; transition: all 0.3s ease; font-weight: bold; }
+        .btn:hover { background: var(--success); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', monospace; color: var(--success); font-size: 0.9rem; }
+        pre { background: var(--bg); padding: 1.5rem; border-radius: 5px; overflow-x: auto; border: 1px solid var(--border); margin: 1rem 0; }
+        pre code { padding: 0; }
+        .api-endpoint { background: var(--bg-tertiary); padding: 1rem; margin: 1rem 0; border-left: 3px solid var(--primary); border-radius: 3px; font-family: monospace; }
+        .review-section { background: var(--bg-tertiary); padding: 2rem; margin: 3rem 0; border-radius: 10px; }
+        .review-question { background: var(--bg); padding: 1rem; margin: 1rem 0; border-left: 3px solid var(--primary); border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">Chapter 3</p>
+        <h1>Control Systems and API Interfaces</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            Exploring the software interfaces, telemetry systems, and control APIs that enable guidance, navigation, and control of hypersonic weapons under extreme flight conditions.
+        </p>
+
+        <h2>3.1 Flight Control System Architecture</h2>
+        <p>
+            The flight control system (FCS) for hypersonic weapons must operate in one of the most demanding environments imaginable: extreme accelerations up to 40g, temperatures exceeding 2,000°C, plasma blackout conditions blocking external communications, and flight dynamics that change dramatically across the Mach 5-20 speed envelope. The WIA-DEF-008 standard defines a layered architecture that separates concerns while ensuring robust, deterministic operation.
+        </p>
+
+        <h3>System Layers</h3>
+        <p>
+            The FCS architecture consists of four primary layers, each with defined interfaces and responsibilities:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Layer</th>
+                    <th>Function</th>
+                    <th>Update Rate</th>
+                    <th>Criticality</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Mission Planning Layer</strong></td>
+                    <td>Pre-flight trajectory optimization, target definition, constraints</td>
+                    <td>Pre-flight only</td>
+                    <td>High</td>
+                </tr>
+                <tr>
+                    <td><strong>Guidance Layer</strong></td>
+                    <td>High-level path planning, navigation solution, trajectory management</td>
+                    <td>1-10 Hz</td>
+                    <td>Critical</td>
+                </tr>
+                <tr>
+                    <td><strong>Control Layer</strong></td>
+                    <td>Flight control laws, stability augmentation, command generation</td>
+                    <td>100-1000 Hz</td>
+                    <td>Critical</td>
+                </tr>
+                <tr>
+                    <td><strong>Actuation Layer</strong></td>
+                    <td>Surface positioning, thrust vector control, RCS valve operation</td>
+                    <td>1000-5000 Hz</td>
+                    <td>Critical</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Interface Standards</h3>
+        <p>
+            WIA-DEF-008 mandates standardized interfaces between layers using message-based protocols with defined data structures, timing guarantees, and fault handling. This enables modular development, testing, and certification of individual components while ensuring system-level integration.
+        </p>
+
+        <div class="api-endpoint">
+            <strong>Guidance-to-Control Interface Message Structure:</strong>
+            <pre><code>struct GuidanceCommand {
+    uint64_t  timestamp_us;      // Microsecond timestamp
+    float     target_altitude_m;  // Commanded altitude (m)
+    float     target_velocity_mps; // Commanded velocity (m/s)
+    float     target_heading_rad; // Commanded heading (radians)
+    float     target_bank_rad;    // Commanded bank angle (radians)
+    uint8_t   flight_mode;        // Boost/Glide/Terminal
+    uint8_t   priority;           // Command priority level
+    uint32_t  checksum;           // CRC32 validation
+};</code></pre>
+        </div>
+
+        <h2>3.2 Navigation System Interfaces</h2>
+        <p>
+            The navigation system must provide continuous position, velocity, and attitude solutions with high accuracy despite GPS denial during plasma blackout periods. WIA-DEF-008 defines a multi-sensor fusion architecture with standardized sensor interfaces.
+        </p>
+
+        <h3>Sensor Suite Integration</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sensor Type</th>
+                    <th>Data Rate</th>
+                    <th>Accuracy</th>
+                    <th>Interface Protocol</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Ring Laser Gyroscope (RLG)</td>
+                    <td>1000 Hz</td>
+                    <td>0.001°/hr drift</td>
+                    <td>SPI, 20 Mbps</td>
+                </tr>
+                <tr>
+                    <td>MEMS Accelerometer</td>
+                    <td>1000 Hz</td>
+                    <td>50 μg bias stability</td>
+                    <td>SPI, 10 Mbps</td>
+                </tr>
+                <tr>
+                    <td>Star Tracker</td>
+                    <td>10 Hz</td>
+                    <td>1 arc-second</td>
+                    <td>SpaceWire, 200 Mbps</td>
+                </tr>
+                <tr>
+                    <td>Radar Altimeter</td>
+                    <td>100 Hz</td>
+                    <td>±0.5 m</td>
+                    <td>ARINC 429, 100 kbps</td>
+                </tr>
+                <tr>
+                    <td>Air Data System</td>
+                    <td>100 Hz</td>
+                    <td>±0.5% Mach</td>
+                    <td>MIL-STD-1553, 1 Mbps</td>
+                </tr>
+                <tr>
+                    <td>GPS Receiver</td>
+                    <td>10 Hz</td>
+                    <td>5 m CEP (when available)</td>
+                    <td>UART, 115.2 kbps</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Kalman Filter State Vector</h3>
+        <p>
+            The navigation solution employs an Extended Kalman Filter (EKF) that fuses all available sensor data to produce optimal state estimates. The state vector includes:
+        </p>
+
+        <div class="api-endpoint">
+            <strong>Navigation State Vector (21 states):</strong>
+            <pre><code>// Position (ECEF coordinates)
+float pos_x, pos_y, pos_z;           // meters
+
+// Velocity (ECEF)
+float vel_x, vel_y, vel_z;           // m/s
+
+// Attitude (quaternion)
+float q0, q1, q2, q3;                // unit quaternion
+
+// Angular rates (body frame)
+float omega_x, omega_y, omega_z;     // rad/s
+
+// Accelerometer biases
+float accel_bias_x, accel_bias_y, accel_bias_z;  // m/s²
+
+// Gyro biases
+float gyro_bias_x, gyro_bias_y, gyro_bias_z;     // rad/s</code></pre>
+        </div>
+
+        <h2>3.3 Telemetry and Data Logging</h2>
+        <p>
+            During test flights and operational missions, comprehensive telemetry data must be recorded for post-flight analysis, system validation, and incident investigation. WIA-DEF-008 specifies minimum telemetry requirements and data formats.
+        </p>
+
+        <h3>Telemetry Channel Definitions</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Channel Group</th>
+                    <th>Parameters</th>
+                    <th>Sample Rate</th>
+                    <th>Bandwidth Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Navigation State</td>
+                    <td>21 state variables + covariance</td>
+                    <td>100 Hz</td>
+                    <td>84 kbps</td>
+                </tr>
+                <tr>
+                    <td>Control Surface Position</td>
+                    <td>12 surface angles + rates</td>
+                    <td>1000 Hz</td>
+                    <td>384 kbps</td>
+                </tr>
+                <tr>
+                    <td>Propulsion Data</td>
+                    <td>Fuel flow, pressures, temperatures (32 channels)</td>
+                    <td>100 Hz</td>
+                    <td>128 kbps</td>
+                </tr>
+                <tr>
+                    <td>Thermal Sensors</td>
+                    <td>Surface temperatures (64 points)</td>
+                    <td>10 Hz</td>
+                    <td>20 kbps</td>
+                </tr>
+                <tr>
+                    <td>Air Data</td>
+                    <td>Mach, altitude, α, β, dynamic pressure</td>
+                    <td>100 Hz</td>
+                    <td>20 kbps</td>
+                </tr>
+                <tr>
+                    <td>System Health</td>
+                    <td>Voltages, currents, processor loads (48 channels)</td>
+                    <td>10 Hz</td>
+                    <td>19 kbps</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            <strong>Total telemetry bandwidth: ~655 kbps</strong>. During plasma blackout periods, data is buffered in onboard solid-state recorders with minimum 512 GB capacity for flights up to 30 minutes duration.
+        </p>
+
+        <h3>Telemetry Packet Format</h3>
+        <div class="api-endpoint">
+            <strong>WIA-DEF-008 Standard Telemetry Packet:</strong>
+            <pre><code>struct TelemetryPacket {
+    // Header (16 bytes)
+    uint32_t  sync_word;         // 0xDEF00801
+    uint32_t  packet_counter;    // Sequence number
+    uint64_t  timestamp_us;      // Mission elapsed time
+
+    // Payload (variable length, max 4080 bytes)
+    uint16_t  channel_id;        // Telemetry channel
+    uint16_t  data_length;       // Payload bytes
+    uint8_t   data[4080];        // Channel data
+
+    // Footer (8 bytes)
+    uint32_t  crc32;             // Error detection
+    uint32_t  end_marker;        // 0xDEF00802
+};
+
+// Total packet size: 16 + variable + 8 bytes (max 4104 bytes)</code></pre>
+        </div>
+
+        <h2>3.4 Control Law API</h2>
+        <p>
+            The control laws translate guidance commands and navigation state into control surface deflections and thrust commands. WIA-DEF-008 defines a plugin architecture allowing different control algorithms to be developed, tested, and certified independently.
+        </p>
+
+        <h3>Control Law Plugin Interface</h3>
+        <div class="info-box">
+            <p><strong>Required Plugin Functions:</strong></p>
+            <pre><code>// Initialize control law with vehicle parameters
+int32_t control_init(VehicleConfig* config);
+
+// Compute control commands from current state and guidance
+int32_t control_update(
+    NavigationState* nav_state,      // Current position, velocity, attitude
+    GuidanceCommand* guidance_cmd,   // Desired trajectory
+    ControlOutput* output,           // Output: surface deflections, thrust
+    float dt_sec                     // Time step
+);
+
+// Handle mode transitions (boost -> glide -> terminal)
+int32_t control_mode_change(FlightMode new_mode);
+
+// Cleanup and resource release
+int32_t control_shutdown();</code></pre>
+        </div>
+
+        <h3>Control Output Structure</h3>
+        <div class="api-endpoint">
+            <strong>Control Command Data Structure:</strong>
+            <pre><code>struct ControlOutput {
+    // Aerodynamic control surfaces (radians)
+    float elevator;           // Pitch control
+    float aileron_left;       // Roll control
+    float aileron_right;
+    float rudder;             // Yaw control
+    float body_flap;          // Additional pitch/drag
+
+    // Reaction Control System (0-100%)
+    float rcs_pitch_up;       // Cold gas thrusters
+    float rcs_pitch_down;
+    float rcs_yaw_left;
+    float rcs_yaw_right;
+    float rcs_roll_cw;
+    float rcs_roll_ccw;
+
+    // Propulsion
+    float throttle;           // 0-100% (scramjet/rocket)
+    float fuel_mix_ratio;     // Equivalence ratio
+
+    // Metadata
+    uint8_t control_mode;     // Auto/Manual/Degraded
+    uint8_t authority_limit;  // Surface deflection limits
+    uint32_t status_flags;    // Health/warnings
+};</code></pre>
+        </div>
+
+        <h2>3.5 Ground Support Equipment Interface</h2>
+        <p>
+            Pre-flight preparation, health monitoring, and post-flight data download require standardized interfaces between the weapon system and ground support equipment (GSE). WIA-DEF-008 defines these interfaces to ensure interoperability across different manufacturers.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>GSE Function</th>
+                    <th>Interface Type</th>
+                    <th>Data Rate</th>
+                    <th>Protocol</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Mission Upload</td>
+                    <td>MIL-STD-1553 bus</td>
+                    <td>1 Mbps</td>
+                    <td>BC-RT commands</td>
+                </tr>
+                <tr>
+                    <td>INS Alignment</td>
+                    <td>Ethernet</td>
+                    <td>100 Mbps</td>
+                    <td>UDP, custom protocol</td>
+                </tr>
+                <tr>
+                    <td>Telemetry Download</td>
+                    <td>High-speed serial</td>
+                    <td>10 Gbps</td>
+                    <td>USB 3.1 Gen 2</td>
+                </tr>
+                <tr>
+                    <td>Built-In Test (BIT)</td>
+                    <td>MIL-STD-1553 bus</td>
+                    <td>1 Mbps</td>
+                    <td>BC-RT commands</td>
+                </tr>
+                <tr>
+                    <td>Firmware Update</td>
+                    <td>Ethernet</td>
+                    <td>1 Gbps</td>
+                    <td>TFTP over UDP</td>
+                </tr>
+                <tr>
+                    <td>Environmental Monitoring</td>
+                    <td>RS-485</td>
+                    <td>115.2 kbps</td>
+                    <td>Modbus RTU</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Mission File Format</h3>
+        <div class="api-endpoint">
+            <strong>Mission Definition File (JSON format):</strong>
+            <pre><code>{
+  "mission_id": "HGV-TEST-2025-042",
+  "launch_time": "2025-03-15T14:30:00Z",
+  "vehicle_config": {
+    "mass_kg": 850,
+    "reference_area_m2": 0.45,
+    "reference_length_m": 3.2
+  },
+  "trajectory": {
+    "boost_phase": {
+      "duration_sec": 45,
+      "target_altitude_m": 85000,
+      "target_velocity_mps": 3200
+    },
+    "glide_phase": {
+      "waypoints": [
+        {"lat": 34.5, "lon": -120.2, "alt_m": 70000},
+        {"lat": 35.1, "lon": -118.7, "alt_m": 55000},
+        {"lat": 35.8, "lon": -117.1, "alt_m": 40000}
+      ],
+      "L_over_D_target": 5.5
+    },
+    "terminal_phase": {
+      "impact_lat": 36.2,
+      "impact_lon": -116.0,
+      "impact_velocity_mps": 2500,
+      "impact_angle_deg": -75
+    }
+  },
+  "control_limits": {
+    "max_alpha_deg": 25,
+    "max_load_factor_g": 35,
+    "max_bank_angle_deg": 85
+  }
+}</code></pre>
+        </div>
+
+        <h2>3.6 Safety and Abort Interfaces</h2>
+        <p>
+            Critical to responsible development is the ability to abort missions safely if anomalies are detected. WIA-DEF-008 mandates multiple abort mechanisms with independent activation paths.
+        </p>
+
+        <div class="warning-box">
+            <h3>Abort System Requirements</h3>
+            <ul>
+                <li><strong>Autonomous Abort:</strong> Flight computer detects out-of-bounds conditions and initiates safe termination</li>
+                <li><strong>Command Abort:</strong> Ground station sends encrypted abort command via UHF link</li>
+                <li><strong>Geographic Limits:</strong> Hardcoded no-fly zones trigger automatic abort if violated</li>
+                <li><strong>Telemetry Loss:</strong> Automatic abort if telemetry lost for >30 seconds during critical phases</li>
+                <li><strong>System Health:</strong> Abort if critical subsystems fail (INS, flight computer, power)</li>
+            </ul>
+        </div>
+
+        <h3>Abort Command Interface</h3>
+        <div class="api-endpoint">
+            <strong>Secure Abort Command:</strong>
+            <pre><code>struct AbortCommand {
+    uint32_t  auth_token_1;      // Cryptographic authentication
+    uint32_t  auth_token_2;      // (dual-key for nuclear-capable)
+    uint8_t   abort_mode;        // Immediate/Delayed/Conditional
+    uint8_t   safing_method;     // Self-destruct/Safe-area landing
+    float     delay_seconds;     // Time before abort execution
+    uint32_t  verification_crc;  // Command validation
+};
+
+// Command is encrypted using AES-256 and signed with RSA-4096
+// Prevents unauthorized abort or spoofing attacks</code></pre>
+        </div>
+
+        <h2>Summary</h2>
+        <div class="highlight-box">
+            <h3>Chapter 3 Key Takeaways</h3>
+            <ul>
+                <li><strong>Layered Architecture:</strong> Four-layer FCS (Mission/Guidance/Control/Actuation) with standardized inter-layer interfaces</li>
+                <li><strong>Multi-Sensor Fusion:</strong> Extended Kalman Filter integrates RLG, accelerometer, star tracker, radar altimeter, and GPS</li>
+                <li><strong>High-Rate Control:</strong> Control laws execute at 100-1000 Hz; actuators at 1-5 kHz for stability in hypersonic regime</li>
+                <li><strong>Telemetry System:</strong> ~655 kbps comprehensive data logging; buffered during plasma blackout; 512 GB minimum storage</li>
+                <li><strong>Plugin Architecture:</strong> Control laws are modular plugins with standard API for independent development and testing</li>
+                <li><strong>GSE Integration:</strong> Standardized pre-flight mission upload, INS alignment, BIT, and post-flight data download interfaces</li>
+                <li><strong>Safety Critical:</strong> Multiple abort mechanisms with cryptographic authentication and geographic limit enforcement</li>
+                <li><strong>WIA-DEF-008 Compliance:</strong> All interfaces defined with message formats, timing, fault handling, and security requirements</li>
+            </ul>
+        </div>
+
+        <div class="review-section">
+            <h2>Review Questions</h2>
+
+            <div class="review-question">
+                <p><strong>Q1:</strong> Describe the four layers of the hypersonic weapon flight control system architecture and explain the update rate requirements for each layer.</p>
+            </div>
+
+            <div class="review-question">
+                <p><strong>Q2:</strong> Why does the navigation system use an Extended Kalman Filter rather than a standard Kalman Filter? What nonlinearities must be handled?</p>
+            </div>
+
+            <div class="review-question">
+                <p><strong>Q3:</strong> Calculate the total data volume generated during a 15-minute flight at the specified telemetry bandwidth of 655 kbps. How much storage capacity is required with 20% margin?</p>
+            </div>
+
+            <div class="review-question">
+                <p><strong>Q4:</strong> Explain why the control output structure includes both aerodynamic surfaces and a reaction control system (RCS). When would each be used?</p>
+            </div>
+
+            <div class="review-question">
+                <p><strong>Q5:</strong> What is the purpose of the CRC32 checksum in both the guidance command and telemetry packet structures? How does it contribute to system reliability?</p>
+            </div>
+
+            <div class="review-question">
+                <p><strong>Q6:</strong> Describe the multi-layered abort system specified in WIA-DEF-008. Why are multiple independent abort mechanisms required?</p>
+            </div>
+
+            <div class="review-question">
+                <p><strong>Q7:</strong> The mission file specifies a terminal impact angle of -75 degrees. What does the negative sign indicate, and why might a steep angle be desirable?</p>
+            </div>
+
+            <div class="review-question">
+                <p><strong>Q8:</strong> Why does the abort command use dual cryptographic tokens (auth_token_1 and auth_token_2) for nuclear-capable systems?</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="chapter-02.html" class="btn">← Previous Chapter</a>
+            <a href="index.html" class="btn">Table of Contents</a>
+            <a href="chapter-04.html" class="btn">Next Chapter →</a>
+        </div>
+    </div>
+</body>
+</html>

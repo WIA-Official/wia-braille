@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-MED-PATH-003 Digital Pathology Simulator 🔬🖼️</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 0;
+            border-bottom: 2px solid #a855f7;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #f1f5f9;
+            margin-bottom: 0.5rem;
+        }
+
+        .emoji {
+            font-size: 3rem;
+        }
+
+        .lang-selector {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+
+        .lang-selector select {
+            background: #a855f7;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .lang-selector select:hover {
+            background: #9333ea;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            border-bottom: 2px solid #334155;
+        }
+
+        .tab {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: #a855f7;
+        }
+
+        .tab.active {
+            color: #a855f7;
+            border-bottom-color: #a855f7;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .panel {
+            background: #1e293b;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel h2 {
+            color: #a855f7;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        .panel h3 {
+            color: #a855f7;
+            margin: 1.5rem 0 1rem;
+            font-size: 1.3rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            color: #a855f7;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 0.5rem;
+            color: #e2e8f0;
+            font-family: 'Courier New', monospace;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #a855f7;
+        }
+
+        button.action-btn {
+            background: linear-gradient(135deg, #a855f7, #9333ea);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        button.action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(168, 85, 247, 0.3);
+        }
+
+        .output {
+            background: #0f172a;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 2px solid #334155;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .example-card {
+            background: #0f172a;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #a855f7;
+        }
+
+        .success {
+            color: #10b981;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+
+        .code-block {
+            background: #0f172a;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+            border-top: 1px solid #334155;
+            color: #64748b;
+        }
+
+        .footer-philosophy {
+            font-size: 1.5rem;
+            color: #a855f7;
+            margin-bottom: 0.5rem;
+        }
+
+        .slide-viewer {
+            background: #0f172a;
+            border: 2px solid #a855f7;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .annotation-marker {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin: 0 0.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .tabs {
+                flex-wrap: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="lang-selector">
+        <select id="langSelect" onchange="changeLanguage()">
+            <option value="en">English</option>
+            <option value="ko">한국어 (Korean)</option>
+            <option value="ja">日本語 (Japanese)</option>
+            <option value="zh">中文 (Chinese)</option>
+            <option value="es">Español (Spanish)</option>
+            <option value="fr">Français (French)</option>
+            <option value="de">Deutsch (German)</option>
+            <option value="it">Italiano (Italian)</option>
+            <option value="pt">Português (Portuguese)</option>
+            <option value="ru">Русский (Russian)</option>
+            <option value="ar">العربية (Arabic)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+            <option value="id">Bahasa Indonesia</option>
+            <option value="ms">Bahasa Melayu</option>
+            <option value="th">ไทย (Thai)</option>
+            <option value="vi">Tiếng Việt (Vietnamese)</option>
+            <option value="tr">Türkçe (Turkish)</option>
+            <option value="pl">Polski (Polish)</option>
+            <option value="nl">Nederlands (Dutch)</option>
+            <option value="sv">Svenska (Swedish)</option>
+            <option value="no">Norsk (Norwegian)</option>
+            <option value="da">Dansk (Danish)</option>
+            <option value="fi">Suomi (Finnish)</option>
+            <option value="cs">Čeština (Czech)</option>
+            <option value="hu">Magyar (Hungarian)</option>
+            <option value="ro">Română (Romanian)</option>
+            <option value="el">Ελληνικά (Greek)</option>
+            <option value="he">עברית (Hebrew)</option>
+            <option value="fa">فارسی (Persian)</option>
+            <option value="ur">اردو (Urdu)</option>
+            <option value="sw">Kiswahili (Swahili)</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="te">తెలుగు (Telugu)</option>
+            <option value="mr">मराठी (Marathi)</option>
+            <option value="gu">ગુજરાતી (Gujarati)</option>
+            <option value="kn">ಕನ್ನಡ (Kannada)</option>
+            <option value="ml">മലയാളം (Malayalam)</option>
+            <option value="si">සිංහල (Sinhala)</option>
+            <option value="my">မြန်မာ (Burmese)</option>
+            <option value="km">ខ្មែរ (Khmer)</option>
+            <option value="lo">ລາວ (Lao)</option>
+            <option value="ne">नेपाली (Nepali)</option>
+            <option value="am">አማርኛ (Amharic)</option>
+            <option value="zu">isiZulu (Zulu)</option>
+            <option value="xh">isiXhosa (Xhosa)</option>
+            <option value="af">Afrikaans</option>
+            <option value="sq">Shqip (Albanian)</option>
+            <option value="hy">Հայերեն (Armenian)</option>
+            <option value="az">Azərbaycan (Azerbaijani)</option>
+            <option value="eu">Euskara (Basque)</option>
+            <option value="be">Беларуская (Belarusian)</option>
+            <option value="bs">Bosanski (Bosnian)</option>
+            <option value="bg">Български (Bulgarian)</option>
+            <option value="ca">Català (Catalan)</option>
+            <option value="hr">Hrvatski (Croatian)</option>
+            <option value="et">Eesti (Estonian)</option>
+            <option value="tl">Filipino (Tagalog)</option>
+            <option value="gl">Galego (Galician)</option>
+            <option value="ka">ქართული (Georgian)</option>
+            <option value="is">Íslenska (Icelandic)</option>
+            <option value="ga">Gaeilge (Irish)</option>
+            <option value="kk">Қазақ (Kazakh)</option>
+            <option value="ky">Кыргызча (Kyrgyz)</option>
+            <option value="lv">Latviešu (Latvian)</option>
+            <option value="lt">Lietuvių (Lithuanian)</option>
+            <option value="lb">Lëtzebuergesch (Luxembourgish)</option>
+            <option value="mk">Македонски (Macedonian)</option>
+            <option value="mg">Malagasy</option>
+            <option value="mt">Malti (Maltese)</option>
+            <option value="mn">Монгол (Mongolian)</option>
+            <option value="ps">پښتو (Pashto)</option>
+            <option value="sr">Српски (Serbian)</option>
+            <option value="sk">Slovenčina (Slovak)</option>
+            <option value="sl">Slovenščina (Slovenian)</option>
+            <option value="so">Soomaali (Somali)</option>
+            <option value="uz">Oʻzbek (Uzbek)</option>
+            <option value="cy">Cymraeg (Welsh)</option>
+            <option value="yi">ייִדיש (Yiddish)</option>
+            <option value="yo">Yorùbá</option>
+            <option value="ig">Igbo</option>
+            <option value="ha">Hausa</option>
+            <option value="ceb">Cebuano</option>
+            <option value="hmn">Hmong</option>
+            <option value="haw">Hawaiian</option>
+            <option value="la">Latina (Latin)</option>
+            <option value="eo">Esperanto</option>
+            <option value="jw">Basa Jawa (Javanese)</option>
+            <option value="sd">سنڌي (Sindhi)</option>
+            <option value="su">Basa Sunda (Sundanese)</option>
+            <option value="tg">Тоҷикӣ (Tajik)</option>
+            <option value="tt">Татар (Tatar)</option>
+            <option value="tk">Türkmen (Turkmen)</option>
+            <option value="ug">ئۇيغۇرچە (Uyghur)</option>
+            <option value="uk">Українська (Ukrainian)</option>
+        </select>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="emoji">🔬🖼️</div>
+            <h1 id="title">Digital Pathology Simulator</h1>
+            <p id="subtitle">WIA-MED-PATH-003 Interactive Testing Environment</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab(0)">
+                <span id="tab1">🖼️ Whole Slide Image</span>
+            </button>
+            <button class="tab" onclick="switchTab(1)">
+                <span id="tab2">✏️ Annotations</span>
+            </button>
+            <button class="tab" onclick="switchTab(2)">
+                <span id="tab3">🤖 AI Analysis</span>
+            </button>
+            <button class="tab" onclick="switchTab(3)">
+                <span id="tab4">🔌 Integration</span>
+            </button>
+            <button class="tab" onclick="switchTab(4)">
+                <span id="tab5">📊 Reporting</span>
+            </button>
+        </div>
+
+        <!-- Tab 1: Whole Slide Image -->
+        <div class="tab-content active" id="content-0">
+            <div class="panel">
+                <h2 id="wsi-title">Whole Slide Imaging (WSI)</h2>
+                <p id="wsi-desc">Manage and view digital pathology whole slide images.</p>
+
+                <h3 id="wsi-metadata-title">WSI Metadata</h3>
+                <div class="input-group">
+                    <label for="wsiInput" id="wsi-metadata-label">WSI Metadata (JSON):</label>
+                    <textarea id="wsiInput" rows="18">{
+  "slideId": "WSI-2025-001",
+  "caseId": "CASE-12345",
+  "scanner": {
+    "manufacturer": "Leica",
+    "model": "Aperio GT450",
+    "magnification": "40x"
+  },
+  "specimen": {
+    "type": "tissue",
+    "organ": "breast",
+    "stain": "H&E",
+    "blockId": "B-001"
+  },
+  "dimensions": {
+    "width": 120000,
+    "height": 80000,
+    "levels": 8,
+    "tileSize": 256
+  },
+  "format": "DICOM",
+  "colorSpace": "RGB",
+  "compression": "JPEG2000",
+  "fileSize": "2.4 GB",
+  "scanDate": "2025-12-26T09:30:00Z",
+  "quality": {
+    "focus": "excellent",
+    "tissueDetection": 98.5
+  }
+}</textarea>
+                </div>
+                <button class="action-btn" onclick="validateWSI()" id="wsi-validate-btn">Validate WSI Metadata</button>
+                <div class="output" id="wsiOutput"></div>
+
+                <h3 id="wsi-viewer-title">Virtual Slide Viewer</h3>
+                <div class="slide-viewer">
+                    <div style="font-size: 4rem; margin: 2rem 0;">🔬</div>
+                    <p style="color: #a855f7;">40x Magnification - H&E Stain</p>
+                    <p style="color: #94a3b8; margin-top: 0.5rem;">Interactive viewer would display here</p>
+                    <p style="color: #64748b; font-size: 0.9rem; margin-top: 1rem;">120,000 x 80,000 pixels · 2.4 GB · 8 zoom levels</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Annotations -->
+        <div class="tab-content" id="content-1">
+            <div class="panel">
+                <h2 id="anno-title">Digital Annotations</h2>
+                <p id="anno-desc">Create and manage pathology annotations on WSI.</p>
+
+                <h3 id="anno-create-title">Create Annotation</h3>
+                <div class="input-group">
+                    <label for="annoType" id="anno-type-label">Annotation Type:</label>
+                    <select id="annoType">
+                        <option value="region">Region of Interest</option>
+                        <option value="cell">Cell Marking</option>
+                        <option value="measurement">Measurement</option>
+                        <option value="comment">Comment/Note</option>
+                        <option value="tumor">Tumor Boundary</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="annoData" id="anno-data-label">Annotation Data (JSON):</label>
+                    <textarea id="annoData" rows="16">{
+  "annotationId": "ANNO-001",
+  "slideId": "WSI-2025-001",
+  "type": "tumor",
+  "geometry": {
+    "type": "polygon",
+    "coordinates": [
+      [1000, 2000],
+      [1500, 2000],
+      [1500, 2500],
+      [1000, 2500],
+      [1000, 2000]
+    ]
+  },
+  "properties": {
+    "diagnosis": "invasive ductal carcinoma",
+    "grade": "2",
+    "markers": ["ER+", "PR+", "HER2-"],
+    "mitoticCount": 8
+  },
+  "author": "Dr. Smith",
+  "createdAt": "2025-12-26T10:00:00Z",
+  "confidence": 0.95
+}</textarea>
+                </div>
+                <button class="action-btn" onclick="createAnnotation()" id="anno-create-btn">Create Annotation</button>
+                <div class="output" id="annoOutput"></div>
+
+                <h3 id="anno-example-title">Annotation Markers</h3>
+                <div class="example-card">
+                    <p><span class="annotation-marker" style="background: #ef4444;"></span> Tumor Area</p>
+                    <p><span class="annotation-marker" style="background: #3b82f6;"></span> Normal Tissue</p>
+                    <p><span class="annotation-marker" style="background: #f59e0b;"></span> Necrosis</p>
+                    <p><span class="annotation-marker" style="background: #10b981;"></span> Inflammation</p>
+                    <p><span class="annotation-marker" style="background: #a855f7;"></span> Region of Interest</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: AI Analysis -->
+        <div class="tab-content" id="content-2">
+            <div class="panel">
+                <h2 id="ai-title">AI-Powered Pathology Analysis</h2>
+                <p id="ai-desc">Automated analysis and quantification of pathology slides.</p>
+
+                <h3 id="ai-model-title">Select AI Model</h3>
+                <div class="input-group">
+                    <label for="aiModel" id="ai-model-label">Analysis Model:</label>
+                    <select id="aiModel">
+                        <option value="tumor-detection">Tumor Detection</option>
+                        <option value="cell-counting">Cell Counting</option>
+                        <option value="mitosis-detection">Mitosis Detection</option>
+                        <option value="tissue-classification">Tissue Classification</option>
+                        <option value="grading">Tumor Grading</option>
+                        <option value="biomarker">Biomarker Quantification</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="aiRegion" id="ai-region-label">Analysis Region (JSON):</label>
+                    <textarea id="aiRegion" rows="8">{
+  "slideId": "WSI-2025-001",
+  "region": {
+    "x": 1000,
+    "y": 2000,
+    "width": 5000,
+    "height": 5000
+  },
+  "magnification": "40x"
+}</textarea>
+                </div>
+                <button class="action-btn" onclick="runAIAnalysis()" id="ai-run-btn">Run AI Analysis</button>
+                <div class="output" id="aiOutput"></div>
+
+                <h3 id="ai-metrics-title">Analysis Metrics</h3>
+                <div class="grid-2">
+                    <div class="example-card">
+                        <h4 style="color: #a855f7;">Tumor Percentage</h4>
+                        <div style="font-size: 2rem; color: #ef4444; margin: 0.5rem 0;">42%</div>
+                        <p style="color: #94a3b8;">Of total tissue area</p>
+                    </div>
+                    <div class="example-card">
+                        <h4 style="color: #a855f7;">Mitotic Count</h4>
+                        <div style="font-size: 2rem; color: #f59e0b; margin: 0.5rem 0;">18/HPF</div>
+                        <p style="color: #94a3b8;">Per high-power field</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div class="tab-content" id="content-3">
+            <div class="panel">
+                <h2 id="integ-title">System Integration</h2>
+                <p id="integ-desc">Integrate digital pathology with LIS and PACS systems.</p>
+
+                <h3 id="integ-api-title">DICOM/DICOMweb API</h3>
+                <div class="code-block">
+<span style="color: #a855f7;">GET</span> /studies/{studyUID}/series/{seriesUID}/instances/{instanceUID}
+<span style="color: #a855f7;">Accept:</span> multipart/related; type="application/dicom"
+
+<span style="color: #64748b;">Store WSI (STOW-RS):</span>
+<span style="color: #a855f7;">POST</span> /studies
+<span style="color: #a855f7;">Content-Type:</span> multipart/related; type="application/dicom"
+
+<span style="color: #64748b;">Query WSI Metadata (QIDO-RS):</span>
+<span style="color: #a855f7;">GET</span> /studies?PatientID=12345&Modality=SM
+
+<span style="color: #64748b;">Response:</span>
+[
+  {
+    <span style="color: #a855f7;">"00100020"</span>: { "vr": "LO", "Value": ["12345"] },
+    <span style="color: #a855f7;">"0020000D"</span>: { "vr": "UI", "Value": ["1.2.3..."] },
+    <span style="color: #a855f7;">"00080060"</span>: { "vr": "CS", "Value": ["SM"] }
+  }
+]</div>
+
+                <h3 id="integ-sdk-title">SDK Integration</h3>
+                <div class="grid-2">
+                    <div class="example-card">
+                        <h4 style="color: #a855f7; margin-bottom: 0.5rem;">Python SDK</h4>
+                        <div class="code-block">
+<span style="color: #f59e0b;">from</span> wia_digital_pathology <span style="color: #f59e0b;">import</span> WSIClient
+
+client = WSIClient(
+    dicom_endpoint=<span style="color: #10b981;">'https://pacs.hospital.org'</span>
+)
+
+<span style="color: #64748b;"># Load slide</span>
+slide = client.load_slide(
+    slide_id=<span style="color: #10b981;">'WSI-2025-001'</span>
+)
+
+<span style="color: #64748b;"># Get region</span>
+region = slide.get_region(
+    x=1000, y=2000,
+    width=5000, height=5000,
+    level=0
+)</div>
+                    </div>
+                    <div class="example-card">
+                        <h4 style="color: #a855f7; margin-bottom: 0.5rem;">TypeScript SDK</h4>
+                        <div class="code-block">
+<span style="color: #f59e0b;">import</span> { WSIClient } <span style="color: #f59e0b;">from</span> <span style="color: #10b981;">'@wia/digital-pathology'</span>;
+
+<span style="color: #f59e0b;">const</span> client = <span style="color: #f59e0b;">new</span> WSIClient({
+  dicomEndpoint: <span style="color: #10b981;">'https://pacs.hospital.org'</span>
+});
+
+<span style="color: #64748b;">// Load slide</span>
+<span style="color: #f59e0b;">const</span> slide = <span style="color: #f59e0b;">await</span> client.loadSlide(
+  <span style="color: #10b981;">'WSI-2025-001'</span>
+);
+
+<span style="color: #64748b;">// Get region</span>
+<span style="color: #f59e0b;">const</span> region = slide.getRegion({
+  x: 1000, y: 2000,
+  width: 5000, height: 5000
+});</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Reporting -->
+        <div class="tab-content" id="content-4">
+            <div class="panel">
+                <h2 id="report-title">Pathology Reporting</h2>
+                <p id="report-desc">Generate structured pathology reports.</p>
+
+                <h3 id="report-generate-title">Generate Report</h3>
+                <div class="input-group">
+                    <label for="reportType" id="report-type-label">Report Type:</label>
+                    <select id="reportType">
+                        <option value="diagnostic">Diagnostic Report</option>
+                        <option value="synoptic">Synoptic Report (CAP)</option>
+                        <option value="quantitative">Quantitative Analysis</option>
+                        <option value="consultation">Consultation Report</option>
+                    </select>
+                </div>
+                <button class="action-btn" onclick="generateReport()" id="report-generate-btn">Generate Report</button>
+                <div class="output" id="reportOutput"></div>
+
+                <h3 id="report-example-title">Synoptic Report Example</h3>
+                <div class="code-block">
+{
+  <span style="color: #a855f7;">"reportId"</span>: "PATH-2025-001",
+  <span style="color: #a855f7;">"caseId"</span>: "CASE-12345",
+  <span style="color: #a855f7;">"template"</span>: "CAP Breast Carcinoma",
+  <span style="color: #a855f7;">"diagnosis"</span>: {
+    <span style="color: #a855f7;">"primary"</span>: "Invasive Ductal Carcinoma",
+    <span style="color: #a855f7;">"histologicType"</span>: "Invasive carcinoma of no special type",
+    <span style="color: #a855f7;">"histologicGrade"</span>: "2 (Moderately differentiated)",
+    <span style="color: #a855f7;">"tumorSize"</span>: "2.3 cm"
+  },
+  <span style="color: #a855f7;">"biomarkers"</span>: {
+    <span style="color: #a855f7;">"ER"</span>: "Positive (95%)",
+    <span style="color: #a855f7;">"PR"</span>: "Positive (80%)",
+    <span style="color: #a855f7;">"HER2"</span>: "Negative (0)",
+    <span style="color: #a855f7;">"Ki67"</span>: "18%"
+  },
+  <span style="color: #a855f7;">"lymphNodes"</span>: {
+    <span style="color: #a855f7;">"examined"</span>: 15,
+    <span style="color: #a855f7;">"positive"</span>: 2
+  },
+  <span style="color: #a855f7;">"TNMstage"</span>: "pT2N1a",
+  <span style="color: #a855f7;">"pathologist"</span>: "Dr. Jane Smith, MD",
+  <span style="color: #a855f7;">"signedAt"</span>: "2025-12-26T14:30:00Z"
+}</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p class="footer-philosophy">弘益人間 (홍익인간) · Benefit All Humanity</p>
+        <p>&copy; 2025 SmileStory Inc. / WIA</p>
+        <p>World Certification Industry Association</p>
+    </footer>
+
+    <script>
+        // Tab switching
+        function switchTab(index) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+
+            contents.forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+        }
+
+        // Validate WSI
+        function validateWSI() {
+            const input = document.getElementById('wsiInput').value;
+            const output = document.getElementById('wsiOutput');
+
+            try {
+                const wsi = JSON.parse(input);
+                const validation = {
+                    valid: true,
+                    slideId: wsi.slideId,
+                    format: wsi.format,
+                    dimensions: wsi.dimensions,
+                    qualityScore: 98.5,
+                    dicomCompliant: wsi.format === 'DICOM',
+                    readyForViewing: true,
+                    message: 'WSI metadata is valid and DICOM compliant'
+                };
+
+                output.innerHTML = `<span class="success">✓ Valid WSI Metadata</span>\n\n${JSON.stringify(validation, null, 2)}`;
+            } catch (error) {
+                output.innerHTML = `<span class="error">✗ Invalid Metadata</span>\n\nError: ${error.message}`;
+            }
+        }
+
+        // Create annotation
+        function createAnnotation() {
+            const input = document.getElementById('annoData').value;
+            const type = document.getElementById('annoType').value;
+            const output = document.getElementById('annoOutput');
+
+            try {
+                const anno = JSON.parse(input);
+
+                const result = {
+                    annotationId: anno.annotationId,
+                    slideId: anno.slideId,
+                    type: anno.type,
+                    created: true,
+                    coordinates: anno.geometry.coordinates.length,
+                    area: 250000,
+                    perimeter: 2000,
+                    properties: anno.properties,
+                    timestamp: new Date().toISOString()
+                };
+
+                output.innerHTML = `<span class="success">✓ Annotation Created</span>\n\n${JSON.stringify(result, null, 2)}`;
+            } catch (error) {
+                output.innerHTML = `<span class="error">✗ Failed to Create Annotation</span>\n\nError: ${error.message}`;
+            }
+        }
+
+        // Run AI analysis
+        function runAIAnalysis() {
+            const model = document.getElementById('aiModel').value;
+            const region = document.getElementById('aiRegion').value;
+            const output = document.getElementById('aiOutput');
+
+            try {
+                const data = JSON.parse(region);
+
+                const result = {
+                    analysisId: 'AI-' + Date.now(),
+                    model: model,
+                    slideId: data.slideId,
+                    region: data.region,
+                    results: {
+                        tumorDetected: true,
+                        tumorPercentage: 42,
+                        mitoticCount: 18,
+                        cellDensity: 2840,
+                        tissueSections: [
+                            { type: 'tumor', area: 42, confidence: 0.94 },
+                            { type: 'normal', area: 38, confidence: 0.96 },
+                            { type: 'necrosis', area: 12, confidence: 0.88 },
+                            { type: 'inflammation', area: 8, confidence: 0.91 }
+                        ]
+                    },
+                    processingTime: '8.2 seconds',
+                    modelVersion: 'v3.1.0',
+                    confidence: 0.93,
+                    timestamp: new Date().toISOString()
+                };
+
+                output.innerHTML = `<span class="success">✓ AI Analysis Complete</span>\n\n${JSON.stringify(result, null, 2)}`;
+            } catch (error) {
+                output.innerHTML = `<span class="error">✗ Analysis Failed</span>\n\nError: ${error.message}`;
+            }
+        }
+
+        // Generate report
+        function generateReport() {
+            const type = document.getElementById('reportType').value;
+            const output = document.getElementById('reportOutput');
+
+            const report = {
+                reportId: 'PATH-' + Date.now(),
+                reportType: type,
+                caseId: 'CASE-12345',
+                diagnosis: 'Invasive Ductal Carcinoma, Grade 2',
+                biomarkers: {
+                    ER: 'Positive (95%)',
+                    PR: 'Positive (80%)',
+                    HER2: 'Negative',
+                    Ki67: '18%'
+                },
+                stage: 'pT2N1a',
+                generatedAt: new Date().toISOString(),
+                pathologist: 'Dr. Jane Smith, MD',
+                status: 'final',
+                format: 'HL7 FHIR DiagnosticReport'
+            };
+
+            output.innerHTML = `<span class="success">✓ Report Generated</span>\n\n${JSON.stringify(report, null, 2)}`;
+        }
+
+        // Language support
+        function changeLanguage() {
+            const lang = document.getElementById('langSelect').value;
+            localStorage.setItem('language', lang);
+
+            const translations = {
+                en: { title: 'Digital Pathology Simulator', subtitle: 'WIA-MED-PATH-003 Interactive Testing Environment' },
+                ko: { title: '디지털 병리학 시뮬레이터', subtitle: 'WIA-MED-PATH-003 인터랙티브 테스트 환경' },
+                ja: { title: 'デジタル病理学シミュレーター', subtitle: 'WIA-MED-PATH-003 インタラクティブテスト環境' },
+                zh: { title: '数字病理学模拟器', subtitle: 'WIA-MED-PATH-003 交互式测试环境' },
+                es: { title: 'Simulador de Patología Digital', subtitle: 'Entorno de Pruebas Interactivo WIA-MED-PATH-003' },
+                fr: { title: 'Simulateur de Pathologie Numérique', subtitle: 'Environnement de Test Interactif WIA-MED-PATH-003' }
+            };
+
+            const t = translations[lang] || translations.en;
+            document.getElementById('title').textContent = t.title;
+            document.getElementById('subtitle').textContent = t.subtitle;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('language') || 'en';
+            document.getElementById('langSelect').value = savedLang;
+            changeLanguage();
+        });
+    </script>
+</body>
+</html>

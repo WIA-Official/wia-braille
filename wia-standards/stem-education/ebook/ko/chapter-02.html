@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>제2장: 기술 아키텍처 - WIA-EDU-023</title>
+    <style>
+        :root { --primary: #3B82F6; --primary-dark: #2563EB; --secondary: #10b981; --bg: #0f172a; --bg-card: #1e293b; --text: #f8fafc; --text-muted: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 40px 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: var(--primary); margin-bottom: 30px; font-size: 2.2rem; border-bottom: 3px solid var(--primary); padding-bottom: 15px; }
+        h2 { color: var(--primary); margin: 40px 0 20px; }
+        h3 { color: var(--secondary); margin: 30px 0 15px; }
+        p { margin: 15px 0; color: var(--text-muted); }
+        a { color: var(--primary); text-decoration: none; }
+        blockquote { border-left: 4px solid #ffd700; padding: 20px; margin: 30px 0; background: var(--bg-card); border-radius: 0 8px 8px 0; }
+        blockquote p { color: var(--text); margin: 5px 0; }
+        pre { background: var(--bg-card); padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; border: 1px solid var(--border); }
+        code { font-family: 'Monaco', monospace; font-size: 0.9rem; color: var(--secondary); }
+        pre code { color: var(--text); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border: 1px solid var(--border); }
+        th { background: var(--bg-card); color: var(--primary); }
+        td { color: var(--text-muted); }
+        ul, ol { margin: 15px 0; padding-left: 30px; color: var(--text-muted); }
+        li { margin: 8px 0; }
+        hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+        .nav { display: flex; justify-content: space-between; margin-bottom: 30px; flex-wrap: wrap; gap: 10px; }
+        .nav a { color: var(--text-muted); padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; }
+        .chapter-nav { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 30px; border-top: 1px solid var(--border); }
+        .footer { text-align: center; margin-top: 60px; padding-top: 30px; border-top: 1px solid var(--border); }
+        .footer .philosophy { color: #ffd700; font-size: 1.1rem; margin-bottom: 10px; }
+        .info-box { background: var(--bg-card); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid var(--primary); }
+        .warning-box { background: rgba(245, 158, 11, 0.1); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="index.html">← 목차</a>
+            <span style="color: var(--text-muted);">제2장 (총 8장)</span>
+            <a href="chapter-03.html">제3장 →</a>
+        </div>
+
+        <h1>🏗️ 제2장: 기술 아키텍처</h1>
+
+        <blockquote>
+            <p><strong>홍익인간 (弘益人間)</strong></p>
+            <p>"기술은 도구일 뿐, 인간을 이롭게 하는 것이 목표다"</p>
+            <p>WIA STEM 교육 플랫폼은 개방형, 확장 가능하며 상호 운용 가능한 아키텍처를 통해 전 세계 교육자와 학습자를 연결합니다.</p>
+        </blockquote>
+
+        <hr>
+
+        <h2>2.1 시스템 아키텍처 개요</h2>
+
+        <p>WIA STEM 교육 플랫폼은 마이크로서비스 기반의 클라우드 네이티브 아키텍처를 채택하여 확장성, 유연성, 신뢰성을 보장합니다.</p>
+
+        <pre><code>┌──────────────────────────────────────────────────────┐
+│            WIA STEM Education Platform               │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │
+│  │  Frontend   │  │   Mobile    │  │   Desktop   │ │
+│  │   Portal    │  │     App     │  │     App     │ │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘ │
+│         │                │                │         │
+│         └────────────────┼────────────────┘         │
+│                          │                          │
+│              ┌───────────┴───────────┐              │
+│              │     API Gateway       │              │
+│              └───────────┬───────────┘              │
+│                          │                          │
+│  ┌───────────────────────┴────────────────────┐    │
+│  │         Microservices Layer              │    │
+│  ├──────────────────────────────────────────┤    │
+│  │ ┌──────────┐ ┌──────────┐ ┌──────────┐  │    │
+│  │ │Curriculum│ │Assessment│ │Analytics │  │    │
+│  │ │ Service  │ │ Service  │ │ Service  │  │    │
+│  │ └──────────┘ └──────────┘ └──────────┘  │    │
+│  │ ┌──────────┐ ┌──────────┐ ┌──────────┐  │    │
+│  │ │ Learner  │ │  Project │ │   AI     │  │    │
+│  │ │ Service  │ │ Service  │ │ Service  │  │    │
+│  │ └──────────┘ └──────────┘ └──────────┘  │    │
+│  └──────────────────────────────────────────┘    │
+│                          │                          │
+│  ┌───────────────────────┴────────────────────┐    │
+│  │         Data Layer                        │    │
+│  ├──────────────────────────────────────────┤    │
+│  │ PostgreSQL │ MongoDB │ Redis │ S3       │    │
+│  └──────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────┘</code></pre>
+
+        <h3>2.1.1 계층별 역할</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>계층</th>
+                    <th>역할</th>
+                    <th>기술 스택</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>프레젠테이션</strong></td>
+                    <td>사용자 인터페이스 제공</td>
+                    <td>React, Vue.js, Flutter, Electron</td>
+                </tr>
+                <tr>
+                    <td><strong>API 게이트웨이</strong></td>
+                    <td>라우팅, 인증, 속도 제한</td>
+                    <td>Kong, AWS API Gateway, NGINX</td>
+                </tr>
+                <tr>
+                    <td><strong>마이크로서비스</strong></td>
+                    <td>비즈니스 로직 처리</td>
+                    <td>Node.js, Python, Go, Rust</td>
+                </tr>
+                <tr>
+                    <td><strong>데이터</strong></td>
+                    <td>영구 저장 및 캐싱</td>
+                    <td>PostgreSQL, MongoDB, Redis, S3</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h2>2.2 핵심 마이크로서비스</h2>
+
+        <h3>2.2.1 커리큘럼 서비스 (Curriculum Service)</h3>
+
+        <p>STEM 커리큘럼의 생성, 관리, 배포를 담당합니다.</p>
+
+        <div class="info-box">
+            <p><strong>주요 기능:</strong></p>
+            <ul style="color: var(--text-muted);">
+                <li>학습 목표 정의 및 매핑</li>
+                <li>프로젝트 템플릿 라이브러리</li>
+                <li>난이도별 커리큘럼 자동 생성</li>
+                <li>표준 준수 검증 (NGSS, CCSS, ISTE)</li>
+                <li>다국어 커리큘럼 관리</li>
+            </ul>
+        </div>
+
+        <pre><code>// 커리큘럼 생성 예시
+POST /api/v1/curriculum
+
+{
+  "title": "로봇팔 설계 프로젝트",
+  "grade_level": "9-12",
+  "duration_weeks": 8,
+  "learning_objectives": [
+    {
+      "domain": "engineering",
+      "objective": "기계 설계 원리 이해 및 적용",
+      "standard": "NGSS-HS-ETS1-2"
+    },
+    {
+      "domain": "mathematics",
+      "objective": "역기구학 방정식 활용",
+      "standard": "CCSS-MATH-HSG-SRT"
+    }
+  ],
+  "materials": [
+    "서보 모터 6개",
+    "아두이노 메가",
+    "3D 프린터 (PLA 필라멘트)"
+  ]
+}</code></pre>
+
+        <h3>2.2.2 평가 서비스 (Assessment Service)</h3>
+
+        <p>학습자의 STEM 역량을 다각도로 평가하고 피드백을 제공합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>평가 유형</th>
+                    <th>설명</th>
+                    <th>측정 지표</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>형성 평가</strong></td>
+                    <td>학습 과정 중 지속적 피드백</td>
+                    <td>퀴즈, 실습 체크리스트</td>
+                </tr>
+                <tr>
+                    <td><strong>총괄 평가</strong></td>
+                    <td>프로젝트 완료 후 종합 평가</td>
+                    <td>최종 제품, 발표, 보고서</td>
+                </tr>
+                <tr>
+                    <td><strong>동료 평가</strong></td>
+                    <td>학생 간 상호 피드백</td>
+                    <td>루브릭 기반 평가</td>
+                </tr>
+                <tr>
+                    <td><strong>자기 평가</strong></td>
+                    <td>메타인지 및 성찰</td>
+                    <td>학습 일지, 포트폴리오</td>
+                </tr>
+                <tr>
+                    <td><strong>AI 평가</strong></td>
+                    <td>기계 학습 기반 자동 평가</td>
+                    <td>코드 품질, 설계 최적성</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.2.3 분석 서비스 (Analytics Service)</h3>
+
+        <p>학습 데이터를 수집, 분석하여 개인화된 인사이트를 제공합니다.</p>
+
+        <pre><code>// 학습 분석 대시보드 데이터
+GET /api/v1/analytics/learner/{learnerId}
+
+{
+  "learner_id": "L123456",
+  "competency_scores": {
+    "scientific_inquiry": 85,
+    "engineering_design": 78,
+    "computational_thinking": 92,
+    "mathematical_modeling": 81,
+    "collaboration": 88
+  },
+  "growth_trend": {
+    "last_month": +12,
+    "last_quarter": +25
+  },
+  "recommended_projects": [
+    "AI-기반 이미지 분류",
+    "드론 자율 비행",
+    "생체 신호 센서"
+  ],
+  "peer_comparison": {
+    "percentile": 78,
+    "cohort_size": 1250
+  }
+}</code></pre>
+
+        <h3>2.2.4 학습자 서비스 (Learner Service)</h3>
+
+        <p>학습자 프로필, 학습 경로, 성취도를 관리합니다.</p>
+
+        <div class="info-box">
+            <p><strong>학습자 프로필 포함 정보:</strong></p>
+            <ul style="color: var(--text-muted);">
+                <li>기본 정보 (이름, 학년, 학교)</li>
+                <li>학습 스타일 및 선호도</li>
+                <li>역량 진척도 및 배지</li>
+                <li>완료한 프로젝트 포트폴리오</li>
+                <li>관심 분야 및 진로 목표</li>
+                <li>학습 활동 이력</li>
+            </ul>
+        </div>
+
+        <h3>2.2.5 프로젝트 서비스 (Project Service)</h3>
+
+        <p>STEM 프로젝트의 생명주기를 관리합니다.</p>
+
+        <pre><code>// 프로젝트 워크플로우
+┌─────────────┐
+│ 아이디어    │
+└──────┬──────┘
+       │
+┌──────▼──────┐
+│ 계획        │ ← 팀 구성, 역할 분담
+└──────┬──────┘
+       │
+┌──────▼──────┐
+│ 설계        │ ← CAD, 프로토타입
+└──────┬──────┘
+       │
+┌──────▼──────┐
+│ 구현        │ ← 코딩, 제작
+└──────┬──────┘
+       │
+┌──────▼──────┐
+│ 테스트      │ ← 실험, 디버깅
+└──────┬──────┘
+       │
+┌──────▼──────┐
+│ 발표        │ ← 문서화, 전시
+└─────────────┘</code></pre>
+
+        <h3>2.2.6 AI 서비스 (AI Service)</h3>
+
+        <p>인공지능을 활용하여 개인화 학습과 지능형 지원을 제공합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>AI 기능</th>
+                    <th>설명</th>
+                    <th>적용 기술</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>개인화 추천</strong></td>
+                    <td>학습자 맞춤형 콘텐츠 추천</td>
+                    <td>협업 필터링, 딥러닝</td>
+                </tr>
+                <tr>
+                    <td><strong>자동 채점</strong></td>
+                    <td>코드 및 수학 문제 자동 평가</td>
+                    <td>NLP, 정적 분석</td>
+                </tr>
+                <tr>
+                    <td><strong>챗봇 튜터</strong></td>
+                    <td>24/7 학습 지원 및 질문 응답</td>
+                    <td>LLM (GPT-4, Claude)</td>
+                </tr>
+                <tr>
+                    <td><strong>학습 예측</strong></td>
+                    <td>학습 부진 조기 감지</td>
+                    <td>시계열 분석, LSTM</td>
+                </tr>
+                <tr>
+                    <td><strong>이미지 인식</strong></td>
+                    <td>실험 결과 자동 분석</td>
+                    <td>CNN, Computer Vision</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h2>2.3 데이터 아키텍처</h2>
+
+        <h3>2.3.1 데이터베이스 선택 기준</h3>
+
+        <p>각 데이터 유형에 최적화된 데이터베이스를 사용합니다:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>데이터베이스</th>
+                    <th>용도</th>
+                    <th>저장 데이터</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>PostgreSQL</strong></td>
+                    <td>관계형 데이터</td>
+                    <td>사용자, 커리큘럼, 성적</td>
+                </tr>
+                <tr>
+                    <td><strong>MongoDB</strong></td>
+                    <td>문서형 데이터</td>
+                    <td>프로젝트, 포트폴리오, 로그</td>
+                </tr>
+                <tr>
+                    <td><strong>Redis</strong></td>
+                    <td>캐싱 및 세션</td>
+                    <td>세션, 실시간 분석</td>
+                </tr>
+                <tr>
+                    <td><strong>Neo4j</strong></td>
+                    <td>그래프 데이터</td>
+                    <td>학습 경로, 지식 그래프</td>
+                </tr>
+                <tr>
+                    <td><strong>S3/MinIO</strong></td>
+                    <td>객체 스토리지</td>
+                    <td>비디오, 이미지, 3D 모델</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.3.2 데이터 흐름</h3>
+
+        <pre><code>// 실시간 학습 데이터 파이프라인
+┌───────────────┐
+│  학생 활동    │
+└───────┬───────┘
+        │
+        ▼
+┌───────────────┐
+│  이벤트 스트림 │ (Kafka)
+└───────┬───────┘
+        │
+        ├──────────┐
+        │          │
+        ▼          ▼
+┌──────────┐  ┌──────────┐
+│ 실시간   │  │  배치    │
+│ 분석     │  │  처리    │
+└──────────┘  └──────────┘
+        │          │
+        └────┬─────┘
+             ▼
+      ┌──────────┐
+      │ 데이터   │
+      │ 웨어하우스│
+      └──────────┘</code></pre>
+
+        <hr>
+
+        <h2>2.4 통합 및 상호 운용성</h2>
+
+        <h3>2.4.1 외부 시스템 통합</h3>
+
+        <p>WIA STEM 플랫폼은 다양한 교육 시스템과 원활하게 통합됩니다:</p>
+
+        <ul>
+            <li><strong>LMS 통합:</strong> Canvas, Moodle, Blackboard, Google Classroom</li>
+            <li><strong>SIS 통합:</strong> PowerSchool, Infinite Campus, Skyward</li>
+            <li><strong>SSO 연동:</strong> SAML, OAuth 2.0, OpenID Connect</li>
+            <li><strong>코딩 플랫폼:</strong> GitHub, GitLab, Replit</li>
+            <li><strong>3D 도구:</strong> Tinkercad, Fusion 360, Blender</li>
+            <li><strong>로봇 플랫폼:</strong> LEGO Mindstorms, VEX, Arduino</li>
+        </ul>
+
+        <h3>2.4.2 API 우선 설계</h3>
+
+        <p>모든 기능은 RESTful API와 GraphQL을 통해 접근 가능합니다:</p>
+
+        <pre><code>// RESTful API 예시
+GET    /api/v1/projects           # 프로젝트 목록
+POST   /api/v1/projects           # 새 프로젝트 생성
+GET    /api/v1/projects/{id}      # 프로젝트 상세
+PUT    /api/v1/projects/{id}      # 프로젝트 수정
+DELETE /api/v1/projects/{id}      # 프로젝트 삭제
+
+// GraphQL 예시
+query {
+  learner(id: "L123") {
+    name
+    gradeLevel
+    competencies {
+      name
+      score
+      badges {
+        title
+        earnedDate
+      }
+    }
+    projects {
+      title
+      status
+      teamMembers {
+        name
+      }
+    }
+  }
+}</code></pre>
+
+        <hr>
+
+        <h2>2.5 확장성 및 성능</h2>
+
+        <h3>2.5.1 수평적 확장</h3>
+
+        <div class="info-box">
+            <p><strong>클라우드 네이티브 아키텍처:</strong></p>
+            <ul style="color: var(--text-muted);">
+                <li>Kubernetes 오케스트레이션으로 자동 스케일링</li>
+                <li>마이크로서비스 독립적 확장 가능</li>
+                <li>로드 밸런서를 통한 트래픽 분산</li>
+                <li>CDN을 통한 정적 콘텐츠 배포</li>
+                <li>다중 리전 배포로 글로벌 저지연 서비스</li>
+            </ul>
+        </div>
+
+        <h3>2.5.2 성능 목표</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>메트릭</th>
+                    <th>목표</th>
+                    <th>측정 방법</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>API 응답 시간</td>
+                    <td>&lt; 200ms (p95)</td>
+                    <td>APM 도구</td>
+                </tr>
+                <tr>
+                    <td>페이지 로딩</td>
+                    <td>&lt; 2초</td>
+                    <td>Lighthouse</td>
+                </tr>
+                <tr>
+                    <td>동시 사용자</td>
+                    <td>100,000+</td>
+                    <td>부하 테스트</td>
+                </tr>
+                <tr>
+                    <td>가용성</td>
+                    <td>99.9%</td>
+                    <td>Uptime 모니터링</td>
+                </tr>
+                <tr>
+                    <td>데이터 처리량</td>
+                    <td>10,000 TPS</td>
+                    <td>Metrics</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h2>2.6 장 요약</h2>
+
+        <div class="info-box">
+            <p><strong>핵심 내용:</strong></p>
+            <ol style="color: var(--text);">
+                <li>마이크로서비스 기반 클라우드 네이티브 아키텍처로 확장성 보장</li>
+                <li>6개 핵심 서비스: 커리큘럼, 평가, 분석, 학습자, 프로젝트, AI</li>
+                <li>폴리글랏 퍼시스턴스: PostgreSQL, MongoDB, Redis, Neo4j, S3</li>
+                <li>오픈 API와 표준 프로토콜로 외부 시스템 통합 지원</li>
+                <li>Kubernetes 기반 자동 스케일링 및 다중 리전 배포</li>
+                <li>99.9% 가용성, &lt;200ms API 응답 시간 목표</li>
+            </ol>
+        </div>
+
+        <div class="chapter-nav">
+            <a href="chapter-01.html">← 제1장</a>
+            <a href="chapter-03.html">제3장: 데이터 형식 →</a>
+        </div>
+
+        <div class="footer">
+            <p class="philosophy">弘益人間 · 널리 인간을 이롭게 하라</p>
+            <p>WIA - 세계인증산업협회</p>
+            <p><a href="https://wiastandards.com" target="_blank">wiastandards.com</a></p>
+        </div>
+    </div>
+</body>
+</html>

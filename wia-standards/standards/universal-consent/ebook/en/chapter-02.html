@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Data Format Specification</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #8B5CF6;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 3rem;
+        }
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 1rem;
+        }
+        h2 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin: 2rem 0 1rem 0;
+        }
+        h3 {
+            color: var(--text);
+            font-size: 1.3rem;
+            margin: 1.5rem 0 0.75rem 0;
+        }
+        p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg);
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+        th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+        .summary {
+            background: var(--bg);
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        .summary h3 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+        li {
+            margin-bottom: 0.5rem;
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+        .nav-links a {
+            color: var(--primary);
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        .nav-links a:hover {
+            background: var(--primary);
+            color: white;
+        }
+        code {
+            background: var(--bg);
+            color: var(--primary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            line-height: 1.4;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        .callout {
+            background: rgba(139, 92, 246, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+        }
+        .questions {
+            background: var(--bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        .questions ol {
+            margin-left: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chapter 2: Data Format Specification</h1>
+
+        <p>The Universal Consent data format defines the precise structure, fields, and validation rules for consent records that ensure interoperability across systems and compliance across jurisdictions. This chapter provides comprehensive technical specifications for implementing WIA-CORE-002 compliant consent records, from basic required fields to advanced extensibility features.</p>
+
+        <h2>Core Consent Record Structure</h2>
+
+        <p>Every Universal Consent record follows a standardized JSON schema that balances completeness with flexibility. The schema distinguishes between required fields that must appear in every record, recommended fields that should be included for most use cases, and optional fields that address specific scenarios.</p>
+
+        <pre><code>{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WIA-CORE-002 Consent Record",
+  "type": "object",
+  "required": [
+    "consentId",
+    "userId",
+    "version",
+    "timestamp",
+    "status",
+    "purposes",
+    "legalBasis",
+    "jurisdiction"
+  ],
+  "properties": {
+    "consentId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique consent identifier (UUID v4)"
+    },
+    "userId": {
+      "type": "string",
+      "description": "User identifier (email, UUID, or internal ID)"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "WIA-CORE-002 version (e.g., '1.0')"
+    },
+    "standard": {
+      "type": "string",
+      "const": "WIA-CORE-002",
+      "description": "Standard identifier"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of consent grant (UTC)"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of consent expiration"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "active", "revoked", "expired", "suspended", "superseded"],
+      "description": "Current consent status"
+    },
+    "jurisdiction": {
+      "type": "string",
+      "description": "Applicable jurisdiction (ISO 3166-1 alpha-2)"
+    },
+    "legalBasis": {
+      "type": "string",
+      "enum": ["consent", "contract", "legal-obligation",
+               "legitimate-interest", "vital-interest", "public-interest"],
+      "description": "Legal basis for processing under GDPR Article 6"
+    }
+  }
+}</code></pre>
+
+        <h2>Required Fields Detailed Specification</h2>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">Table 2.1: Required Field Specifications</caption>
+            <thead>
+                <tr>
+                    <th>Field Name</th>
+                    <th>Type</th>
+                    <th>Format/Pattern</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>consentId</td>
+                    <td>string</td>
+                    <td>UUID v4</td>
+                    <td>Globally unique identifier for this consent record</td>
+                </tr>
+                <tr>
+                    <td>userId</td>
+                    <td>string</td>
+                    <td>Any valid identifier</td>
+                    <td>Links consent to specific user across systems</td>
+                </tr>
+                <tr>
+                    <td>version</td>
+                    <td>string</td>
+                    <td>Semantic version (X.Y)</td>
+                    <td>Indicates WIA-CORE-002 specification version</td>
+                </tr>
+                <tr>
+                    <td>timestamp</td>
+                    <td>string</td>
+                    <td>ISO 8601 date-time</td>
+                    <td>Records precise moment consent was granted</td>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>string</td>
+                    <td>Enum (6 values)</td>
+                    <td>Represents current state in consent lifecycle</td>
+                </tr>
+                <tr>
+                    <td>purposes</td>
+                    <td>array</td>
+                    <td>Purpose objects</td>
+                    <td>Defines specific processing purposes</td>
+                </tr>
+                <tr>
+                    <td>legalBasis</td>
+                    <td>string</td>
+                    <td>Enum (6 values)</td>
+                    <td>GDPR Article 6 legal basis for processing</td>
+                </tr>
+                <tr>
+                    <td>jurisdiction</td>
+                    <td>string</td>
+                    <td>ISO 3166-1 alpha-2</td>
+                    <td>Determines applicable privacy regulations</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Consent Identifier (consentId)</h3>
+
+        <p>The consentId serves as the primary key for consent records and must be globally unique across all systems using Universal Consent. UUID version 4 (random) is mandated to ensure uniqueness without coordination. Implementations must generate UUIDs using cryptographically secure random number generators to prevent collisions and security vulnerabilities.</p>
+
+        <pre><code>// TypeScript example
+import { v4 as uuidv4 } from 'uuid';
+
+const consentId = uuidv4(); // e.g., "550e8400-e29b-41d4-a716-446655440000"</code></pre>
+
+        <h3>User Identifier (userId)</h3>
+
+        <p>The userId links consent records to specific users. While the format is flexible to accommodate different identification schemes, organizations must use consistent identifiers across all consent records for a given user. Common patterns include email addresses, internal database IDs, or dedicated user UUIDs. For privacy-sensitive implementations, hashed identifiers provide pseudonymization while maintaining linkability.</p>
+
+        <pre><code>// Examples of valid userId values
+{
+  "userId": "user@example.com"              // Email address
+}
+{
+  "userId": "user-7c3f8a92-4e1b-4d5f-a9e2-6b8c4a1d3e2f"  // UUID
+}
+{
+  "userId": "12345678"                      // Internal ID
+}
+{
+  "userId": "sha256:a1b2c3d4e5..."        // Hashed identifier
+}</code></pre>
+
+        <h3>Status Field</h3>
+
+        <p>The status field tracks the consent lifecycle through six distinct states, each with specific meaning and transitions:</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">Table 2.2: Consent Status Values and State Transitions</caption>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Meaning</th>
+                    <th>Valid Transitions</th>
+                    <th>Regulatory Significance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>pending</td>
+                    <td>Awaiting verification</td>
+                    <td>→ active, revoked</td>
+                    <td>Consent requested but not confirmed (e.g., email verification pending)</td>
+                </tr>
+                <tr>
+                    <td>active</td>
+                    <td>Currently valid</td>
+                    <td>→ revoked, expired, suspended, superseded</td>
+                    <td>Processing may proceed under this consent</td>
+                </tr>
+                <tr>
+                    <td>revoked</td>
+                    <td>User withdrew consent</td>
+                    <td>(terminal state)</td>
+                    <td>Processing must cease; GDPR Article 7(3) compliance</td>
+                </tr>
+                <tr>
+                    <td>expired</td>
+                    <td>Passed expiration date</td>
+                    <td>(terminal state)</td>
+                    <td>Automatic termination per retention policy</td>
+                </tr>
+                <tr>
+                    <td>suspended</td>
+                    <td>Temporarily inactive</td>
+                    <td>→ active, revoked</td>
+                    <td>Temporary restriction (e.g., investigation, breach response)</td>
+                </tr>
+                <tr>
+                    <td>superseded</td>
+                    <td>Replaced by newer consent</td>
+                    <td>(terminal state)</td>
+                    <td>Archived record; see replacement consent</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Legal Basis</h3>
+
+        <p>GDPR Article 6 defines six lawful bases for processing personal data. Universal Consent supports all six to accommodate different processing scenarios:</p>
+
+        <ul>
+            <li><strong>consent:</strong> User has given explicit consent for specific purposes</li>
+            <li><strong>contract:</strong> Processing necessary for contract performance</li>
+            <li><strong>legal-obligation:</strong> Processing required by law</li>
+            <li><strong>legitimate-interest:</strong> Processing necessary for legitimate interests (with balancing test)</li>
+            <li><strong>vital-interest:</strong> Processing necessary to protect vital interests (typically life-or-death situations)</li>
+            <li><strong>public-interest:</strong> Processing necessary for public interest or official authority</li>
+        </ul>
+
+        <div class="callout">
+            <strong>Implementation Note:</strong> While "consent" is the most restrictive legal basis, it's not always appropriate. For example, payment processing should use "contract" as the legal basis, as users cannot reasonably object to payment processing when purchasing products. Choosing the correct legal basis affects what rights users can exercise.
+        </div>
+
+        <h2>Purpose Specification Structure</h2>
+
+        <p>Purposes define what organizations intend to do with personal data. Each purpose is a structured object containing detailed information about the processing activity, data involved, and conditions:</p>
+
+        <pre><code>{
+  "purposes": [
+    {
+      "purposeId": "marketing-email",
+      "purposeName": "Email Marketing Communications",
+      "description": "Receive promotional emails about products, services, special offers, and company updates",
+      "granted": true,
+      "categories": ["email", "marketing", "promotional"],
+      "dataCategories": ["email-address", "name", "preferences", "purchase-history"],
+      "retentionPeriod": "P2Y",
+      "thirdParties": ["marketing-platform-inc", "email-service-provider"],
+      "thirdPartyPurposes": ["email-delivery", "analytics"],
+      "automated": false,
+      "profiling": true,
+      "crossBorder": true,
+      "countries": ["US", "IE", "SG"]
+    },
+    {
+      "purposeId": "order-processing",
+      "purposeName": "Order Processing and Fulfillment",
+      "description": "Process your orders, arrange shipping, handle payments, and provide customer service",
+      "granted": true,
+      "categories": ["contract", "fulfillment"],
+      "dataCategories": ["contact-info", "payment-info", "shipping-address", "order-details"],
+      "retentionPeriod": "P7Y",
+      "thirdParties": ["payment-processor", "shipping-carrier"],
+      "thirdPartyPurposes": ["payment-processing", "delivery"],
+      "automated": true,
+      "profiling": false,
+      "crossBorder": true,
+      "countries": ["US", "GB"]
+    }
+  ]
+}</code></pre>
+
+        <h3>Purpose Fields Explained</h3>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">Table 2.3: Purpose Object Field Specifications</caption>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>purposeId</td>
+                    <td>Yes</td>
+                    <td>Unique identifier for this purpose</td>
+                    <td>"marketing-email"</td>
+                </tr>
+                <tr>
+                    <td>purposeName</td>
+                    <td>Yes</td>
+                    <td>Human-readable purpose title</td>
+                    <td>"Email Marketing Communications"</td>
+                </tr>
+                <tr>
+                    <td>description</td>
+                    <td>Yes</td>
+                    <td>Detailed explanation of processing</td>
+                    <td>"Receive promotional emails..."</td>
+                </tr>
+                <tr>
+                    <td>granted</td>
+                    <td>Yes</td>
+                    <td>Boolean indicating consent status</td>
+                    <td>true / false</td>
+                </tr>
+                <tr>
+                    <td>dataCategories</td>
+                    <td>Yes</td>
+                    <td>Types of data processed</td>
+                    <td>["email-address", "name"]</td>
+                </tr>
+                <tr>
+                    <td>retentionPeriod</td>
+                    <td>Recommended</td>
+                    <td>ISO 8601 duration format</td>
+                    <td>"P2Y" (2 years)</td>
+                </tr>
+                <tr>
+                    <td>thirdParties</td>
+                    <td>Recommended</td>
+                    <td>Third-party processors</td>
+                    <td>["marketing-platform-inc"]</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Standard Purpose and Data Categories</h2>
+
+        <p>To promote consistency, Universal Consent defines standard purpose categories and data categories that organizations should use when applicable:</p>
+
+        <h3>Standard Purpose Categories</h3>
+
+        <pre><code>const PURPOSE_CATEGORIES = [
+  "marketing",           // Marketing communications
+  "analytics",          // Usage analytics and monitoring
+  "personalization",    // Content personalization
+  "advertising",        // Targeted advertising
+  "social-media",       // Social media integration
+  "research",           // Product research and development
+  "security",           // Security and fraud prevention
+  "support",            // Customer support
+  "legal",              // Legal compliance
+  "contract"            // Contract fulfillment
+];</code></pre>
+
+        <h3>Standard Data Categories</h3>
+
+        <pre><code>const DATA_CATEGORIES = {
+  "contact-info": ["email", "phone", "address"],
+  "identification": ["name", "date-of-birth", "government-id"],
+  "financial": ["credit-card", "bank-account", "transactions"],
+  "health": ["medical-records", "health-conditions", "prescriptions"],
+  "biometric": ["fingerprints", "facial-recognition", "dna"],
+  "location": ["gps-coordinates", "ip-address", "geolocation"],
+  "behavioral": ["browsing-history", "purchase-history", "app-usage"],
+  "preferences": ["user-settings", "favorites", "wishlist"],
+  "communications": ["emails", "messages", "calls"],
+  "employment": ["job-title", "employer", "work-history"]
+};</code></pre>
+
+        <h2>Metadata Structure</h2>
+
+        <p>The metadata object captures contextual information about how and where consent was obtained. This information proves crucial for demonstrating informed consent and investigating disputes:</p>
+
+        <pre><code>{
+  "metadata": {
+    "source": "web-signup-form",
+    "sourceUrl": "https://example.com/signup",
+    "sourceVersion": "2.3.1",
+    "ipAddress": "192.0.2.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "consentFormVersion": "2.3",
+    "consentFormLanguage": "en",
+    "privacyPolicyVersion": "4.1",
+    "privacyPolicyUrl": "https://example.com/privacy/v4.1",
+    "termsVersion": "3.2",
+    "termsUrl": "https://example.com/terms/v3.2",
+    "language": "en",
+    "country": "US",
+    "interface": "web",
+    "method": "checkbox",
+    "doubleOptIn": true,
+    "verificationMethod": "email",
+    "verifiedAt": "2025-01-15T10:32:45Z"
+  }
+}</code></pre>
+
+        <div class="callout">
+            <strong>Legal Significance:</strong> Metadata provides evidence of informed consent. If a user claims they never consented to email marketing, the metadata shows exactly when they checked the consent box, what version of the privacy policy was presented, what IP address they used, and whether they verified their email. This documentation is invaluable for regulatory investigations and legal disputes.
+        </div>
+
+        <h2>Audit Trail Specification</h2>
+
+        <p>The audit trail maintains an immutable log of all consent-related events. Each entry records a specific action with complete context:</p>
+
+        <pre><code>{
+  "auditTrail": [
+    {
+      "timestamp": "2025-01-15T10:30:00Z",
+      "action": "created",
+      "actor": "system",
+      "actorType": "system",
+      "ipAddress": "192.0.2.1",
+      "previousState": null,
+      "newState": "pending",
+      "changes": null,
+      "reason": "User initiated signup process"
+    },
+    {
+      "timestamp": "2025-01-15T10:32:45Z",
+      "action": "verified",
+      "actor": "user-12345",
+      "actorType": "user",
+      "ipAddress": "192.0.2.1",
+      "previousState": "pending",
+      "newState": "active",
+      "changes": {
+        "status": {"from": "pending", "to": "active"}
+      },
+      "reason": "Email verification completed",
+      "verificationToken": "hash:sha256:abc123..."
+    },
+    {
+      "timestamp": "2025-02-20T14:15:30Z",
+      "action": "updated",
+      "actor": "user-12345",
+      "actorType": "user",
+      "ipAddress": "192.0.2.55",
+      "previousState": "active",
+      "newState": "active",
+      "changes": {
+        "purposes": {
+          "marketing-email": {"from": true, "to": false}
+        }
+      },
+      "reason": "User updated preferences via settings page"
+    }
+  ]
+}</code></pre>
+
+        <h3>Standard Audit Actions</h3>
+
+        <ul>
+            <li><strong>created:</strong> Consent record created</li>
+            <li><strong>verified:</strong> Consent verified (e.g., email confirmation completed)</li>
+            <li><strong>updated:</strong> Consent preferences or purposes modified</li>
+            <li><strong>revoked:</strong> User withdrew consent</li>
+            <li><strong>expired:</strong> Consent reached expiration date</li>
+            <li><strong>suspended:</strong> Consent temporarily suspended</li>
+            <li><strong>superseded:</strong> Consent replaced by new version</li>
+            <li><strong>exported:</strong> Consent data exported for portability</li>
+            <li><strong>reviewed:</strong> Compliance review conducted</li>
+        </ul>
+
+        <h2>User Information for Special Cases</h2>
+
+        <p>Some users require special handling, particularly minors who need parental consent in many jurisdictions:</p>
+
+        <pre><code>{
+  "userInfo": {
+    "age": 14,
+    "isMinor": true,
+    "ageVerificationMethod": "self-reported",
+    "ageVerificationDate": "2025-01-15T10:30:00Z",
+    "parentalConsent": {
+      "required": true,
+      "obtained": true,
+      "parentId": "parent-456789",
+      "parentEmail": "parent@example.com",
+      "parentName": "Jane Doe",
+      "verificationMethod": "credit-card-check",
+      "verifiedAt": "2025-01-15T10:40:00Z",
+      "relationship": "parent",
+      "consentId": "parent-consent-uuid"
+    },
+    "language": "en",
+    "region": "EU",
+    "accessibility": {
+      "requiresScreenReader": false,
+      "requiresSimplifiedLanguage": false
+    }
+  }
+}</code></pre>
+
+        <h2>Extensibility Through Custom Fields</h2>
+
+        <p>Organizations often need to capture information specific to their industry, business model, or internal processes. Universal Consent supports extensions through a dedicated <code>custom</code> namespace:</p>
+
+        <pre><code>{
+  "custom": {
+    "organizationId": "org-123",
+    "department": "marketing",
+    "campaignId": "summer-2025",
+    "internalReferenceId": "ref-xyz-789",
+    "salesforceContactId": "003xx000004TmiQ",
+    "hubspotContactId": "12345",
+    "customField1": "value1",
+    "customField2": {
+      "nested": "structures",
+      "are": "supported"
+    }
+  }
+}</code></pre>
+
+        <div class="callout">
+            <strong>Best Practice:</strong> Use custom fields sparingly and document their purpose. Custom fields should not duplicate standard fields or contradict standard data. Custom fields are not guaranteed to be understood by other systems, so use them only for internal purposes or when coordinating with specific partners who understand your custom schema.
+        </div>
+
+        <h2>Complete Example: E-Commerce Consent Record</h2>
+
+        <pre><code>{
+  "consentId": "550e8400-e29b-41d4-a716-446655440000",
+  "userId": "user-7c3f8a92",
+  "version": "1.0",
+  "standard": "WIA-CORE-002",
+  "timestamp": "2025-01-15T10:30:00Z",
+  "expiresAt": "2027-01-15T10:30:00Z",
+  "status": "active",
+  "jurisdiction": "US",
+  "legalBasis": "consent",
+
+  "purposes": [
+    {
+      "purposeId": "order-processing",
+      "purposeName": "Order Processing",
+      "description": "Process your orders and arrange delivery",
+      "granted": true,
+      "categories": ["contract", "fulfillment"],
+      "dataCategories": ["contact-info", "payment-info", "shipping-address"],
+      "retentionPeriod": "P7Y",
+      "thirdParties": ["payment-processor", "shipping-carrier"]
+    },
+    {
+      "purposeId": "marketing-email",
+      "purposeName": "Email Marketing",
+      "description": "Send promotional emails",
+      "granted": false,
+      "categories": ["marketing"],
+      "dataCategories": ["email-address", "name"],
+      "retentionPeriod": "P2Y"
+    }
+  ],
+
+  "metadata": {
+    "source": "checkout-page",
+    "sourceUrl": "https://shop.example.com/checkout",
+    "ipAddress": "192.0.2.1",
+    "privacyPolicyVersion": "4.1"
+  },
+
+  "auditTrail": [
+    {
+      "timestamp": "2025-01-15T10:30:00Z",
+      "action": "created",
+      "actor": "system",
+      "newState": "active"
+    }
+  ]
+}</code></pre>
+
+        <div class="summary">
+            <h3>Chapter Summary</h3>
+            <p><strong>Key Takeaways:</strong></p>
+            <ol>
+                <li>Universal Consent records follow a standardized JSON schema with 8 required fields (consentId, userId, version, timestamp, status, purposes, legalBasis, jurisdiction) that ensure completeness and interoperability across systems.</li>
+                <li>The purpose specification structure enables granular consent through detailed objects that specify processing activities, data categories, retention periods, third-party sharing, and automation/profiling characteristics.</li>
+                <li>Status tracking through six distinct states (pending, active, revoked, expired, suspended, superseded) provides precise lifecycle management with legally significant state transitions that support GDPR Article 7(3) and other regulatory requirements.</li>
+                <li>Comprehensive metadata capture (source, IP address, user agent, policy versions, verification methods) provides crucial evidence of informed consent for regulatory compliance and dispute resolution.</li>
+                <li>The immutable audit trail logs every consent-related event with timestamp, actor, state changes, and reasons, creating an irrefutable record that demonstrates compliance and enables detailed forensic analysis when needed.</li>
+            </ol>
+        </div>
+
+        <div class="questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>Why does Universal Consent mandate UUID v4 for consentId rather than allowing sequential integers or other identifier schemes? What security and operational benefits does this provide?</li>
+                <li>Explain the difference between the six GDPR legal bases (consent, contract, legal-obligation, legitimate-interest, vital-interest, public-interest). Provide an example scenario for each where that legal basis would be most appropriate.</li>
+                <li>Describe the complete lifecycle of a consent record from creation through revocation, including all possible status transitions. What regulatory requirements drive the need for the "superseded" status?</li>
+                <li>A user claims they never consented to marketing emails. Using the metadata structure, explain what information you would examine to verify whether informed consent was obtained. What specific metadata fields provide legal protection?</li>
+                <li>Design a purpose specification for a healthcare application that needs to: (a) share medical records with a specialist for consultation, (b) use anonymized data for research, and (c) send appointment reminders. Include appropriate data categories, retention periods, and legal bases.</li>
+                <li>Compare the advantages and disadvantages of using custom fields versus extending the standard specification. When should organizations use the custom namespace, and when should they propose additions to the standard?</li>
+            </ol>
+        </div>
+
+        <div class="callout">
+            <h3>Looking Ahead</h3>
+            <p>Chapter 3 introduces the API interface specification, detailing the operations, endpoints, and protocols for creating, retrieving, updating, and deleting consent records. You'll learn to implement RESTful APIs that enable consent management across distributed systems.</p>
+        </div>
+
+        <div class="nav-links">
+            <a href="chapter-01.html">← Previous Chapter</a>
+            <a href="chapter-03.html">Next Chapter →</a>
+        </div>
+    </div>
+</body>
+</html>

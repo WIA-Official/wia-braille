@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Token Standards - ERC-721 & ERC-1155 | WIA-FIN-009</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.8;
+        }
+
+        .header {
+            background: rgba(30, 41, 59, 0.8);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+            padding: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #22c55e;
+            text-decoration: none;
+        }
+
+        nav a {
+            color: #94a3b8;
+            text-decoration: none;
+            margin-left: 2rem;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: #22c55e;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .chapter-header {
+            margin-bottom: 3rem;
+        }
+
+        .chapter-number {
+            display: inline-block;
+            background: #22c55e;
+            color: #0f172a;
+            font-size: 0.875rem;
+            font-weight: 800;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #22c55e;
+            margin: 3rem 0 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(34, 197, 94, 0.2);
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #10b981;
+            margin: 2rem 0 1rem;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            color: #cbd5e1;
+            font-size: 1.125rem;
+        }
+
+        .highlight {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 4px solid #22c55e;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .highlight p {
+            margin-bottom: 0;
+        }
+
+        ul, ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+            color: #cbd5e1;
+        }
+
+        li {
+            margin-bottom: 0.75rem;
+            font-size: 1.125rem;
+        }
+
+        .code-block {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            color: #22c55e;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        code {
+            color: #22c55e;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .info-box h4 {
+            color: #3b82f6;
+            margin-bottom: 1rem;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .comparison-table th {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 1rem;
+            border-top: 1px solid rgba(34, 197, 94, 0.1);
+            color: #cbd5e1;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .nav-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            color: #22c55e;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-button:hover {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: #22c55e;
+            transform: translateY(-2px);
+        }
+
+        footer {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid rgba(34, 197, 94, 0.2);
+            margin-top: 4rem;
+            color: #64748b;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .container {
+                padding: 2rem 1rem;
+            }
+
+            .navigation {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <a href="index.html" class="logo">🖼️ WIA-FIN-009</a>
+            <nav>
+                <a href="index.html">Contents</a>
+                <a href="../../index.html">Home</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="chapter-header">
+            <span class="chapter-number">CHAPTER 2</span>
+            <h1>Token Standards: ERC-721 & ERC-1155</h1>
+        </div>
+
+        <p>
+            Token standards are the backbone of the NFT ecosystem, providing a common framework that enables
+            interoperability, composability, and consistent behavior across different platforms and applications.
+            This chapter explores the two primary NFT standards on Ethereum: ERC-721 and ERC-1155, examining
+            their technical specifications, use cases, and implementation considerations.
+        </p>
+
+        <h2>Understanding ERC-721: The Original NFT Standard</h2>
+
+        <h3>History and Development</h3>
+
+        <p>
+            ERC-721 emerged from the CryptoKitties project in late 2017. As the game's popularity exploded,
+            the development team, led by Dieter Shirley, recognized the need for a standardized interface for
+            non-fungible tokens. They proposed ERC-721 as an Ethereum Improvement Proposal (EIP), which was
+            finalized in January 2018 after extensive community discussion and refinement.
+        </p>
+
+        <p>
+            The standard's name comes from the Ethereum Request for Comments (ERC) process, with 721 being
+            the proposal number. It established the first formal specification for non-fungible tokens on
+            Ethereum, defining the minimum interface that conforming contracts must implement.
+        </p>
+
+        <h3>Core Concepts and Architecture</h3>
+
+        <p>
+            At its heart, ERC-721 defines each token as absolutely unique, identified by a uint256 token ID
+            within a specific contract. No two tokens can share the same ID within the same contract, ensuring
+            uniqueness. Each token is indivisible—you cannot own 0.5 of an ERC-721 token; you either own it
+            entirely or not at all.
+        </p>
+
+        <p>
+            The standard maintains a mapping of token IDs to owner addresses, creating an immutable record of
+            ownership on the blockchain. It also tracks which addresses are approved to transfer specific
+            tokens, enabling marketplace functionality where you can list a token for sale without transferring
+            ownership until the sale completes.
+        </p>
+
+        <h3>Required Interface Methods</h3>
+
+        <p>
+            Every ERC-721 compliant contract must implement specific functions:
+        </p>
+
+        <div class="code-block">
+            <pre>
+interface IERC721 {
+    // Returns the number of tokens owned by an address
+    function balanceOf(address owner) external view returns (uint256 balance);
+
+    // Returns the owner of a specific token ID
+    function ownerOf(uint256 tokenId) external view returns (address owner);
+
+    // Transfers a token from one address to another
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) external;
+
+    // Transfers a token (unsafe version)
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) external;
+
+    // Approves another address to transfer a specific token
+    function approve(address to, uint256 tokenId) external;
+
+    // Approves an operator to manage all tokens for the owner
+    function setApprovalForAll(address operator, bool approved) external;
+
+    // Returns the approved address for a specific token
+    function getApproved(uint256 tokenId) external view returns (address);
+
+    // Checks if an operator is approved to manage all tokens for an owner
+    function isApprovedForAll(
+        address owner,
+        address operator
+    ) external view returns (bool);
+}
+            </pre>
+        </div>
+
+        <h3>Metadata Extension</h3>
+
+        <p>
+            While the core ERC-721 standard handles ownership and transfers, the metadata extension defines
+            how to associate descriptive information with tokens. This optional but widely adopted extension
+            includes:
+        </p>
+
+        <div class="code-block">
+            <pre>
+interface IERC721Metadata {
+    // Returns the token collection name
+    function name() external view returns (string memory);
+
+    // Returns the token collection symbol
+    function symbol() external view returns (string memory);
+
+    // Returns the URI for a token's metadata
+    function tokenURI(uint256 tokenId) external view returns (string memory);
+}
+            </pre>
+        </div>
+
+        <p>
+            The tokenURI function is particularly important, as it returns a URL pointing to a JSON file
+            containing the token's metadata. This metadata typically includes the token's name, description,
+            image URL, and any additional attributes or properties.
+        </p>
+
+        <h3>Use Cases and Applications</h3>
+
+        <p>
+            ERC-721 excels in scenarios where each token should be completely unique:
+        </p>
+
+        <ul>
+            <li>
+                <strong>Digital Art:</strong> One-of-one pieces or limited edition artworks where each piece
+                is distinct and valuable in its own right.
+            </li>
+            <li>
+                <strong>Virtual Real Estate:</strong> Parcels of land in virtual worlds like Decentraland,
+                where each plot has unique coordinates and characteristics.
+            </li>
+            <li>
+                <strong>Domain Names:</strong> NFT-based domain systems like ENS (Ethereum Name Service) where
+                each domain is unique and non-fungible.
+            </li>
+            <li>
+                <strong>Collectibles:</strong> Trading cards, sports memorabilia, or other collectibles where
+                each item has individual value and rarity.
+            </li>
+            <li>
+                <strong>Digital Identity:</strong> Credentials, certificates, or identity tokens where each
+                represents a unique individual or achievement.
+            </li>
+        </ul>
+
+        <h2>ERC-1155: The Multi-Token Standard</h2>
+
+        <h3>Origins and Motivation</h3>
+
+        <p>
+            ERC-1155 was developed by Enjin, a blockchain gaming company, and formally proposed by Witek
+            Radomski in June 2018. The standard emerged from practical challenges in blockchain gaming, where
+            games need to manage thousands of different item types—some unique (like legendary weapons) and
+            others fungible (like gold coins or potions).
+        </p>
+
+        <p>
+            Before ERC-1155, a game would need separate ERC-721 contracts for unique items and ERC-20 contracts
+            for fungible items, leading to complexity, higher gas costs, and difficult inventory management.
+            ERC-1155 solved this by allowing a single contract to manage multiple token types, both fungible
+            and non-fungible.
+        </p>
+
+        <h3>Multi-Token Architecture</h3>
+
+        <p>
+            The key innovation of ERC-1155 is its ability to represent multiple token types in a single contract.
+            Each token type has a unique ID, but unlike ERC-721, multiple addresses can own quantities of the
+            same token type. For non-fungible items, you simply set the supply to 1; for fungible items, you
+            can have any supply amount.
+        </p>
+
+        <p>
+            This architecture enables batch operations—you can transfer multiple different token types in a
+            single transaction, significantly reducing gas costs compared to multiple ERC-721 transfers.
+        </p>
+
+        <h3>Interface and Functions</h3>
+
+        <div class="code-block">
+            <pre>
+interface IERC1155 {
+    // Returns the amount of tokens of type `id` owned by `account`
+    function balanceOf(
+        address account,
+        uint256 id
+    ) external view returns (uint256);
+
+    // Batch version of balanceOf
+    function balanceOfBatch(
+        address[] calldata accounts,
+        uint256[] calldata ids
+    ) external view returns (uint256[] memory);
+
+    // Approves or removes operator for the caller
+    function setApprovalForAll(address operator, bool approved) external;
+
+    // Checks if operator is approved for owner
+    function isApprovedForAll(
+        address account,
+        address operator
+    ) external view returns (bool);
+
+    // Transfers tokens from one address to another
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes calldata data
+    ) external;
+
+    // Batch transfer multiple token types
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] calldata ids,
+        uint256[] calldata amounts,
+        bytes calldata data
+    ) external;
+}
+            </pre>
+        </div>
+
+        <h3>Metadata Flexibility</h3>
+
+        <p>
+            ERC-1155 uses a flexible URI system for metadata. Instead of requiring a separate URI for each
+            token, the standard allows a base URI with a placeholder that gets replaced with the token ID:
+        </p>
+
+        <div class="code-block">
+            <pre>
+// Base URI might be: https://token-cdn-domain/{id}.json
+// For token ID 123, the actual URI becomes: https://token-cdn-domain/123.json
+
+function uri(uint256 tokenId) external view returns (string memory);
+            </pre>
+        </div>
+
+        <p>
+            This approach dramatically simplifies metadata management for large collections, though individual
+            URIs can still be set for specific tokens when needed.
+        </p>
+
+        <h3>Gas Efficiency</h3>
+
+        <p>
+            One of ERC-1155's major advantages is gas efficiency. Batch operations allow you to:
+        </p>
+
+        <ul>
+            <li>Mint multiple token types in a single transaction</li>
+            <li>Transfer an entire inventory in one operation</li>
+            <li>Approve all token types for an operator with one call</li>
+            <li>Query balances for multiple tokens simultaneously</li>
+        </ul>
+
+        <p>
+            In gaming scenarios where players might acquire dozens of different items, ERC-1155 can reduce
+            gas costs by 80% or more compared to equivalent ERC-721 operations.
+        </p>
+
+        <h3>Use Cases and Applications</h3>
+
+        <ul>
+            <li>
+                <strong>Gaming:</strong> Perfect for games with diverse inventories mixing unique items
+                (characters, legendary equipment) and consumables (potions, materials).
+            </li>
+            <li>
+                <strong>Large Collections:</strong> Projects minting thousands or millions of items benefit
+                from the gas efficiency and simplified contract management.
+            </li>
+            <li>
+                <strong>Fractional Ownership:</strong> Scenarios where you want to represent both whole
+                ownership and fractional shares of assets.
+            </li>
+            <li>
+                <strong>Complex Ecosystems:</strong> Projects needing multiple interrelated token types
+                managed from a single contract.
+            </li>
+        </ul>
+
+        <h2>Comparing ERC-721 and ERC-1155</h2>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>ERC-721</th>
+                    <th>ERC-1155</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Token Uniqueness</td>
+                    <td>Each token is unique</td>
+                    <td>Can be unique or have multiple copies</td>
+                </tr>
+                <tr>
+                    <td>Contract Efficiency</td>
+                    <td>One contract per collection</td>
+                    <td>Multiple token types in one contract</td>
+                </tr>
+                <tr>
+                    <td>Gas Costs</td>
+                    <td>Higher for batch operations</td>
+                    <td>Lower due to batch transfers</td>
+                </tr>
+                <tr>
+                    <td>Adoption</td>
+                    <td>More widely adopted and supported</td>
+                    <td>Growing adoption, especially in gaming</td>
+                </tr>
+                <tr>
+                    <td>Metadata</td>
+                    <td>Individual URI per token</td>
+                    <td>Flexible URI system with ID substitution</td>
+                </tr>
+                <tr>
+                    <td>Best For</td>
+                    <td>Unique collectibles, art, real estate</td>
+                    <td>Gaming items, large collections, mixed types</td>
+                </tr>
+                <tr>
+                    <td>Marketplace Support</td>
+                    <td>Universal support</td>
+                    <td>Good support, but less universal</td>
+                </tr>
+                <tr>
+                    <td>Complexity</td>
+                    <td>Simpler to understand and implement</td>
+                    <td>More complex but more powerful</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Implementation Considerations</h2>
+
+        <h3>Choosing the Right Standard</h3>
+
+        <p>
+            The choice between ERC-721 and ERC-1155 depends on your specific requirements:
+        </p>
+
+        <p>
+            <strong>Choose ERC-721 when:</strong>
+        </p>
+        <ul>
+            <li>Each token should be completely unique</li>
+            <li>You're creating art or collectibles where individual provenance matters</li>
+            <li>You want maximum marketplace compatibility</li>
+            <li>Simplicity and widespread adoption are priorities</li>
+            <li>You don't need batch operations</li>
+        </ul>
+
+        <p>
+            <strong>Choose ERC-1155 when:</strong>
+        </p>
+        <ul>
+            <li>You're building a game with diverse item types</li>
+            <li>Gas efficiency is crucial due to high transaction volumes</li>
+            <li>You need both unique and fungible tokens in your ecosystem</li>
+            <li>Batch operations would benefit your use case</li>
+            <li>You're managing large collections (10,000+ items)</li>
+        </ul>
+
+        <h3>OpenZeppelin Implementation</h3>
+
+        <p>
+            For production deployments, using battle-tested implementations is crucial. OpenZeppelin provides
+            secure, community-vetted implementations of both standards:
+        </p>
+
+        <div class="code-block">
+            <pre>
+// ERC-721 Example
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+
+contract MyNFT is ERC721 {
+    constructor() ERC721("MyNFT", "MNFT") {
+        // Constructor logic
+    }
+
+    function mint(address to, uint256 tokenId) public {
+        _safeMint(to, tokenId);
+    }
+}
+
+// ERC-1155 Example
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+
+contract MyMultiToken is ERC1155 {
+    constructor() ERC1155("https://api.mytoken.com/metadata/{id}.json") {
+        // Constructor logic
+    }
+
+    function mint(
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) public {
+        _mint(to, id, amount, data);
+    }
+}
+            </pre>
+        </div>
+
+        <h3>Security Considerations</h3>
+
+        <p>
+            Regardless of which standard you choose, security must be paramount:
+        </p>
+
+        <ul>
+            <li>
+                <strong>Reentrancy Protection:</strong> Use checks-effects-interactions pattern and consider
+                OpenZeppelin's ReentrancyGuard for functions involving external calls.
+            </li>
+            <li>
+                <strong>Access Control:</strong> Implement proper authorization for minting, burning, and
+                administrative functions using role-based access control.
+            </li>
+            <li>
+                <strong>Integer Overflow:</strong> While Solidity 0.8+ has built-in overflow protection,
+                be cautious with older versions and external libraries.
+            </li>
+            <li>
+                <strong>Front-running:</strong> Consider front-running implications for minting and trading
+                functions, especially in high-demand scenarios.
+            </li>
+            <li>
+                <strong>Audits:</strong> Professional security audits are essential before deploying contracts
+                managing significant value.
+            </li>
+        </ul>
+
+        <div class="info-box">
+            <h4>💡 Best Practice</h4>
+            <p>
+                Always use well-audited library implementations like OpenZeppelin rather than writing standards
+                from scratch. These libraries have been tested in production by thousands of projects and have
+                undergone multiple security audits. Custom implementations dramatically increase the risk of
+                bugs and vulnerabilities.
+            </p>
+        </div>
+
+        <h2>Beyond Ethereum: Cross-Chain Standards</h2>
+
+        <p>
+            While ERC-721 and ERC-1155 originated on Ethereum, the concepts have been adapted to other
+            blockchains:
+        </p>
+
+        <ul>
+            <li>
+                <strong>Polygon:</strong> Fully compatible with ERC-721 and ERC-1155, offering lower gas costs
+                while maintaining Ethereum security through its Layer 2 architecture.
+            </li>
+            <li>
+                <strong>Binance Smart Chain:</strong> Uses BEP-721 and BEP-1155, which are functionally
+                identical to their Ethereum counterparts.
+            </li>
+            <li>
+                <strong>Solana:</strong> Uses a different technical approach but provides similar NFT
+                functionality with its own standards.
+            </li>
+            <li>
+                <strong>Flow:</strong> Developed by the CryptoKitties team specifically for NFTs, with
+                resource-oriented programming paradigm.
+            </li>
+        </ul>
+
+        <p>
+            Cross-chain bridges are emerging to enable NFT transfers between different blockchains, though
+            this technology is still maturing and carries additional risks.
+        </p>
+
+        <h2>Conclusion</h2>
+
+        <p>
+            Understanding ERC-721 and ERC-1155 is fundamental to working with NFTs. These standards provide
+            the technical foundation enabling interoperability, marketplace functionality, and consistent user
+            experiences across the NFT ecosystem.
+        </p>
+
+        <p>
+            ERC-721's simplicity and universal adoption make it the default choice for unique digital assets,
+            while ERC-1155's flexibility and efficiency make it increasingly popular for gaming and complex
+            applications. As the NFT space evolves, both standards will continue to play crucial roles, and
+            new standards may emerge to address specific use cases and limitations.
+        </p>
+
+        <p>
+            In the next chapter, we'll explore metadata standards and IPFS storage, examining how to properly
+            structure and store the data that gives NFTs their visual and descriptive characteristics.
+        </p>
+
+        <div class="navigation">
+            <a href="chapter-01.html" class="nav-button">← Previous: Introduction</a>
+            <a href="chapter-03.html" class="nav-button">Next: Metadata & IPFS →</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 SmileStory Inc. / WIA</p>
+        <p>弘益人間 (홍익인간) · Benefit All Humanity</p>
+    </footer>
+</body>
+</html>

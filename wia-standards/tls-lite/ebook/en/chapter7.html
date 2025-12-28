@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 7: Session Management - WIA TLS-Lite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #e0e0e0; line-height: 1.8; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: rgba(236, 72, 153, 0.1); border-bottom: 3px solid #EC4899; padding: 30px 0; margin-bottom: 40px; }
+        h1 { color: #EC4899; font-size: 2.5em; margin-bottom: 10px; text-shadow: 0 0 20px rgba(236, 72, 153, 0.5); }
+        h2 { color: #EC4899; font-size: 2em; margin: 40px 0 20px 0; border-left: 5px solid #EC4899; padding-left: 15px; }
+        h3 { color: #EC4899; font-size: 1.5em; margin: 30px 0 15px 0; }
+        .breadcrumb { color: #808080; margin-bottom: 20px; }
+        .breadcrumb a { color: #EC4899; text-decoration: none; }
+        .content-section { background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 30px; margin-bottom: 30px; border: 1px solid rgba(236, 72, 153, 0.2); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(0, 0, 0, 0.3); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(236, 72, 153, 0.2); }
+        th { background: rgba(236, 72, 153, 0.3); color: #EC4899; font-weight: bold; }
+        tr:hover { background: rgba(236, 72, 153, 0.1); }
+        code { background: rgba(0, 0, 0, 0.5); padding: 2px 6px; border-radius: 4px; color: #EC4899; font-family: 'Courier New', monospace; }
+        pre { background: rgba(0, 0, 0, 0.5); border-left: 4px solid #EC4899; padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; }
+        pre code { background: none; padding: 0; color: #e0e0e0; }
+        .api-endpoint { background: rgba(236, 72, 153, 0.1); border-left: 4px solid #EC4899; padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .api-endpoint .method { display: inline-block; background: #EC4899; color: #fff; padding: 5px 15px; border-radius: 5px; font-weight: bold; margin-right: 10px; }
+        .certification-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin: 20px 0; }
+        .cert-item { background: rgba(236, 72, 153, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(236, 72, 153, 0.3); }
+        .cert-item h4 { color: #EC4899; margin-bottom: 8px; }
+        .navigation { display: flex; justify-content: space-between; margin: 40px 0; gap: 20px; }
+        .nav-button { background: rgba(236, 72, 153, 0.2); color: #EC4899; padding: 15px 30px; border-radius: 8px; text-decoration: none; border: 2px solid #EC4899; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-button:hover { background: #EC4899; color: #fff; transform: translateY(-2px); }
+        footer { text-align: center; padding: 30px 0; margin-top: 60px; border-top: 2px solid rgba(236, 72, 153, 0.3); color: #808080; }
+        footer .korean-text { color: #EC4899; font-size: 1.3em; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="breadcrumb"><a href="index.html">Home</a> / Chapter 7</div>
+            <h1>Chapter 7: Session Management & Resumption</h1>
+        </header>
+
+        <div class="content-section">
+            <h2>Efficient Session Management for IoT</h2>
+            <p>Effective session management is critical for IoT devices that need to maintain long-term connections or frequently reconnect to servers. TLS-Lite provides optimized session caching, resumption mechanisms, and connection lifecycle management tailored for resource-constrained environments with intermittent connectivity.</p>
+            <p>This chapter covers session caching strategies, resumption protocols, connection pooling, and techniques for managing multiple concurrent sessions within strict memory limits.</p>
+        </div>
+
+        <div class="content-section">
+            <h2>Session Management Strategies</h2>
+            <h3>Table 1: Session Storage Comparison</h3>
+            <table>
+                <thead>
+                    <tr><th>Strategy</th><th>Memory per Session</th><th>Resumption Speed</th><th>Server State</th><th>Security</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Server Cache</td><td>Server: 128B, Client: 8B</td><td>Fast</td><td>Stateful</td><td>High</td></tr>
+                    <tr><td>Session Tickets</td><td>Client: 128B</td><td>Fast</td><td>Stateless</td><td>High</td></tr>
+                    <tr><td>PSK Store</td><td>Both: 64B</td><td>Very Fast</td><td>Minimal</td><td>Medium</td></tr>
+                    <tr><td>Client Cache Only</td><td>Client: 96B</td><td>Medium</td><td>Stateless</td><td>High</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Table 2: Connection Lifecycle States</h3>
+            <table>
+                <thead>
+                    <tr><th>State</th><th>Description</th><th>Memory Usage</th><th>Power Consumption</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Idle</td><td>No active connection</td><td>Minimal</td><td>Very Low</td></tr>
+                    <tr><td>Connecting</td><td>Handshake in progress</td><td>High</td><td>High</td></tr>
+                    <tr><td>Connected</td><td>Secure session established</td><td>Medium</td><td>Medium</td></tr>
+                    <tr><td>Suspended</td><td>Session cached, no traffic</td><td>Low</td><td>Very Low</td></tr>
+                    <tr><td>Resuming</td><td>Resuming cached session</td><td>Medium</td><td>Medium</td></tr>
+                    <tr><td>Closing</td><td>Graceful shutdown</td><td>Low</td><td>Low</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="content-section">
+            <h2>Session Management Implementation</h2>
+
+            <h3>Code Example 1: Session Cache with LRU Eviction</h3>
+            <pre><code>/**
+ * Least Recently Used (LRU) session cache
+ * Manages multiple sessions within memory constraints
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdbool.h&gt;
+
+#define MAX_SESSIONS 8
+#define SESSION_ID_LEN 32
+#define MASTER_SECRET_LEN 48
+
+typedef struct session_entry {
+    uint8_t session_id[SESSION_ID_LEN];
+    uint8_t master_secret[MASTER_SECRET_LEN];
+    uint16_t cipher_suite;
+    uint32_t creation_time;
+    uint32_t last_access_time;
+    uint8_t peer_address[16];
+    uint16_t peer_port;
+    bool valid;
+    struct session_entry *next;
+    struct session_entry *prev;
+} session_entry_t;
+
+typedef struct {
+    session_entry_t sessions[MAX_SESSIONS];
+    session_entry_t *lru_head;
+    session_entry_t *lru_tail;
+    size_t num_sessions;
+    uint32_t session_lifetime;
+} session_cache_t;
+
+static session_cache_t g_session_cache = {0};
+
+/**
+ * Initialize session cache
+ */
+void session_cache_init(uint32_t lifetime_seconds) {
+    memset(&g_session_cache, 0, sizeof(session_cache_t));
+    g_session_cache.session_lifetime = lifetime_seconds;
+    g_session_cache.lru_head = NULL;
+    g_session_cache.lru_tail = NULL;
+}
+
+/**
+ * Move session to head of LRU list (most recently used)
+ */
+static void lru_touch(session_entry_t *entry) {
+    if (entry == g_session_cache.lru_head) {
+        return;  // Already at head
+    }
+
+    // Remove from current position
+    if (entry->prev) entry->prev->next = entry->next;
+    if (entry->next) entry->next->prev = entry->prev;
+    if (entry == g_session_cache.lru_tail) {
+        g_session_cache.lru_tail = entry->prev;
+    }
+
+    // Insert at head
+    entry->prev = NULL;
+    entry->next = g_session_cache.lru_head;
+    if (g_session_cache.lru_head) {
+        g_session_cache.lru_head->prev = entry;
+    }
+    g_session_cache.lru_head = entry;
+
+    if (!g_session_cache.lru_tail) {
+        g_session_cache.lru_tail = entry;
+    }
+}
+
+/**
+ * Find session by ID
+ */
+session_entry_t* session_cache_lookup(const uint8_t *session_id) {
+    uint32_t current_time = get_current_time();
+
+    for (size_t i = 0; i < MAX_SESSIONS; i++) {
+        session_entry_t *entry = &g_session_cache.sessions[i];
+
+        if (!entry->valid) continue;
+
+        // Check expiration
+        if (current_time - entry->creation_time > g_session_cache.session_lifetime) {
+            entry->valid = false;
+            g_session_cache.num_sessions--;
+            continue;
+        }
+
+        if (memcmp(entry->session_id, session_id, SESSION_ID_LEN) == 0) {
+            entry->last_access_time = current_time;
+            lru_touch(entry);
+            return entry;
+        }
+    }
+
+    return NULL;
+}
+
+/**
+ * Store new session (evict LRU if necessary)
+ */
+int session_cache_store(const uint8_t *session_id,
+                       const uint8_t *master_secret,
+                       uint16_t cipher_suite,
+                       const uint8_t *peer_addr,
+                       uint16_t peer_port) {
+    session_entry_t *entry = NULL;
+
+    // Find empty slot or LRU entry
+    for (size_t i = 0; i < MAX_SESSIONS; i++) {
+        if (!g_session_cache.sessions[i].valid) {
+            entry = &g_session_cache.sessions[i];
+            break;
+        }
+    }
+
+    if (!entry) {
+        // Evict LRU entry
+        entry = g_session_cache.lru_tail;
+        if (!entry) return -1;
+    }
+
+    // Store session data
+    memcpy(entry->session_id, session_id, SESSION_ID_LEN);
+    memcpy(entry->master_secret, master_secret, MASTER_SECRET_LEN);
+    entry->cipher_suite = cipher_suite;
+    entry->creation_time = get_current_time();
+    entry->last_access_time = entry->creation_time;
+    memcpy(entry->peer_address, peer_addr, 16);
+    entry->peer_port = peer_port;
+    entry->valid = true;
+
+    if (!g_session_cache.sessions[0].valid ||
+        entry < &g_session_cache.sessions[0] ||
+        entry > &g_session_cache.sessions[MAX_SESSIONS-1]) {
+        // Not in array, this shouldn't happen
+        return -1;
+    }
+
+    lru_touch(entry);
+    g_session_cache.num_sessions++;
+
+    return 0;
+}
+
+/**
+ * Remove session from cache
+ */
+void session_cache_remove(const uint8_t *session_id) {
+    for (size_t i = 0; i < MAX_SESSIONS; i++) {
+        if (g_session_cache.sessions[i].valid &&
+            memcmp(g_session_cache.sessions[i].session_id, session_id,
+                   SESSION_ID_LEN) == 0) {
+            g_session_cache.sessions[i].valid = false;
+            g_session_cache.num_sessions--;
+            break;
+        }
+    }
+}
+
+/**
+ * Get cache statistics
+ */
+void session_cache_stats(size_t *active, size_t *capacity) {
+    *active = g_session_cache.num_sessions;
+    *capacity = MAX_SESSIONS;
+}
+</code></pre>
+
+            <h3>Code Example 2: Connection Pool Management</h3>
+            <pre><code>/**
+ * Connection pool for managing multiple concurrent TLS sessions
+ * Reuses connections to reduce handshake overhead
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+#define POOL_SIZE 4
+
+typedef enum {
+    CONN_STATE_FREE,
+    CONN_STATE_CONNECTING,
+    CONN_STATE_ACTIVE,
+    CONN_STATE_IDLE,
+    CONN_STATE_CLOSING
+} conn_state_t;
+
+typedef struct {
+    conn_state_t state;
+    uint8_t peer_address[16];
+    uint16_t peer_port;
+    uint8_t session_id[32];
+    void *tls_context;
+    uint32_t last_activity;
+    uint32_t idle_timeout;
+} connection_t;
+
+typedef struct {
+    connection_t connections[POOL_SIZE];
+    size_t num_active;
+} connection_pool_t;
+
+static connection_pool_t g_conn_pool = {0};
+
+/**
+ * Initialize connection pool
+ */
+void connection_pool_init(void) {
+    memset(&g_conn_pool, 0, sizeof(connection_pool_t));
+    for (size_t i = 0; i < POOL_SIZE; i++) {
+        g_conn_pool.connections[i].state = CONN_STATE_FREE;
+        g_conn_pool.connections[i].idle_timeout = 300;  // 5 minutes
+    }
+}
+
+/**
+ * Acquire connection from pool
+ */
+connection_t* connection_pool_acquire(const uint8_t *peer_addr,
+                                     uint16_t peer_port) {
+    // First, try to find existing connection
+    for (size_t i = 0; i < POOL_SIZE; i++) {
+        connection_t *conn = &g_conn_pool.connections[i];
+
+        if ((conn->state == CONN_STATE_ACTIVE || conn->state == CONN_STATE_IDLE) &&
+            memcmp(conn->peer_address, peer_addr, 16) == 0 &&
+            conn->peer_port == peer_port) {
+
+            conn->state = CONN_STATE_ACTIVE;
+            conn->last_activity = get_current_time();
+            return conn;
+        }
+    }
+
+    // Find free connection slot
+    for (size_t i = 0; i < POOL_SIZE; i++) {
+        connection_t *conn = &g_conn_pool.connections[i];
+
+        if (conn->state == CONN_STATE_FREE) {
+            conn->state = CONN_STATE_CONNECTING;
+            memcpy(conn->peer_address, peer_addr, 16);
+            conn->peer_port = peer_port;
+            conn->last_activity = get_current_time();
+            g_conn_pool.num_active++;
+            return conn;
+        }
+    }
+
+    // Pool full - try to evict idle connection
+    uint32_t current_time = get_current_time();
+    for (size_t i = 0; i < POOL_SIZE; i++) {
+        connection_t *conn = &g_conn_pool.connections[i];
+
+        if (conn->state == CONN_STATE_IDLE &&
+            current_time - conn->last_activity > conn->idle_timeout) {
+
+            // Close and reuse this connection
+            if (conn->tls_context) {
+                tls_close(conn->tls_context);
+                conn->tls_context = NULL;
+            }
+
+            conn->state = CONN_STATE_CONNECTING;
+            memcpy(conn->peer_address, peer_addr, 16);
+            conn->peer_port = peer_port;
+            conn->last_activity = current_time;
+            return conn;
+        }
+    }
+
+    return NULL;  // Pool exhausted
+}
+
+/**
+ * Release connection back to pool
+ */
+void connection_pool_release(connection_t *conn, bool keep_alive) {
+    if (!conn) return;
+
+    conn->last_activity = get_current_time();
+
+    if (keep_alive && conn->state == CONN_STATE_ACTIVE) {
+        conn->state = CONN_STATE_IDLE;
+    } else {
+        if (conn->tls_context) {
+            tls_close(conn->tls_context);
+            conn->tls_context = NULL;
+        }
+        conn->state = CONN_STATE_FREE;
+        g_conn_pool.num_active--;
+    }
+}
+
+/**
+ * Periodic maintenance - close idle connections
+ */
+void connection_pool_maintain(void) {
+    uint32_t current_time = get_current_time();
+
+    for (size_t i = 0; i < POOL_SIZE; i++) {
+        connection_t *conn = &g_conn_pool.connections[i];
+
+        if (conn->state == CONN_STATE_IDLE &&
+            current_time - conn->last_activity > conn->idle_timeout) {
+
+            if (conn->tls_context) {
+                tls_close(conn->tls_context);
+                conn->tls_context = NULL;
+            }
+            conn->state = CONN_STATE_FREE;
+            g_conn_pool.num_active--;
+        }
+    }
+}
+</code></pre>
+
+            <h3>Code Example 3: Session Resumption Manager</h3>
+            <pre><code>/**
+ * Session resumption manager
+ * Coordinates session tickets and PSK-based resumption
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+typedef enum {
+    RESUME_MODE_NONE,
+    RESUME_MODE_TICKET,
+    RESUME_MODE_PSK,
+    RESUME_MODE_CACHE
+} resume_mode_t;
+
+typedef struct {
+    resume_mode_t mode;
+    uint8_t session_ticket[128];
+    size_t ticket_length;
+    uint8_t psk_identity[64];
+    size_t psk_identity_len;
+    uint8_t resumption_secret[32];
+    uint32_t ticket_age_add;
+    uint32_t ticket_timestamp;
+    uint16_t cipher_suite;
+    bool early_data_allowed;
+    uint32_t max_early_data_size;
+} resumption_state_t;
+
+/**
+ * Save resumption state after handshake
+ */
+int resumption_save_state(const void *tls_context,
+                          resumption_state_t *state) {
+    // Get session ticket from NewSessionTicket message
+    uint8_t ticket[128];
+    size_t ticket_len;
+
+    if (tls_get_session_ticket(tls_context, ticket, &ticket_len) == 0) {
+        state->mode = RESUME_MODE_TICKET;
+        memcpy(state->session_ticket, ticket, ticket_len);
+        state->ticket_length = ticket_len;
+        state->ticket_timestamp = get_current_time();
+
+        // Get resumption master secret
+        tls_get_resumption_secret(tls_context, state->resumption_secret);
+
+        // Get ticket age add and early data info
+        tls_get_ticket_info(tls_context,
+                           &state->ticket_age_add,
+                           &state->early_data_allowed,
+                           &state->max_early_data_size);
+
+        return 0;
+    }
+
+    // Fall back to PSK mode if available
+    if (tls_get_psk_identity(tls_context, state->psk_identity,
+                            &state->psk_identity_len) == 0) {
+        state->mode = RESUME_MODE_PSK;
+        tls_get_psk_secret(tls_context, state->resumption_secret);
+        return 0;
+    }
+
+    state->mode = RESUME_MODE_NONE;
+    return -1;
+}
+
+/**
+ * Attempt session resumption
+ */
+int resumption_try_resume(resumption_state_t *state,
+                         void **tls_context_out) {
+    if (state->mode == RESUME_MODE_NONE) {
+        return -1;  // No resumption state
+    }
+
+    // Create new TLS context
+    void *ctx = tls_context_create();
+    if (!ctx) return -2;
+
+    if (state->mode == RESUME_MODE_TICKET) {
+        // Calculate obfuscated ticket age
+        uint32_t current_time = get_current_time();
+        uint32_t ticket_age = (current_time - state->ticket_timestamp) * 1000;
+        uint32_t obfuscated_age = ticket_age + state->ticket_age_add;
+
+        // Configure session ticket for resumption
+        tls_set_session_ticket(ctx, state->session_ticket,
+                              state->ticket_length, obfuscated_age);
+
+        // Configure early data if allowed
+        if (state->early_data_allowed) {
+            tls_enable_early_data(ctx, state->max_early_data_size);
+        }
+    } else if (state->mode == RESUME_MODE_PSK) {
+        // Configure PSK for resumption
+        tls_set_psk(ctx, state->psk_identity, state->psk_identity_len,
+                   state->resumption_secret);
+    }
+
+    *tls_context_out = ctx;
+    return 0;
+}
+</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>Session Management APIs</h2>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/session/cache/init</code><p>Initialize session cache with configuration</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/session/cache/lookup</code><p>Lookup session by session ID</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/session/cache/store</code><p>Store new session in cache</p></div>
+            <div class="api-endpoint"><span class="method">DELETE</span><code>/api/v1/session/cache/{id}</code><p>Remove session from cache</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/session/cache/stats</code><p>Get session cache statistics</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/connection/pool/acquire</code><p>Acquire connection from pool</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/connection/pool/release</code><p>Release connection back to pool</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/connection/pool/maintain</code><p>Run connection pool maintenance</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/resumption/save</code><p>Save resumption state after handshake</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/resumption/try</code><p>Attempt session resumption</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/session/lifetime</code><p>Get configured session lifetime</p></div>
+            <div class="api-endpoint"><span class="method">PUT</span><code>/api/v1/session/lifetime</code><p>Update session lifetime configuration</p></div>
+        </div>
+
+        <div class="content-section">
+            <h2>Session Management Configuration Schema</h2>
+            <pre><code>{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Session Management Configuration",
+  "type": "object",
+  "properties": {
+    "session_cache": {
+      "type": "object",
+      "properties": {
+        "max_sessions": { "type": "integer", "minimum": 1, "maximum": 32, "default": 8 },
+        "session_lifetime_seconds": { "type": "integer", "default": 86400 },
+        "eviction_policy": { "type": "string", "enum": ["lru", "fifo", "ttl"], "default": "lru" }
+      }
+    },
+    "connection_pool": {
+      "type": "object",
+      "properties": {
+        "pool_size": { "type": "integer", "minimum": 1, "maximum": 16, "default": 4 },
+        "idle_timeout_seconds": { "type": "integer", "default": 300 },
+        "keep_alive": { "type": "boolean", "default": true }
+      }
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>Session Management Certification</h2>
+            <div class="certification-list">
+                <div class="cert-item"><h4>SESS-001: Session Caching</h4><p>Efficient session cache implementation</p></div>
+                <div class="cert-item"><h4>SESS-002: LRU Eviction</h4><p>Least recently used eviction policy</p></div>
+                <div class="cert-item"><h4>SESS-003: Session Expiration</h4><p>Automatic session expiration handling</p></div>
+                <div class="cert-item"><h4>SESS-004: Connection Pooling</h4><p>Connection pool management</p></div>
+                <div class="cert-item"><h4>SESS-005: Idle Timeout</h4><p>Idle connection timeout mechanism</p></div>
+                <div class="cert-item"><h4>SESS-006: Resumption State</h4><p>Proper resumption state management</p></div>
+                <div class="cert-item"><h4>SESS-007: Ticket Handling</h4><p>Session ticket storage and retrieval</p></div>
+                <div class="cert-item"><h4>SESS-008: PSK Management</h4><p>Pre-shared key session management</p></div>
+                <div class="cert-item"><h4>SESS-009: Memory Limits</h4><p>Enforcement of memory usage limits</p></div>
+                <div class="cert-item"><h4>SESS-010: Concurrent Sessions</h4><p>Support for multiple concurrent sessions</p></div>
+                <div class="cert-item"><h4>SESS-011: Session Lookup</h4><p>Efficient session lookup mechanism</p></div>
+                <div class="cert-item"><h4>SESS-012: State Cleanup</h4><p>Proper cleanup of expired sessions</p></div>
+                <div class="cert-item"><h4>SESS-013: Resumption Fallback</h4><p>Graceful fallback on resumption failure</p></div>
+                <div class="cert-item"><h4>SESS-014: Keep-Alive</h4><p>Connection keep-alive mechanism</p></div>
+                <div class="cert-item"><h4>SESS-015: Pool Statistics</h4><p>Connection pool statistics tracking</p></div>
+                <div class="cert-item"><h4>SESS-016: Thread Safety</h4><p>Thread-safe session management (if applicable)</p></div>
+                <div class="cert-item"><h4>SESS-017: Secure Cleanup</h4><p>Secure erasure of session secrets</p></div>
+                <div class="cert-item"><h4>SESS-018: Peer Validation</h4><p>Validation of peer identity on resumption</p></div>
+                <div class="cert-item"><h4>SESS-019: Performance</h4><p>Low latency session lookup and resumption</p></div>
+                <div class="cert-item"><h4>SESS-020: Configuration</h4><p>Flexible session management configuration</p></div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter6.html" class="nav-button">← TLS Handshake Optimization</a>
+            <a href="chapter8.html" class="nav-button">Next: Implementation & Testing →</a>
+        </div>
+
+        <footer>
+            <div class="korean-text">弘益人間</div>
+            <p>Benefit All Mankind</p>
+            <p>&copy; 2025 WIA (Wireless IoT Alliance). All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: Apache Kafka Deep Dive - WIA-DATA-013</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        h1, h2, h3 { color: #10B981; margin-top: 40px; }
+        h1 { font-size: 2.5em; border-bottom: 3px solid #10B981; padding-bottom: 15px; }
+        h2 { font-size: 2em; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        code {
+            background: #1e293b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #10B981;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background: #1e293b;
+            border-left: 4px solid #10B981;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: #1e293b;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #334155;
+        }
+        th {
+            background: #10B981;
+            color: #0f172a;
+            font-weight: bold;
+        }
+        .highlight {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid #10B981;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        ul, ol { margin: 15px 0; padding-left: 30px; }
+        li { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Chapter 3: Apache Kafka Deep Dive</h1>
+
+    <h2>3.1 Kafka Architecture Overview</h2>
+    <p>Apache Kafka is a distributed event streaming platform capable of handling trillions of events per day. Originally developed at LinkedIn, Kafka has become the de facto standard for event streaming.</p>
+
+    <h3>3.1.1 Core Components</h3>
+    <table>
+        <tr>
+            <th>Component</th>
+            <th>Description</th>
+            <th>Role</th>
+        </tr>
+        <tr>
+            <td><strong>Broker</strong></td>
+            <td>Kafka server instance</td>
+            <td>Stores and serves data</td>
+        </tr>
+        <tr>
+            <td><strong>Topic</strong></td>
+            <td>Logical channel for events</td>
+            <td>Categorizes event streams</td>
+        </tr>
+        <tr>
+            <td><strong>Partition</strong></td>
+            <td>Ordered, immutable sequence</td>
+            <td>Enables parallelism</td>
+        </tr>
+        <tr>
+            <td><strong>Producer</strong></td>
+            <td>Publishes events to topics</td>
+            <td>Data ingestion</td>
+        </tr>
+        <tr>
+            <td><strong>Consumer</strong></td>
+            <td>Reads events from topics</td>
+            <td>Data consumption</td>
+        </tr>
+        <tr>
+            <td><strong>ZooKeeper/KRaft</strong></td>
+            <td>Cluster coordination</td>
+            <td>Metadata management</td>
+        </tr>
+    </table>
+
+    <h2>3.2 Topics and Partitions</h2>
+    <p>Topics are the fundamental abstraction in Kafka. Each topic is divided into partitions for scalability.</p>
+
+    <pre><code>// Topic structure
+Topic: user-events
+├── Partition 0: [evt0, evt3, evt6, ...]
+├── Partition 1: [evt1, evt4, evt7, ...]
+└── Partition 2: [evt2, evt5, evt8, ...]
+
+// Each partition is an ordered log
+Partition 0:
+Offset: 0    1    2    3    4    5    ...
+       [A] [B] [C] [D] [E] [F] ...
+</code></pre>
+
+    <h3>3.2.1 Partition Key Selection</h3>
+    <pre><code>// Hash-based partitioning
+producer.send({
+    topic: 'orders',
+    key: userId,  // Same user → same partition
+    value: orderData
+});
+
+// Custom partitioner
+class RegionPartitioner {
+    partition(key, numPartitions) {
+        const region = extractRegion(key);
+        return regionMap[region] % numPartitions;
+    }
+}
+</code></pre>
+
+    <h2>3.3 Producers</h2>
+    <h3>3.3.1 Producer Configuration</h3>
+    <pre><code>const producer = kafka.producer({
+    // Idempotence ensures exactly-once semantics
+    idempotent: true,
+
+    // Batching for throughput
+    batch: {
+        size: 16384,        // 16KB batch
+        lingerMs: 10        // Wait up to 10ms
+    },
+
+    // Compression
+    compression: CompressionTypes.GZIP,
+
+    // Acks configuration
+    acks: -1,  // All in-sync replicas
+
+    // Retry configuration
+    retry: {
+        retries: 5,
+        initialRetryTime: 300
+    }
+});
+</code></pre>
+
+    <h3>3.3.2 Delivery Guarantees</h3>
+    <table>
+        <tr>
+            <th>Setting</th>
+            <th>Guarantee</th>
+            <th>Use Case</th>
+        </tr>
+        <tr>
+            <td>acks=0</td>
+            <td>At-most-once</td>
+            <td>Metrics, logs (ok to lose)</td>
+        </tr>
+        <tr>
+            <td>acks=1</td>
+            <td>At-least-once</td>
+            <td>General use</td>
+        </tr>
+        <tr>
+            <td>acks=-1 + idempotent</td>
+            <td>Exactly-once</td>
+            <td>Financial transactions</td>
+        </tr>
+    </table>
+
+    <h2>3.4 Consumers and Consumer Groups</h2>
+    <pre><code>// Consumer group enables parallel processing
+const consumer = kafka.consumer({
+    groupId: 'analytics-group'
+});
+
+await consumer.subscribe({
+    topics: ['user-events', 'order-events']
+});
+
+await consumer.run({
+    eachMessage: async ({ topic, partition, message }) => {
+        await processEvent(message.value);
+        // Auto-commit or manual commit
+    }
+});
+</code></pre>
+
+    <h3>3.4.1 Consumer Group Rebalancing</h3>
+    <pre><code>// Before rebalance
+Consumer Group: analytics-group
+├── Consumer A: [P0, P1]
+└── Consumer B: [P2, P3]
+
+// After Consumer C joins
+Consumer Group: analytics-group
+├── Consumer A: [P0]
+├── Consumer B: [P1, P2]
+└── Consumer C: [P3]
+</code></pre>
+
+    <h2>3.5 Replication and Fault Tolerance</h2>
+    <pre><code>// Topic with replication factor 3
+Partition 0:
+├── Leader: Broker 1 (handles reads/writes)
+└── Followers: Broker 2, Broker 3 (replicas)
+
+// If Broker 1 fails:
+Partition 0:
+├── Leader: Broker 2 (promoted)
+└── Follower: Broker 3
+</code></pre>
+
+    <h3>3.5.1 In-Sync Replicas (ISR)</h3>
+    <ul>
+        <li>Replicas that are caught up with leader</li>
+        <li>Only ISR can be elected as leader</li>
+        <li>min.insync.replicas ensures durability</li>
+    </ul>
+
+    <h2>3.6 Storage and Retention</h2>
+    <table>
+        <tr>
+            <th>Policy</th>
+            <th>Configuration</th>
+            <th>Example</th>
+        </tr>
+        <tr>
+            <td>Time-based</td>
+            <td>retention.ms</td>
+            <td>7 days (604800000 ms)</td>
+        </tr>
+        <tr>
+            <td>Size-based</td>
+            <td>retention.bytes</td>
+            <td>100 GB per partition</td>
+        </tr>
+        <tr>
+            <td>Compaction</td>
+            <td>cleanup.policy=compact</td>
+            <td>Keep latest per key</td>
+        </tr>
+    </table>
+
+    <h3>3.6.1 Log Compaction</h3>
+    <pre><code>// Before compaction
+Key | Value | Offset
+A   | 1     | 0
+B   | 2     | 1
+A   | 3     | 2  ← Latest for A
+C   | 4     | 3
+B   | 5     | 4  ← Latest for B
+
+// After compaction
+Key | Value | Offset
+A   | 3     | 2
+C   | 4     | 3
+B   | 5     | 4
+</code></pre>
+
+    <h2>3.7 Performance Optimization</h2>
+    <h3>3.7.1 Producer Optimization</h3>
+    <ul>
+        <li><strong>Batching:</strong> Combine multiple messages</li>
+        <li><strong>Compression:</strong> Reduce network/disk I/O</li>
+        <li><strong>Pipelining:</strong> Multiple in-flight requests</li>
+        <li><strong>Async sending:</strong> Don't wait for acknowledgment</li>
+    </ul>
+
+    <h3>3.7.2 Consumer Optimization</h3>
+    <ul>
+        <li><strong>Fetch size:</strong> Larger batches per poll</li>
+        <li><strong>Parallel processing:</strong> Multiple consumer instances</li>
+        <li><strong>Offset management:</strong> Manual commit for control</li>
+        <li><strong>Deserialization:</strong> Efficient formats (Avro, Protobuf)</li>
+    </ul>
+
+    <h2>3.8 Kafka Connect</h2>
+    <p>Kafka Connect provides a framework for streaming data between Kafka and external systems.</p>
+
+    <pre><code>// Source connector (database → Kafka)
+{
+    "name": "mysql-source",
+    "config": {
+        "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+        "database.hostname": "mysql",
+        "database.port": "3306",
+        "database.user": "debezium",
+        "database.dbname": "inventory",
+        "topic.prefix": "mysql"
+    }
+}
+
+// Sink connector (Kafka → Elasticsearch)
+{
+    "name": "elasticsearch-sink",
+    "config": {
+        "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+        "topics": "user-events",
+        "connection.url": "http://elasticsearch:9200",
+        "type.name": "_doc"
+    }
+}
+</code></pre>
+
+    <h2>3.9 Kafka Streams</h2>
+    <pre><code>// Stream processing with Kafka Streams
+StreamsBuilder builder = new StreamsBuilder();
+
+KStream<String, Order> orders = builder.stream("orders");
+
+// Stateless transformations
+KStream<String, Order> highValueOrders = orders
+    .filter((key, order) -> order.getAmount() > 1000)
+    .mapValues(order -> enrichOrder(order));
+
+// Stateful aggregation
+KTable<String, Long> orderCounts = orders
+    .groupByKey()
+    .windowedBy(TimeWindows.of(Duration.ofMinutes(5)))
+    .count();
+
+// Write to output topic
+highValueOrders.to("high-value-orders");
+orderCounts.toStream().to("order-counts");
+</code></pre>
+
+    <h2>3.10 Monitoring Kafka</h2>
+    <h3>3.10.1 Key Metrics</h3>
+    <table>
+        <tr>
+            <th>Metric</th>
+            <th>Description</th>
+            <th>Alert Threshold</th>
+        </tr>
+        <tr>
+            <td>Consumer Lag</td>
+            <td>Messages behind current offset</td>
+            <td>&gt; 1000 messages</td>
+        </tr>
+        <tr>
+            <td>Request Rate</td>
+            <td>Requests per second</td>
+            <td>Near capacity</td>
+        </tr>
+        <tr>
+            <td>Under-replicated Partitions</td>
+            <td>Partitions without all replicas</td>
+            <td>&gt; 0</td>
+        </tr>
+        <tr>
+            <td>ISR Shrink Rate</td>
+            <td>Replicas falling out of sync</td>
+            <td>&gt; 0</td>
+        </tr>
+        <tr>
+            <td>Disk Usage</td>
+            <td>Storage consumption</td>
+            <td>&gt; 80%</td>
+        </tr>
+    </table>
+
+    <h2>3.11 Security</h2>
+    <ul>
+        <li><strong>SSL/TLS:</strong> Encrypt data in transit</li>
+        <li><strong>SASL:</strong> Authentication (PLAIN, SCRAM, GSSAPI)</li>
+        <li><strong>ACLs:</strong> Authorization for topics and consumer groups</li>
+        <li><strong>Quotas:</strong> Rate limiting per client</li>
+    </ul>
+
+    <h2>3.12 Best Practices</h2>
+    <ol>
+        <li>Use appropriate replication factor (3 for production)</li>
+        <li>Monitor consumer lag continuously</li>
+        <li>Choose partition keys carefully for even distribution</li>
+        <li>Enable compression for large messages</li>
+        <li>Use Schema Registry for schema evolution</li>
+        <li>Implement proper error handling and dead-letter queues</li>
+        <li>Plan capacity for peak load + 50% headroom</li>
+        <li>Regular backups and disaster recovery testing</li>
+    </ol>
+
+    <div class="highlight">
+        <strong>Looking Ahead:</strong> Chapter 4 explores stream processing engines like Apache Flink and Spark Streaming for complex event processing and transformations.
+    </div>
+
+    <p style="text-align: center; margin-top: 50px; color: #64748b;">
+        © 2025 SmileStory Inc. / WIA · 弘益人間 (홍익인간) · Benefit All Humanity
+    </p>
+</body>
+</html>

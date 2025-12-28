@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Cryptographic Integrity and Security | WIA-CORE-009</title>
+    <style>
+        body { font-family: Georgia, serif; line-height: 1.8; max-width: 800px; margin: 0 auto; padding: 2rem; background: #f8fafc; color: #1e293b; }
+        h1 { color: #6B7280; border-bottom: 3px solid #6B7280; padding-bottom: 0.5rem; }
+        h2 { color: #9CA3AF; margin-top: 2rem; }
+        h3 { color: #6B7280; margin-top: 1.5rem; }
+        .nav { background: #6B7280; color: white; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; }
+        .nav a { color: white; text-decoration: none; margin-right: 1rem; }
+        code { background: #e2e8f0; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: 'Courier New', monospace; }
+        pre { background: #1e293b; color: #94a3b8; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; }
+        .note { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 1rem; margin: 1rem 0; }
+        .example { background: #f0fdf4; border-left: 4px solid #10b981; padding: 1rem; margin: 1rem 0; }
+        .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; margin: 1rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { border: 1px solid #e2e8f0; padding: 0.75rem; text-align: left; }
+        th { background: #6B7280; color: white; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="chapter04.html">← Previous</a>
+        <a href="../index.html">Home</a>
+        <a href="chapter06.html">Next →</a>
+    </div>
+
+    <h1>Chapter 5: Cryptographic Integrity and Security</h1>
+
+    <h2>5.1 The Need for Timestamp Integrity</h2>
+
+    <p>In many applications, the integrity and authenticity of timestamps is as important as the timestamps themselves. Consider these scenarios where timestamp tampering could have serious consequences:</p>
+
+    <ul>
+        <li><strong>Financial Audit Trails:</strong> Backdating transactions to manipulate accounting records</li>
+        <li><strong>Legal Evidence:</strong> Altering timestamps on digital documents to create false alibis</li>
+        <li><strong>Blockchain Systems:</strong> Manipulating block timestamps to game consensus mechanisms</li>
+        <li><strong>Medical Records:</strong> Changing treatment timestamps to cover up malpractice</li>
+        <li><strong>Scientific Data:</strong> Falsifying experiment timestamps to claim priority or hide anomalies</li>
+    </ul>
+
+    <p>The WIA Universal Timestamp standard addresses these concerns through an optional but powerful cryptographic hash component that provides tamper-evident time records.</p>
+
+    <h2>5.2 Hash Component Structure</h2>
+
+    <p>The hash appears at the end of a Universal Timestamp, preceded by a hash symbol:</p>
+
+    <pre><code>2025-12-27T14:30:00.123456Z[UTC]{context:present}#a1b2c3d4e5f67890</code></pre>
+
+    <p>The hash is computed as SHA-256 of the entire timestamp string (excluding the hash itself and the # symbol). The full 256-bit (32-byte) hash can be included, or it can be truncated for brevity. The standard supports several truncation levels:</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Truncation</th>
+                <th>Bytes</th>
+                <th>Hex Digits</th>
+                <th>Collision Risk</th>
+                <th>Use Case</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Full</td>
+                <td>32</td>
+                <td>64</td>
+                <td>~0%</td>
+                <td>Maximum security (blockchain, legal)</td>
+            </tr>
+            <tr>
+                <td>Half</td>
+                <td>16</td>
+                <td>32</td>
+                <td>Negligible</td>
+                <td>High security (financial, medical)</td>
+            </tr>
+            <tr>
+                <td>Quarter</td>
+                <td>8</td>
+                <td>16</td>
+                <td>Very low</td>
+                <td>Standard integrity (logs, APIs)</td>
+            </tr>
+            <tr>
+                <td>Eighth</td>
+                <td>4</td>
+                <td>8</td>
+                <td>Low</td>
+                <td>Basic detection (development, testing)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>5.2.1 Hash Computation Algorithm</h3>
+
+    <p>The hash is computed following these exact steps to ensure consistency across implementations:</p>
+
+    <ol>
+        <li>Construct the complete timestamp string (without hash)</li>
+        <li>Convert the string to UTF-8 bytes</li>
+        <li>Compute SHA-256 hash of the byte array</li>
+        <li>Convert the hash bytes to lowercase hexadecimal</li>
+        <li>Optionally truncate to desired length (from the left)</li>
+        <li>Append # followed by the hash to the timestamp</li>
+    </ol>
+
+    <div class="example">
+        <strong>Example Hash Computation (Pseudocode):</strong>
+        <pre><code>function computeTimestampHash(timestamp, truncateBytes = 32) {
+    // Timestamp without hash
+    const baseString = "2025-12-27T14:30:00.123456Z[UTC]{context:present}";
+
+    // Convert to bytes and hash
+    const bytes = utf8Encode(baseString);
+    const hashBytes = sha256(bytes);
+
+    // Convert to hex and truncate
+    const hexHash = bytesToHex(hashBytes).toLowerCase();
+    const truncated = hexHash.substring(0, truncateBytes * 2);
+
+    // Return complete timestampreturn `${baseString}#${truncated}`;
+}
+
+// Output example:
+"2025-12-27T14:30:00.123456Z[UTC]{context:present}#7f3a9c2d8e1b4f6a"</code></pre>
+    </div>
+
+    <h2>5.3 Verification Process</h2>
+
+    <p>Verifying a timestam hash is straightforward:</p>
+
+    <ol>
+        <li>Split the timestamp at the # symbol</li>
+        <li>Extract the base timestamp and provided hash</li>
+        <li>Recompute the hash from the base timestamp</li>
+        <li>Compare computed hash with provided hash (accounting for truncation)</li>
+        <li>If they match, timestamp is unmodified; otherwise, it's been tampered with</li>
+    </ol>
+
+    <div class="example">
+        <strong>Example Verification (Pseudocode):</strong>
+        <pre><code>function verifyTimestampHash(fullTimestamp) {
+    const [baseTimestamp, providedHash] = fullTimestamp.split('#');
+
+    // Recompute hash
+    const bytes = utf8Encode(baseTimestamp);
+    const computedHashFull = sha256(bytes);
+    const computedHex = bytesToHex(computedHashFull).toLowerCase();
+
+    // Truncate to match provided hash length
+    const truncatedComputed = computedHex.substring(0, providedHash.length);
+
+    // Verify
+    if (truncatedComputed === providedHash) {
+        return { valid: true, message: "Timestamp integrity verified" };
+    } else {
+        return { valid: false, message: "Timestamp has been tampered with" };
+    }
+}</code></pre>
+    </div>
+
+    <h2>5.4 Security Properties</h2>
+
+    <p>The SHA-256 hash provides several important security properties:</p>
+
+    <h3>5.4.1 Tamper Evidence</h3>
+
+    <p>Any modification to any part of the timestamp—even changing a single digit—will completely change the hash. SHA-256 exhibits the "avalanche effect": a tiny input change causes a dramatic hash change.</p>
+
+    <div class="example">
+        <strong>Demonstrating Avalanche Effect:</strong>
+        <pre><code>Original:  "2025-12-27T14:30:00Z[UTC]{context:present}"
+Hash:      "7f3a9c2d8e1b4f6a5c0e9d2f8a7b3e1c..."
+
+Modified:  "2025-12-27T14:30:01Z[UTC]{context:present}"  (1 second diff)
+Hash:      "c2d8f5e0a9b1c3d7f2e8a4b6c9d1e3f7..."  (completely different!)</code></pre>
+    </div>
+
+    <h3>5.4.2 Collision Resistance</h3>
+
+    <p>SHA-256 is collision-resistant: it's computationally infeasible to find two different timestamps that produce the same hash. Even with truncation to 16 hex digits (64 bits), the probability of accidental collision is negligible for most applications.</p>
+
+    <p>The birthday paradox gives us collision probabilities:</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Hash Bits</th>
+                <th>Timestamps Before 50% Collision</th>
+                <th>Acceptable?</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>256 (full)</td>
+                <td>~10^38</td>
+                <td>✅ Cryptographically secure</td>
+            </tr>
+            <tr>
+                <td>128 (half)</td>
+                <td>~10^19</td>
+                <td>✅ High security</td>
+            </tr>
+            <tr>
+                <td>64 (quarter)</td>
+                <td>~6 billion</td>
+                <td>✅ General purpose</td>
+            </tr>
+            <tr>
+                <td>32 (eighth)</td>
+                <td>~77,000</td>
+                <td>⚠️ Development only</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>5.4.3 Preimage Resistance</h3>
+
+    <p>Given a hash, it's computationally infeasible to find a timestamp that produces that hash. This prevents attackers from crafting timestamps to match a given hash.</p>
+
+    <h2>5.5 Use Cases for Cryptographic Timestamps</h2>
+
+    <h3>5.5.1 Audit Logging</h3>
+
+    <p>In security-critical systems, audit logs must be tamper-evident. Hashed timestamps ensure that log entries cannot be retroactively modified:</p>
+
+    <div class="example">
+        <strong>Example: Security Audit Log</strong>
+        <pre><code>{
+  "event": "admin_login",
+  "user": "admin@example.com",
+  "ip": "192.168.1.100",
+  "timestamp": "2025-12-27T14:30:00.123Z[UTC]{context:past}#7f3a9c2d8e1b4f6a",
+  "previous_hash": "#6e2b8a1c9f0d3e5a"  // Links to previous log entry
+}</code></pre>
+    </div>
+
+    <p>By chaining hashes (including the previous entry's hash in each new entry), you create an immutable audit trail similar to a blockchain.</p>
+
+    <h3>5.5.2 Digital Signatures and Certificates</h3>
+
+    <p>Hashed timestamps are essential for digital signatures, ensuring that signed documents include tamper-evident time records:</p>
+
+    <pre><code>{
+  "document_hash": "a1b2c3...",
+  "signed_at": "2025-12-27T14:30:00Z[UTC]{context:past}#7f3a9c2d",
+  "signer": "CN=John Doe, O=Example Corp",
+  "signature": "base64encodedRSAsignature..."
+}</code></pre>
+
+    <h3>5.5.3 Blockchain and Distributed Ledgers</h3>
+
+    <p>Blockchain systems require verifiable timestamps for blocks and transactions:</p>
+
+    <pre><code>{
+  "block_number": 12345,
+  "previous_hash": "0x...",
+  "timestamp": "2025-12-27T14:30:00.123456Z[UTC]{context:past}#7f3a9c2d8e1b4f6a",
+  "merkle_root": "0x...",
+  "nonce": 1234567890
+}</code></pre>
+
+    <h3>5.5.4 Trusted Timestamping Services</h3>
+
+    <p>RFC 3161-compliant timestamp authorities can use hashed Universal Timestamps:</p>
+
+    <div class="example">
+        <strong>Example: TSA Response</strong>
+        <pre><code>{
+  "tsa_name": "GlobalTime Authority",
+  "serial": "98765432",
+  "timestamp": "2025-12-27T14:30:00.123456789Z[UTC]{context:past}#7f3a9c2d8e1b4f6a5c0e9d2f",
+  "accuracy": "100ms",
+  "hash_algorithm": "SHA-256",
+  "signed_data_hash": "a1b2c3d4..."
+}</code></pre>
+    </div>
+
+    <h2>5.6 Performance Considerations</h2>
+
+    <p>SHA-256 hashing is fast on modern hardware, but at scale, performance matters:</p>
+
+    <h3>5.6.1 Hashing Speed</h3>
+
+    <p>Typical SHA-256 performance on modern CPUs:</p>
+
+    <table>
+        <tr><th>Platform</th><th>Speed</th></tr>
+        <tr><td>Modern CPU (software)</td><td>~500 MB/s per core</td></tr>
+        <tr><td>CPU with SHA extensions</td><td>~2-3 GB/s per core</td></tr>
+        <tr><td>GPU acceleration</td><td>~10-50 GB/s</td></tr>
+        <tr><td>Dedicated ASIC</td><td>~TH/s (terahashes/sec)</td></tr>
+    </table>
+
+    <p>For a typical 60-byte timestamp, hashing takes:</p>
+    <ul>
+        <li>Without SHA extensions: ~120 nanoseconds</li>
+        <li>With SHA extensions: ~30 nanoseconds</li>
+    </ul>
+
+    <p>This means you can generate millions of hashed timestamps per second on a single CPU core.</p>
+
+    <h3>5.6.2 Storage Overhead</h3>
+
+    <p>Hash storage overhead depends on truncation level:</p>
+
+    <table>
+        <tr><th>Truncation</th><th>Bytes Added</th><th>% Overhead (60-byte base)</th></tr>
+        <tr><td>Full (64 hex)</td><td>65 (64 + #)</td><td>+108%</td></tr>
+        <tr><td>Half (32 hex)</td><td>33</td><td>+55%</td></tr>
+        <tr><td>Quarter (16 hex)</td><td>17</td><td>+28%</td></tr>
+        <tr><td>Eighth (8 hex)</td><td>9</td><td>+15%</td></tr>
+    </table>
+
+    <p>For most applications, quarter-truncation (16 hex digits) provides an excellent balance between security and efficiency.</p>
+
+    <h2>5.7 Hash Chaining for Immutable Logs</h2>
+
+    <p>Individual hashed timestamps prevent modification of single entries, but don't prevent deletion or reordering. Hash chaining solves this by linking each entry to the previous one:</p>
+
+    <pre><code>Entry 1: timestamp1#hash(timestamp1)
+Entry 2: timestamp2,prev:hash1#hash(timestamp2,prev:hash1)
+Entry 3: timestamp3,prev:hash2#hash(timestamp3,prev:hash2)</code></pre>
+
+    <p>This creates a tamper-evident chain where:</p>
+    <ul>
+        <li>You can't modify entry N without invalidating all subsequent entries</li>
+        <li>You can't delete entry N without breaking the chain</li>
+        <li>You can't reorder entries without breaking the chain</li>
+    </ul>
+
+    <div class="example">
+        <strong>Example: Chained Log Entries</strong>
+        <pre><code>[
+  {
+    "seq": 1,
+    "event": "System started",
+    "timestamp": "2025-12-27T10:00:00Z[UTC]{context:past}#a1b2c3d4e5f6",
+    "prev_hash": "genesis"
+  },
+  {
+    "seq": 2,
+    "event": "User login",
+    "timestamp": "2025-12-27T10:15:30Z[UTC]{context:past}#f6e5d4c3b2a1",
+    "prev_hash": "a1b2c3d4e5f6"
+  },
+  {
+    "seq": 3,
+    "event": "Data accessed",
+    "timestamp": "2025-12-27T10:20:45Z[UTC]{context:past}#9c8d7e6f5a4b",
+    "prev_hash": "f6e5d4c3b2a1"
+  }
+]</code></pre>
+    </div>
+
+    <h2>5.8 Merkle Trees for Efficient Verification</h2>
+
+    <p>When you have thousands or millions of timestamps, verifying them individually is inefficient. Merkle trees allow verifying the integrity of an entire set with minimal computation:</p>
+
+    <pre><code>                  Root Hash
+                 /          \
+            Hash(L,R)      Hash(L,R)
+            /    \          /    \
+         TS1    TS2      TS3    TS4</code></pre>
+
+    <p>To verify TS2 is in the set, you only need:</p>
+    <ol>
+        <li>TS2's hash</li>
+        <li>TS1's hash (sibling)</li>
+        <li>Hash(TS3, TS4) (uncle)</li>
+        <li>Root hash (public/trusted)</li>
+    </ol>
+
+    <p>This is O(log N) instead of O(N), enabling efficient proof of inclusion.</p>
+
+    <h2>5.9 Quantum-Resistant Hashing</h2>
+
+    <p>SHA-256 is considered quantum-resistant for collision resistance (Grover's algorithm only provides quadratic speedup), but quantum computers could potentially find preimages faster. For future-proofing against quantum attacks, the WIA standard allows specifying alternative hash functions:</p>
+
+    <pre><code>2025-12-27T14:30:00Z[UTC]{context:present,hash:sha3-256}#7f3a9c2d...</code></pre>
+
+    <p>Supported quantum-resistant hash algorithms:</p>
+    <ul>
+        <li><strong>SHA-3 (Keccak):</strong> Different construction than SHA-2, adds diversity</li>
+        <li><strong>BLAKE3:</strong> Very fast, parallelizable, collision-resistant</li>
+        <li><strong>SHA-512/256:</strong> Truncated SHA-512 (more resistant to length-extension)</li>
+    </ul>
+
+    <h2>5.10 Timestamping Authority Integration</h2>
+
+    <p>For legal and compliance purposes, timestamps sometimes need third-party verification from a trusted timestamping authority (TSA). The Universal Timestamp format supports TSA signatures:</p>
+
+    <pre><code>{
+  "timestamp": "2025-12-27T14:30:00.123456Z[UTC]{context:past}#7f3a9c2d",
+  "tsa": {
+    "authority": "GlobalTimestamp Inc.",
+    "policy_oid": "1.2.3.4.5",
+    "serial": "12345678",
+    "signature": "base64encodedSignature...",
+    "chain": ["cert1", "cert2", "root"]
+  }
+}</code></pre>
+
+    <h2>5.11 Security Best Practices</h2>
+
+    <ol>
+        <li><strong>Always hash in production:</strong> The performance cost is negligible compared to the security benefit</li>
+        <li><strong>Use full hashes for critical data:</strong> Legal, financial, and medical systems should use 64-hex-digit hashes</li>
+        <li><strong>Store hashes separately:</strong> For ultimate security, store hashes in a separate, append-only database</li>
+        <li><strong>Regular verification:</strong> Periodically verify timestamp hashes to detect tampering</li>
+        <li><strong>Chain important logs:</strong> Use hash chaining for audit trails</li>
+        <li><strong>Consider TSA for legal matters:</strong> Third-party timestamps add legal weight</li>
+        <li><strong>Update hash algorithms:</strong> Plan for migrating to quantum-resistant hashes as quantum computing advances</li>
+    </ol>
+
+    <div class="warning">
+        <strong>Warning:</strong> Hashes prevent tampering but don't prevent incorrect timestamps from being created in the first place. Ensure your clocks are accurately synchronized and that timestamp generation happens in trusted environments.
+    </div>
+
+    <h2>5.12 Compliance and Standards</h2>
+
+    <p>Cryptographically hashed timestamps help meet various compliance requirements:</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Standard/Regulation</th>
+                <th>Requirement</th>
+                <th>How Hashes Help</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>GDPR</td>
+                <td>Data integrity</td>
+                <td>Prove data hasn't been modified</td>
+            </tr>
+            <tr>
+                <td>SOX</td>
+                <td>Financial audit trails</td>
+                <td>Tamper-evident transaction logs</td>
+            </tr>
+            <tr>
+                <td>HIPAA</td>
+                <td>Medical record integrity</td>
+                <td>Verify treatment timestamps</td>
+            </tr>
+            <tr>
+                <td>ISO 27001</td>
+                <td>Information security</td>
+                <td>Immutable security event logs</td>
+            </tr>
+            <tr>
+                <td>eIDAS (EU)</td>
+                <td>Electronic signatures</td>
+                <td>Qualified timestamp support</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="note">
+        <strong>Legal Note:</strong> In many jurisdictions, cryptographically verified timestamps have legal standing as evidence. Some countries recognize RFC 3161 timestamps as legally equivalent to notarized time records. Consult legal counsel for specific requirements in your jurisdiction.
+    </div>
+
+    <div class="nav" style="margin-top: 3rem;">
+        <a href="chapter04.html">← Previous</a>
+        <a href="../index.html">Home</a>
+        <a href="chapter06.html">Next →</a>
+    </div>
+
+    <footer style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #e2e8f0; text-align: center; color: #64748b;">
+        <p>弘益人間 (홍익인간) - Benefit All Humanity</p>
+        <p>© 2025 SmileStory Inc. / WIA</p>
+    </footer>
+</body>
+</html>

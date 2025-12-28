@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Tracking Simulator - WIA-PET-008</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: rgba(30, 41, 59, 0.8);
+            border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #F59E0B;
+            text-decoration: none;
+        }
+
+        .logo span {
+            opacity: 0.6;
+        }
+
+        .back-link {
+            color: #94a3b8;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            border-color: #F59E0B;
+            color: #F59E0B;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .tab:hover {
+            border-color: rgba(245, 158, 11, 0.5);
+            color: #cbd5e1;
+        }
+
+        .tab.active {
+            background: #F59E0B;
+            color: #0f172a;
+            border-color: #F59E0B;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            color: #F59E0B;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h3 {
+            color: #F59E0B;
+            font-size: 1.5rem;
+            margin: 1.5rem 0 1rem;
+        }
+
+        .card p {
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+            line-height: 1.8;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #F59E0B;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            background: #F59E0B;
+            color: #0f172a;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #D97706;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.8);
+            color: #F59E0B;
+            border: 1px solid #F59E0B;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .code-block {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+            color: #e2e8f0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .output-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            min-height: 100px;
+        }
+
+        .output-box.success {
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+
+        .output-box.error {
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .map-container {
+            width: 100%;
+            height: 400px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #F59E0B;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transform: translate(-50%, -50%);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 20px rgba(245, 158, 11, 0);
+            }
+        }
+
+        .metric-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #F59E0B;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        table th,
+        table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        table th {
+            background: rgba(245, 158, 11, 0.1);
+            color: #F59E0B;
+            font-weight: 600;
+        }
+
+        table td {
+            color: #cbd5e1;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+        }
+
+        .geofence-zone {
+            position: absolute;
+            border: 3px dashed #F59E0B;
+            border-radius: 50%;
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+        }
+
+        .status-badge.warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        .status-badge.offline {
+            background: rgba(148, 163, 184, 0.2);
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="../index.html" class="logo">📍 <span>WIA-PET-008</span> Simulator</a>
+            <a href="../index.html" class="back-link">← Back to Home</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('data-format')">Data Format</div>
+            <div class="tab" onclick="switchTab('algorithms')">Algorithms</div>
+            <div class="tab" onclick="switchTab('protocol')">Protocol</div>
+            <div class="tab" onclick="switchTab('integration')">Integration</div>
+            <div class="tab" onclick="switchTab('test')">Test</div>
+        </div>
+
+        <!-- Data Format Tab -->
+        <div id="data-format" class="tab-content active">
+            <div class="card">
+                <h2>📊 Data Format Specification</h2>
+                <p>Define and validate location data structures for pet tracking systems.</p>
+
+                <h3>GPS Location Format (WGS84)</h3>
+                <div class="code-block">
+                    <pre>{
+  "location": {
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "altitude": 52.3,
+    "accuracy": 5.2,
+    "timestamp": "2025-12-25T14:30:00Z"
+  },
+  "device": {
+    "id": "PET-TRACKER-12345",
+    "batteryLevel": 85,
+    "signalStrength": -72
+  },
+  "pet": {
+    "id": "pet_abc123",
+    "name": "Max",
+    "breed": "Golden Retriever"
+  }
+}</pre>
+                </div>
+
+                <h3>Geofence Boundary Definition</h3>
+                <div class="code-block">
+                    <pre>{
+  "geofence": {
+    "id": "zone_home_001",
+    "name": "Home Safe Zone",
+    "type": "circle",
+    "center": {
+      "latitude": 37.7749,
+      "longitude": -122.4194
+    },
+    "radius": 100,
+    "unit": "meters",
+    "alerts": {
+      "onEnter": true,
+      "onExit": true,
+      "notificationChannels": ["push", "sms", "email"]
+    }
+  }
+}</pre>
+                </div>
+
+                <h3>Activity Event Schema</h3>
+                <div class="code-block">
+                    <pre>{
+  "event": {
+    "type": "location_update",
+    "petId": "pet_abc123",
+    "timestamp": "2025-12-25T14:30:00Z",
+    "location": {
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "accuracy": 5.2
+    },
+    "activity": {
+      "type": "walking",
+      "speed": 1.2,
+      "distance": 450,
+      "duration": 375
+    },
+    "environment": {
+      "indoor": false,
+      "temperature": 22.5
+    }
+  }
+}</pre>
+                </div>
+
+                <div class="form-group">
+                    <label>Test Your JSON Data Format:</label>
+                    <textarea id="json-input" rows="10" placeholder="Paste your JSON here...">{
+  "location": {
+    "latitude": 37.7749,
+    "longitude": -122.4194
+  }
+}</textarea>
+                </div>
+                <button class="btn" onclick="validateJSON()">Validate JSON</button>
+                <div id="json-output" class="output-box" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Algorithms Tab -->
+        <div id="algorithms" class="tab-content">
+            <div class="card">
+                <h2>🧮 Tracking Algorithms</h2>
+                <p>Explore position calculation, geofencing, and battery optimization algorithms.</p>
+
+                <h3>Position Filtering Algorithm</h3>
+                <p>Kalman filter for smoothing GPS coordinates and removing noise:</p>
+                <div class="code-block">
+                    <pre>function kalmanFilter(measurement, previousEstimate, errorCovariance) {
+  const processNoise = 0.01;
+  const measurementNoise = 5.0;
+
+  // Prediction
+  let predictedEstimate = previousEstimate;
+  let predictedCovariance = errorCovariance + processNoise;
+
+  // Update
+  const kalmanGain = predictedCovariance /
+                     (predictedCovariance + measurementNoise);
+  const estimate = predictedEstimate +
+                   kalmanGain * (measurement - predictedEstimate);
+  const covariance = (1 - kalmanGain) * predictedCovariance;
+
+  return { estimate, covariance };
+}</pre>
+                </div>
+
+                <h3>Geofence Detection</h3>
+                <div class="grid">
+                    <div>
+                        <div class="form-group">
+                            <label>Pet Latitude:</label>
+                            <input type="number" id="pet-lat" value="37.7749" step="0.0001">
+                        </div>
+                        <div class="form-group">
+                            <label>Pet Longitude:</label>
+                            <input type="number" id="pet-lng" value="-122.4194" step="0.0001">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Geofence Center Lat:</label>
+                            <input type="number" id="fence-lat" value="37.7749" step="0.0001">
+                        </div>
+                        <div class="form-group">
+                            <label>Geofence Center Lng:</label>
+                            <input type="number" id="fence-lng" value="-122.4194" step="0.0001">
+                        </div>
+                        <div class="form-group">
+                            <label>Radius (meters):</label>
+                            <input type="number" id="fence-radius" value="100" step="10">
+                        </div>
+                    </div>
+                </div>
+                <button class="btn" onclick="checkGeofence()">Check Geofence Status</button>
+                <div id="geofence-result" class="output-box" style="display:none;"></div>
+
+                <h3>Battery Optimization Logic</h3>
+                <div class="code-block">
+                    <pre>function optimizeTrackingInterval(batteryLevel, movementSpeed, mode) {
+  // Adaptive tracking based on battery and activity
+  if (mode === 'power_save') {
+    return batteryLevel < 20 ? 600 : 300; // 10min or 5min
+  }
+
+  if (movementSpeed > 2.0) { // Fast movement (running/car)
+    return 10; // 10 seconds
+  } else if (movementSpeed > 0.5) { // Walking
+    return 30; // 30 seconds
+  } else { // Stationary
+    return batteryLevel < 30 ? 120 : 60; // 2min or 1min
+  }
+}</pre>
+                </div>
+
+                <div class="grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="tracking-interval">30s</div>
+                        <div class="metric-label">Current Interval</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="battery-est">25 days</div>
+                        <div class="metric-label">Battery Estimate</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="accuracy-level">±5m</div>
+                        <div class="metric-label">Accuracy</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Protocol Tab -->
+        <div id="protocol" class="tab-content">
+            <div class="card">
+                <h2>🔌 Communication Protocols</h2>
+                <p>Real-time location updates and event streaming protocols.</p>
+
+                <h3>WebSocket Event Streaming</h3>
+                <div class="code-block">
+                    <pre>// Client connection
+const ws = new WebSocket('wss://api.pettrack.wia.org/v1/stream');
+
+ws.on('connect', () => {
+  ws.send(JSON.stringify({
+    type: 'subscribe',
+    petId: 'pet_abc123',
+    events: ['location', 'geofence', 'battery']
+  }));
+});
+
+ws.on('message', (data) => {
+  const event = JSON.parse(data);
+  handleLocationUpdate(event);
+});</pre>
+                </div>
+
+                <h3>MQTT for IoT Devices</h3>
+                <div class="code-block">
+                    <pre>// MQTT Topic Structure
+pet/{pet_id}/location        // Location updates
+pet/{pet_id}/status          // Device status
+pet/{pet_id}/alerts          // Alert notifications
+pet/{pet_id}/config          // Configuration updates
+
+// Example publish
+mqtt.publish('pet/abc123/location', JSON.stringify({
+  lat: 37.7749,
+  lng: -122.4194,
+  accuracy: 5.2,
+  timestamp: Date.now()
+}));</pre>
+                </div>
+
+                <h3>RESTful API Endpoints</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Endpoint</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>GET</td>
+                            <td>/v1/pets/{id}/location</td>
+                            <td>Get current location</td>
+                        </tr>
+                        <tr>
+                            <td>GET</td>
+                            <td>/v1/pets/{id}/history</td>
+                            <td>Get location history</td>
+                        </tr>
+                        <tr>
+                            <td>POST</td>
+                            <td>/v1/geofences</td>
+                            <td>Create geofence zone</td>
+                        </tr>
+                        <tr>
+                            <td>GET</td>
+                            <td>/v1/pets/{id}/alerts</td>
+                            <td>Get alert notifications</td>
+                        </tr>
+                        <tr>
+                            <td>PUT</td>
+                            <td>/v1/pets/{id}/mode</td>
+                            <td>Update tracking mode</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>End-to-End Encryption</h3>
+                <div class="alert alert-info">
+                    <strong>🔒 Security:</strong> All location data is encrypted using AES-256-GCM before transmission.
+                    Device authentication uses JWT tokens with RSA-2048 signatures.
+                </div>
+
+                <div class="form-group">
+                    <label>Test API Endpoint:</label>
+                    <select id="api-endpoint">
+                        <option value="location">GET /v1/pets/{id}/location</option>
+                        <option value="history">GET /v1/pets/{id}/history</option>
+                        <option value="alerts">GET /v1/pets/{id}/alerts</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="testAPI()">Send Request</button>
+                <div id="api-response" class="output-box" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Integration Tab -->
+        <div id="integration" class="tab-content">
+            <div class="card">
+                <h2>🔗 System Integration</h2>
+                <p>Integrate pet tracking with mobile apps, smart home, and third-party services.</p>
+
+                <h3>Mobile App SDK (iOS/Android)</h3>
+                <div class="code-block">
+                    <pre>// iOS Swift Example
+import WIAPetTracking
+
+let tracker = PetTracker(apiKey: "your_api_key")
+
+tracker.subscribe(petId: "pet_abc123") { location in
+    print("Pet location: \(location.latitude), \(location.longitude)")
+    updateMapView(location)
+}
+
+tracker.createGeofence(
+    center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
+    radius: 100,
+    onExit: { alert in
+        showNotification("Pet left safe zone!")
+    }
+)</pre>
+                </div>
+
+                <h3>Smart Home Integration</h3>
+                <div class="code-block">
+                    <pre>// Home Assistant Integration
+automation:
+  - alias: "Pet Arrived Home"
+    trigger:
+      platform: state
+      entity_id: device_tracker.pet_max
+      to: 'home'
+    action:
+      - service: light.turn_on
+        entity_id: light.front_door
+      - service: notify.mobile_app
+        data:
+          message: "Max has arrived home!"</pre>
+                </div>
+
+                <h3>Veterinary System Connect</h3>
+                <div class="alert alert-success">
+                    <strong>✓ Healthcare Integration:</strong> Share activity data and location history with veterinary
+                    clinics through secure FHIR-compliant APIs for better health monitoring.
+                </div>
+
+                <h3>Integration Examples</h3>
+                <div class="grid">
+                    <div class="metric-card">
+                        <div class="metric-value">🏠</div>
+                        <div class="metric-label">Smart Home</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">📱</div>
+                        <div class="metric-label">Mobile Apps</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">🏥</div>
+                        <div class="metric-label">Vet Systems</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">🌐</div>
+                        <div class="metric-label">Pet Services</div>
+                    </div>
+                </div>
+
+                <h3>Webhook Configuration</h3>
+                <div class="form-group">
+                    <label>Webhook URL:</label>
+                    <input type="url" id="webhook-url" placeholder="https://your-server.com/webhook">
+                </div>
+                <div class="form-group">
+                    <label>Events to Subscribe:</label>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 0.5rem;">
+                        <label style="color: #cbd5e1;">
+                            <input type="checkbox" checked> Location Updates
+                        </label>
+                        <label style="color: #cbd5e1;">
+                            <input type="checkbox" checked> Geofence Alerts
+                        </label>
+                        <label style="color: #cbd5e1;">
+                            <input type="checkbox"> Battery Warnings
+                        </label>
+                        <label style="color: #cbd5e1;">
+                            <input type="checkbox"> Device Offline
+                        </label>
+                    </div>
+                </div>
+                <button class="btn" onclick="configureWebhook()">Configure Webhook</button>
+            </div>
+        </div>
+
+        <!-- Test Tab -->
+        <div id="test" class="tab-content">
+            <div class="card">
+                <h2>🧪 Live Testing Interface</h2>
+                <p>Simulate real-time pet tracking scenarios and test system behavior.</p>
+
+                <h3>Pet Tracker Simulator</h3>
+                <div class="grid">
+                    <div>
+                        <div class="form-group">
+                            <label>Pet Name:</label>
+                            <input type="text" id="test-pet-name" value="Max">
+                        </div>
+                        <div class="form-group">
+                            <label>Tracking Mode:</label>
+                            <select id="test-mode">
+                                <option value="normal">Normal (30s updates)</option>
+                                <option value="active">Active (10s updates)</option>
+                                <option value="power_save">Power Save (5min updates)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Battery Level:</label>
+                            <input type="range" id="test-battery" min="0" max="100" value="85"
+                                   oninput="document.getElementById('battery-value').textContent = this.value + '%'">
+                            <span id="battery-value" style="color: #F59E0B;">85%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Movement Pattern:</label>
+                            <select id="test-movement">
+                                <option value="stationary">Stationary</option>
+                                <option value="walking">Walking</option>
+                                <option value="running">Running</option>
+                                <option value="random">Random Movement</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Geofence Alert:</label>
+                            <select id="test-geofence">
+                                <option value="inside">Inside Safe Zone</option>
+                                <option value="exit">Exit Safe Zone</option>
+                                <option value="enter">Enter Safe Zone</option>
+                            </select>
+                        </div>
+                        <button class="btn" onclick="startSimulation()">Start Simulation</button>
+                        <button class="btn btn-secondary" onclick="stopSimulation()">Stop</button>
+                    </div>
+                </div>
+
+                <h3>Live Tracking Map</h3>
+                <div class="map-container" id="test-map">
+                    <div class="geofence-zone" style="width: 200px; height: 200px; left: 50%; top: 50%; transform: translate(-50%, -50%);"></div>
+                    <div class="marker" id="pet-marker" style="left: 50%; top: 50%;"></div>
+                </div>
+
+                <h3>Recent Events</h3>
+                <div id="event-log" class="output-box" style="max-height: 300px; overflow-y: auto;">
+                    <div style="color: #94a3b8;">Waiting for simulation to start...</div>
+                </div>
+
+                <h3>System Metrics</h3>
+                <div class="grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="test-updates">0</div>
+                        <div class="metric-label">Location Updates</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="test-distance">0 km</div>
+                        <div class="metric-label">Distance Traveled</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="test-accuracy">±5m</div>
+                        <div class="metric-label">Avg Accuracy</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">
+                            <span class="status-badge active">Active</span>
+                        </div>
+                        <div class="metric-label">Device Status</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let simulationInterval = null;
+        let updateCount = 0;
+        let totalDistance = 0;
+        let currentLat = 37.7749;
+        let currentLng = -122.4194;
+
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function validateJSON() {
+            const input = document.getElementById('json-input').value;
+            const output = document.getElementById('json-output');
+
+            try {
+                const data = JSON.parse(input);
+                output.style.display = 'block';
+                output.className = 'output-box success';
+                output.innerHTML = `<strong style="color: #86efac;">✓ Valid JSON Format</strong><br><br>` +
+                    `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (e) {
+                output.style.display = 'block';
+                output.className = 'output-box error';
+                output.innerHTML = `<strong style="color: #fca5a5;">✗ Invalid JSON</strong><br><br>` +
+                    `Error: ${e.message}`;
+            }
+        }
+
+        function checkGeofence() {
+            const petLat = parseFloat(document.getElementById('pet-lat').value);
+            const petLng = parseFloat(document.getElementById('pet-lng').value);
+            const fenceLat = parseFloat(document.getElementById('fence-lat').value);
+            const fenceLng = parseFloat(document.getElementById('fence-lng').value);
+            const radius = parseFloat(document.getElementById('fence-radius').value);
+
+            const distance = calculateDistance(petLat, petLng, fenceLat, fenceLng);
+            const output = document.getElementById('geofence-result');
+
+            output.style.display = 'block';
+            if (distance <= radius) {
+                output.className = 'output-box success';
+                output.innerHTML = `<strong style="color: #86efac;">✓ Pet is INSIDE the geofence</strong><br><br>` +
+                    `Distance from center: ${distance.toFixed(2)}m (Radius: ${radius}m)`;
+            } else {
+                output.className = 'output-box error';
+                output.innerHTML = `<strong style="color: #fca5a5;">⚠ Pet is OUTSIDE the geofence</strong><br><br>` +
+                    `Distance from center: ${distance.toFixed(2)}m (Radius: ${radius}m)`;
+            }
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Earth radius in meters
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lon2-lon1) * Math.PI/180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c;
+        }
+
+        function testAPI() {
+            const endpoint = document.getElementById('api-endpoint').value;
+            const output = document.getElementById('api-response');
+
+            output.style.display = 'block';
+            output.className = 'output-box success';
+
+            const responses = {
+                location: {
+                    petId: 'pet_abc123',
+                    location: { lat: 37.7749, lng: -122.4194, accuracy: 5.2 },
+                    timestamp: new Date().toISOString(),
+                    status: 'active'
+                },
+                history: {
+                    petId: 'pet_abc123',
+                    points: 150,
+                    timeRange: '24h',
+                    distance: 5.2
+                },
+                alerts: {
+                    petId: 'pet_abc123',
+                    alerts: [
+                        { type: 'geofence_exit', timestamp: new Date().toISOString() }
+                    ]
+                }
+            };
+
+            output.innerHTML = `<strong style="color: #86efac;">✓ API Response (200 OK)</strong><br><br>` +
+                `<pre>${JSON.stringify(responses[endpoint], null, 2)}</pre>`;
+        }
+
+        function configureWebhook() {
+            const url = document.getElementById('webhook-url').value;
+            if (!url) {
+                alert('Please enter a webhook URL');
+                return;
+            }
+            alert(`Webhook configured successfully!\nURL: ${url}\n\nEvents will be sent to this endpoint.`);
+        }
+
+        function startSimulation() {
+            if (simulationInterval) return;
+
+            updateCount = 0;
+            totalDistance = 0;
+            const eventLog = document.getElementById('event-log');
+            eventLog.innerHTML = '<div style="color: #86efac;">Simulation started...</div>';
+
+            simulationInterval = setInterval(() => {
+                const movement = document.getElementById('test-movement').value;
+                const battery = document.getElementById('test-battery').value;
+
+                // Update position based on movement
+                if (movement !== 'stationary') {
+                    const delta = movement === 'running' ? 0.0002 : 0.0001;
+                    currentLat += (Math.random() - 0.5) * delta;
+                    currentLng += (Math.random() - 0.5) * delta;
+                }
+
+                // Update marker position
+                const marker = document.getElementById('pet-marker');
+                const mapCenter = { lat: 37.7749, lng: -122.4194 };
+                const offsetX = (currentLng - mapCenter.lng) * 50000;
+                const offsetY = (currentLat - mapCenter.lat) * 50000;
+                marker.style.left = `calc(50% + ${offsetX}px)`;
+                marker.style.top = `calc(50% - ${offsetY}px)`;
+
+                // Add event to log
+                updateCount++;
+                document.getElementById('test-updates').textContent = updateCount;
+
+                const event = document.createElement('div');
+                event.style.color = '#cbd5e1';
+                event.style.marginBottom = '0.5rem';
+                event.innerHTML = `[${new Date().toLocaleTimeString()}] Location: ${currentLat.toFixed(6)}, ${currentLng.toFixed(6)} | Battery: ${battery}%`;
+                eventLog.insertBefore(event, eventLog.firstChild);
+
+                // Update distance
+                totalDistance += Math.random() * 0.01;
+                document.getElementById('test-distance').textContent = totalDistance.toFixed(2) + ' km';
+
+            }, 2000);
+        }
+
+        function stopSimulation() {
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+                simulationInterval = null;
+                const eventLog = document.getElementById('event-log');
+                const event = document.createElement('div');
+                event.style.color = '#fca5a5';
+                event.innerHTML = `[${new Date().toLocaleTimeString()}] Simulation stopped.`;
+                eventLog.insertBefore(event, eventLog.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

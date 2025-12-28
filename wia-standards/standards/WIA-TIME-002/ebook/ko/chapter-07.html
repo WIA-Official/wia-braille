@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제7장: 구현 및 통합 | WIA-TIME-002</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0f172a; --bg-secondary: #1e293b; --bg-tertiary: #334155; --primary: #06B6D4; --text: #f1f5f9; --text-secondary: #cbd5e1; --border: #475569; --success: #10b981; --warning: #f59e0b; --accent: #22D3EE; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-secondary); padding: 3rem; border-radius: 10px; box-shadow: 0 10px 50px rgba(0,0,0,0.5); }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--accent); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.05)); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .warning-box { background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .korea-box { background: linear-gradient(135deg, rgba(205, 62, 81, 0.1), rgba(10, 71, 165, 0.1)); border-left: 4px solid #CD3E51; padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .hongik-box { background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.05)); border-left: 4px solid #8B5CF6; padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--primary); font-weight: bold; }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: var(--bg); text-decoration: none; border-radius: 5px; transition: all 0.3s ease; font-weight: 500; }
+        .btn:hover { background: var(--accent); transform: translateY(-2px); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', 'Consolas', monospace; color: var(--success); font-size: 0.9rem; }
+        pre { background: var(--bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1.5rem 0; border: 1px solid var(--border); }
+        pre code { padding: 0; background: none; }
+        .equation { background: var(--bg); padding: 1.5rem; border-radius: 8px; text-align: center; font-size: 1.2rem; margin: 1.5rem 0; border: 1px solid var(--border); }
+        .diagram { background: var(--bg); padding: 2rem; border-radius: 8px; margin: 2rem 0; border: 1px solid var(--border); font-family: 'Monaco', monospace; white-space: pre; overflow-x: auto; line-height: 1.4; font-size: 0.85rem; }
+        .summary-section { background: var(--bg); padding: 2rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--success); }
+        .review-questions { background: var(--bg-tertiary); padding: 2rem; border-radius: 8px; margin: 2rem 0; }
+        .review-questions h3 { color: var(--primary); margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">제7장</p>
+        <h1>구현 및 통합</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            시공간 조작 시스템의 소프트웨어 아키텍처, API 설계, 마이크로서비스 통합을 다룹니다.
+        </p>
+
+        <h2>7.1 시스템 아키텍처</h2>
+        <p>
+            WIA-TIME-002 표준을 구현하는 시스템은 복잡한 물리 시뮬레이션, 실시간 제어, 안전 모니터링을 포함하는 다층 아키텍처를 필요로 합니다. 마이크로서비스 기반 설계가 확장성과 유지보수성을 위해 권장됩니다.
+        </p>
+
+        <div class="diagram">
+WIA-TIME-002 시스템 아키텍처:
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           클라이언트 계층                               │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                  │
+│  │   웹 UI      │  │  CLI 도구    │  │   모바일 앱  │                  │
+│  │  (React)     │  │  (Node.js)   │  │  (Flutter)   │                  │
+│  └──────────────┘  └──────────────┘  └──────────────┘                  │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │ REST / GraphQL / gRPC
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           API 게이트웨이                                │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐       │
+│  │  인증/인가  │  │  속도 제한  │  │   로깅     │  │   라우팅   │       │
+│  └────────────┘  └────────────┘  └────────────┘  └────────────┘       │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        마이크로서비스 계층                              │
+│                                                                         │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐     │
+│  │   계량 텐서      │  │   중력 우물      │  │    워프 필드     │     │
+│  │   서비스         │  │   서비스         │  │    서비스        │     │
+│  │                  │  │                  │  │                  │     │
+│  │  - 텐서 계산     │  │  - 우물 설계     │  │  - 버블 설계     │     │
+│  │  - 곡률 분석     │  │  - 조석력 계산   │  │  - 에너지 계산   │     │
+│  │  - 좌표 변환     │  │  - 안전 검증     │  │  - 궤적 최적화   │     │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘     │
+│                                                                         │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐     │
+│  │   이상 물질      │  │   안전 관리      │  │   시뮬레이션     │     │
+│  │   서비스         │  │   서비스         │  │   서비스         │     │
+│  │                  │  │                  │  │                  │     │
+│  │  - 카시미르 설계 │  │  - 실시간 모니터 │  │  - 시공간 시뮬   │     │
+│  │  - 격납 관리     │  │  - 비상 프로토콜 │  │  - 입자 추적     │     │
+│  │  - 에너지 추정   │  │  - 인과성 검증   │  │  - 가시화        │     │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘     │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │ 이벤트 버스 (Kafka / RabbitMQ)
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           데이터 계층                                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                  │
+│  │ PostgreSQL   │  │    Redis     │  │    MinIO     │                  │
+│  │ (메타데이터) │  │  (캐시)      │  │  (시뮬 데이터)│                  │
+│  └──────────────┘  └──────────────┘  └──────────────┘                  │
+└─────────────────────────────────────────────────────────────────────────┘</div>
+
+        <h2>7.2 핵심 API 설계</h2>
+
+        <h3>계량 텐서 서비스</h3>
+        <pre><code>// REST API 엔드포인트
+interface MetricTensorAPI {
+  // 계량 텐서 계산
+  POST /api/v1/metric/compute
+  Request: MetricComputeRequest
+  Response: MetricTensorResponse
+
+  // 곡률 텐서 계산
+  POST /api/v1/metric/curvature
+  Request: CurvatureRequest
+  Response: CurvatureTensorsResponse
+
+  // 좌표 변환
+  POST /api/v1/metric/transform
+  Request: CoordinateTransformRequest
+  Response: TransformedMetricResponse
+}
+
+// 요청/응답 스키마
+interface MetricComputeRequest {
+  metricType: 'minkowski' | 'schwarzschild' | 'kerr' | 'alcubierre' | 'custom';
+  coordinates: CoordinateSystem;
+  parameters: MetricParameters;
+  options?: ComputeOptions;
+}
+
+interface MetricTensorResponse {
+  requestId: string;
+  status: 'success' | 'error';
+  data: {
+    components: number[][];      // g_μν
+    inverse: number[][];         // g^μν
+    determinant: number;
+    signature: number[];
+    christoffelSymbols?: number[][][];
+  };
+  metadata: {
+    computeTime: number;         // 밀리초
+    precision: number;
+    coordinateSystem: string;
+  };
+}
+
+// 사용 예시
+const response = await fetch('/api/v1/metric/compute', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    metricType: 'schwarzschild',
+    coordinates: { type: 'spherical', r: 1e7, theta: Math.PI/2, phi: 0 },
+    parameters: { mass: 1.989e30 }  // 태양 질량
+  })
+});</code></pre>
+
+        <h3>워프 필드 서비스</h3>
+        <pre><code>interface WarpFieldAPI {
+  // 워프 버블 설계
+  POST /api/v1/warp/design
+  Request: WarpDesignRequest
+  Response: WarpDesignResponse
+
+  // 에너지 요구량 계산
+  POST /api/v1/warp/energy
+  Request: WarpEnergyRequest
+  Response: WarpEnergyResponse
+
+  // 궤적 최적화
+  POST /api/v1/warp/trajectory
+  Request: TrajectoryOptimizeRequest
+  Response: OptimizedTrajectoryResponse
+
+  // 안전 분석
+  POST /api/v1/warp/safety
+  Request: WarpSafetyRequest
+  Response: WarpSafetyResponse
+}
+
+interface WarpDesignRequest {
+  // 버블 기하학
+  internalRadius: number;        // 미터
+  wallThickness: number;         // 미터
+  shape: 'spherical' | 'ellipsoidal';
+
+  // 성능 요구사항
+  targetVelocity: number;        // c의 배수
+  payloadMass: number;           // kg
+
+  // 안전 제약
+  maxTidalForce: number;         // N/m
+  maxEnergy?: number;            // J (옵션)
+}
+
+interface WarpDesignResponse {
+  requestId: string;
+  status: 'success' | 'marginal' | 'impossible';
+  design: {
+    metric: AlcubierreMetricData;
+    energyRequired: number;
+    exoticMatterMass: number;
+    efficiency: number;
+    warnings: string[];
+  };
+  recommendations?: {
+    optimizedParameters: Partial<WarpDesignRequest>;
+    potentialEnergyReduction: number;
+  };
+}</code></pre>
+
+        <h2>7.3 마이크로서비스 통합</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>서비스</th>
+                    <th>기술 스택</th>
+                    <th>통신 방식</th>
+                    <th>확장 전략</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>계량 텐서</td>
+                    <td>Python/NumPy, FastAPI</td>
+                    <td>gRPC (저지연)</td>
+                    <td>수평 확장 (계산 집약)</td>
+                </tr>
+                <tr>
+                    <td>중력 우물</td>
+                    <td>Rust, Actix-web</td>
+                    <td>REST + WebSocket</td>
+                    <td>수평 확장</td>
+                </tr>
+                <tr>
+                    <td>워프 필드</td>
+                    <td>Go, gRPC</td>
+                    <td>gRPC</td>
+                    <td>수평 확장</td>
+                </tr>
+                <tr>
+                    <td>이상 물질</td>
+                    <td>C++, gRPC</td>
+                    <td>gRPC (고성능)</td>
+                    <td>수직 확장 (메모리)</td>
+                </tr>
+                <tr>
+                    <td>안전 관리</td>
+                    <td>Java, Spring Boot</td>
+                    <td>Kafka (이벤트)</td>
+                    <td>고가용성 클러스터</td>
+                </tr>
+                <tr>
+                    <td>시뮬레이션</td>
+                    <td>C++/CUDA, REST</td>
+                    <td>비동기 작업 큐</td>
+                    <td>GPU 클러스터</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box">
+            <h3>서비스 간 통신 패턴</h3>
+            <p>
+                시공간 조작 시스템은 다양한 통신 패턴을 사용합니다:
+            </p>
+            <ul>
+                <li><strong>동기식 (gRPC):</strong> 계량 텐서 계산, 실시간 안전 검사</li>
+                <li><strong>비동기식 (Kafka):</strong> 시뮬레이션 결과, 모니터링 데이터</li>
+                <li><strong>WebSocket:</strong> 실시간 시각화, 제어판 업데이트</li>
+                <li><strong>배치 처리:</strong> 대규모 궤적 최적화, 과거 데이터 분석</li>
+            </ul>
+        </div>
+
+        <h2>7.4 Kubernetes 배포</h2>
+
+        <pre><code># wia-time-002-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metric-tensor-service
+  namespace: wia-time-002
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: metric-tensor
+  template:
+    metadata:
+      labels:
+        app: metric-tensor
+    spec:
+      containers:
+      - name: metric-tensor
+        image: wia/metric-tensor:v1.2.0
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "2"
+          limits:
+            memory: "8Gi"
+            cpu: "8"
+        ports:
+        - containerPort: 50051
+          name: grpc
+        - containerPort: 8080
+          name: health
+        env:
+        - name: COMPUTE_PRECISION
+          value: "double"
+        - name: MAX_CONCURRENT_REQUESTS
+          value: "100"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metric-tensor-service
+  namespace: wia-time-002
+spec:
+  selector:
+    app: metric-tensor
+  ports:
+  - name: grpc
+    port: 50051
+    targetPort: 50051
+  - name: health
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: metric-tensor-hpa
+  namespace: wia-time-002
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: metric-tensor-service
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70</code></pre>
+
+        <div class="korea-box">
+            <h3>한국의 클라우드 인프라</h3>
+            <p>
+                WIA-TIME-002 시스템은 국내 주요 클라우드 제공업체에서 운영될 수 있습니다. 네이버 클라우드, 카카오 클라우드, NHN 클라우드는 모두 Kubernetes 관리 서비스를 제공하며, 고성능 컴퓨팅(HPC)과 GPU 인스턴스도 지원합니다. KISTI(한국과학기술정보연구원)의 슈퍼컴퓨팅 인프라는 대규모 시뮬레이션에 활용될 수 있습니다.
+            </p>
+        </div>
+
+        <h2>7.5 모니터링 및 관찰성</h2>
+
+        <div class="diagram">
+모니터링 스택:
+
+┌───────────────────────────────────────────────────────────────┐
+│                      대시보드 (Grafana)                        │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐           │
+│  │  서비스 상태 │  │  성능 메트릭 │  │  비즈니스   │           │
+│  │  대시보드   │  │  대시보드   │  │  대시보드   │           │
+│  └─────────────┘  └─────────────┘  └─────────────┘           │
+└───────────────────────────┬───────────────────────────────────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+        ▼                   ▼                   ▼
+┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+│  Prometheus   │  │    Loki       │  │    Jaeger     │
+│  (메트릭)     │  │   (로그)      │  │  (트레이싱)   │
+└───────────────┘  └───────────────┘  └───────────────┘
+        ↑                   ↑                   ↑
+        │                   │                   │
+┌───────────────────────────────────────────────────────────────┐
+│                      마이크로서비스                            │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐         │
+│  │ metrics │  │  logs   │  │  spans  │  │ alerts  │         │
+│  │ exporter│  │ shipper │  │ reporter│  │ sender  │         │
+│  └─────────┘  └─────────┘  └─────────┘  └─────────┘         │
+└───────────────────────────────────────────────────────────────┘</code></pre>
+
+        <h3>핵심 메트릭</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>메트릭 유형</th>
+                    <th>메트릭 이름</th>
+                    <th>설명</th>
+                    <th>임계값</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>지연 시간</td>
+                    <td>request_duration_seconds</td>
+                    <td>요청 처리 시간</td>
+                    <td>p99 < 500ms</td>
+                </tr>
+                <tr>
+                    <td>처리량</td>
+                    <td>requests_total</td>
+                    <td>초당 요청 수</td>
+                    <td>> 1000 req/s</td>
+                </tr>
+                <tr>
+                    <td>오류율</td>
+                    <td>errors_total</td>
+                    <td>오류 요청 비율</td>
+                    <td>< 0.1%</td>
+                </tr>
+                <tr>
+                    <td>가용성</td>
+                    <td>service_up</td>
+                    <td>서비스 가용성</td>
+                    <td>> 99.9%</td>
+                </tr>
+                <tr>
+                    <td>계산 정확도</td>
+                    <td>computation_accuracy</td>
+                    <td>수치 계산 정밀도</td>
+                    <td>> 1e-12</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>7.6 보안 고려사항</h2>
+
+        <pre><code>// 인증 및 인가 구현
+interface SecurityConfig {
+  authentication: {
+    method: 'oauth2' | 'jwt' | 'mtls';
+    provider: string;
+    tokenExpiry: number;
+  };
+
+  authorization: {
+    model: 'rbac' | 'abac';
+    roles: Role[];
+    policies: Policy[];
+  };
+
+  encryption: {
+    inTransit: 'tls1.3';
+    atRest: 'aes-256-gcm';
+    keyManagement: 'vault' | 'kms';
+  };
+}
+
+// 역할 기반 접근 제어
+const roles: Role[] = [
+  {
+    name: 'operator',
+    permissions: [
+      'metric:compute',
+      'warp:design',
+      'simulation:run'
+    ]
+  },
+  {
+    name: 'engineer',
+    permissions: [
+      'metric:*',
+      'warp:*',
+      'exotic:read',
+      'simulation:*'
+    ]
+  },
+  {
+    name: 'admin',
+    permissions: [
+      '*:*'  // 전체 접근
+    ]
+  },
+  {
+    name: 'safety_officer',
+    permissions: [
+      'safety:*',
+      'exotic:*',
+      'warp:emergency_stop'
+    ]
+  }
+];
+
+// 감사 로깅
+interface AuditLog {
+  timestamp: Date;
+  userId: string;
+  action: string;
+  resource: string;
+  result: 'success' | 'denied' | 'error';
+  details: Record<string, any>;
+  clientIp: string;
+  userAgent: string;
+}</code></pre>
+
+        <div class="warning-box">
+            <h3>보안 모범 사례</h3>
+            <ul>
+                <li><strong>최소 권한 원칙:</strong> 각 서비스와 사용자에게 필요한 최소한의 권한만 부여</li>
+                <li><strong>비밀 관리:</strong> HashiCorp Vault 또는 클라우드 KMS를 사용한 비밀 관리</li>
+                <li><strong>네트워크 분리:</strong> 서비스 메시(Istio)를 통한 마이크로서비스 간 mTLS</li>
+                <li><strong>감사 추적:</strong> 모든 민감한 작업에 대한 불변 감사 로그 유지</li>
+                <li><strong>취약점 스캔:</strong> 컨테이너 이미지 및 종속성의 정기적 보안 스캔</li>
+            </ul>
+        </div>
+
+        <h2>7.7 SDK 및 클라이언트 라이브러리</h2>
+
+        <pre><code>// TypeScript SDK 사용 예시
+import { WiaTime002Client } from '@wia/time-002-sdk';
+
+const client = new WiaTime002Client({
+  endpoint: 'https://api.wia.org/time-002',
+  apiKey: process.env.WIA_API_KEY,
+  options: {
+    timeout: 30000,
+    retries: 3
+  }
+});
+
+// 워프 버블 설계
+async function designWarpDrive() {
+  const design = await client.warp.design({
+    internalRadius: 10,      // 10m 거주 공간
+    wallThickness: 1,        // 1m 버블 벽
+    targetVelocity: 1.0,     // 광속
+    payloadMass: 10000,      // 10톤
+    maxTidalForce: 0.001     // 1 mN/m
+  });
+
+  console.log(`필요 에너지: ${design.energyRequired} J`);
+  console.log(`이상 물질 질량: ${design.exoticMatterMass} kg`);
+  console.log(`실현 가능성: ${design.status}`);
+
+  if (design.recommendations) {
+    console.log('최적화 권장사항:', design.recommendations);
+  }
+
+  return design;
+}
+
+// 실시간 안전 모니터링
+const safetyStream = client.safety.monitor({
+  systemId: 'warp-drive-001',
+  metrics: ['containment', 'energy', 'tidal'],
+  interval: 100  // 100ms
+});
+
+safetyStream.on('alert', (alert) => {
+  console.error(`안전 경보: ${alert.level} - ${alert.message}`);
+  if (alert.level === 'critical') {
+    client.warp.emergencyStop('warp-drive-001');
+  }
+});
+
+safetyStream.on('data', (data) => {
+  updateDashboard(data);
+});</code></pre>
+
+        <div class="summary-section">
+            <h3 style="color: var(--success);">장 요약</h3>
+            <ul>
+                <li>마이크로서비스 아키텍처가 확장성과 유지보수성을 위해 권장됩니다</li>
+                <li>핵심 서비스: 계량 텐서, 중력 우물, 워프 필드, 이상 물질, 안전 관리</li>
+                <li>gRPC와 Kafka를 통한 효율적인 서비스 간 통신</li>
+                <li>Kubernetes를 통한 자동 확장 및 고가용성</li>
+                <li>Prometheus, Loki, Jaeger를 활용한 종합적인 관찰성</li>
+                <li>역할 기반 접근 제어와 감사 로깅을 통한 보안</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>복습 문제</h3>
+            <ol>
+                <li>WIA-TIME-002 시스템의 주요 마이크로서비스들을 나열하시오.</li>
+                <li>gRPC와 REST API의 장단점을 비교하시오.</li>
+                <li>Kubernetes HPA가 제공하는 이점은 무엇인가?</li>
+                <li>시공간 조작 시스템에서 모니터링이 중요한 이유를 설명하시오.</li>
+                <li>역할 기반 접근 제어의 구현 방법을 설명하시오.</li>
+                <li>서비스 메시(Service Mesh)의 역할은 무엇인가?</li>
+                <li>SDK 설계 시 고려해야 할 사항을 나열하시오.</li>
+            </ol>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="chapter-06.html" class="btn">← 제6장: 이상 물질 공학</a>
+            <a href="chapter-08.html" class="btn">제8장: 미래 전망 및 결론 →</a>
+        </div>
+    </div>
+</body>
+</html>

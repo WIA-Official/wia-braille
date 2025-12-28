@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-LEG-010 Simulator - Digital Identity After Death 👻</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 2px solid #8B5CF6;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: #8B5CF6;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #94a3b8;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #334155;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            color: #8B5CF6;
+        }
+
+        .tab.active {
+            color: #8B5CF6;
+            border-bottom-color: #8B5CF6;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .simulator-panel {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            color: #8B5CF6;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #8B5CF6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .output-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: #10b981;
+            min-height: 200px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .output-box.error {
+            color: #ef4444;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .info-card {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .info-card h3 {
+            color: #8B5CF6;
+            margin-bottom: 1rem;
+        }
+
+        .info-card p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid #8B5CF6;
+            border-radius: 12px;
+            color: #8B5CF6;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .code-block {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        .code-block pre {
+            color: #10b981;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #334155;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 2rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2.5rem;
+            top: 0.5rem;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #8B5CF6;
+            border: 2px solid #0f172a;
+        }
+
+        .timeline-time {
+            color: #8B5CF6;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-content {
+            color: #94a3b8;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-active {
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+
+        .status-pending {
+            background: #f59e0b;
+        }
+
+        .status-revoked {
+            background: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👻 WIA-LEG-010 Simulator</h1>
+        <p>Digital Identity After Death - Interactive Testing Environment</p>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('data-format')">Data Format</button>
+            <button class="tab" onclick="switchTab('algorithms')">Algorithms</button>
+            <button class="tab" onclick="switchTab('protocol')">Protocol</button>
+            <button class="tab" onclick="switchTab('integration')">Integration</button>
+            <button class="tab" onclick="switchTab('test')">Live Test</button>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div id="data-format" class="tab-content active">
+            <div class="simulator-panel">
+                <h2 class="panel-title">📋 Data Format Explorer</h2>
+
+                <div class="grid-2">
+                    <div class="info-card">
+                        <h3>Death Certificate Schema</h3>
+                        <p>Standardized format for death certificate verification and blockchain anchoring</p>
+                        <div class="code-block">
+                            <pre>{
+  "certificateId": "DC-2025-001",
+  "deceasedId": "uuid",
+  "deathDate": "2025-12-25T00:00:00Z",
+  "jurisdiction": "US-CA",
+  "verificationHash": "0x...",
+  "blockchainAnchor": {
+    "chain": "ethereum",
+    "txHash": "0x...",
+    "timestamp": "2025-12-25T00:05:00Z"
+  }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h3>Identity Revocation Record</h3>
+                        <p>Cascading revocation of digital credentials and tokens</p>
+                        <div class="code-block">
+                            <pre>{
+  "revocationId": "REV-2025-001",
+  "subjectId": "uuid",
+  "timestamp": "2025-12-25T01:00:00Z",
+  "scope": "global",
+  "credentials": [
+    "did:wia:123",
+    "oauth:google:456"
+  ],
+  "status": "revoked"
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h3>Executor Authorization</h3>
+                        <p>Time-locked access control for estate executors</p>
+                        <div class="code-block">
+                            <pre>{
+  "authId": "AUTH-2025-001",
+  "executorId": "uuid",
+  "deceasedId": "uuid",
+  "issuedAt": "2025-12-25T02:00:00Z",
+  "expiresAt": "2026-12-25T00:00:00Z",
+  "permissions": ["read", "export"],
+  "requiresMultisig": true,
+  "signers": ["executor", "witness"]
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h3>AI Persona Metadata</h3>
+                        <p>Digital afterlife persona configuration</p>
+                        <div class="code-block">
+                            <pre>{
+  "personaId": "AI-2025-001",
+  "sourceId": "uuid",
+  "createdAt": "2025-12-25T03:00:00Z",
+  "model": "gpt-4",
+  "trainingData": {
+    "sources": ["messages", "posts"],
+    "size": "10GB",
+    "privacy": "encrypted"
+  },
+  "interactionRules": {
+    "consentRequired": true,
+    "familyOnly": false
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Test Custom Data Format:</label>
+                    <textarea id="customFormat" placeholder="Paste your JSON data here..."></textarea>
+                </div>
+                <button onclick="validateDataFormat()">Validate Format</button>
+                <div id="formatOutput" class="output-box"></div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div id="algorithms" class="tab-content">
+            <div class="simulator-panel">
+                <h2 class="panel-title">🧮 Algorithm Simulator</h2>
+
+                <div class="info-card">
+                    <h3>Death Verification Algorithm</h3>
+                    <p><span class="badge">SHA-256</span><span class="badge">Multi-source</span><span class="badge">Blockchain</span></p>
+                    <div class="code-block">
+                        <pre>function verifyDeath(certificateData, registrySources) {
+  // 1. Hash certificate data
+  const certHash = sha256(certificateData);
+
+  // 2. Verify against multiple registries
+  const verifications = registrySources.map(source =>
+    source.verify(certHash)
+  );
+
+  // 3. Require 2/3 consensus
+  const consensus = verifications.filter(v => v.valid).length >= 2;
+
+  // 4. Anchor to blockchain
+  if (consensus) {
+    return blockchain.anchor(certHash);
+  }
+
+  return { verified: consensus, hash: certHash };
+}</pre>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Certificate ID:</label>
+                    <input type="text" id="certId" placeholder="DC-2025-001">
+                </div>
+                <div class="form-group">
+                    <label>Deceased ID:</label>
+                    <input type="text" id="deceasedId" placeholder="uuid-1234-5678">
+                </div>
+                <div class="form-group">
+                    <label>Death Date:</label>
+                    <input type="datetime-local" id="deathDate">
+                </div>
+                <div class="form-group">
+                    <label>Jurisdiction:</label>
+                    <select id="jurisdiction">
+                        <option>US-CA</option>
+                        <option>US-NY</option>
+                        <option>UK-ENG</option>
+                        <option>KR-SE</option>
+                        <option>JP-TO</option>
+                    </select>
+                </div>
+                <button onclick="runVerificationAlgorithm()">Run Verification Algorithm</button>
+                <div id="algoOutput" class="output-box"></div>
+
+                <div class="info-card" style="margin-top: 2rem;">
+                    <h3>Revocation Cascade Algorithm</h3>
+                    <p><span class="badge">BFS</span><span class="badge">Async</span><span class="badge">Idempotent</span></p>
+                    <div class="code-block">
+                        <pre>async function cascadeRevocation(identityId) {
+  const queue = [identityId];
+  const revoked = new Set();
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+
+    if (revoked.has(current)) continue;
+
+    // Revoke current credential
+    await revokeCredential(current);
+    revoked.add(current);
+
+    // Find dependent credentials
+    const dependents = await findDependentCredentials(current);
+    queue.push(...dependents);
+  }
+
+  return { totalRevoked: revoked.size, credentials: Array.from(revoked) };
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div id="protocol" class="tab-content">
+            <div class="simulator-panel">
+                <h2 class="panel-title">🔄 Protocol Flow Visualizer</h2>
+
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-time">Phase 1: Death Verification (T+0 hours)</div>
+                        <div class="timeline-content">
+                            <strong>Death Registry Integration</strong><br>
+                            1. Receive death notification from official registry<br>
+                            2. Validate certificate authenticity (multi-source)<br>
+                            3. Generate blockchain proof-of-death<br>
+                            4. Update identity status to "deceased"
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-time">Phase 2: Identity Revocation (T+24 hours)</div>
+                        <div class="timeline-content">
+                            <strong>Credential Cascade Revocation</strong><br>
+                            1. Enumerate all associated credentials (SSO, OAuth, DID)<br>
+                            2. Execute breadth-first revocation cascade<br>
+                            3. Invalidate biometric templates<br>
+                            4. Notify all relying parties
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-time">Phase 3: Executor Authorization (T+7 days)</div>
+                        <div class="timeline-content">
+                            <strong>Posthumous Access Control</strong><br>
+                            1. Verify executor legal authority<br>
+                            2. Issue time-locked credentials<br>
+                            3. Enable multi-signature requirements<br>
+                            4. Activate audit logging
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-time">Phase 4: Digital Afterlife (T+30 days)</div>
+                        <div class="timeline-content">
+                            <strong>AI Persona & Memorial</strong><br>
+                            1. Generate AI persona from legacy data (with consent)<br>
+                            2. Configure memorial platform access<br>
+                            3. Establish interaction rules<br>
+                            4. Monitor for ethical compliance
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 2rem;">
+                    <label>Simulate Protocol Flow:</label>
+                    <select id="protocolPhase">
+                        <option value="1">Phase 1: Death Verification</option>
+                        <option value="2">Phase 2: Identity Revocation</option>
+                        <option value="3">Phase 3: Executor Authorization</option>
+                        <option value="4">Phase 4: Digital Afterlife</option>
+                    </select>
+                </div>
+                <button onclick="simulateProtocol()">Simulate Phase</button>
+                <div id="protocolOutput" class="output-box"></div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div id="integration" class="tab-content">
+            <div class="simulator-panel">
+                <h2 class="panel-title">🔌 Integration Examples</h2>
+
+                <div class="info-card">
+                    <h3>REST API Integration</h3>
+                    <div class="code-block">
+                        <pre>// Initialize WIA-LEG-010 Client
+import { DigitalIdentityAfterDeath } from '@wia/digital-identity-after-death';
+
+const client = new DigitalIdentityAfterDeath({
+  apiKey: 'your-api-key',
+  network: 'mainnet',
+  jurisdiction: 'US-CA'
+});
+
+// Report death event
+const deathReport = await client.reportDeath({
+  certificateId: 'DC-2025-001',
+  deceasedId: 'uuid-1234',
+  deathDate: '2025-12-25T00:00:00Z',
+  certificateHash: '0x...'
+});
+
+// Query identity status
+const status = await client.getIdentityStatus('uuid-1234');
+console.log(status); // { status: 'deceased', verifiedAt: '...' }
+
+// Revoke credentials
+const revocation = await client.revokeCredentials({
+  subjectId: 'uuid-1234',
+  scope: 'global'
+});
+
+// Issue executor access
+const executorAuth = await client.issueExecutorAuth({
+  executorId: 'uuid-5678',
+  deceasedId: 'uuid-1234',
+  permissions: ['read', 'export'],
+  expiresIn: '1y'
+});</pre>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>Webhook Integration</h3>
+                    <div class="code-block">
+                        <pre>// Configure webhook endpoint
+app.post('/webhooks/wia-leg-010', async (req, res) => {
+  const event = req.body;
+
+  switch (event.type) {
+    case 'death.verified':
+      await handleDeathVerification(event.data);
+      break;
+
+    case 'credentials.revoked':
+      await handleCredentialRevocation(event.data);
+      break;
+
+    case 'executor.authorized':
+      await handleExecutorAuthorization(event.data);
+      break;
+
+    case 'persona.created':
+      await handlePersonaCreation(event.data);
+      break;
+  }
+
+  res.status(200).json({ received: true });
+});</pre>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>Smart Contract Integration</h3>
+                    <div class="code-block">
+                        <pre>// Solidity Smart Contract
+pragma solidity ^0.8.0;
+
+contract DigitalIdentityRegistry {
+    mapping(bytes32 => DeathRecord) public deathRecords;
+
+    struct DeathRecord {
+        bytes32 certificateHash;
+        uint256 timestamp;
+        bool verified;
+        address[] verifiers;
+    }
+
+    event DeathVerified(bytes32 indexed subjectId, bytes32 certHash);
+    event CredentialsRevoked(bytes32 indexed subjectId, uint256 count);
+
+    function registerDeath(
+        bytes32 subjectId,
+        bytes32 certHash,
+        bytes[] calldata signatures
+    ) external {
+        require(signatures.length >= 2, "Require 2+ verifiers");
+
+        deathRecords[subjectId] = DeathRecord({
+            certificateHash: certHash,
+            timestamp: block.timestamp,
+            verified: true,
+            verifiers: msg.sender
+        });
+
+        emit DeathVerified(subjectId, certHash);
+    }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Test API Endpoint:</label>
+                    <input type="text" id="apiEndpoint" placeholder="https://api.wia.org/v1/leg-010/...">
+                </div>
+                <div class="form-group">
+                    <label>Request Body (JSON):</label>
+                    <textarea id="apiBody" placeholder='{"certificateId": "DC-2025-001", ...}'></textarea>
+                </div>
+                <button onclick="testIntegration()">Test Integration</button>
+                <div id="integrationOutput" class="output-box"></div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Live Test -->
+        <div id="test" class="tab-content">
+            <div class="simulator-panel">
+                <h2 class="panel-title">🧪 Live Testing Environment</h2>
+
+                <div class="grid-2">
+                    <div>
+                        <h3 style="color: #8B5CF6; margin-bottom: 1rem;">Identity Registry</h3>
+                        <div id="identityRegistry" class="code-block">
+                            <pre>// Active Identities: 0
+// Deceased: 0
+// Pending Verification: 0</pre>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 style="color: #8B5CF6; margin-bottom: 1rem;">Recent Events</h3>
+                        <div id="recentEvents" class="code-block">
+                            <pre>// No events yet
+// Start a test to see events here</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="color: #8B5CF6; margin: 2rem 0 1rem;">Create Test Identity</h3>
+                <div class="form-group">
+                    <label>Subject Name:</label>
+                    <input type="text" id="testName" placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label>Subject ID:</label>
+                    <input type="text" id="testSubjectId" placeholder="uuid-test-001">
+                </div>
+                <div class="form-group">
+                    <label>Credentials Count:</label>
+                    <input type="number" id="testCredCount" value="5" min="1" max="50">
+                </div>
+                <button onclick="createTestIdentity()">Create Identity</button>
+
+                <h3 style="color: #8B5CF6; margin: 2rem 0 1rem;">Simulate Death Event</h3>
+                <div class="form-group">
+                    <label>Subject ID:</label>
+                    <input type="text" id="deathSubjectId" placeholder="uuid-test-001">
+                </div>
+                <div class="form-group">
+                    <label>Certificate ID:</label>
+                    <input type="text" id="deathCertId" placeholder="DC-TEST-001">
+                </div>
+                <button onclick="simulateDeathEvent()">Simulate Death</button>
+
+                <h3 style="color: #8B5CF6; margin: 2rem 0 1rem;">Grant Executor Access</h3>
+                <div class="form-group">
+                    <label>Executor ID:</label>
+                    <input type="text" id="executorId" placeholder="uuid-executor-001">
+                </div>
+                <div class="form-group">
+                    <label>Deceased Subject ID:</label>
+                    <input type="text" id="execDeceasedId" placeholder="uuid-test-001">
+                </div>
+                <button onclick="grantExecutorAccess()">Grant Access</button>
+
+                <div id="testOutput" class="output-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Data Format validation
+        function validateDataFormat() {
+            const input = document.getElementById('customFormat').value;
+            const output = document.getElementById('formatOutput');
+
+            try {
+                const data = JSON.parse(input);
+                output.className = 'output-box';
+                output.textContent = '✅ Valid JSON Format\n\n' +
+                    'Parsed Structure:\n' +
+                    JSON.stringify(data, null, 2) + '\n\n' +
+                    'Fields detected: ' + Object.keys(data).length + '\n' +
+                    'Size: ' + new Blob([input]).size + ' bytes';
+            } catch (e) {
+                output.className = 'output-box error';
+                output.textContent = '❌ Invalid JSON Format\n\n' + e.message;
+            }
+        }
+
+        // Algorithm simulation
+        function runVerificationAlgorithm() {
+            const certId = document.getElementById('certId').value;
+            const deceasedId = document.getElementById('deceasedId').value;
+            const deathDate = document.getElementById('deathDate').value;
+            const jurisdiction = document.getElementById('jurisdiction').value;
+            const output = document.getElementById('algoOutput');
+
+            if (!certId || !deceasedId || !deathDate) {
+                output.className = 'output-box error';
+                output.textContent = '❌ Please fill in all required fields';
+                return;
+            }
+
+            output.className = 'output-box';
+
+            const certData = { certId, deceasedId, deathDate, jurisdiction };
+            const certHash = 'sha256:' + btoa(JSON.stringify(certData)).substring(0, 64);
+
+            output.textContent = `🔄 Running Death Verification Algorithm...\n\n` +
+                `Step 1: Hashing certificate data...\n` +
+                `  Certificate Hash: ${certHash}\n\n` +
+                `Step 2: Verifying with registries...\n` +
+                `  Registry 1 (Government): ✅ VERIFIED\n` +
+                `  Registry 2 (Hospital): ✅ VERIFIED\n` +
+                `  Registry 3 (Funeral): ✅ VERIFIED\n\n` +
+                `Step 3: Consensus check (2/3 required)...\n` +
+                `  Result: ✅ CONSENSUS ACHIEVED (3/3)\n\n` +
+                `Step 4: Blockchain anchoring...\n` +
+                `  Chain: Ethereum Mainnet\n` +
+                `  Block: 18293847\n` +
+                `  TX Hash: 0x${Math.random().toString(16).substring(2, 66)}\n` +
+                `  Gas Used: 21000\n\n` +
+                `✅ Death Verification Complete!\n` +
+                `Status: VERIFIED\n` +
+                `Timestamp: ${new Date().toISOString()}`;
+        }
+
+        // Protocol simulation
+        function simulateProtocol() {
+            const phase = document.getElementById('protocolPhase').value;
+            const output = document.getElementById('protocolOutput');
+            output.className = 'output-box';
+
+            const simulations = {
+                '1': `🔄 Simulating Phase 1: Death Verification\n\n` +
+                     `T+0:00:00 - Death notification received from registry\n` +
+                     `T+0:00:05 - Certificate validation started\n` +
+                     `T+0:00:10 - Multi-source verification (3/3 sources)\n` +
+                     `T+0:00:15 - Generating blockchain proof\n` +
+                     `T+0:00:20 - Proof anchored: 0x${Math.random().toString(16).substring(2, 18)}\n` +
+                     `T+0:00:25 - Identity status updated: DECEASED\n` +
+                     `T+0:00:30 - Phase 1 complete ✅`,
+
+                '2': `🔄 Simulating Phase 2: Identity Revocation\n\n` +
+                     `T+24:00:00 - Revocation cascade initiated\n` +
+                     `T+24:00:05 - Enumerating credentials (found 27)\n` +
+                     `T+24:00:10 - Revoking OAuth tokens (12 services)\n` +
+                     `T+24:00:15 - Revoking SSO sessions (5 providers)\n` +
+                     `T+24:00:20 - Invalidating DID credentials (3 DIDs)\n` +
+                     `T+24:00:25 - Purging biometric templates\n` +
+                     `T+24:00:30 - Notifying relying parties (27 sent)\n` +
+                     `T+24:00:35 - Phase 2 complete ✅\n` +
+                     `Total revoked: 27 credentials`,
+
+                '3': `🔄 Simulating Phase 3: Executor Authorization\n\n` +
+                     `T+168:00:00 - Executor request received\n` +
+                     `T+168:00:05 - Verifying legal authority\n` +
+                     `T+168:00:10 - Validating executor identity (KYC)\n` +
+                     `T+168:00:15 - Generating time-locked credential\n` +
+                     `T+168:00:20 - Setting multi-sig requirements (2/3)\n` +
+                     `T+168:00:25 - Activating audit logging\n` +
+                     `T+168:00:30 - Issuing authorization token\n` +
+                     `T+168:00:35 - Phase 3 complete ✅\n` +
+                     `Executor access: GRANTED (expires in 1 year)`,
+
+                '4': `🔄 Simulating Phase 4: Digital Afterlife\n\n` +
+                     `T+720:00:00 - Digital afterlife services initiated\n` +
+                     `T+720:00:05 - Checking consent preferences: GRANTED\n` +
+                     `T+720:00:10 - Collecting legacy data (15.2 GB)\n` +
+                     `T+720:00:15 - Training AI persona (GPT-4 model)\n` +
+                     `T+720:00:20 - Generating personality model\n` +
+                     `T+720:00:25 - Configuring memorial platform\n` +
+                     `T+720:00:30 - Setting interaction rules (family-only)\n` +
+                     `T+720:00:35 - Phase 4 complete ✅\n` +
+                     `AI Persona: ACTIVE | Memorial: PUBLISHED`
+            };
+
+            output.textContent = simulations[phase];
+        }
+
+        // Integration test
+        function testIntegration() {
+            const endpoint = document.getElementById('apiEndpoint').value;
+            const body = document.getElementById('apiBody').value;
+            const output = document.getElementById('integrationOutput');
+
+            if (!endpoint) {
+                output.className = 'output-box error';
+                output.textContent = '❌ Please provide an API endpoint';
+                return;
+            }
+
+            output.className = 'output-box';
+            output.textContent = `🔄 Testing Integration...\n\n` +
+                `Endpoint: ${endpoint}\n` +
+                `Method: POST\n` +
+                `Body: ${body || '(empty)'}\n\n` +
+                `⚠️  Demo Mode: Simulated Response\n\n` +
+                `HTTP/1.1 200 OK\n` +
+                `Content-Type: application/json\n\n` +
+                JSON.stringify({
+                    success: true,
+                    message: 'Request processed successfully',
+                    data: {
+                        id: 'req_' + Math.random().toString(36).substring(7),
+                        timestamp: new Date().toISOString(),
+                        status: 'completed'
+                    }
+                }, null, 2);
+        }
+
+        // Live test - Create identity
+        let testIdentities = {};
+        let eventLog = [];
+
+        function createTestIdentity() {
+            const name = document.getElementById('testName').value;
+            const subjectId = document.getElementById('testSubjectId').value;
+            const credCount = parseInt(document.getElementById('testCredCount').value);
+            const output = document.getElementById('testOutput');
+
+            if (!name || !subjectId) {
+                output.className = 'output-box error';
+                output.textContent = '❌ Please fill in all fields';
+                return;
+            }
+
+            const credentials = [];
+            for (let i = 0; i < credCount; i++) {
+                credentials.push(`cred-${subjectId}-${i}`);
+            }
+
+            testIdentities[subjectId] = {
+                name,
+                subjectId,
+                credentials,
+                status: 'active',
+                createdAt: new Date().toISOString()
+            };
+
+            eventLog.push({
+                type: 'identity.created',
+                subjectId,
+                timestamp: new Date().toISOString()
+            });
+
+            updateTestDisplay();
+
+            output.className = 'output-box';
+            output.textContent = `✅ Identity Created Successfully\n\n` +
+                `Subject ID: ${subjectId}\n` +
+                `Name: ${name}\n` +
+                `Credentials: ${credCount}\n` +
+                `Status: ACTIVE\n` +
+                `Created: ${testIdentities[subjectId].createdAt}`;
+        }
+
+        function simulateDeathEvent() {
+            const subjectId = document.getElementById('deathSubjectId').value;
+            const certId = document.getElementById('deathCertId').value;
+            const output = document.getElementById('testOutput');
+
+            if (!testIdentities[subjectId]) {
+                output.className = 'output-box error';
+                output.textContent = '❌ Identity not found. Create it first.';
+                return;
+            }
+
+            testIdentities[subjectId].status = 'deceased';
+            testIdentities[subjectId].deathCertId = certId;
+            testIdentities[subjectId].deathDate = new Date().toISOString();
+
+            const credCount = testIdentities[subjectId].credentials.length;
+            testIdentities[subjectId].credentials = [];
+
+            eventLog.push({
+                type: 'death.verified',
+                subjectId,
+                certId,
+                timestamp: new Date().toISOString()
+            });
+
+            eventLog.push({
+                type: 'credentials.revoked',
+                subjectId,
+                count: credCount,
+                timestamp: new Date().toISOString()
+            });
+
+            updateTestDisplay();
+
+            output.className = 'output-box';
+            output.textContent = `✅ Death Event Processed\n\n` +
+                `Subject ID: ${subjectId}\n` +
+                `Certificate: ${certId}\n` +
+                `Status: DECEASED\n` +
+                `Credentials Revoked: ${credCount}\n` +
+                `Processed: ${testIdentities[subjectId].deathDate}`;
+        }
+
+        function grantExecutorAccess() {
+            const executorId = document.getElementById('executorId').value;
+            const deceasedId = document.getElementById('execDeceasedId').value;
+            const output = document.getElementById('testOutput');
+
+            if (!testIdentities[deceasedId]) {
+                output.className = 'output-box error';
+                output.textContent = '❌ Deceased identity not found';
+                return;
+            }
+
+            if (testIdentities[deceasedId].status !== 'deceased') {
+                output.className = 'output-box error';
+                output.textContent = '❌ Subject must be deceased first';
+                return;
+            }
+
+            const authToken = 'AUTH-' + Math.random().toString(36).substring(7);
+
+            eventLog.push({
+                type: 'executor.authorized',
+                executorId,
+                deceasedId,
+                token: authToken,
+                timestamp: new Date().toISOString()
+            });
+
+            updateTestDisplay();
+
+            output.className = 'output-box';
+            output.textContent = `✅ Executor Access Granted\n\n` +
+                `Executor ID: ${executorId}\n` +
+                `Deceased ID: ${deceasedId}\n` +
+                `Auth Token: ${authToken}\n` +
+                `Permissions: read, export\n` +
+                `Expires: ${new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()}\n` +
+                `Multi-sig: Required (2/3)`;
+        }
+
+        function updateTestDisplay() {
+            const identityCount = Object.keys(testIdentities).length;
+            const deceasedCount = Object.values(testIdentities).filter(i => i.status === 'deceased').length;
+            const activeCount = identityCount - deceasedCount;
+
+            document.getElementById('identityRegistry').innerHTML = `<pre>// Active Identities: ${activeCount}
+// Deceased: ${deceasedCount}
+// Total: ${identityCount}</pre>`;
+
+            const recentEvents = eventLog.slice(-5).reverse().map(e =>
+                `${new Date(e.timestamp).toLocaleTimeString()} - ${e.type} - ${e.subjectId || e.executorId}`
+            ).join('\n');
+
+            document.getElementById('recentEvents').innerHTML = `<pre>${recentEvents || '// No events yet'}</pre>`;
+        }
+    </script>
+</body>
+</html>

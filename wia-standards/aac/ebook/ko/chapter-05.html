@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제5장: Phase 2 API 인터페이스 표준 - WIA AAC 표준 전자책</title>
+</head>
+<body>
+
+<p><a href="index.html">[AAC] WIA AAC 표준 전자책</a> | 제5장 (총 8장)</p>
+
+<hr>
+
+<h1>[AAC] 제5장: Phase 2 - API 인터페이스 표준</h1>
+
+<blockquote>
+<p><strong>홍익인간 (弘益人間)</strong></p>
+<p>"모든 것을 연결하는 하나의 API."</p>
+<p>Phase 2는 센서 통합을 모든 개발자에게 간단하게 만드는 프로그래밍 인터페이스를 만듭니다.</p>
+</blockquote>
+
+<hr>
+
+<h2>5.1 Phase 2 개요</h2>
+
+<h3>5.1.1 목적</h3>
+
+<p>Phase 2는 API 인터페이스 표준을 정의합니다 - 소프트웨어 개발자가 WIA AAC 호환 센서와 상호작용하는 데 사용하는 통합 프로그래밍 인터페이스입니다. 이 계층은 다른 센서 유형의 복잡성을 일관된 API 뒤에 추상화합니다.</p>
+
+<h3>5.1.2 산출물</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>산출물</th>
+            <th>설명</th>
+            <th>언어</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>API 사양</td>
+            <td>완전한 인터페이스 문서화</td>
+            <td>언어 독립적</td>
+        </tr>
+        <tr>
+            <td>참조 구현</td>
+            <td>공식 구현</td>
+            <td>Rust</td>
+        </tr>
+        <tr>
+            <td>TypeScript SDK</td>
+            <td>Web/Node.js SDK</td>
+            <td>TypeScript</td>
+        </tr>
+        <tr>
+            <td>Python SDK</td>
+            <td>Python SDK</td>
+            <td>Python 3.9+</td>
+        </tr>
+        <tr>
+            <td>개발자 가이드</td>
+            <td>통합 튜토리얼</td>
+            <td>Markdown</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>5.2 핵심 API 설계</h2>
+
+<h3>5.2.1 설계 원칙</h3>
+
+<ol>
+    <li><strong>단순성 우선</strong>
+        <p>일반적인 작업은 최소한의 코드가 필요해야 합니다. 복잡한 작업은 가능하지만 필수는 아닙니다.</p>
+    </li>
+    <li><strong>이벤트 기반 아키텍처</strong>
+        <p>모든 센서 입력은 이벤트를 통해 처리되어 반응형 프로그래밍 패턴을 가능하게 합니다.</p>
+    </li>
+    <li><strong>타입 안전성</strong>
+        <p>강력한 타이핑은 일반적인 오류를 방지하고 IDE 지원을 가능하게 합니다.</p>
+    </li>
+    <li><strong>기본적으로 비동기</strong>
+        <p>모든 I/O 작업은 블로킹을 방지하기 위해 비동기입니다.</p>
+    </li>
+    <li><strong>우아한 오류 처리</strong>
+        <p>명확한 오류 유형과 복구 메커니즘.</p>
+    </li>
+</ol>
+
+<hr>
+
+<h2>5.3 WiaAAC 클래스</h2>
+
+<h3>5.3.1 생성자 및 초기화</h3>
+
+<pre>
+// TypeScript 예제
+
+import { WiaAAC, WiaAACConfig } from 'wia-aac';
+
+// 기본 초기화
+const aac = new WiaAAC();
+
+// 설정과 함께 초기화
+const aac = new WiaAAC({
+    autoConnect: false,
+    signalValidation: true,
+    logLevel: 'info',
+    userProfile: 'profile-001'
+});
+
+// 설정 인터페이스
+interface WiaAACConfig {
+    autoConnect?: boolean;        // 발견된 장치에 자동 연결
+    signalValidation?: boolean;   // 모든 수신 신호 검증
+    logLevel?: 'debug' | 'info' | 'warn' | 'error';
+    userProfile?: string;         // 사용자 프로필 식별자
+    calibrationId?: string;       // 보정 데이터 식별자
+    locale?: string;              // 언어 선호도
+}
+</pre>
+
+<h3>5.3.2 연결 메서드</h3>
+
+<pre>
+// 특정 장치 유형에 연결
+await aac.connect({
+    type: 'eye_tracker',
+    deviceId: 'TOBII-ET5-A1B2C3D4'  // 선택: 특정 장치
+});
+
+// 사용 가능한 모든 장치에 연결
+await aac.connect({ type: 'switch' });
+
+// 전송 지정과 함께 연결
+await aac.connect({
+    type: 'emg',
+    transport: 'bluetooth',
+    connectionTimeout: 10000
+});
+
+// 연결 상태 확인
+const isConnected = aac.isConnected();
+const deviceInfo = aac.getConnectedDevice();
+
+// 연결 해제
+await aac.disconnect();
+</pre>
+
+<h3>5.3.3 이벤트 처리</h3>
+
+<pre>
+// 신호 이벤트
+aac.on('signal', (signal: AACSignal) =&gt; {
+    console.log('수신된 신호:', signal.type);
+    console.log('데이터:', signal.data);
+    console.log('신뢰도:', signal.confidence);
+});
+
+// 특정 센서 유형 이벤트
+aac.on('eye_tracker', (signal: EyeTrackerSignal) =&gt; {
+    console.log(`시선: (${signal.data.gaze_x}, ${signal.data.gaze_y})`);
+    if (signal.data.fixation) {
+        console.log(`고정 시간: ${signal.data.dwell_time_ms}ms`);
+    }
+});
+
+aac.on('switch', (signal: SwitchSignal) =&gt; {
+    console.log(`스위치 ${signal.data.switch_id}: ${signal.data.state}`);
+});
+
+// 선택 이벤트 (추상화됨)
+aac.on('selection', (event: SelectionEvent) =&gt; {
+    console.log('선택됨:', event.target);
+    console.log('선택 방법:', event.method);  // dwell, switch, blink 등
+});
+
+// 텍스트 출력 이벤트
+aac.on('text', (text: string) =&gt; {
+    console.log('사용자 입력:', text);
+    // TTS, 수어, 점자로 전달...
+});
+
+// 장치 이벤트
+aac.on('connected', (device: DeviceInfo) =&gt; {
+    console.log('연결됨:', device.model);
+});
+
+aac.on('disconnected', (reason: string) =&gt; {
+    console.log('연결 해제됨:', reason);
+});
+
+// 오류 이벤트
+aac.on('error', (error: AACError) =&gt; {
+    console.error('오류:', error.code, error.message);
+});
+</pre>
+
+<hr>
+
+<h2>5.4 장치 검색 및 관리</h2>
+
+<h3>5.4.1 장치 검색</h3>
+
+<pre>
+// 사용 가능한 모든 장치 검색
+const devices = await aac.discoverDevices();
+
+// 출력 예시:
+// [
+//   {
+//     deviceId: 'TOBII-ET5-A1B2C3D4',
+//     type: 'eye_tracker',
+//     manufacturer: 'Tobii',
+//     model: 'Eye Tracker 5',
+//     transport: 'usb',
+//     status: 'available'
+//   },
+//   {
+//     deviceId: 'ABLENET-BLUE2-X1Y2Z3',
+//     type: 'switch',
+//     manufacturer: 'AbleNet',
+//     model: 'Blue2 Bluetooth',
+//     transport: 'bluetooth',
+//     status: 'available'
+//   }
+// ]
+
+// 특정 유형 검색
+const eyeTrackers = await aac.discoverDevices({ type: 'eye_tracker' });
+
+// 타임아웃과 함께 검색
+const devices = await aac.discoverDevices({
+    timeout: 5000,
+    transport: 'bluetooth'
+});
+</pre>
+
+<h3>5.4.2 다중 장치 지원</h3>
+
+<pre>
+// 여러 장치 동시 연결
+await aac.connect({ type: 'eye_tracker' });
+await aac.connect({ type: 'switch' });
+
+// 모든 연결된 장치 확인
+const connectedDevices = aac.getConnectedDevices();
+
+// 특정 장치의 신호 처리
+aac.on('signal', (signal, deviceInfo) =&gt; {
+    if (deviceInfo.type === 'eye_tracker') {
+        handleEyeTracking(signal);
+    } else if (deviceInfo.type === 'switch') {
+        handleSwitch(signal);
+    }
+});
+
+// 특정 장치 연결 해제
+await aac.disconnect({ deviceId: 'TOBII-ET5-A1B2C3D4' });
+
+// 모두 연결 해제
+await aac.disconnectAll();
+</pre>
+
+<hr>
+
+<h2>5.5 신호 처리</h2>
+
+<h3>5.5.1 신호 검증</h3>
+
+<pre>
+import { SignalValidator } from 'wia-aac';
+
+const validator = new SignalValidator();
+
+// 신호 검증
+const result = validator.validate(incomingSignal);
+
+if (result.valid) {
+    processSignal(incomingSignal);
+} else {
+    console.error('유효하지 않은 신호:', result.errors);
+}
+</pre>
+
+<h3>5.5.2 응시 감지 (Dwell Detection)</h3>
+
+<pre>
+import { DwellDetector } from 'wia-aac';
+
+const dwellDetector = new DwellDetector({
+    dwellTime: 800,           // 트리거까지 ms
+    tolerance: 50,            // 허용되는 움직임 픽셀
+    cooldown: 200             // 활성화 간 ms
+});
+
+// 시선 추적 신호 처리
+dwellDetector.process(eyeTrackerSignal);
+
+// 응시 이벤트
+dwellDetector.on('dwellStart', (position) =&gt; {
+    highlightTarget(position);
+});
+
+dwellDetector.on('dwellProgress', (position, progress) =&gt; {
+    updateProgressIndicator(position, progress);  // 0-100%
+});
+
+dwellDetector.on('dwellComplete', (position) =&gt; {
+    activateTarget(position);
+});
+
+dwellDetector.on('dwellCancel', (position) =&gt; {
+    clearHighlight(position);
+});
+</pre>
+
+<hr>
+
+<h2>5.6 사용자 프로필 및 보정</h2>
+
+<h3>5.6.1 사용자 프로필</h3>
+
+<pre>
+// 사용자 프로필 생성
+const profile = await aac.createProfile({
+    name: '홍길동',
+    preferences: {
+        dwellTime: 1000,
+        scanSpeed: 'medium',
+        fontSize: 'large',
+        voice: 'ko-KR-Neural'
+    },
+    sensorSettings: {
+        eye_tracker: {
+            sensitivity: 0.8,
+            smoothing: 0.3
+        },
+        switch: {
+            debounce: 50,
+            longPressTime: 800
+        }
+    }
+});
+
+// 프로필 로드
+await aac.loadProfile('profile-hong-001');
+
+// 프로필 업데이트
+await aac.updateProfile({
+    preferences: {
+        dwellTime: 900  // 조정됨
+    }
+});
+
+// 프로필 내보내기 (백업/전송용)
+const exportedProfile = await aac.exportProfile('profile-hong-001');
+
+// 프로필 가져오기
+await aac.importProfile(exportedProfile);
+</pre>
+
+<h3>5.6.2 보정 (Calibration)</h3>
+
+<pre>
+// 시선 추적기 보정 시작
+const calibration = await aac.startCalibration({
+    type: 'eye_tracker',
+    points: 9,              // 5, 9, 또는 16점 보정
+    pointDuration: 2000,    // 포인트당 ms
+    animatePoints: true
+});
+
+// 보정 이벤트
+calibration.on('pointStart', (point, index) =&gt; {
+    showCalibrationPoint(point.x, point.y);
+});
+
+calibration.on('pointComplete', (point, quality) =&gt; {
+    console.log(`포인트 ${point.index} 품질: ${quality}`);
+});
+
+calibration.on('complete', (result) =&gt; {
+    console.log('보정 완료');
+    console.log('전체 품질:', result.quality);
+    console.log('포인트:', result.pointResults);
+});
+
+// 보정 저장
+await aac.saveCalibration('calibration-hong-001');
+
+// 보정 로드
+await aac.loadCalibration('calibration-hong-001');
+</pre>
+
+<hr>
+
+<h2>5.7 Rust 참조 구현</h2>
+
+<h3>5.7.1 핵심 구조</h3>
+
+<pre>
+// Rust 구현 구조
+
+use wia_aac::{WiaAAC, Config, Signal, SensorType};
+use tokio;
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    // 초기화
+    let config = Config::builder()
+        .signal_validation(true)
+        .log_level("info")
+        .build();
+
+    let aac = WiaAAC::new(config)?;
+
+    // 장치 검색
+    let devices = aac.discover_devices().await?;
+    println!("{}개 장치 발견", devices.len());
+
+    // 연결
+    aac.connect(SensorType::EyeTracker, None).await?;
+
+    // 신호 처리
+    let mut rx = aac.subscribe();
+    while let Some(signal) = rx.recv().await {
+        match signal.sensor_type {
+            SensorType::EyeTracker =&gt; {
+                let data = signal.as_eye_tracker()?;
+                println!("시선: ({}, {})", data.gaze_x, data.gaze_y);
+            }
+            SensorType::Switch =&gt; {
+                let data = signal.as_switch()?;
+                println!("스위치 {}: {}", data.switch_id, data.state);
+            }
+            _ =&gt; {}
+        }
+    }
+
+    Ok(())
+}
+</pre>
+
+<hr>
+
+<h2>5.8 오류 처리</h2>
+
+<h3>5.8.1 오류 유형</h3>
+
+<pre>
+// 오류 유형 열거
+enum AACErrorCode {
+    // 연결 오류
+    CONNECTION_TIMEOUT = 'E001',
+    DEVICE_NOT_FOUND = 'E002',
+    DEVICE_BUSY = 'E003',
+    CONNECTION_LOST = 'E004',
+
+    // 신호 오류
+    INVALID_SIGNAL = 'E101',
+    VALIDATION_FAILED = 'E102',
+    SIGNAL_TIMEOUT = 'E103',
+
+    // 보정 오류
+    CALIBRATION_FAILED = 'E201',
+    CALIBRATION_INCOMPLETE = 'E202',
+
+    // 프로필 오류
+    PROFILE_NOT_FOUND = 'E301',
+    PROFILE_CORRUPT = 'E302',
+
+    // 시스템 오류
+    PERMISSION_DENIED = 'E401',
+    RESOURCE_UNAVAILABLE = 'E402',
+    INTERNAL_ERROR = 'E500'
+}
+</pre>
+
+<h3>5.8.2 복구 전략</h3>
+
+<pre>
+// 자동 재연결 설정
+const aac = new WiaAAC({
+    autoReconnect: true,
+    reconnectAttempts: 5,
+    reconnectDelay: 1000,       // 초기 지연
+    reconnectBackoff: 'exponential'  // 1초, 2초, 4초, 8초, 16초
+});
+
+// 수동 재연결
+aac.on('disconnected', async (reason) =&gt; {
+    console.log('연결 해제:', reason);
+
+    // 재연결 시도
+    for (let i = 0; i &lt; 3; i++) {
+        try {
+            await aac.reconnect();
+            console.log('재연결 성공');
+            break;
+        } catch (error) {
+            console.log(`재연결 시도 ${i + 1} 실패`);
+            await sleep(2000 * (i + 1));
+        }
+    }
+});
+</pre>
+
+<hr>
+
+<h2>5.9 장 요약</h2>
+
+<p>[OK] <strong>핵심 내용:</strong></p>
+
+<ol>
+    <li><strong>메인 클래스:</strong> WiaAAC는 모든 센서 유형에 대한 통합 접근 제공</li>
+    <li><strong>이벤트 기반:</strong> 모든 센서 입력은 이벤트 콜백을 통해 처리</li>
+    <li><strong>장치 관리:</strong> 검색, 연결, 다중 장치 지원</li>
+    <li><strong>신호 처리:</strong> 검증, 변환, 응시 감지</li>
+    <li><strong>사용자 프로필:</strong> 선호도, 설정, 보정 데이터</li>
+    <li><strong>Rust 참조:</strong> Axum 웹 서버를 사용한 공식 구현</li>
+    <li><strong>오류 처리:</strong> 포괄적인 오류 유형과 복구</li>
+</ol>
+
+<hr>
+
+<h2>5.10 복습 문제</h2>
+
+<ol>
+    <li>WIA AAC API의 다섯 가지 설계 원칙은 무엇입니까?</li>
+    <li>API를 사용하여 특정 장치 유형에 어떻게 연결합니까?</li>
+    <li>응시 감지 중에 어떤 이벤트가 발생합니까?</li>
+    <li>API에서 사용자 프로필의 목적을 설명하세요.</li>
+    <li>참조 구현 언어는 무엇이고 그 이유는 무엇입니까?</li>
+    <li>API에서 제공하는 세 가지 오류 복구 전략을 설명하세요.</li>
+</ol>
+
+<hr>
+
+<p><strong>제5장 완료</strong> | 예상 페이지: 14</p>
+
+<p><a href="chapter-04.html">이전: 제4장</a> | <a href="chapter-06.html">다음: 제6장 - Phase 3: 통신 프로토콜</a></p>
+
+<hr>
+
+<p><strong>WIA - 세계인증산업협회</strong></p>
+<p>홍익인간 - 널리 인간을 이롭게</p>
+<p><a href="https://wia.live">https://wia.live</a></p>
+
+</body>
+</html>

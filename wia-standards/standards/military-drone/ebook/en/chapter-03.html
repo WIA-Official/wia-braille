@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: API and Interfaces | WIA-DEF-002 Military Drone</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --primary: #8B5CF6;
+            --text: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #475569;
+            --success: #10b981;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-secondary); padding: 3rem; border-radius: 10px; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: var(--bg-tertiary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--primary); font-weight: bold; }
+        tr:hover { background: var(--bg-tertiary); }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: 5px; transition: all 0.3s ease; }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', monospace; color: var(--success); font-size: 0.9em; }
+        pre { background: var(--bg); padding: 1.5rem; border-radius: 5px; overflow-x: auto; margin: 1.5rem 0; border: 1px solid var(--border); line-height: 1.4; }
+        pre code { padding: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">Chapter 3</p>
+        <h1>API and Interfaces</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            Comprehensive specifications for sensor payloads, communication protocols, and system integration interfaces.
+        </p>
+
+        <h2>Sensor Payload APIs</h2>
+        <p>
+            The WIA-DEF-002 standard defines comprehensive APIs for integrating diverse sensor payloads into military drone platforms. These APIs provide standardized interfaces that enable different sensor types to communicate with flight control systems, ground control stations, and data processing pipelines. By establishing common interface specifications, the standard enables mix-and-match sensor configurations and facilitates integration of sensors from multiple manufacturers.
+        </p>
+        <p>
+            Each sensor category has specific interface requirements tailored to its operational characteristics. Electro-optical cameras require different data rates, control commands, and metadata formats compared to synthetic aperture radar systems. The API specifications accommodate these differences while maintaining a consistent high-level interface structure that simplifies integration and reduces development time.
+        </p>
+
+        <h3>Electro-Optical Camera Interface</h3>
+        <p>
+            Electro-optical cameras represent the most common sensor type on military drones, providing daylight visual imaging capabilities essential for target identification and reconnaissance. The EO camera API defines interfaces for camera control, image capture, zoom/focus adjustment, and video streaming.
+        </p>
+
+        <pre><code>interface EOCamera {
+  // Camera identification and capabilities
+  model: string;
+  serialNumber: string;
+  resolution: '720p' | '1080p' | '4K' | '8K';
+  sensor: 'CMOS' | 'CCD';
+
+  // Optical capabilities
+  zoom: {
+    optical: number;      // Maximum optical zoom (e.g., 30x)
+    digital: number;      // Maximum digital zoom (e.g., 4x)
+    current: number;      // Current zoom level
+  };
+
+  // Field of view settings
+  fieldOfView: {
+    wide: number;         // Wide FOV in degrees
+    narrow: number;       // Narrow FOV in degrees
+    current: number;      // Current FOV
+  };
+
+  // Frame rate control
+  frameRate: number;      // Current fps
+  maxFrameRate: number;   // Maximum supported fps
+
+  // Stabilization system
+  stabilization: {
+    type: 'mechanical' | 'electronic' | 'hybrid';
+    enabled: boolean;
+    performance: number;  // Stabilization effectiveness (0-100%)
+  };
+
+  // Control methods
+  setZoom(level: number): Promise&lt;void&gt;;
+  setFOV(degrees: number): Promise&lt;void&gt;;
+  setFrameRate(fps: number): Promise&lt;void&gt;;
+  autofocus(): Promise&lt;void&gt;;
+  manualFocus(distance: number): Promise&lt;void&gt;;
+
+  // Image capture
+  captureStill(): Promise&lt;ImageData&gt;;
+  startVideoStream(): ReadableStream&lt;VideoFrame&gt;;
+  stopVideoStream(): Promise&lt;void&gt;;
+
+  // Geo-registration
+  getImageCoordinates(pixelX: number, pixelY: number): Promise&lt;{
+    latitude: number;
+    longitude: number;
+    altitude: number;
+    accuracy: number;
+  }&gt;;
+}</code></pre>
+
+        <p>
+            This interface provides comprehensive control over all aspects of EO camera operation. The <code>setZoom</code> and <code>setFOV</code> methods allow operators to adjust the camera's viewing characteristics in real-time, balancing wide-area surveillance against detailed observation of specific targets. Frame rate control enables optimization for bandwidth constraints or specific operational requirements.
+        </p>
+        <p>
+            The <code>getImageCoordinates</code> method is particularly important for intelligence applications, enabling automatic extraction of geographic coordinates for objects in the camera's field of view. This geo-registration capability allows analysts to determine precise locations of observed features, facilities, or activities without manual map correlation.
+        </p>
+
+        <h3>Infrared Camera Interface</h3>
+        <p>
+            Infrared cameras provide night vision and thermal imaging capabilities essential for 24-hour operations. The IR camera API extends the basic camera interface with thermal-specific capabilities including temperature measurement, false color palettes, and detector cooling control.
+        </p>
+
+        <pre><code>interface IRCamera {
+  // Camera type and specifications
+  type: 'MWIR' | 'LWIR' | 'SWIR';
+  resolution: string;            // e.g., '640x480', '1280x1024'
+  detector: 'cooled' | 'uncooled';
+  thermalSensitivity: number;    // mK (milliKelvin)
+  spectralRange: [number, number];  // μm (micrometers)
+  frameRate: number;
+
+  // Temperature measurement
+  measureTemperature(x: number, y: number): Promise&lt;{
+    celsius: number;
+    fahrenheit: number;
+    kelvin: number;
+    accuracy: number;
+  }&gt;;
+
+  // Image enhancement
+  palette: 'white-hot' | 'black-hot' | 'ironbow' | 'rainbow';
+  setPalette(palette: string): Promise&lt;void&gt;;
+
+  // Automatic gain control
+  agc: {
+    enabled: boolean;
+    mode: 'linear' | 'plateau' | 'auto';
+  };
+
+  // Cooling system (for cooled detectors)
+  coolingSystem?: {
+    temperature: number;      // Current detector temperature (K)
+    targetTemperature: number;  // Target operating temperature
+    powerConsumption: number;   // Watts
+    timeToOperational: number;  // Seconds until ready
+  };
+
+  // Video streaming
+  startStream(): ReadableStream&lt;ThermalFrame&gt;;
+  stopStream(): Promise&lt;void&gt;;
+
+  // Calibration
+  performNUC(): Promise&lt;void&gt;;  // Non-uniformity correction
+}</code></pre>
+
+        <p>
+            The infrared camera interface accommodates the unique characteristics of thermal imaging systems. The <code>measureTemperature</code> method enables quantitative temperature measurement, useful for detecting heat signatures of vehicles, equipment, or even human body heat in search and rescue operations. The cooling system interface is essential for managing mid-wave infrared (MWIR) cameras that require cryogenic cooling for optimal performance.
+        </p>
+        <p>
+            Non-uniformity correction (NUC) calibration addresses the fact that individual detector pixels may have different sensitivity characteristics. The <code>performNUC</code> method triggers an automated calibration process that improves image uniformity and quality. This is typically performed periodically or when significant temperature changes affect the sensor.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Sensor Type</th>
+                    <th>Spectral Range</th>
+                    <th>Resolution</th>
+                    <th>Weather Capability</th>
+                    <th>Primary Use</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>EO Camera</td>
+                    <td>400-700 nm</td>
+                    <td>4K-8K</td>
+                    <td>Clear conditions only</td>
+                    <td>Daylight reconnaissance</td>
+                </tr>
+                <tr>
+                    <td>MWIR</td>
+                    <td>3-5 μm</td>
+                    <td>640x480 - 1280x1024</td>
+                    <td>Limited weather penetration</td>
+                    <td>Hot target detection</td>
+                </tr>
+                <tr>
+                    <td>LWIR</td>
+                    <td>8-14 μm</td>
+                    <td>640x480 - 1024x768</td>
+                    <td>Good weather penetration</td>
+                    <td>Night operations</td>
+                </tr>
+                <tr>
+                    <td>SAR</td>
+                    <td>8-12 GHz (X-band)</td>
+                    <td>0.3-3 m</td>
+                    <td>All-weather</td>
+                    <td>Ground mapping, GMTI</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Synthetic Aperture Radar Interface</h3>
+        <p>
+            Synthetic aperture radar provides all-weather, day/night imaging capability by using radio frequency energy rather than visible or infrared light. SAR systems are more complex than optical sensors and require specialized interfaces for mode selection, processing parameter configuration, and interpretation of radar returns.
+        </p>
+
+        <pre><code>interface SARSystem {
+  // System specifications
+  frequency: 'X-band' | 'Ku-band' | 'Ka-band';  // GHz
+  resolution: number;          // meters
+  swathWidth: number;          // meters
+
+  // Operating modes
+  mode: 'stripmap' | 'spotlight' | 'scanSAR' | 'ISAR';
+  setMode(mode: string): Promise&lt;void&gt;;
+
+  // Polarization configuration
+  polarization: {
+    transmit: 'H' | 'V';
+    receive: 'H' | 'V';
+    configuration: 'single' | 'dual' | 'quad';
+  };
+
+  // Imaging parameters
+  lookAngle: number;           // degrees from nadir
+  squintAngle: number;         // degrees from perpendicular
+
+  // Ground moving target indicator
+  gmti: {
+    enabled: boolean;
+    minVelocity: number;       // m/s minimum detectable velocity
+    maxTargets: number;        // Maximum tracked targets
+  };
+
+  // Image acquisition
+  acquireImage(params: {
+    center: { lat: number; lon: number };
+    size: { width: number; height: number };  // meters
+    resolution: number;
+  }): Promise&lt;SARImage&gt;;
+
+  // Change detection
+  compareImages(image1: SARImage, image2: SARImage): Promise&lt;{
+    changes: Array&lt;{
+      location: { lat: number; lon: number };
+      confidence: number;
+      changeType: 'new' | 'removed' | 'modified';
+    }&gt;;
+  }&gt;;
+
+  // Motion tracking
+  trackMovingTargets(): ReadableStream&lt;{
+    targets: Array&lt;{
+      id: string;
+      location: { lat: number; lon: number };
+      velocity: { speed: number; heading: number };
+      rcs: number;  // Radar cross-section (dBsm)
+    }&gt;;
+  }&gt;;
+}</code></pre>
+
+        <p>
+            The SAR interface provides control over complex radar imaging parameters that significantly affect image quality and interpretation. Different imaging modes serve different purposes: stripmap mode provides wide-area coverage, spotlight mode concentrates radar energy for maximum resolution of a specific area, scanSAR extends coverage at reduced resolution, and inverse SAR (ISAR) creates images of moving targets.
+        </p>
+        <p>
+            Ground moving target indicator (GMTI) is a particularly valuable SAR capability that detects and tracks moving vehicles even when hidden under foliage or camouflage. The <code>trackMovingTargets</code> method provides a stream of target detections with estimated velocities, enabling monitoring of vehicle movements across large areas.
+        </p>
+
+        <h2>Communication Link APIs</h2>
+        <p>
+            Reliable communication between drones and ground control stations is fundamental to safe and effective operations. The WIA-DEF-002 standard defines comprehensive APIs for both line-of-sight and beyond-line-of-sight communication links, with provisions for link management, encryption, and failover.
+        </p>
+
+        <h3>Data Link Interface</h3>
+        <p>
+            The data link interface abstracts the underlying physical communication medium (RF, satellite, etc.) to provide a unified API for command/control and data transmission. This abstraction enables applications to operate independently of the specific communication technology in use.
+        </p>
+
+        <pre><code>interface DataLink {
+  // Link identification and type
+  linkID: string;
+  type: 'LOS-RF' | 'BLOS-Satellite' | 'Cellular' | 'Mesh';
+
+  // Link status
+  status: {
+    connected: boolean;
+    signalStrength: number;     // dBm
+    signalQuality: number;      // 0-100%
+    latency: number;            // milliseconds
+    jitter: number;             // milliseconds
+    packetLoss: number;         // percentage
+  };
+
+  // Bandwidth management
+  bandwidth: {
+    uplink: number;             // kbps available
+    downlink: number;           // kbps available
+    uplinkUsed: number;         // kbps in use
+    downlinkUsed: number;       // kbps in use
+  };
+
+  // Security configuration
+  security: {
+    encryption: 'AES-256' | 'ChaCha20';
+    authenticated: boolean;
+    keyRotationInterval: number;  // seconds
+  };
+
+  // Send command to drone
+  sendCommand(command: DroneCommand): Promise&lt;CommandAck&gt;;
+
+  // Receive telemetry
+  getTelemetry(): ReadableStream&lt;TelemetryData&gt;;
+
+  // Video streaming
+  getVideoStream(channelID: string): ReadableStream&lt;VideoFrame&gt;;
+
+  // Link management
+  getAvailableLinks(): Promise&lt;DataLink[]&gt;;
+  switchLink(linkID: string): Promise&lt;void&gt;;
+
+  // Events
+  onDisconnect(callback: () => void): void;
+  onReconnect(callback: () => void): void;
+  onDegraded(callback: (status: LinkStatus) => void): void;
+}</code></pre>
+
+        <p>
+            The data link interface provides comprehensive monitoring of link health through the status object, which reports signal strength, quality metrics, latency, jitter, and packet loss. These metrics are essential for operators to assess whether the link is adequate for current mission requirements or if alternative communication paths should be activated.
+        </p>
+        <p>
+            The <code>switchLink</code> method enables failover to backup communication links when the primary link becomes degraded or unavailable. This is particularly important for beyond-line-of-sight operations where satellite link interruptions can occur due to atmospheric conditions, satellite handoffs, or electronic interference.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Link Type</th>
+                    <th>Typical Bandwidth</th>
+                    <th>Latency</th>
+                    <th>Range</th>
+                    <th>Best Use Case</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>C-band LOS</td>
+                    <td>10-50 Mbps</td>
+                    <td>10-50 ms</td>
+                    <td>50-200 km</td>
+                    <td>HD video, tactical operations</td>
+                </tr>
+                <tr>
+                    <td>Ku-band LOS</td>
+                    <td>50-300 Mbps</td>
+                    <td>10-50 ms</td>
+                    <td>200-500 km</td>
+                    <td>SAR data, multiple video streams</td>
+                </tr>
+                <tr>
+                    <td>GEO Satellite</td>
+                    <td>128 Kbps - 10 Mbps</td>
+                    <td>500-800 ms</td>
+                    <td>Global</td>
+                    <td>BLOS command/control, SD video</td>
+                </tr>
+                <tr>
+                    <td>LEO Satellite</td>
+                    <td>10-100 Mbps</td>
+                    <td>20-40 ms</td>
+                    <td>Global</td>
+                    <td>BLOS HD video, near-real-time ops</td>
+                </tr>
+                <tr>
+                    <td>4G/5G Cellular</td>
+                    <td>10-100 Mbps</td>
+                    <td>30-100 ms</td>
+                    <td>Coverage dependent</td>
+                    <td>Training, domestic operations</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Secure Communication Interface</h3>
+        <p>
+            Military drone communications must be protected against interception, jamming, and spoofing. The secure communication interface provides cryptographic protection, anti-jamming capabilities, and authentication mechanisms to ensure communication integrity.
+        </p>
+
+        <pre><code>interface SecureDataLink extends DataLink {
+  // Encryption configuration
+  encryption: {
+    algorithm: 'AES-256-GCM' | 'ChaCha20-Poly1305';
+    keyLength: number;          // bits
+    keyExchange: 'ECDH-P256' | 'RSA-4096';
+    authentication: 'HMAC-SHA256' | 'Ed25519';
+  };
+
+  // Anti-jamming measures
+  antiJam: {
+    frequencyHopping: {
+      enabled: boolean;
+      hoppingRate: number;      // hops per second
+      hopSet: number[];         // Available frequencies (MHz)
+    };
+    spreadSpectrum: {
+      type: 'DSSS' | 'FHSS';
+      processingGain: number;   // dB
+    };
+    adaptivePower: {
+      enabled: boolean;
+      currentPower: number;     // dBm
+      maxPower: number;         // dBm
+    };
+  };
+
+  // Intrusion detection
+  intrusion: {
+    detectionEnabled: boolean;
+    anomalies: Array&lt;{
+      timestamp: Date;
+      type: 'unauthorized-command' | 'replay-attack' | 'protocol-violation';
+      severity: 'low' | 'medium' | 'high' | 'critical';
+    }&gt;;
+  };
+
+  // Key management
+  rotateKeys(): Promise&lt;void&gt;;
+  getKeyStatus(): Promise&lt;{
+    currentKeyID: string;
+    expiresIn: number;          // seconds
+    nextKeyID: string;
+  }&gt;;
+
+  // Authentication
+  authenticate(credentials: DroneCredentials): Promise&lt;AuthToken&gt;;
+  verifyAuthentication(): Promise&lt;boolean&gt;;
+}</code></pre>
+
+        <p>
+            The secure communication interface implements multiple layers of protection. Encryption protects against eavesdropping, authentication prevents unauthorized command injection, and anti-jamming measures maintain communications in contested electromagnetic environments. Frequency hopping is particularly effective against narrowband jammers, as the communication signal rapidly moves between hundreds or thousands of frequencies per second, making it extremely difficult to jam all frequencies simultaneously.
+        </p>
+        <p>
+            Intrusion detection monitors communication patterns for anomalies that might indicate attempted attacks. Replay attacks, where an adversary captures and retransmits legitimate commands, are detected through sequence number validation and timestamp verification. Protocol violations that deviate from expected communication patterns trigger alerts for investigation.
+        </p>
+
+        <h2>Mission Planning Interface</h2>
+        <p>
+            Mission planning APIs enable automated generation and optimization of flight plans, waypoint navigation, and sensor tasking. These interfaces support both pre-mission planning and dynamic re-planning during flight operations.
+        </p>
+
+        <pre><code>interface MissionPlan {
+  // Mission identification
+  missionID: string;
+  missionName: string;
+  missionType: 'ISR' | 'Reconnaissance' | 'Surveillance' | 'Logistics' | 'CSAR';
+
+  // Mission area
+  area: {
+    center: { latitude: number; longitude: number };
+    radius?: number;            // meters (for circular areas)
+    polygon?: Array&lt;{ lat: number; lon: number }&gt;;  // for irregular areas
+  };
+
+  // Flight parameters
+  flightParameters: {
+    altitude: number;           // feet MSL
+    speed: number;              // knots
+    estimatedDuration: number;  // hours
+    takeoffTime: Date;
+    estimatedLandingTime: Date;
+  };
+
+  // Waypoint sequence
+  waypoints: Array&lt;{
+    id: string;
+    sequence: number;
+    position: { lat: number; lon: number; alt: number };
+    action: 'flyby' | 'loiter' | 'orbit' | 'hover' | 'land';
+    loiterTime?: number;        // seconds (for loiter)
+    orbitRadius?: number;       // meters (for orbit)
+    orbitDirection?: 'CW' | 'CCW';
+    sensorTasking?: {
+      sensors: string[];        // Sensor IDs to activate
+      priority: 'low' | 'medium' | 'high';
+    };
+  }&gt;;
+
+  // Sensor tasking
+  sensorPlan: Array&lt;{
+    sensorID: string;
+    activationTime: Date;
+    deactivationTime?: Date;
+    targetArea?: { lat: number; lon: number; radius: number };
+    parameters: Record&lt;string, any&gt;;
+  }&gt;;
+
+  // Contingency planning
+  contingencies: {
+    lostLink: {
+      action: 'RTB' | 'loiter' | 'land-nearest' | 'continue-mission';
+      loiterDuration?: number;  // seconds before RTB
+    };
+    lowFuel: {
+      action: 'RTB' | 'land-nearest';
+      threshold: number;        // percentage remaining
+    };
+    weatherDivert: Array&lt;{ lat: number; lon: number; name: string }&gt;;
+    emergencyLanding: Array&lt;{ lat: number; lon: number; name: string }&gt;;
+  };
+
+  // Validation and optimization
+  validate(): Promise&lt;ValidationResult&gt;;
+  optimize(criteria: 'time' | 'fuel' | 'coverage'): Promise&lt;MissionPlan&gt;;
+  estimateFuelConsumption(): Promise&lt;number&gt;;
+  checkAirspaceRestrictions(): Promise&lt;Array&lt;AirspaceViolation&gt;&gt;;
+}</code></pre>
+
+        <p>
+            The mission planning interface provides comprehensive tools for defining all aspects of a drone mission. The waypoint structure allows specification of complex flight patterns including straight-line transit, loitering at points of interest, orbits around targets, and precision landing procedures. Each waypoint can have associated sensor tasking commands that automatically activate specific sensors when the drone reaches that location.
+        </p>
+        <p>
+            Mission validation is crucial before executing a flight plan. The <code>validate</code> method checks for potential problems including impossible turns given the aircraft's performance limits, conflicts with airspace restrictions, insufficient fuel for the planned route, and hazardous terrain along the flight path. Identifying these issues during planning prevents mission failures and potential platform losses.
+        </p>
+
+        <div class="highlight-box">
+            <h3>Summary: Key Takeaways</h3>
+            <ul>
+                <li><strong>Sensor API Standardization:</strong> TypeScript interfaces define consistent APIs for EO cameras, IR cameras, SAR systems, LIDAR, and other sensors, enabling multi-vendor interoperability and reducing integration costs.</li>
+                <li><strong>Thermal Imaging Capabilities:</strong> IR camera interfaces support temperature measurement, false color palettes, and cooled detector management for sophisticated thermal imaging applications.</li>
+                <li><strong>Radar Complexity:</strong> SAR interfaces accommodate multiple imaging modes (stripmap, spotlight, scanSAR, ISAR) and provide GMTI for detecting and tracking moving targets.</li>
+                <li><strong>Communication Abstraction:</strong> Data link APIs abstract physical communication media to provide unified interfaces for LOS, BLOS, and cellular links with automatic failover capabilities.</li>
+                <li><strong>Security Integration:</strong> Secure communication interfaces embed encryption, authentication, anti-jamming, and intrusion detection directly into the API layer rather than treating security as an add-on.</li>
+                <li><strong>Mission Planning Tools:</strong> Comprehensive mission planning APIs support waypoint navigation, sensor tasking, contingency planning, and automated validation/optimization.</li>
+                <li><strong>Geo-Registration:</strong> Camera APIs provide automatic coordinate extraction from imagery, enabling precise geolocation of observed features without manual processing.</li>
+            </ul>
+        </div>
+
+        <h2>Review Questions</h2>
+        <ol>
+            <li>Describe the key components of the electro-optical camera interface. How does the <code>getImageCoordinates</code> method enable intelligence analysis?</li>
+            <li>What are the three main types of infrared cameras (SWIR, MWIR, LWIR), and how do their interface requirements differ? Why do MWIR cameras require cooling systems?</li>
+            <li>Explain the different SAR imaging modes (stripmap, spotlight, scanSAR, ISAR). What are the trade-offs between coverage area and resolution?</li>
+            <li>How does the data link interface enable communication link failover? Why is this capability essential for beyond-line-of-sight operations?</li>
+            <li>Describe the anti-jamming measures provided by the secure communication interface. How does frequency hopping protect against jamming attacks?</li>
+            <li>What is the purpose of the mission planning interface's <code>validate</code> method? What types of problems does it detect before mission execution?</li>
+            <li>Compare the bandwidth and latency characteristics of different communication link types (LOS vs. GEO satellite vs. LEO satellite). How do these characteristics affect operational capabilities?</li>
+            <li>Explain how sensor tasking is integrated into waypoint navigation in the mission planning interface. What are the benefits of automated sensor activation?</li>
+        </ol>
+
+        <div class="nav-buttons">
+            <a href="chapter-02.html" class="btn">← Previous: Current Challenges</a>
+            <a href="chapter-04.html" class="btn">Next: Implementation Guide →</a>
+        </div>
+    </div>
+</body>
+</html>

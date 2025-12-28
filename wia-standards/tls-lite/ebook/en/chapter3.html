@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: Constrained Device Protocols - WIA TLS-Lite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header {
+            background: rgba(236, 72, 153, 0.1);
+            border-bottom: 3px solid #EC4899;
+            padding: 30px 0;
+            margin-bottom: 40px;
+        }
+        h1 {
+            color: #EC4899;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
+        }
+        h2 {
+            color: #EC4899;
+            font-size: 2em;
+            margin: 40px 0 20px 0;
+            border-left: 5px solid #EC4899;
+            padding-left: 15px;
+        }
+        h3 { color: #EC4899; font-size: 1.5em; margin: 30px 0 15px 0; }
+        .breadcrumb { color: #808080; margin-bottom: 20px; }
+        .breadcrumb a { color: #EC4899; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .content-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(236, 72, 153, 0.2);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(236, 72, 153, 0.2); }
+        th { background: rgba(236, 72, 153, 0.3); color: #EC4899; font-weight: bold; }
+        tr:hover { background: rgba(236, 72, 153, 0.1); }
+        code {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #EC4899;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.5);
+            border-left: 4px solid #EC4899;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        pre code { background: none; padding: 0; color: #e0e0e0; }
+        .api-endpoint {
+            background: rgba(236, 72, 153, 0.1);
+            border-left: 4px solid #EC4899;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .api-endpoint .method {
+            display: inline-block;
+            background: #EC4899;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .certification-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .cert-item {
+            background: rgba(236, 72, 153, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(236, 72, 153, 0.3);
+        }
+        .cert-item h4 { color: #EC4899; margin-bottom: 8px; }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin: 40px 0;
+            gap: 20px;
+        }
+        .nav-button {
+            background: rgba(236, 72, 153, 0.2);
+            color: #EC4899;
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            border: 2px solid #EC4899;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+        .nav-button:hover {
+            background: #EC4899;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 60px;
+            border-top: 2px solid rgba(236, 72, 153, 0.3);
+            color: #808080;
+        }
+        footer .korean-text {
+            color: #EC4899;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="breadcrumb"><a href="index.html">Home</a> / Chapter 3</div>
+            <h1>Chapter 3: Constrained Device Protocols</h1>
+        </header>
+
+        <div class="content-section">
+            <h2>Protocol Optimization for Constrained Devices</h2>
+            <p>
+                Constrained devices face unique challenges when implementing security protocols. Limited RAM,
+                restricted processing power, and energy constraints require careful protocol design. This chapter
+                explores optimizations that make TLS-Lite practical for Class 1 and Class 2 devices while maintaining
+                strong security guarantees.
+            </p>
+            <p>
+                The key strategies include reducing message overhead, minimizing computational complexity,
+                optimizing memory usage, and supporting asynchronous operations. TLS-Lite achieves these goals
+                through protocol extensions, compressed message formats, and stateless operation modes.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2>Protocol Message Optimization</h2>
+
+            <h3>Table 1: TLS-Lite Message Size Comparison</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Message Type</th>
+                        <th>Standard TLS 1.3</th>
+                        <th>TLS-Lite Optimized</th>
+                        <th>Reduction</th>
+                        <th>Technique</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ClientHello</td>
+                        <td>256 bytes</td>
+                        <td>128 bytes</td>
+                        <td>50%</td>
+                        <td>Extension pruning, compression</td>
+                    </tr>
+                    <tr>
+                        <td>ServerHello</td>
+                        <td>192 bytes</td>
+                        <td>96 bytes</td>
+                        <td>50%</td>
+                        <td>Minimal extensions</td>
+                    </tr>
+                    <tr>
+                        <td>Certificate</td>
+                        <td>1024+ bytes</td>
+                        <td>256 bytes</td>
+                        <td>75%</td>
+                        <td>Compressed certificates, raw public keys</td>
+                    </tr>
+                    <tr>
+                        <td>Finished</td>
+                        <td>48 bytes</td>
+                        <td>32 bytes</td>
+                        <td>33%</td>
+                        <td>Shorter MAC tags</td>
+                    </tr>
+                    <tr>
+                        <td>Application Data</td>
+                        <td>21 byte overhead</td>
+                        <td>13 byte overhead</td>
+                        <td>38%</td>
+                        <td>Compact record format</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Table 2: Memory Footprint by Protocol Profile</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Profile</th>
+                        <th>Static RAM</th>
+                        <th>Dynamic RAM</th>
+                        <th>Code Size</th>
+                        <th>Max Connections</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Minimal (PSK)</td>
+                        <td>4 KB</td>
+                        <td>6 KB</td>
+                        <td>24 KB</td>
+                        <td>2</td>
+                    </tr>
+                    <tr>
+                        <td>Standard (ECC)</td>
+                        <td>8 KB</td>
+                        <td>12 KB</td>
+                        <td>42 KB</td>
+                        <td>4</td>
+                    </tr>
+                    <tr>
+                        <td>Enhanced (Full)</td>
+                        <td>16 KB</td>
+                        <td>24 KB</td>
+                        <td>64 KB</td>
+                        <td>8</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="content-section">
+            <h2>Implementation Examples</h2>
+
+            <h3>Code Example 1: Compact TLS Record Processing</h3>
+            <pre><code>/**
+ * Compact TLS record layer implementation for constrained devices
+ * Minimizes memory usage through in-place processing
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+
+#define TLS_RECORD_HEADER_SIZE 5
+#define TLS_COMPACT_HEADER_SIZE 3
+#define MAX_FRAGMENT_SIZE 512
+
+typedef enum {
+    RECORD_HANDSHAKE = 22,
+    RECORD_APPLICATION = 23,
+    RECORD_ALERT = 21
+} record_type_t;
+
+typedef struct {
+    uint8_t type;
+    uint16_t version;
+    uint16_t length;
+} tls_record_header_t;
+
+typedef struct {
+    uint8_t buffer[MAX_FRAGMENT_SIZE + 64];
+    size_t buffer_used;
+    uint16_t sequence_number;
+    uint8_t encryption_enabled;
+} compact_record_ctx_t;
+
+/**
+ * Parse compact TLS record header
+ */
+int parse_compact_record(const uint8_t *data, size_t data_len,
+                         tls_record_header_t *header, size_t *header_len) {
+    if (data_len < TLS_COMPACT_HEADER_SIZE) {
+        return -1;
+    }
+
+    // Compact format: type(5 bits) | length(11 bits)
+    uint16_t type_and_length = (data[0] << 8) | data[1];
+    header->type = (type_and_length >> 11) & 0x1F;
+    header->length = type_and_length & 0x7FF;
+    header->version = 0x0304;  // TLS 1.3
+    *header_len = TLS_COMPACT_HEADER_SIZE;
+
+    // Extended length for larger messages
+    if (header->length == 0x7FF) {
+        if (data_len < 5) return -1;
+        header->length = (data[2] << 8) | data[3];
+        *header_len = 4;
+    }
+
+    return 0;
+}
+
+/**
+ * In-place record encryption
+ */
+int encrypt_record_inplace(compact_record_ctx_t *ctx,
+                           uint8_t *data, size_t plaintext_len,
+                           size_t *ciphertext_len) {
+    uint8_t nonce[12];
+    uint8_t ad[TLS_COMPACT_HEADER_SIZE];
+
+    // Construct nonce from sequence number
+    memset(nonce, 0, 4);
+    nonce[4] = (ctx->sequence_number >> 56) & 0xFF;
+    nonce[5] = (ctx->sequence_number >> 48) & 0xFF;
+    nonce[6] = (ctx->sequence_number >> 40) & 0xFF;
+    nonce[7] = (ctx->sequence_number >> 32) & 0xFF;
+    nonce[8] = (ctx->sequence_number >> 24) & 0xFF;
+    nonce[9] = (ctx->sequence_number >> 16) & 0xFF;
+    nonce[10] = (ctx->sequence_number >> 8) & 0xFF;
+    nonce[11] = ctx->sequence_number & 0xFF;
+
+    // Additional data: record header
+    ad[0] = RECORD_APPLICATION;
+    ad[1] = (plaintext_len >> 8) & 0xFF;
+    ad[2] = plaintext_len & 0xFF;
+
+    // Encrypt in place with AEAD
+    int result = chacha20_poly1305_encrypt_inplace(
+        data, plaintext_len,
+        ad, TLS_COMPACT_HEADER_SIZE,
+        nonce, ciphertext_len
+    );
+
+    ctx->sequence_number++;
+    return result;
+}
+
+/**
+ * Zero-copy record transmission
+ */
+int send_record_zerocopy(compact_record_ctx_t *ctx,
+                         const uint8_t *payload, size_t payload_len,
+                         int (*send_func)(const uint8_t*, size_t)) {
+    uint8_t header[TLS_COMPACT_HEADER_SIZE];
+
+    // Build compact header
+    uint16_t type_and_length = (RECORD_APPLICATION << 11) |
+                               (payload_len & 0x7FF);
+    header[0] = (type_and_length >> 8) & 0xFF;
+    header[1] = type_and_length & 0xFF;
+
+    // Send header
+    if (send_func(header, TLS_COMPACT_HEADER_SIZE) != 0) {
+        return -1;
+    }
+
+    // Send payload
+    if (send_func(payload, payload_len) != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+</code></pre>
+
+            <h3>Code Example 2: Asynchronous Handshake State Machine</h3>
+            <pre><code>/**
+ * Asynchronous TLS handshake for event-driven systems
+ * Allows interleaving with other tasks on constrained devices
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+typedef enum {
+    STATE_INIT,
+    STATE_CLIENT_HELLO_SENT,
+    STATE_SERVER_HELLO_RECEIVED,
+    STATE_CERTIFICATE_RECEIVED,
+    STATE_SERVER_FINISHED_RECEIVED,
+    STATE_CLIENT_FINISHED_SENT,
+    STATE_CONNECTED,
+    STATE_ERROR
+} handshake_state_t;
+
+typedef struct {
+    handshake_state_t state;
+    uint8_t *rx_buffer;
+    size_t rx_buffer_size;
+    size_t rx_buffer_used;
+    uint8_t client_random[32];
+    uint8_t server_random[32];
+    uint8_t shared_secret[32];
+    uint16_t selected_cipher;
+    bool async_crypto_pending;
+} async_handshake_ctx_t;
+
+/**
+ * Initialize async handshake context
+ */
+void handshake_init(async_handshake_ctx_t *ctx,
+                   uint8_t *buffer, size_t buffer_size) {
+    memset(ctx, 0, sizeof(async_handshake_ctx_t));
+    ctx->state = STATE_INIT;
+    ctx->rx_buffer = buffer;
+    ctx->rx_buffer_size = buffer_size;
+}
+
+/**
+ * Process handshake - returns immediately if async operation pending
+ */
+int handshake_process(async_handshake_ctx_t *ctx) {
+    switch (ctx->state) {
+        case STATE_INIT:
+            // Generate client random
+            csprng_generate(ctx->client_random, 32);
+
+            // Send ClientHello
+            if (send_client_hello(ctx) == 0) {
+                ctx->state = STATE_CLIENT_HELLO_SENT;
+            }
+            return 0;  // Need to wait for ServerHello
+
+        case STATE_CLIENT_HELLO_SENT:
+            // Check if we have complete ServerHello
+            if (ctx->rx_buffer_used < 96) {
+                return 0;  // Need more data
+            }
+
+            // Parse ServerHello
+            if (parse_server_hello(ctx) != 0) {
+                ctx->state = STATE_ERROR;
+                return -1;
+            }
+
+            ctx->state = STATE_SERVER_HELLO_RECEIVED;
+            // Fall through to process next state
+
+        case STATE_SERVER_HELLO_RECEIVED:
+            // Start async ECDH computation
+            if (!ctx->async_crypto_pending) {
+                start_async_ecdh(ctx->shared_secret,
+                                ctx->server_public_key);
+                ctx->async_crypto_pending = true;
+                return 0;  // Wait for crypto completion
+            }
+
+            // Check if ECDH completed
+            if (!is_async_ecdh_complete()) {
+                return 0;  // Still computing
+            }
+
+            ctx->async_crypto_pending = false;
+            ctx->state = STATE_CERTIFICATE_RECEIVED;
+            // Fall through
+
+        case STATE_CERTIFICATE_RECEIVED:
+            // Derive handshake keys
+            derive_handshake_keys(ctx);
+
+            // Verify server Finished message
+            if (verify_server_finished(ctx) != 0) {
+                ctx->state = STATE_ERROR;
+                return -1;
+            }
+
+            ctx->state = STATE_SERVER_FINISHED_RECEIVED;
+            // Fall through
+
+        case STATE_SERVER_FINISHED_RECEIVED:
+            // Send client Finished
+            if (send_client_finished(ctx) == 0) {
+                ctx->state = STATE_CLIENT_FINISHED_SENT;
+            }
+            // Fall through
+
+        case STATE_CLIENT_FINISHED_SENT:
+            // Derive application keys
+            derive_application_keys(ctx);
+            ctx->state = STATE_CONNECTED;
+            return 1;  // Handshake complete
+
+        case STATE_CONNECTED:
+            return 1;  // Already connected
+
+        case STATE_ERROR:
+            return -1;  // Error state
+
+        default:
+            return -1;
+    }
+}
+
+/**
+ * Feed received data into handshake processor
+ */
+int handshake_receive_data(async_handshake_ctx_t *ctx,
+                          const uint8_t *data, size_t data_len) {
+    if (ctx->rx_buffer_used + data_len > ctx->rx_buffer_size) {
+        return -1;  // Buffer overflow
+    }
+
+    memcpy(ctx->rx_buffer + ctx->rx_buffer_used, data, data_len);
+    ctx->rx_buffer_used += data_len;
+
+    // Try to advance handshake state
+    return handshake_process(ctx);
+}
+</code></pre>
+
+            <h3>Code Example 3: Memory Pool Allocator</h3>
+            <pre><code>/**
+ * Fixed-size memory pool for deterministic memory allocation
+ * Eliminates fragmentation on constrained devices
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+#define POOL_BLOCK_SIZE 64
+#define POOL_NUM_BLOCKS 16
+
+typedef struct {
+    uint8_t blocks[POOL_NUM_BLOCKS][POOL_BLOCK_SIZE];
+    uint16_t allocation_bitmap;
+    size_t blocks_allocated;
+} memory_pool_t;
+
+static memory_pool_t g_tls_pool = {0};
+
+/**
+ * Initialize memory pool
+ */
+void pool_init(void) {
+    g_tls_pool.allocation_bitmap = 0;
+    g_tls_pool.blocks_allocated = 0;
+}
+
+/**
+ * Allocate block from pool
+ */
+void* pool_alloc(size_t size) {
+    if (size > POOL_BLOCK_SIZE) {
+        return NULL;  // Size exceeds block size
+    }
+
+    // Find free block
+    for (int i = 0; i < POOL_NUM_BLOCKS; i++) {
+        if ((g_tls_pool.allocation_bitmap & (1 << i)) == 0) {
+            // Mark as allocated
+            g_tls_pool.allocation_bitmap |= (1 << i);
+            g_tls_pool.blocks_allocated++;
+            return g_tls_pool.blocks[i];
+        }
+    }
+
+    return NULL;  // No free blocks
+}
+
+/**
+ * Free block back to pool
+ */
+void pool_free(void *ptr) {
+    if (ptr == NULL) return;
+
+    // Calculate block index
+    uintptr_t offset = (uintptr_t)ptr -
+                       (uintptr_t)g_tls_pool.blocks;
+    size_t block_idx = offset / POOL_BLOCK_SIZE;
+
+    if (block_idx >= POOL_NUM_BLOCKS) {
+        return;  // Invalid pointer
+    }
+
+    // Mark as free
+    g_tls_pool.allocation_bitmap &= ~(1 << block_idx);
+    g_tls_pool.blocks_allocated--;
+}
+
+/**
+ * Get pool statistics
+ */
+void pool_stats(size_t *total, size_t *used, size_t *free) {
+    *total = POOL_NUM_BLOCKS;
+    *used = g_tls_pool.blocks_allocated;
+    *free = POOL_NUM_BLOCKS - g_tls_pool.blocks_allocated;
+}
+</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>Protocol Configuration API</h2>
+
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <code>/api/v1/protocol/profiles</code>
+                <p>List available protocol profiles and their resource requirements</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">PUT</span>
+                <code>/api/v1/protocol/profile</code>
+                <p>Select and configure protocol profile for device</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <code>/api/v1/protocol/extensions</code>
+                <p>Query supported TLS extensions</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/protocol/handshake/start</code>
+                <p>Initiate TLS handshake with optimized parameters</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <code>/api/v1/protocol/handshake/status</code>
+                <p>Check asynchronous handshake progress</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/protocol/record/send</code>
+                <p>Send application data using compact record format</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <code>/api/v1/protocol/record/receive</code>
+                <p>Receive and decrypt incoming records</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <code>/api/v1/protocol/memory/stats</code>
+                <p>Get protocol stack memory usage statistics</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">PUT</span>
+                <code>/api/v1/protocol/fragment-size</code>
+                <p>Configure maximum fragment size for records</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/protocol/compress</code>
+                <p>Enable/disable message compression</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <code>/api/v1/protocol/overhead</code>
+                <p>Calculate protocol overhead for current configuration</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/protocol/optimize</code>
+                <p>Auto-optimize protocol settings for device capabilities</p>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2>Protocol Configuration Schema</h2>
+            <pre><code>{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Constrained Device Protocol Configuration",
+  "type": "object",
+  "required": ["profile", "optimization"],
+  "properties": {
+    "profile": {
+      "type": "string",
+      "enum": ["minimal", "standard", "enhanced"]
+    },
+    "optimization": {
+      "type": "object",
+      "properties": {
+        "compact_records": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use 3-byte compact record headers"
+        },
+        "max_fragment_length": {
+          "type": "integer",
+          "enum": [512, 1024, 2048, 4096],
+          "default": 512
+        },
+        "async_handshake": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable asynchronous handshake processing"
+        },
+        "zero_copy": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable zero-copy optimizations"
+        },
+        "memory_pool_size": {
+          "type": "integer",
+          "minimum": 4,
+          "maximum": 64,
+          "default": 16
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "properties": {
+        "supported_versions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["TLS1.3", "TLSLITE1.0"]
+          }
+        },
+        "record_size_limit": {
+          "type": "boolean",
+          "default": true
+        },
+        "connection_id": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>Protocol Certification Requirements</h2>
+
+            <div class="certification-list">
+                <div class="cert-item">
+                    <h4>PROTO-001: Profile Selection</h4>
+                    <p>Correct automatic profile selection based on device capabilities</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-002: Compact Records</h4>
+                    <p>Support for 3-byte compact record format</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-003: Fragment Handling</h4>
+                    <p>Proper handling of fragmented messages</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-004: Memory Management</h4>
+                    <p>Deterministic memory allocation without fragmentation</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-005: Async Processing</h4>
+                    <p>Non-blocking handshake state machine</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-006: Zero-Copy Support</h4>
+                    <p>Optional zero-copy record processing</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-007: Extension Negotiation</h4>
+                    <p>Proper TLS extension negotiation</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-008: Error Recovery</h4>
+                    <p>Graceful error handling and recovery</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-009: Message Parsing</h4>
+                    <p>Robust parsing with bounds checking</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-010: State Management</h4>
+                    <p>Correct handshake state transitions</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-011: Timeout Handling</h4>
+                    <p>Configurable timeouts for constrained networks</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-012: Flow Control</h4>
+                    <p>Proper flow control for resource management</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-013: Record Limits</h4>
+                    <p>Enforcement of maximum record size limits</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-014: Version Negotiation</h4>
+                    <p>Backward-compatible version negotiation</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-015: Alert Handling</h4>
+                    <p>Proper generation and processing of alerts</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-016: Compression Support</h4>
+                    <p>Optional message compression (if enabled)</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-017: Connection Closure</h4>
+                    <p>Clean connection termination</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-018: Renegotiation</h4>
+                    <p>Secure renegotiation handling</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-019: Performance Metrics</h4>
+                    <p>Meet latency requirements for device class</p>
+                </div>
+                <div class="cert-item">
+                    <h4>PROTO-020: Interoperability</h4>
+                    <p>Successful communication with reference implementations</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter2.html" class="nav-button">← Lightweight Cryptography</a>
+            <a href="chapter4.html" class="nav-button">Next: Certificate Management →</a>
+        </div>
+
+        <footer>
+            <div class="korean-text">弘益人間</div>
+            <p>Benefit All Mankind</p>
+            <p>&copy; 2025 WIA (Wireless IoT Alliance). All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

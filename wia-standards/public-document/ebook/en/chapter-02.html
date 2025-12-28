@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 02: Document Digitization Technologies - WIA-SOC-013</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #0f172a;
+    color: #f8fafc;
+    line-height: 1.8;
+}
+h1, h2, h3 { color: #10B981; }
+h2 { margin-top: 40px; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+pre {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    border: 1px solid #334155;
+}
+code { color: #34D399; }
+.nav { margin-bottom: 30px; }
+.nav a { color: #10B981; text-decoration: none; margin-right: 20px; }
+.highlight {
+    background: rgba(16, 185, 129, 0.1);
+    padding: 20px;
+    border-left: 4px solid #10B981;
+    margin: 20px 0;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #334155;
+}
+th { background: #1e293b; color: #10B981; }
+ul, ol { margin: 15px 0; padding-left: 30px; }
+li { margin: 8px 0; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+<a href="index.html">← Table of Contents</a>
+<a href="chapter-01.html">← Previous</a>
+<a href="chapter-03.html">Next →</a>
+</div>
+
+<h1>Chapter 02: Document Digitization Technologies</h1>
+
+<blockquote class="highlight">
+<strong>弘益人間</strong> - "Quality digitization is the foundation of trustworthy document archives."
+</blockquote>
+
+<h2>02.1 Image Capture and Scanning</h2>
+
+<p>The quality of digitized documents depends fundamentally on the capture process. WIA-SOC-013 defines minimum standards for resolution, color depth, and file formats:</p>
+
+<h3>Resolution Standards</h3>
+<table>
+<tr><th>Document Type</th><th>Minimum DPI</th><th>Recommended DPI</th><th>Purpose</th></tr>
+<tr><td>Text documents</td><td>300</td><td>400-600</td><td>OCR accuracy and readability</td></tr>
+<tr><td>Mixed text/graphics</td><td>400</td><td>600</td><td>Preserve visual elements</td></tr>
+<tr><td>Archival materials</td><td>600</td><td>1200</td><td>Long-term preservation</td></tr>
+<tr><td>Maps and blueprints</td><td>600</td><td>1200-2400</td><td>Fine detail preservation</td></tr>
+<tr><td>Photographs</td><td>600</td><td>1200-4800</td><td>Professional archival quality</td></tr>
+</table>
+
+<h3>Color Space and Depth</h3>
+<p>Documents should be captured in appropriate color spaces:</p>
+<ul>
+<li><strong>Grayscale (8-bit)</strong>: Text-only documents, reduces file size by 60%</li>
+<li><strong>RGB Color (24-bit)</strong>: Documents with color elements, logos, stamps</li>
+<li><strong>CMYK Color (32-bit)</strong>: Print-ready documents requiring precise color reproduction</li>
+<li><strong>Bitonal (1-bit)</strong>: High-contrast text documents for maximum compression</li>
+</ul>
+
+<h3>Scanner Types and Selection</h3>
+<table>
+<tr><th>Scanner Type</th><th>Speed</th><th>Quality</th><th>Best For</th></tr>
+<tr><td>Flatbed</td><td>Slow (5-15 pages/min)</td><td>Excellent</td><td>Books, fragile documents, high-quality archival</td></tr>
+<tr><td>Sheet-fed ADF</td><td>Fast (50-120 pages/min)</td><td>Good</td><td>High-volume batch processing</td></tr>
+<tr><td>Planetary/Overhead</td><td>Slow (10-30 pages/min)</td><td>Excellent</td><td>Rare books, historical documents</td></tr>
+<tr><td>Mobile/Smartphone</td><td>Variable</td><td>Fair-Good</td><td>Field work, citizen self-service</td></tr>
+</table>
+
+<h2>02.2 Optical Character Recognition (OCR)</h2>
+
+<p>OCR converts scanned images into machine-readable text. WIA-SOC-013 supports multiple OCR engines optimized for different languages and document types.</p>
+
+<h3>OCR Engine Comparison</h3>
+<table>
+<tr><th>Engine</th><th>Accuracy (Latin)</th><th>Languages</th><th>License</th></tr>
+<tr><td>Tesseract 5.x</td><td>95-98%</td><td>100+</td><td>Apache 2.0 (Open Source)</td></tr>
+<tr><td>ABBYY FineReader</td><td>97-99%</td><td>190+</td><td>Commercial</td></tr>
+<tr><td>Google Cloud Vision</td><td>96-99%</td><td>50+</td><td>Commercial API</td></tr>
+<tr><td>Amazon Textract</td><td>95-98%</td><td>15+</td><td>Commercial API</td></tr>
+</table>
+
+<h3>OCR Workflow Implementation</h3>
+<pre><code>import { WiaDocumentScanner } from 'wia-soc-013';
+
+const scanner = new WiaDocumentScanner({
+  engine: 'tesseract',
+  language: 'eng+kor+chi_sim',
+  outputFormat: 'hocr',
+  preprocessing: {
+    deskew: true,
+    denoise: true,
+    binarization: 'adaptive'
+  }
+});
+
+const result = await scanner.process({
+  imageUrl: '/path/to/document.jpg',
+  pageNumber: 1
+});
+
+console.log(result.text); // Extracted text
+console.log(result.confidence); // 0.987 (98.7% confidence)
+console.log(result.boundingBoxes); // Word-level coordinates
+</code></pre>
+
+<h3>Handling Multilingual Documents</h3>
+<p>Public documents often contain multiple languages. WIA-SOC-013 supports automatic language detection and mixed-language OCR:</p>
+<pre><code>{
+  "pages": [
+    {
+      "pageNumber": 1,
+      "blocks": [
+        {
+          "language": "en",
+          "text": "United States Passport",
+          "confidence": 0.995,
+          "boundingBox": [120, 80, 520, 140]
+        },
+        {
+          "language": "fr",
+          "text": "Passeport des États-Unis",
+          "confidence": 0.991,
+          "boundingBox": [120, 150, 520, 210]
+        }
+      ]
+    }
+  ]
+}
+</code></pre>
+
+<h2>02.3 Image Quality Enhancement</h2>
+
+<p>Raw scanned images often require preprocessing to improve OCR accuracy and visual quality.</p>
+
+<h3>Deskewing and Rotation</h3>
+<p>Documents may be scanned at slight angles. Automatic deskewing corrects rotation up to ±10 degrees:</p>
+<pre><code>import { ImageProcessor } from 'wia-soc-013';
+
+const processor = new ImageProcessor();
+const deskewed = await processor.deskew({
+  image: rawImage,
+  maxAngle: 10,
+  algorithm: 'hough-transform'
+});
+</code></pre>
+
+<h3>Noise Reduction</h3>
+<p>Remove scanning artifacts, dust, and speckles using median filters and morphological operations:</p>
+<ul>
+<li><strong>Gaussian Blur</strong>: Smooth high-frequency noise</li>
+<li><strong>Median Filter</strong>: Remove salt-and-pepper noise while preserving edges</li>
+<li><strong>Morphological Opening</strong>: Remove small artifacts</li>
+<li><strong>Adaptive Wiener Filter</strong>: Context-aware noise reduction</li>
+</ul>
+
+<h3>Binarization</h3>
+<p>Convert grayscale images to black-and-white for optimal OCR performance:</p>
+<table>
+<tr><th>Method</th><th>Best For</th><th>Complexity</th></tr>
+<tr><td>Global Threshold (Otsu)</td><td>Uniform lighting</td><td>Low</td></tr>
+<tr><td>Adaptive Threshold</td><td>Variable lighting</td><td>Medium</td></tr>
+<tr><td>Sauvola-Pietikäinen</td><td>Historical documents</td><td>High</td></tr>
+<tr><td>Deep Learning (U-Net)</td><td>Degraded documents</td><td>Very High</td></tr>
+</table>
+
+<h3>Contrast Enhancement</h3>
+<p>Improve readability of faded or low-contrast documents:</p>
+<pre><code>const enhanced = await processor.enhanceContrast({
+  image: input,
+  method: 'clahe', // Contrast Limited Adaptive Histogram Equalization
+  clipLimit: 2.0,
+  tileSize: 8
+});
+</code></pre>
+
+<h2>02.4 Format Conversion and Compression</h2>
+
+<p>WIA-SOC-013 supports multiple output formats optimized for different use cases:</p>
+
+<h3>PDF/A (Archival)</h3>
+<p>ISO 19005-compliant format ensuring long-term readability:</p>
+<pre><code>const pdf = await converter.toPDFA({
+  images: scannedPages,
+  version: 'PDF/A-2b',
+  ocrText: true, // Embed searchable text layer
+  metadata: {
+    title: 'Birth Certificate - John Doe',
+    author: 'Registry Office',
+    keywords: ['vital records', 'birth', 'certificate']
+  },
+  compression: {
+    images: 'jpeg2000',
+    quality: 85
+  }
+});
+</code></pre>
+
+<h3>TIFF (Multi-page)</h3>
+<p>Industry-standard format for high-quality archival:</p>
+<ul>
+<li><strong>Compression</strong>: LZW (lossless) or JPEG (lossy)</li>
+<li><strong>Color Depth</strong>: 1-bit, 8-bit grayscale, 24-bit RGB</li>
+<li><strong>Resolution</strong>: Embedded DPI metadata</li>
+<li><strong>Tags</strong>: EXIF metadata for camera/scanner information</li>
+</ul>
+
+<h3>JSON/XML (Structured Data)</h3>
+<p>Machine-readable formats for API integration:</p>
+<pre><code>{
+  "documentId": "doc:wia:soc013:birth:US:2025:abc123",
+  "type": "birthCertificate",
+  "issuer": "did:gov:us:california:registry",
+  "issuedAt": "2025-01-15T10:00:00Z",
+  "fields": {
+    "fullName": "John Alexander Doe",
+    "dateOfBirth": "1990-05-20",
+    "placeOfBirth": "San Francisco, CA, USA",
+    "fatherName": "Michael James Doe",
+    "motherName": "Sarah Elizabeth Smith",
+    "registrationNumber": "2025-CA-123456"
+  },
+  "images": [
+    {
+      "pageNumber": 1,
+      "format": "image/jpeg",
+      "resolution": 600,
+      "url": "https://cdn.wia.gov/documents/abc123/page-1.jpg",
+      "sha256": "7f8a9b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a"
+    }
+  ]
+}
+</code></pre>
+
+<h2>02.5 Automated Metadata Extraction</h2>
+
+<p>Intelligent document analysis can automatically extract structured metadata:</p>
+
+<h3>Named Entity Recognition (NER)</h3>
+<p>Identify key information using machine learning:</p>
+<ul>
+<li><strong>Names</strong>: Person names, organization names</li>
+<li><strong>Dates</strong>: Issue dates, expiration dates, birth dates</li>
+<li><strong>Locations</strong>: Cities, countries, addresses</li>
+<li><strong>Identifiers</strong>: Passport numbers, social security numbers, license plates</li>
+</ul>
+
+<pre><code>import { MetadataExtractor } from 'wia-soc-013';
+
+const extractor = new MetadataExtractor({
+  model: 'bert-base-ner',
+  confidence: 0.85
+});
+
+const metadata = await extractor.extract({
+  text: ocrResult.text,
+  documentType: 'passport'
+});
+
+// Output:
+// {
+//   "entities": [
+//     {"type": "PERSON", "value": "Jane Doe", "confidence": 0.97},
+//     {"type": "DATE", "value": "2025-01-15", "confidence": 0.99},
+//     {"type": "PASSPORT_NUMBER", "value": "123456789", "confidence": 0.95}
+//   ]
+// }
+</code></pre>
+
+<h3>Template Matching</h3>
+<p>Recognize known document layouts and extract fields:</p>
+<pre><code>const templateMatcher = new TemplateMatcher({
+  templates: [
+    'us-passport-2020',
+    'uk-passport-2019',
+    'eu-id-card-2021'
+  ]
+});
+
+const match = await templateMatcher.identify(documentImage);
+if (match.confidence > 0.9) {
+  const fields = await templateMatcher.extractFields(
+    documentImage,
+    match.template
+  );
+}
+</code></pre>
+
+<h2>02.6 Quality Assurance and Validation</h2>
+
+<p>Automated quality checks ensure digitized documents meet standards:</p>
+
+<h3>Quality Metrics</h3>
+<table>
+<tr><th>Metric</th><th>Threshold</th><th>Action if Failed</th></tr>
+<tr><td>OCR Confidence</td><td>&gt; 95%</td><td>Manual review required</td></tr>
+<tr><td>Resolution</td><td>&gt; 300 DPI</td><td>Re-scan at higher resolution</td></tr>
+<tr><td>Skew Angle</td><td>&lt; 2 degrees</td><td>Apply deskewing algorithm</td></tr>
+<tr><td>Blank Page Detection</td><td>0% content</td><td>Remove from output</td></tr>
+<tr><td>Image Sharpness</td><td>Laplacian &gt; 100</td><td>Flag for review/re-scan</td></tr>
+</table>
+
+<h3>Automated QA Pipeline</h3>
+<pre><code>const qa = new QualityAssurance({
+  checks: ['resolution', 'ocr-confidence', 'skew', 'sharpness']
+});
+
+const result = await qa.validate(document);
+
+if (!result.passed) {
+  console.error('QA Failed:', result.failures);
+  // [
+  //   {"check": "ocr-confidence", "expected": 0.95, "actual": 0.87},
+  //   {"check": "sharpness", "expected": 100, "actual": 78}
+  // ]
+
+  // Trigger remediation
+  await remediationService.handleFailures(result.failures);
+}
+</code></pre>
+
+<h2>02.7 Batch Processing and Workflow Automation</h2>
+
+<p>Government agencies must digitize millions of documents efficiently. WIA-SOC-013 supports high-throughput batch processing:</p>
+
+<h3>Parallel Processing Architecture</h3>
+<pre><code>import { BatchProcessor } from 'wia-soc-013';
+
+const processor = new BatchProcessor({
+  concurrency: 8, // Process 8 documents simultaneously
+  queueSize: 1000,
+  retryPolicy: {
+    maxAttempts: 3,
+    backoff: 'exponential'
+  }
+});
+
+const job = await processor.submitBatch({
+  documents: documentList, // Array of 10,000 documents
+  workflow: [
+    { step: 'scan', params: { dpi: 600 } },
+    { step: 'deskew' },
+    { step: 'ocr', params: { language: 'eng' } },
+    { step: 'pdf-conversion', params: { format: 'PDF/A-2b' } },
+    { step: 'metadata-extraction' },
+    { step: 'quality-assurance' },
+    { step: 'signature', params: { key: 'gov-signing-key' } },
+    { step: 'blockchain-anchor' },
+    { step: 'storage', params: { bucket: 'gov-archive' } }
+  ]
+});
+
+// Monitor progress
+processor.on('progress', (status) => {
+  console.log(`Processed: ${status.completed}/${status.total}`);
+});
+
+processor.on('complete', (summary) => {
+  console.log('Batch complete:', summary);
+  // { completed: 9987, failed: 13, duration: '4h 23m' }
+});
+</code></pre>
+
+<h3>Error Handling and Recovery</h3>
+<p>Robust error handling ensures no documents are lost:</p>
+<ul>
+<li><strong>Checkpointing</strong>: Save progress every 100 documents</li>
+<li><strong>Dead Letter Queue</strong>: Failed documents move to manual review queue</li>
+<li><strong>Retry Logic</strong>: Transient failures (network errors) retry with exponential backoff</li>
+<li><strong>Audit Logging</strong>: Every operation logged with timestamps and error details</li>
+</ul>
+
+<h2>02.8 Mobile Document Capture</h2>
+
+<p>Citizens increasingly use smartphones to scan documents. WIA-SOC-013 provides mobile SDKs with advanced image processing:</p>
+
+<h3>Mobile SDK Features</h3>
+<ul>
+<li><strong>Auto-Capture</strong>: Detects document edges and captures automatically</li>
+<li><strong>Perspective Correction</strong>: Warps camera angles to flat perspective</li>
+<li><strong>Shadow Removal</strong>: Eliminates shadows from handheld capture</li>
+<li><strong>Lighting Normalization</strong>: Adjusts for ambient lighting conditions</li>
+<li><strong>Real-Time Feedback</strong>: Guides users to improve capture quality</li>
+</ul>
+
+<pre><code>import { WiaMobileScanner } from 'wia-soc-013-mobile';
+
+const scanner = new WiaMobileScanner({
+  autoCapture: true,
+  guidanceUI: true,
+  minQuality: 0.85
+});
+
+scanner.on('documentDetected', (bounds) => {
+  // Display overlay showing detected document edges
+  showOverlay(bounds);
+});
+
+scanner.on('qualityWarning', (issues) => {
+  // "Document too dark", "Hold camera steady", etc.
+  showGuidance(issues);
+});
+
+const image = await scanner.capture();
+// Automatically perspective-corrected, enhanced, and cropped
+</code></pre>
+
+<h2>02.9 Integration with Document Management Systems</h2>
+
+<p>WIA-SOC-013 integrates seamlessly with existing DMS platforms:</p>
+
+<h3>Supported Systems</h3>
+<ul>
+<li><strong>SharePoint</strong>: Microsoft 365 integration via REST API</li>
+<li><strong>Documentum</strong>: OpenText enterprise content management</li>
+<li><strong>Alfresco</strong>: Open-source ECM platform</li>
+<li><strong>FileNet</strong>: IBM enterprise content management</li>
+</ul>
+
+<pre><code>import { DMSIntegration } from 'wia-soc-013';
+
+const dms = new DMSIntegration({
+  platform: 'sharepoint',
+  credentials: {
+    tenantId: 'xxx',
+    clientId: 'yyy',
+    clientSecret: 'zzz'
+  }
+});
+
+await dms.uploadDocument({
+  documentId: 'doc:wia:soc013:abc123',
+  library: 'Public Documents',
+  folder: '/Birth Certificates/2025',
+  metadata: {
+    'Document Type': 'Birth Certificate',
+    'Issue Date': '2025-01-15',
+    'Retention Period': '99 years'
+  }
+});
+</code></pre>
+
+<h2>02.10 Conclusion</h2>
+
+<p>Document digitization technology has advanced dramatically, enabling government agencies to convert vast paper archives into searchable, verifiable digital records. By following WIA-SOC-013 standards for image capture, OCR, quality assurance, and workflow automation, organizations can build scalable digitization pipelines that preserve document integrity while improving citizen access.</p>
+
+<p>In the next chapter, we will explore archival standards and long-term preservation strategies to ensure digitized documents remain accessible for decades or centuries.</p>
+
+<div class="nav" style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #334155;">
+<a href="chapter-01.html">← Previous: Chapter 01</a>
+<a href="index.html">Table of Contents</a>
+<a href="chapter-03.html">Next: Chapter 03 →</a>
+</div>
+
+</body>
+</html>

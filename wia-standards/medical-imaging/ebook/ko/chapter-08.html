@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8장: 방사선 피폭 추적 - WIA 의료 영상 표준</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        header { padding: 2rem 0; border-bottom: 2px solid #14B8A6; margin-bottom: 2rem; }
+        .chapter-number { font-size: 1rem; color: #14B8A6; font-weight: 600; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #f8fafc; margin-bottom: 1rem; }
+        h2 { color: #14B8A6; font-size: 1.8rem; margin: 2.5rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(20, 184, 166, 0.3); }
+        h3 { color: #14B8A6; font-size: 1.3rem; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.2rem; color: #cbd5e1; }
+        .chapter-nav { background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .nav-button { padding: 0.75rem 1.5rem; background: #334155; color: #14B8A6; text-decoration: none; border-radius: 6px; transition: all 0.3s ease; border: 1px solid #14B8A6; }
+        .nav-button:hover { background: #14B8A6; color: #0f172a; transform: translateY(-2px); }
+        .highlight-box { background: rgba(20, 184, 166, 0.1); border-left: 4px solid #14B8A6; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: #1e293b; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #14B8A6; color: #0f172a; font-weight: 600; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #334155; }
+        ul, ol { margin: 1rem 0 1rem 2rem; color: #cbd5e1; }
+        li { margin-bottom: 0.5rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0; }
+        .stat-card { background: #1e293b; padding: 1.5rem; border-radius: 8px; border: 1px solid #334155; text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #14B8A6; margin-bottom: 0.5rem; }
+        .stat-label { color: #94a3b8; font-size: 0.9rem; }
+        footer { margin-top: 4rem; padding: 2rem 0; text-align: center; border-top: 2px solid #334155; color: #64748b; }
+        .footer-tagline { font-size: 1.1rem; color: #14B8A6; margin-bottom: 0.5rem; }
+        @media (max-width: 768px) { h1 { font-size: 2rem; } .container { padding: 1rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-number">8장</div>
+            <h1>방사선 피폭 추적</h1>
+        </header>
+
+        <div class="chapter-nav">
+            <a href="chapter-07.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">목차</a>
+            <a href="index.html" class="nav-button">목차로 →</a>
+        </div>
+
+        <div class="highlight-box">
+            <strong>장 개요:</strong> 의료 영상 검사에서 방사선 피폭은 불가피하지만, 환자 안전을 위해 피폭량을 최소화하고 추적하는 것이 매우 중요합니다. 이 장에서는 선량 측정, 누적 피폭 관리, ALARA 원칙, 환자 안전, 규제 준수를 다룹니다.
+        </div>
+
+        <h2>방사선 피폭의 현황</h2>
+
+        <p>CT, X-Ray, PET, 투시 검사 등은 전리방사선을 사용하여 영상을 획득합니다. 의료 방사선은 전체 인구 방사선 피폭의 약 50%를 차지하며, 검사 빈도 증가로 누적 피폭에 대한 우려가 커지고 있습니다.</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">50%</div>
+                <div class="stat-label">의료 방사선 비중</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">7배</div>
+                <div class="stat-label">1980년 대비 피폭 증가</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">3.0 mSv</div>
+                <div class="stat-label">미국 평균 연간 의료 피폭</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">100 mSv</div>
+                <div class="stat-label">암 위험 증가 임계값</div>
+            </div>
+        </div>
+
+        <h2>방사선 단위 및 측정</h2>
+
+        <h3>주요 단위</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>단위</th>
+                    <th>설명</th>
+                    <th>용도</th>
+                    <th>예시</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Gray (Gy)</td>
+                    <td>흡수 선량</td>
+                    <td>물질이 흡수한 에너지</td>
+                    <td>1 Gy = 1 J/kg</td>
+                </tr>
+                <tr>
+                    <td>Sievert (Sv)</td>
+                    <td>등가 선량</td>
+                    <td>인체 영향 고려</td>
+                    <td>1 Sv = 1 Gy × 방사선가중계수</td>
+                </tr>
+                <tr>
+                    <td>mSv (밀리시버트)</td>
+                    <td>Sv/1000</td>
+                    <td>일반적 의료 피폭</td>
+                    <td>흉부 X-Ray: 0.02 mSv</td>
+                </tr>
+                <tr>
+                    <td>CTDI (mGy)</td>
+                    <td>CT 선량 지수</td>
+                    <td>CT 스캐너 출력</td>
+                    <td>흉부 CT: 7-10 mGy</td>
+                </tr>
+                <tr>
+                    <td>DLP (mGy·cm)</td>
+                    <td>선량-길이곱</td>
+                    <td>전체 CT 검사량</td>
+                    <td>흉부 CT: 350 mGy·cm</td>
+                </tr>
+                <tr>
+                    <td>DAP (cGy·cm²)</td>
+                    <td>선량-면적곱</td>
+                    <td>투시 검사량</td>
+                    <td>심혈관 중재: 5000 cGy·cm²</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>일반적인 검사별 피폭량</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>검사</th>
+                    <th>유효 선량 (mSv)</th>
+                    <th>자연 방사선 대비</th>
+                    <th>비고</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>흉부 X-Ray (PA)</td>
+                    <td>0.02</td>
+                    <td>2일</td>
+                    <td>매우 낮음</td>
+                </tr>
+                <tr>
+                    <td>유방촬영</td>
+                    <td>0.4</td>
+                    <td>7주</td>
+                    <td>낮음</td>
+                </tr>
+                <tr>
+                    <td>흉부 CT</td>
+                    <td>7</td>
+                    <td>2.3년</td>
+                    <td>중간</td>
+                </tr>
+                <tr>
+                    <td>복부 CT</td>
+                    <td>10</td>
+                    <td>3.3년</td>
+                    <td>중간-높음</td>
+                </tr>
+                <tr>
+                    <td>관상동맥 CT</td>
+                    <td>12</td>
+                    <td>4년</td>
+                    <td>높음</td>
+                </tr>
+                <tr>
+                    <td>PET/CT</td>
+                    <td>14</td>
+                    <td>4.7년</td>
+                    <td>높음</td>
+                </tr>
+                <tr>
+                    <td>바륨 조영</td>
+                    <td>6</td>
+                    <td>2년</td>
+                    <td>중간</td>
+                </tr>
+                <tr>
+                    <td>심혈관 중재</td>
+                    <td>5-50</td>
+                    <td>1.7-17년</td>
+                    <td>매우 높음</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p style="font-size: 0.9rem; color: #94a3b8; margin-top: 1rem;">* 자연 방사선: 약 3 mSv/년 (지역에 따라 1-10 mSv 범위)</p>
+
+        <h2>ALARA 원칙</h2>
+
+        <p><strong>ALARA (As Low As Reasonably Achievable)</strong>는 방사선 안전의 기본 원칙으로, 진단 품질을 유지하면서 피폭량을 합리적으로 달성 가능한 최저 수준으로 유지하는 것입니다.</p>
+
+        <h3>ALARA 구현 전략</h3>
+
+        <ol>
+            <li><strong>정당화(Justification):</strong> 검사가 정말 필요한가? 대체 검사는 없는가?</li>
+            <li><strong>최적화(Optimization):</strong> 최소 선량으로 진단 품질 달성</li>
+            <li><strong>선량 제한(Dose Limitation):</strong> 규제 한도 준수</li>
+        </ol>
+
+        <h3>선량 감소 기술</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>기술</th>
+                    <th>방법</th>
+                    <th>선량 감소</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Automatic Exposure Control</td>
+                    <td>환자 크기에 따라 자동 조절</td>
+                    <td>20-40%</td>
+                </tr>
+                <tr>
+                    <td>Iterative Reconstruction</td>
+                    <td>노이즈 감소 알고리즘</td>
+                    <td>30-60%</td>
+                </tr>
+                <tr>
+                    <td>Low kVp Protocol</td>
+                    <td>전압 낮춤 (소아, 조영)</td>
+                    <td>40-60%</td>
+                </tr>
+                <tr>
+                    <td>Bismuth Shield</td>
+                    <td>민감 장기 차폐</td>
+                    <td>20-50% (해당 장기)</td>
+                </tr>
+                <tr>
+                    <td>Prospective ECG Gating</td>
+                    <td>심장 CT 펄스 최적화</td>
+                    <td>70-80%</td>
+                </tr>
+                <tr>
+                    <td>Dual Energy CT</td>
+                    <td>저에너지 영상 활용</td>
+                    <td>20-30%</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>DICOM 선량 보고</h2>
+
+        <p>DICOM은 방사선 선량 정보를 구조화하여 저장하는 표준을 제공합니다.</p>
+
+        <h3>RDSR (Radiation Dose Structured Report)</h3>
+
+        <p>DICOM Supplement 127에서 정의된 선량 보고 표준입니다:</p>
+
+        <ul>
+            <li><strong>CT RDSR:</strong> CTDI, DLP, kVp, mAs 등</li>
+            <li><strong>X-Ray RDSR:</strong> DAP, Entrance Dose, Fluoroscopy Time</li>
+            <li><strong>자동 전송:</strong> 검사 완료 후 PACS/RDM으로 전송</li>
+            <li><strong>템플릿 ID:</strong> TID 10011 (CT), TID 10002 (X-Ray RF)</li>
+        </ul>
+
+        <h3>RDSR 주요 태그</h3>
+
+        <ul>
+            <li>(0008,0060) Modality: "SR" (Structured Report)</li>
+            <li>(0040,A043) Concept Name Code Sequence: "X-Ray Radiation Dose Report"</li>
+            <li>(0040,A730) Content Sequence: 선량 데이터 계층 구조</li>
+            <li>(0018,9345) CTDIvol</li>
+            <li>(0018,9346) CTDI Phantom Type</li>
+            <li>(0018,9473) Dose (RP) Total</li>
+        </ul>
+
+        <h2>선량 관리 시스템 (RDM/DMS)</h2>
+
+        <p>Radiation Dose Management 시스템은 RDSR을 수집, 분석, 보고하는 전문 소프트웨어입니다.</p>
+
+        <h3>주요 기능</h3>
+
+        <ol>
+            <li><strong>자동 수집:</strong> 모든 방사선 검사의 RDSR 수집</li>
+            <li><strong>환자별 추적:</strong> 누적 피폭량 자동 계산</li>
+            <li><strong>DRL 모니터링:</strong> Diagnostic Reference Level 준수 확인</li>
+            <li><strong>알림:</strong> 고선량 검사 시 자동 경고</li>
+            <li><strong>품질 개선:</strong> 장비별, 프로토콜별 선량 비교</li>
+            <li><strong>규제 보고:</strong> 감사 리포트 자동 생성</li>
+        </ol>
+
+        <h3>대표적인 RDM 솔루션</h3>
+
+        <ul>
+            <li><strong>Bayer Radimetrics:</strong> 시장 점유율 1위</li>
+            <li><strong>GE DoseWatch:</strong> GE 장비 최적화</li>
+            <li><strong>Philips DoseWise Portal:</strong> Philips 통합</li>
+            <li><strong>Sectra DoseTrack:</strong> PACS 통합</li>
+        </ul>
+
+        <h2>DRL (Diagnostic Reference Level)</h2>
+
+        <p>DRL은 특정 검사에 대한 선량 참조 수준으로, 이를 초과하면 최적화가 필요함을 나타냅니다.</p>
+
+        <h3>미국 ACR DRL 예시</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>검사</th>
+                    <th>DRL (CTDIvol, mGy)</th>
+                    <th>DRL (DLP, mGy·cm)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Head CT (Adult)</td>
+                    <td>60</td>
+                    <td>1050</td>
+                </tr>
+                <tr>
+                    <td>Chest CT (Adult)</td>
+                    <td>15</td>
+                    <td>650</td>
+                </tr>
+                <tr>
+                    <td>Abdomen/Pelvis CT</td>
+                    <td>25</td>
+                    <td>1600</td>
+                </tr>
+                <tr>
+                    <td>Chest CT (Pediatric 5yo)</td>
+                    <td>5</td>
+                    <td>200</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>소아 방사선 안전</h2>
+
+        <p>소아는 성인보다 방사선에 3-5배 더 민감하며, 기대 수명이 길어 장기적 영향이 크므로 특별한 주의가 필요합니다.</p>
+
+        <h3>Image Gently 캠페인</h3>
+
+        <ul>
+            <li><strong>Child-size 조절:</strong> 성인 프로토콜 사용 금지</li>
+            <li><strong>최소 스캔 범위:</strong> 필요한 부위만 촬영</li>
+            <li><strong>Single-phase:</strong> 다중 조영 검사 최소화</li>
+            <li><strong>Low dose 프로토콜:</strong> 소아 전용 최적화</li>
+            <li><strong>대체 검사 고려:</strong> 초음파, MRI 우선 고려</li>
+        </ul>
+
+        <h3>임산부 방사선 안전</h3>
+
+        <ul>
+            <li><strong>임신 확인:</strong> 가임기 여성은 검사 전 확인</li>
+            <li><strong>태아 선량 계산:</strong> 자궁 직접 피폭 시 계산 필수</li>
+            <li><strong>100 mGy 이하:</strong> 일반적으로 안전</li>
+            <li><strong>대체 검사:</strong> MRI(금속 없으면), 초음파</li>
+            <li><strong>지연 가능 검사:</strong> 출산 후로 연기</li>
+        </ul>
+
+        <h2>누적 피폭 추적</h2>
+
+        <h3>환자별 추적 시스템</h3>
+
+        <p>RDM 시스템은 환자의 모든 방사선 검사를 추적하여 누적 피폭량을 계산합니다:</p>
+
+        <ul>
+            <li><strong>자동 연결:</strong> 환자 ID로 모든 검사 연계</li>
+            <li><strong>생애 누적:</strong> 태어날 때부터 현재까지</li>
+            <li><strong>기간별 집계:</strong> 최근 1개월, 1년 등</li>
+            <li><strong>임계값 알림:</strong> 100 mSv 초과 시 경고</li>
+            <li><strong>환자 보고서:</strong> 환자가 볼 수 있는 선량 내역</li>
+        </ul>
+
+        <h3>고위험 환자 관리</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>환자 그룹</th>
+                    <th>위험 요인</th>
+                    <th>관리 전략</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>만성 질환자</td>
+                    <td>빈번한 CT 추적</td>
+                    <td>MRI 대체, 간격 연장</td>
+                </tr>
+                <tr>
+                    <td>암 환자</td>
+                    <td>치료 전후 다수 검사</td>
+                    <td>선량 최적화, 통합 검사</td>
+                </tr>
+                <tr>
+                    <td>심혈관 환자</td>
+                    <td>중재 시술 높은 선량</td>
+                    <td>투시 시간 최소화</td>
+                </tr>
+                <tr>
+                    <td>소아</td>
+                    <td>높은 감수성</td>
+                    <td>Child-size, 대체 영상</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>규제 및 준수</h2>
+
+        <h3>국제 기준</h3>
+
+        <ul>
+            <li><strong>ICRP (국제방사선방호위원회):</strong> 권고안 103 (2007)</li>
+            <li><strong>IAEA (국제원자력기구):</strong> BSS (Basic Safety Standards)</li>
+            <li><strong>WHO:</strong> 의료 방사선 안전 가이드라인</li>
+        </ul>
+
+        <h3>국가별 규제</h3>
+
+        <ul>
+            <li><strong>미국:</strong> FDA, NRC, ACR 표준</li>
+            <li><strong>유럽:</strong> Euratom Directive 2013/59</li>
+            <li><strong>한국:</strong> 원자력안전법, 의료법 시행규칙</li>
+        </ul>
+
+        <h2>미래 기술</h2>
+
+        <h3>초저선량 CT</h3>
+
+        <ul>
+            <li><strong>Photon-counting CT:</strong> 검출기 혁신으로 50-70% 감소</li>
+            <li><strong>AI 재구성:</strong> 딥러닝으로 노이즈 제거</li>
+            <li><strong>목표:</strong> 흉부 CT 0.1 mSv 이하</li>
+        </ul>
+
+        <h3>실시간 선량 피드백</h3>
+
+        <ul>
+            <li><strong>AR 디스플레이:</strong> 투시 중 실시간 선량 표시</li>
+            <li><strong>음성 경고:</strong> 임계값 도달 시 음성 알림</li>
+            <li><strong>AI 최적화:</strong> 자동으로 최적 파라미터 제안</li>
+        </ul>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">90%</div>
+                <div class="stat-label">2030년 RDM 도입률 목표</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">50%↓</div>
+                <div class="stat-label">차세대 CT 선량 감소</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">불필요한 고선량 검사</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">환자 선량 인지도</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <strong>핵심 요약:</strong> 방사선 피폭 추적과 관리는 환자 안전의 필수 요소입니다. DICOM RDSR을 통한 자동 선량 수집, RDM 시스템을 통한 누적 피폭 추적, ALARA 원칙 준수, DRL 모니터링이 핵심입니다. 소아와 임산부는 특별한 주의가 필요하며, 의료진은 정당화와 최적화를 통해 진단 품질을 유지하면서 선량을 최소화해야 합니다. 차세대 저선량 기술과 AI 재구성은 미래 의료 영상의 안전성을 더욱 향상시킬 것입니다.
+        </div>
+
+        <div class="chapter-nav" style="margin-top: 3rem;">
+            <a href="chapter-07.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">목차로 →</a>
+        </div>
+
+        <footer>
+            <div class="footer-tagline">弘益人間 (널리 인간을 이롭게 하라)</div>
+            <p>WIA 의료 영상 표준 - 8장: 방사선 피폭 추적</p>
+            <p style="margin-top: 1rem; font-size: 0.9rem;">모든 장이 완료되었습니다. 감사합니다!</p>
+        </footer>
+    </div>
+</body>
+</html>

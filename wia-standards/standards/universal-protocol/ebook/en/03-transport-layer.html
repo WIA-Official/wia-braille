@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: Transport Layer | WIA-CORE-007</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9; line-height: 1.8; padding: 2rem;
+        }
+        .container {
+            max-width: 900px; margin: 0 auto; background: #1e293b;
+            padding: 3rem; border-radius: 15px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #10b981; border-bottom: 3px solid #6B7280; padding-bottom: 1rem; }
+        h2 { font-size: 2rem; margin: 2rem 0 1rem; color: #6B7280; }
+        h3 { font-size: 1.5rem; margin: 1.5rem 0 1rem; color: #10b981; }
+        p { margin: 1rem 0; font-size: 1.1rem; }
+        code { background: #0f172a; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: Monaco, monospace; color: #10b981; }
+        pre { background: #0f172a; padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; border-left: 4px solid #6B7280; }
+        pre code { background: none; padding: 0; }
+        .nav { margin: 2rem 0; display: flex; justify-content: space-between; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #10b981; text-decoration: none; font-weight: 600; padding: 0.5rem 1rem; border: 2px solid #6B7280; border-radius: 5px; transition: all 0.3s; }
+        .nav a:hover { background: #6B7280; color: white; }
+        .highlight { background: #334155; padding: 1.5rem; border-left: 4px solid #10b981; border-radius: 5px; margin: 1.5rem 0; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; font-size: 1.1rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 1rem; text-align: left; border: 1px solid #334155; }
+        th { background: #0f172a; color: #10b981; }
+        td { background: #1e293b; }
+        .emoji { font-size: 1.5em; margin-right: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">🚀</span>Chapter 3: Transport Layer</h1>
+
+        <h2>3.1 Transport Abstraction</h2>
+        <p>The transport layer is responsible for moving messages between endpoints. The Universal Protocol abstracts this layer so your application code doesn't need to know whether it's using HTTP, WebSocket, gRPC, or any other mechanism.</p>
+
+        <h3>3.1.1 Transport Interface</h3>
+        <p>All transports implement a common interface:</p>
+
+        <pre><code>interface Transport {
+  // Connection management
+  connect(): Promise&lt;void&gt;;
+  disconnect(): Promise&lt;void&gt;;
+  isConnected(): boolean;
+
+  // Message transmission
+  send(message: Message): Promise&lt;void&gt;;
+  receive(): AsyncIterableIterator&lt;Message&gt;;
+
+  // Event handling
+  on(event: string, handler: Function): void;
+  off(event: string, handler: Function): void;
+
+  // Configuration
+  configure(options: TransportOptions): void;
+}</code></pre>
+
+        <h2>3.2 HTTP Transport</h2>
+        <p>HTTP is the most widely supported transport. The Universal Protocol uses HTTP for request-response patterns.</p>
+
+        <pre><code>import { HTTPTransport } from '@wia/universal-protocol';
+
+const transport = new HTTPTransport({
+  baseURL: 'https://api.example.com',
+  timeout: 30000,
+  headers: {
+    'User-Agent': 'UniversalProtocol/1.0',
+    'Accept': 'application/json'
+  },
+  retryPolicy: {
+    maxRetries: 3,
+    retryDelay: 1000,
+    retryOn: [408, 429, 500, 502, 503, 504]
+  }
+});
+
+// RPC over HTTP
+// Request: POST /rpc
+// Body: {"method": "users.get", "params": {...}}
+const result = await protocol.call('users.get', { id: '123' });</code></pre>
+
+        <h3>3.2.1 HTTP Streaming</h3>
+        <p>Server-sent events (SSE) enable HTTP streaming:</p>
+
+        <pre><code>const transport = new HTTPTransport({
+  baseURL: 'https://api.example.com',
+  streaming: {
+    enabled: true,
+    format: 'server-sent-events'
+  }
+});
+
+// Server streams over HTTP using SSE
+for await (const event of protocol.stream('notifications.subscribe')) {
+  console.log('New notification:', event);
+}</code></pre>
+
+        <h2>3.3 WebSocket Transport</h2>
+        <p>WebSocket provides full-duplex communication over a single TCP connection.</p>
+
+        <pre><code>import { WebSocketTransport } from '@wia/universal-protocol';
+
+const transport = new WebSocketTransport({
+  url: 'wss://api.example.com/ws',
+  reconnect: {
+    enabled: true,
+    maxAttempts: 10,
+    delay: 1000,
+    maxDelay: 30000,
+    backoff: 'exponential'
+  },
+  heartbeat: {
+    enabled: true,
+    interval: 30000,
+    timeout: 5000
+  },
+  compression: true
+});
+
+const protocol = new UniversalProtocol({ transport });</code></pre>
+
+        <h3>3.3.1 WebSocket Features</h3>
+        <ul>
+            <li><strong>Bidirectional:</strong> Client and server can send messages anytime</li>
+            <li><strong>Low Latency:</strong> No HTTP overhead for each message</li>
+            <li><strong>Persistent:</strong> Connection stays open for continuous communication</li>
+            <li><strong>Compression:</strong> Built-in support for message compression</li>
+        </ul>
+
+        <pre><code>// Bidirectional streaming over WebSocket
+const stream = protocol.createBidirectionalStream('chat');
+
+// Send messages
+stream.send({ message: 'Hello!' });
+
+// Receive messages
+stream.on('message', (data) => {
+  console.log('Received:', data);
+});</code></pre>
+
+        <h2>3.4 gRPC Transport</h2>
+        <p>gRPC provides high-performance RPC with HTTP/2 and Protocol Buffers.</p>
+
+        <pre><code>import { GRPCTransport } from '@wia/universal-protocol';
+
+const transport = new GRPCTransport({
+  host: 'api.example.com',
+  port: 50051,
+  credentials: {
+    type: 'ssl',
+    cert: fs.readFileSync('ca.pem')
+  },
+  keepalive: {
+    time: 60000,
+    timeout: 20000,
+    permitWithoutCalls: true
+  },
+  compression: 'gzip'
+});
+
+const protocol = new UniversalProtocol({
+  transport,
+  encoding: 'protobuf' // gRPC works best with protobuf
+});</code></pre>
+
+        <h3>3.4.1 gRPC Advantages</h3>
+        <ul>
+            <li><strong>Performance:</strong> Binary protocol with efficient encoding</li>
+            <li><strong>Streaming:</strong> Native support for all streaming patterns</li>
+            <li><strong>Type Safety:</strong> Strong typing with Protocol Buffers</li>
+            <li><strong>Code Generation:</strong> Automatic client/server code generation</li>
+        </ul>
+
+        <h2>3.5 MQTT Transport</h2>
+        <p>MQTT is designed for IoT and constrained networks with low bandwidth.</p>
+
+        <pre><code>import { MQTTTransport } from '@wia/universal-protocol';
+
+const transport = new MQTTTransport({
+  broker: 'mqtt://broker.hivemq.com',
+  clientId: 'device_' + Math.random().toString(16).slice(2),
+  qos: 1, // Quality of Service level
+  clean: true,
+  keepalive: 60,
+  reconnectPeriod: 5000,
+  topics: {
+    request: 'devices/{deviceId}/request',
+    response: 'devices/{deviceId}/response',
+    events: 'devices/{deviceId}/events'
+  }
+});
+
+// Publish-subscribe works naturally with MQTT
+protocol.subscribe('sensor.temperature', (data) => {
+  console.log('Temperature:', data.value);
+});
+
+protocol.publish('sensor.temperature', {
+  deviceId: 'sensor_001',
+  value: 23.5,
+  unit: 'celsius'
+});</code></pre>
+
+        <h3>3.5.1 MQTT QoS Levels</h3>
+        <table>
+            <tr>
+                <th>Level</th>
+                <th>Name</th>
+                <th>Guarantee</th>
+            </tr>
+            <tr>
+                <td>0</td>
+                <td>At most once</td>
+                <td>Fire and forget, no acknowledgment</td>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td>At least once</td>
+                <td>Acknowledged delivery, possible duplicates</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>Exactly once</td>
+                <td>Guaranteed delivery, no duplicates</td>
+            </tr>
+        </table>
+
+        <h2>3.6 Custom Transports</h2>
+        <p>You can implement custom transports for specialized needs:</p>
+
+        <pre><code>import { Transport } from '@wia/universal-protocol';
+
+class CustomTCPTransport implements Transport {
+  private socket: net.Socket;
+
+  async connect(): Promise&lt;void&gt; {
+    return new Promise((resolve, reject) => {
+      this.socket = net.connect({
+        host: this.config.host,
+        port: this.config.port
+      });
+
+      this.socket.on('connect', () => {
+        this.emit('connected');
+        resolve();
+      });
+
+      this.socket.on('error', reject);
+    });
+  }
+
+  async send(message: Message): Promise&lt;void&gt; {
+    const buffer = this.serialize(message);
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(buffer.length, 0);
+
+    this.socket.write(length);
+    this.socket.write(buffer);
+  }
+
+  async* receive(): AsyncIterableIterator&lt;Message&gt; {
+    for await (const chunk of this.socket) {
+      const message = this.deserialize(chunk);
+      yield message;
+    }
+  }
+}</code></pre>
+
+        <h2>3.7 Transport Selection Guide</h2>
+        <table>
+            <tr>
+                <th>Transport</th>
+                <th>Best For</th>
+                <th>Latency</th>
+                <th>Bandwidth</th>
+            </tr>
+            <tr>
+                <td><strong>HTTP</strong></td>
+                <td>Web APIs, simple request-response</td>
+                <td>Medium</td>
+                <td>Medium</td>
+            </tr>
+            <tr>
+                <td><strong>WebSocket</strong></td>
+                <td>Real-time web apps, gaming</td>
+                <td>Low</td>
+                <td>Low</td>
+            </tr>
+            <tr>
+                <td><strong>gRPC</strong></td>
+                <td>Microservices, high-performance APIs</td>
+                <td>Very Low</td>
+                <td>Low</td>
+            </tr>
+            <tr>
+                <td><strong>MQTT</strong></td>
+                <td>IoT, constrained networks</td>
+                <td>Low</td>
+                <td>Very Low</td>
+            </tr>
+            <tr>
+                <td><strong>AMQP</strong></td>
+                <td>Enterprise messaging, reliability</td>
+                <td>Medium</td>
+                <td>Medium</td>
+            </tr>
+        </table>
+
+        <h2>3.8 Transport Multiplexing</h2>
+        <p>Use multiple transports simultaneously for different purposes:</p>
+
+        <pre><code>// HTTP for public API
+const httpProtocol = new UniversalProtocol({
+  transport: new HTTPTransport({ baseURL: 'https://api.example.com' })
+});
+
+// WebSocket for real-time features
+const wsProtocol = new UniversalProtocol({
+  transport: new WebSocketTransport({ url: 'wss://api.example.com/ws' })
+});
+
+// gRPC for internal microservices
+const grpcProtocol = new UniversalProtocol({
+  transport: new GRPCTransport({ host: 'internal.example.com', port: 50051 })
+});
+
+// Use the right protocol for each scenario
+const userData = await httpProtocol.call('users.get', { id: '123' });
+wsProtocol.subscribe('notifications', handleNotification);
+const internalData = await grpcProtocol.call('internal.getData', params);</code></pre>
+
+        <div class="highlight">
+            <h3>Transport Best Practices</h3>
+            <ul>
+                <li>Choose transport based on your specific requirements</li>
+                <li>Enable compression for large payloads</li>
+                <li>Implement reconnection logic for unstable networks</li>
+                <li>Use heartbeats to detect connection issues early</li>
+                <li>Monitor transport metrics (latency, throughput, errors)</li>
+                <li>Test your application with different transports</li>
+            </ul>
+        </div>
+
+        <div class="nav">
+            <a href="02-core-concepts.html">← Previous: Core Concepts</a>
+            <a href="04-encoding-serialization.html">Next: Encoding & Serialization →</a>
+        </div>
+
+        <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; opacity: 0.7; text-align: center;">
+            <p>&copy; 2025 SmileStory Inc. / WIA | 弘益人間 · Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

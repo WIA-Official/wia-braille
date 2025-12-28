@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>제5장 | WIA-ART-003 음악 제작 표준</title>
+<style>:root{--bg:#0f172a;--surface:#1e293b;--surface-2:#283548;--primary:#F59E0B;--text:#f1f5f9;--text-dim:#94a3b8;--border:#334155;--gold:#ffd700;--success:#10b981}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Malgun Gothic',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.9}.container{max-width:900px;margin:0 auto;padding:2rem}header{text-align:center;padding:3rem 0;border-bottom:2px solid var(--primary);margin-bottom:2rem}.badge{display:inline-block;background:var(--primary);color:var(--bg);padding:0.5rem 1.5rem;border-radius:2rem;font-weight:600;margin-bottom:1rem}h1{font-size:2.2rem;color:var(--primary)}h2{color:var(--primary);font-size:1.6rem;margin:2rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)}h3{color:var(--gold);font-size:1.3rem;margin:1.5rem 0 1rem}p{margin-bottom:1rem;word-break:keep-all}.callout{background:var(--surface);border-left:4px solid var(--primary);padding:1.5rem;margin:1.5rem 0;border-radius:0 0.5rem 0.5rem 0}.callout-title{font-weight:600;margin-bottom:0.5rem}pre{background:var(--surface-2);border:1px solid var(--border);border-radius:0.5rem;padding:1rem;overflow-x:auto;margin:1rem 0;font-size:0.85rem}ul,ol{margin:1rem 0 1rem 1.5rem}li{margin-bottom:0.5rem}table{width:100%;border-collapse:collapse;margin:1.5rem 0;background:var(--surface)}th,td{padding:0.75rem;text-align:left;border-bottom:1px solid var(--border)}th{background:var(--surface-2);color:var(--primary)}.nav{display:flex;justify-content:space-between;padding:2rem 0;border-top:1px solid var(--border);margin-top:2rem}.nav a{color:var(--primary);text-decoration:none;padding:0.75rem 1.5rem;background:var(--surface);border-radius:0.5rem}.philosophy{text-align:center;padding:2rem;background:var(--surface);border-radius:1rem;margin:2rem 0}.philosophy-text{font-size:1.5rem;color:var(--gold)}footer{text-align:center;padding:2rem;color:var(--text-dim)}</style>
+</head>
+<body>
+<div class="container">
+<header><div class="badge">제5장 / 8장</div><h1>Phase 2: DAW 플러그인 인터페이스</h1><p style="color:var(--text-dim)">WIA-ART-003 음악 제작 표준</p></header>
+
+<section>
+<h2>5.1 범용 플러그인 상태</h2>
+<p>WIA 플러그인 상태 사양은 플러그인 구성이 다른 호스트 애플리케이션 간에 전송될 수 있도록 합니다. 기존 플러그인 형식을 대체하는 대신, WIA-ART-003은 표준화된 메타데이터 및 파라미터 매핑으로 래핑합니다.</p>
+
+<h3>상태 구조</h3>
+<pre>
+{
+  "wia_plugin_state": {
+    "version": "1.0",
+    "plugin_id": {
+      "vendor": "FabFilter",
+      "name": "Pro-Q 3",
+      "version": "3.21",
+      "formats": {
+        "vst3": "XXXXXXXX-XXXX-XXXX-XXXX",
+        "au": "aufx:FabQ:FaFi",
+        "aax": "com.fabfilter.pro-q-3"
+      }
+    },
+    "semantic_params": [...],
+    "native_state": {
+      "format": "vst3",
+      "blob": "base64..."
+    }
+  }
+}
+</pre>
+
+<div class="callout">
+<div class="callout-title">🔌 형식 변환</div>
+<p>다른 플러그인 형식을 사용하는 호스트 간 전송 시:</p>
+<ol>
+<li>시맨틱 파라미터가 사람이 읽을 수 있는 매핑 제공</li>
+<li>네이티브 상태가 정확한 플러그인 구성 보존</li>
+<li>네이티브 형식을 사용할 수 없는 경우 시맨틱 파라미터가 설정 재구성</li>
+</ol>
+</div>
+</section>
+
+<section>
+<h2>5.2 시맨틱 파라미터 매핑</h2>
+<p>WIA-ART-003은 일반적인 플러그인 카테고리에 대한 표준화된 파라미터 식별자를 정의합니다. 이를 통해 동일한 기능을 수행하는 다른 플러그인 간에도 의미 있는 설정 전송이 가능합니다.</p>
+
+<h3>이퀄라이저 파라미터</h3>
+<table>
+<tr><th>WIA ID</th><th>설명</th><th>범위</th></tr>
+<tr><td>eq.band[n].enabled</td><td>밴드 활성 상태</td><td>boolean</td></tr>
+<tr><td>eq.band[n].type</td><td>필터 타입</td><td>enum: bell, lowshelf, highshelf...</td></tr>
+<tr><td>eq.band[n].frequency</td><td>중심 주파수</td><td>20-20000 Hz</td></tr>
+<tr><td>eq.band[n].gain</td><td>게인 조정</td><td>-24 ~ +24 dB</td></tr>
+<tr><td>eq.band[n].q</td><td>대역폭/Q 팩터</td><td>0.1 ~ 30</td></tr>
+</table>
+
+<h3>컴프레서 파라미터</h3>
+<table>
+<tr><th>WIA ID</th><th>설명</th><th>범위</th></tr>
+<tr><td>comp.threshold</td><td>스레숄드 레벨</td><td>-60 ~ 0 dB</td></tr>
+<tr><td>comp.ratio</td><td>압축 비율</td><td>1:1 ~ inf:1</td></tr>
+<tr><td>comp.attack</td><td>어택 타임</td><td>0.01 ~ 500 ms</td></tr>
+<tr><td>comp.release</td><td>릴리즈 타임</td><td>10 ~ 5000 ms</td></tr>
+<tr><td>comp.makeup</td><td>출력 게인</td><td>-12 ~ +24 dB</td></tr>
+</table>
+</section>
+
+<section>
+<h2>5.3 플러그인 검색 프로토콜</h2>
+<p>WIA 플러그인 검색 프로토콜은 호스트가 형식 경계를 넘어 동등한 플러그인을 찾을 수 있도록 합니다. 이는 협력자가 다른 플랫폼을 사용할 때 세션 이식성에 필수적입니다.</p>
+
+<h3>매칭 기준</h3>
+<ul>
+<li>플러그인 카테고리 (EQ, 컴프레서, 리버브 등)</li>
+<li>지원되는 파라미터 타입 및 범위</li>
+<li>처리 품질 특성</li>
+<li>사용자 선호도 가중치</li>
+</ul>
+</section>
+
+<section>
+<h2>5.4 프리셋 교환</h2>
+<p>WIA-ART-003은 플러그인 간 범용 프리셋 교환을 가능하게 합니다. 한 플러그인에서 생성된 프리셋이 다른 공급업체의 호환 플러그인에서 작동하도록 변환될 수 있습니다.</p>
+
+<h3>프리셋 패키지 형식</h3>
+<pre>
+WIA 프리셋 패키지 (.wiap)
+├── manifest.json
+│   ├── name: "Warm Vocal"
+│   ├── category: "vocal"
+│   ├── creator: "Producer Name"
+│   └── original_plugin: {...}
+├── semantic_preset.json
+│   └── (시맨틱 파라미터 값)
+├── native/
+│   ├── fabfilter-pro-q-3.fxp
+│   ├── waves-ssl-eq.xml
+│   └── (기타 네이티브 형식)
+└── preview.png
+</pre>
+</section>
+
+<section>
+<h2>5.5 SDK 구현</h2>
+<p>WIA 플러그인 SDK는 DAW 애플리케이션에 플러그인 상태 관리를 통합하기 위한 TypeScript/JavaScript 구현을 제공합니다.</p>
+
+<h3>SDK 기능</h3>
+<table>
+<tr><th>기능</th><th>메서드</th><th>설명</th></tr>
+<tr><td>직렬화</td><td>serialize()</td><td>완전한 플러그인 상태 캡처</td></tr>
+<tr><td>역직렬화</td><td>deserialize()</td><td>플러그인 상태 복원</td></tr>
+<tr><td>비교</td><td>compare()</td><td>두 플러그인 상태 비교</td></tr>
+<tr><td>변환</td><td>translate()</td><td>플러그인 타입 간 변환</td></tr>
+<tr><td>검색</td><td>findAlternatives()</td><td>호환 플러그인 찾기</td></tr>
+</table>
+</section>
+
+<section>
+<h2>5.6 장 요약</h2>
+<div class="callout" style="border-color:var(--success)">
+<div class="callout-title">✅ 핵심 정리</div>
+<ul>
+<li>WIA 플러그인 상태가 표준화된 메타데이터로 네이티브 형식 래핑</li>
+<li>시맨틱 파라미터 매핑이 다른 플러그인 간 변환 가능</li>
+<li>플러그인 검색 프로토콜이 형식 간 호환 대안 찾기</li>
+<li>범용 프리셋 교환이 다른 공급업체의 플러그인 간 작동</li>
+<li>SDK가 DAW 개발자를 위한 간단한 통합 제공</li>
+</ul>
+</div>
+
+<div class="philosophy"><div class="philosophy-text">弘益人間</div><p>플러그인은 협업을 제한하지 않고 창의성을 향상시켜야 합니다.</p></div>
+</section>
+
+<nav class="nav">
+<a href="chapter-04.html">← 제4장</a>
+<a href="chapter-06.html">제6장 →</a>
+</nav>
+<footer><p>WIA-ART-003 v1.0 | © 2025 WIA | 弘益人間</p></footer>
+</div>
+</body>
+</html>

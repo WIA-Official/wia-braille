@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Implementation Guide | WIA-DEF-002 Military Drone</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --primary: #8B5CF6;
+            --text: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #475569;
+            --success: #10b981;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-secondary); padding: 3rem; border-radius: 10px; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: var(--bg-tertiary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--primary); font-weight: bold; }
+        tr:hover { background: var(--bg-tertiary); }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: 5px; transition: all 0.3s ease; }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', monospace; color: var(--success); font-size: 0.9em; }
+        pre { background: var(--bg); padding: 1.5rem; border-radius: 5px; overflow-x: auto; margin: 1.5rem 0; border: 1px solid var(--border); line-height: 1.4; }
+        pre code { padding: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">Chapter 4</p>
+        <h1>Implementation Guide</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            Practical guidance for implementing flight control systems, autopilot architecture, and navigation subsystems.
+        </p>
+
+        <h2>Flight Control System Architecture</h2>
+        <p>
+            The flight control system represents the brain of any unmanned aerial vehicle, managing everything from basic stability to complex autonomous navigation. Implementing a compliant flight control system requires careful integration of hardware components, software algorithms, and safety mechanisms that work together to provide reliable, safe flight operations across diverse environmental conditions and mission scenarios.
+        </p>
+        <p>
+            The WIA-DEF-002 standard specifies a layered architecture that separates concerns between hardware abstraction, core flight control algorithms, mission planning, and safety monitoring. This modular approach enables implementations to swap hardware components or upgrade algorithms without requiring complete system redesigns. It also facilitates certification by allowing independent validation of each layer.
+        </p>
+
+        <h3>Hardware Layer Components</h3>
+        <p>
+            The hardware foundation of the flight control system consists of sensors that measure the aircraft's state, actuators that control flight surfaces or motors, and the flight controller computer that processes sensor data and generates control commands. Proper selection and integration of these components is critical for achieving desired performance characteristics.
+        </p>
+
+        <div class="info-box">
+            <h4>Core Flight Controller Components:</h4>
+            <ul>
+                <li><strong>Inertial Measurement Unit (IMU):</strong> 3-axis accelerometers and 3-axis gyroscopes measuring linear acceleration and angular rates. High-end military systems use tactical-grade or navigation-grade IMUs with bias stability &lt;1°/hour for gyros.</li>
+                <li><strong>GPS/GNSS Receiver:</strong> Multi-constellation (GPS, GLONASS, Galileo, BeiDou) receiver providing position, velocity, and time. Military receivers include anti-spoofing and anti-jamming capabilities.</li>
+                <li><strong>Barometric Altimeter:</strong> Atmospheric pressure sensor for altitude measurement, typically accurate to ±1-2 meters when properly calibrated to local pressure.</li>
+                <li><strong>Magnetometer:</strong> 3-axis magnetic compass for heading reference, though subject to magnetic interference from motors and electronics requiring careful calibration.</li>
+                <li><strong>Airspeed Sensor:</strong> Pitot-static system measuring dynamic pressure for indicated airspeed calculation, essential for fixed-wing aircraft control.</li>
+                <li><strong>Flight Controller Computer:</strong> Embedded processor (typically ARM Cortex-M7 or similar) running at 168-400 MHz with hardware floating-point unit for efficient calculation.</li>
+            </ul>
+        </div>
+
+        <h3>Autopilot Software Stack</h3>
+        <p>
+            The autopilot software transforms raw sensor measurements into flight control commands through a sophisticated processing pipeline. The WIA-DEF-002 standard specifies minimum update rates, filter specifications, and control loop characteristics to ensure adequate performance across all drone classes.
+        </p>
+
+        <pre><code>// Flight Control Stack Architecture
+FlightController {
+  // Sensor fusion layer (400 Hz update rate)
+  SensorFusion {
+    IMU: read accelerometer + gyro data
+    GPS: read position + velocity
+    Barometer: read altitude
+    Magnetometer: read heading
+
+    ExtendedKalmanFilter(IMU, GPS, Baro, Mag)
+      → Attitude (roll, pitch, yaw)
+      → Position (lat, lon, alt)
+      → Velocity (vx, vy, vz)
+      → Angular rates (p, q, r)
+  }
+
+  // Attitude control (400 Hz)
+  AttitudeController {
+    desired_attitude ← NavigationController
+    current_attitude ← SensorFusion
+
+    error = desired - current
+    PID_roll(error.roll) → aileron_command
+    PID_pitch(error.pitch) → elevator_command
+    PID_yaw(error.yaw) → rudder_command
+  }
+
+  // Navigation control (50 Hz)
+  NavigationController {
+    waypoint ← MissionPlanner
+    position ← SensorFusion
+
+    // Compute desired heading and altitude
+    heading = atan2(waypoint - position)
+    altitude_error = waypoint.alt - position.alt
+
+    // Generate attitude commands
+    desired_roll = heading_PID(heading_error)
+    desired_pitch = altitude_PID(altitude_error)
+    desired_yaw = coordinated_turn(desired_roll)
+  }
+
+  // Safety monitor (100 Hz)
+  SafetyMonitor {
+    check_geofence_violations()
+    check_low_battery()
+    check_sensor_health()
+    check_communication_status()
+
+    if (critical_failure) {
+      trigger_RTB() or trigger_emergency_land()
+    }
+  }
+}</code></pre>
+
+        <p>
+            This architecture implements a cascaded control structure where the navigation controller generates desired attitude commands, the attitude controller maintains those attitudes, and the inner loop rate controller ensures smooth, stable control of angular rates. Each layer operates at an appropriate update frequency: fast inner loops for stability, slower outer loops for navigation.
+        </p>
+
+        <h3>Coordinate Systems and Transformations</h3>
+        <p>
+            Drone flight control requires working with multiple coordinate frames: body frame (fixed to aircraft), navigation frame (local level), and Earth frame (latitude/longitude). Proper transformation between these frames is essential for accurate navigation and control.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Coordinate Frame</th>
+                    <th>Axes Definition</th>
+                    <th>Primary Use</th>
+                    <th>Transformation Method</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Body Frame</td>
+                    <td>X: forward, Y: right, Z: down</td>
+                    <td>IMU measurements, control outputs</td>
+                    <td>Fixed to aircraft structure</td>
+                </tr>
+                <tr>
+                    <td>Navigation (NED)</td>
+                    <td>X: North, Y: East, Z: Down</td>
+                    <td>Local position, velocity</td>
+                    <td>Rotation matrices (DCM) or quaternions</td>
+                </tr>
+                <tr>
+                    <td>Earth (ECEF)</td>
+                    <td>X, Y, Z from Earth center</td>
+                    <td>GPS coordinates, long-range nav</td>
+                    <td>Geodetic transformations</td>
+                </tr>
+                <tr>
+                    <td>Sensor Frame</td>
+                    <td>Varies by sensor mounting</td>
+                    <td>Camera pointing, radar beam</td>
+                    <td>Calibrated mounting angles</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Navigation System Implementation</h2>
+        <p>
+            Reliable navigation requires fusing data from multiple sensors with complementary characteristics. GPS provides accurate absolute position but can be jammed or spoofed. Inertial navigation provides short-term accuracy but drifts over time. Barometric altitude is susceptible to weather pressure changes. Magnetometers suffer from local magnetic disturbances. An effective navigation solution combines all these sources optimally.
+        </p>
+
+        <h3>Extended Kalman Filter for State Estimation</h3>
+        <p>
+            The Extended Kalman Filter (EKF) is the most common approach for fusing sensor data in drone navigation systems. The EKF maintains a statistical estimate of the vehicle state (position, velocity, attitude) and updates this estimate as new sensor measurements arrive, properly accounting for sensor noise characteristics and dynamic uncertainties.
+        </p>
+
+        <pre><code>// Extended Kalman Filter Implementation
+class NavigationEKF {
+  state: {
+    position: [x, y, z],          // NED position (m)
+    velocity: [vx, vy, vz],       // NED velocity (m/s)
+    attitude: [q0, q1, q2, q3],   // Quaternion orientation
+    gyro_bias: [bx, by, bz],      // Gyro bias estimates (rad/s)
+    accel_bias: [ax, ay, az]      // Accel bias estimates (m/s²)
+  };
+
+  covariance: Matrix(15x15);       // State uncertainty
+
+  predict(dt, imu_measurement) {
+    // Propagate state forward using IMU
+    // position += velocity * dt
+    // velocity += (rotation * acceleration) * dt
+    // attitude = integrate(angular_rates) * dt
+
+    // Propagate covariance using process noise
+    // P = F * P * F^T + Q
+  }
+
+  update_gps(gps_measurement) {
+    // Compute innovation (measurement - prediction)
+    innovation = gps_measurement.position - state.position
+
+    // Compute Kalman gain
+    K = P * H^T * (H * P * H^T + R_gps)^-1
+
+    // Update state and covariance
+    state += K * innovation
+    covariance = (I - K * H) * covariance
+  }
+
+  update_barometer(baro_measurement) {
+    // Update altitude using barometric pressure
+    innovation = pressure_to_altitude(baro) - state.position.z
+    // ... Kalman update for altitude
+  }
+
+  update_magnetometer(mag_measurement) {
+    // Update heading using magnetometer
+    expected_mag = rotation * earth_magnetic_field
+    innovation = mag_measurement - expected_mag
+    // ... Kalman update for yaw
+  }
+}</code></pre>
+
+        <p>
+            The EKF operates in a two-step cycle: prediction and update. During prediction, the filter uses IMU measurements to propagate the state forward in time based on the equations of motion. During updates, measurements from GPS, barometer, and magnetometer are incorporated to correct drift and maintain accuracy. The filter automatically weights each sensor based on its noise characteristics and current reliability.
+        </p>
+
+        <h3>GPS-Denied Navigation</h3>
+        <p>
+            Military drones must maintain navigation capability when GPS is unavailable due to jamming, signal blockage, or indoor operations. The WIA-DEF-002 standard specifies backup navigation modes that can sustain operations for limited periods without GPS.
+        </p>
+
+        <div class="highlight-box">
+            <h4>GPS-Denied Navigation Techniques:</h4>
+            <ul>
+                <li><strong>Dead Reckoning:</strong> Pure inertial navigation using only IMU, accumulating position from integrated acceleration. Drift: 1-5 nm/hour for tactical IMUs, requires periodic GPS updates or other position fixes.</li>
+                <li><strong>Terrain-Aided Navigation (TAN):</strong> Compares barometric altitude and radar altimeter readings against known terrain elevation database to estimate position. Effective over terrain with significant elevation variations.</li>
+                <li><strong>Visual Odometry:</strong> Tracks features in camera images frame-to-frame to estimate motion. Requires textured terrain and good lighting. Can achieve <1% distance error in favorable conditions.</li>
+                <li><strong>SLAM (Simultaneous Localization and Mapping):</strong> Builds map of environment while localizing within it using LIDAR or camera. Computationally intensive but enables indoor navigation.</li>
+                <li><strong>Celestial Navigation:</strong> Traditional astronomy-based position fixing using sun, moon, and star observations. Rarely used on small drones due to sensor requirements.</li>
+            </ul>
+        </div>
+
+        <h2>Flight Control Modes</h2>
+        <p>
+            Military drones operate in various control modes depending on mission phase, operator intent, and system health. Implementing smooth transitions between modes while maintaining safety is a critical aspect of flight controller design.
+        </p>
+
+        <h3>Manual Control Mode</h3>
+        <p>
+            In manual mode, operator stick inputs directly command flight control surfaces (fixed-wing) or motor speeds (rotorcraft). The autopilot provides only basic stabilization to make the aircraft easier to fly, but the operator is responsible for navigation and collision avoidance. This mode is typically used for takeoff, landing, and training operations.
+        </p>
+
+        <h3>Stabilized Mode</h3>
+        <p>
+            Stabilized mode (also called attitude mode) maintains level flight when the operator releases controls. Stick inputs command desired attitudes rather than control surface deflections. The autopilot uses attitude control loops to hold roll, pitch, and yaw angles. Altitude and heading may drift, but the aircraft will not enter unusual attitudes. This mode is useful for manual flying in moderate conditions.
+        </p>
+
+        <h3>Autonomous Waypoint Navigation</h3>
+        <p>
+            In autonomous mode, the autopilot follows a pre-programmed flight plan consisting of waypoints, each specifying position, altitude, and actions. The navigation controller computes heading and altitude commands to reach waypoints in sequence, while the attitude controller maintains commanded attitudes. This is the primary mode for most military drone missions.
+        </p>
+
+        <pre><code>// Waypoint Navigation Logic
+function navigate_to_waypoint(current_position, waypoint) {
+  // Compute vector to waypoint
+  dx = waypoint.lon - current_position.lon
+  dy = waypoint.lat - current_position.lat
+  distance = sqrt(dx² + dy²)
+
+  // Compute desired heading
+  desired_heading = atan2(dx, dy)
+
+  // Compute cross-track error (distance from desired track)
+  cross_track = compute_cross_track_error()
+  heading_correction = atan(cross_track / distance)
+  desired_heading += heading_correction
+
+  // Compute desired altitude
+  altitude_error = waypoint.alt - current_position.alt
+  // Limit climb/descent rate based on aircraft performance
+  max_climb_rate = 500 ft/min
+  desired_climb_rate = clamp(altitude_error / time_to_waypoint,
+                             -max_climb_rate, max_climb_rate)
+
+  // Generate attitude commands
+  desired_roll = heading_PID(heading_error)
+  desired_pitch = altitude_PID(altitude_error)
+
+  // Check waypoint arrival
+  if (distance < arrival_radius &&
+      abs(altitude_error) < altitude_tolerance) {
+    advance_to_next_waypoint()
+  }
+
+  return {desired_roll, desired_pitch, desired_yaw}
+}</code></pre>
+
+        <h3>Return-to-Base (RTB) Mode</h3>
+        <p>
+            RTB mode is automatically engaged when the aircraft experiences low battery, communication loss, geofence violation, or other emergencies. The autopilot computes a direct route back to the designated home position (typically the launch site or a designated recovery area) and autonomously flies there. Upon arrival, the aircraft either loiters awaiting further commands or executes an autonomous landing if fuel state is critical.
+        </p>
+
+        <h2>Failsafe Mechanisms</h2>
+        <p>
+            Safety is paramount in military drone operations. The WIA-DEF-002 standard mandates comprehensive failsafe mechanisms that detect abnormal conditions and execute appropriate recovery actions. These systems must function reliably even when primary systems are degraded or failed.
+        </p>
+
+        <h3>Geofencing Implementation</h3>
+        <p>
+            Geofencing prevents drones from entering restricted airspace or flying beyond authorized areas. The flight controller continuously monitors position relative to defined geographic boundaries and takes action when violations are detected or imminent.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Geofence Type</th>
+                    <th>Definition</th>
+                    <th>Violation Action</th>
+                    <th>Use Cases</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Max Altitude</td>
+                    <td>Upper altitude limit (AGL or MSL)</td>
+                    <td>Prevent further climb, initiate descent</td>
+                    <td>Airspace restrictions, regulatory compliance</td>
+                </tr>
+                <tr>
+                    <td>Max Distance</td>
+                    <td>Maximum range from home position</td>
+                    <td>Stop outbound flight, return to home</td>
+                    <td>Communication range, battery endurance</td>
+                </tr>
+                <tr>
+                    <td>Inclusion Zone</td>
+                    <td>Polygon defining allowed flight area</td>
+                    <td>Prevent exit, force return inward</td>
+                    <td>Mission areas, authorized airspace</td>
+                </tr>
+                <tr>
+                    <td>Exclusion Zone</td>
+                    <td>Polygon defining prohibited area</td>
+                    <td>Prevent entry, route around</td>
+                    <td>Sensitive sites, hazards, populated areas</td>
+                </tr>
+                <tr>
+                    <td>Dynamic No-Fly</td>
+                    <td>Temporary restrictions (NOTAMs)</td>
+                    <td>Real-time avoidance, mission re-plan</td>
+                    <td>TFRs, conflicting aircraft, hazards</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Battery Management and Low-Power Handling</h3>
+        <p>
+            Proper battery management is critical for safe operations. The flight controller monitors battery voltage, current draw, and remaining capacity to estimate endurance. When battery reserves reach critical levels, the autopilot must initiate return-to-base or emergency landing procedures.
+        </p>
+
+        <pre><code>// Battery Management System
+class BatteryMonitor {
+  voltage_threshold: {
+    nominal: 22.2V,    // 6S LiPo nominal
+    low: 20.4V,        // 3.4V per cell
+    critical: 19.8V,   // 3.3V per cell
+    emergency: 19.2V   // 3.2V per cell
+  };
+
+  current: measured in amps
+  capacity: 10000 mAh
+  consumed: mAh used so far
+
+  estimate_remaining_time() {
+    remaining_capacity = capacity - consumed
+    current_draw = average_current(last_60_seconds)
+
+    // Account for voltage drop under load
+    voltage_factor = current_voltage / nominal_voltage
+    effective_capacity = remaining_capacity * voltage_factor
+
+    // Time in minutes
+    return (effective_capacity / current_draw) * 60
+  }
+
+  check_battery_status() {
+    remaining = estimate_remaining_time()
+    time_to_home = estimate_flight_time_to_home()
+
+    if (voltage < emergency_threshold) {
+      trigger_immediate_landing()
+    } else if (voltage < critical_threshold ||
+               remaining < time_to_home * 1.5) {
+      trigger_RTB_immediate()
+    } else if (voltage < low_threshold ||
+               remaining < time_to_home * 2.0) {
+      warn_operator_low_battery()
+      prepare_RTB()
+    }
+  }
+}</code></pre>
+
+        <h3>Lost Link Procedures</h3>
+        <p>
+            Communication link failures require autonomous decision-making by the flight controller. The WIA-DEF-002 standard specifies a progressive escalation of responses based on link loss duration and mission criticality.
+        </p>
+
+        <div class="info-box">
+            <h4>Lost Link Response Sequence:</h4>
+            <ol>
+                <li><strong>0-30 seconds:</strong> Continue current flight mode, attempt to re-establish link on backup frequencies. No altitude or heading changes to facilitate recovery.</li>
+                <li><strong>30-120 seconds:</strong> Enter loiter mode at current position. Aircraft circles at safe altitude while continuing communication recovery attempts on all available links.</li>
+                <li><strong>2-5 minutes:</strong> Initiate return-to-base procedure if communication not restored. Fly direct route to home position using autonomous navigation.</li>
+                <li><strong>5+ minutes:</strong> Upon reaching home position, enter holding pattern at pattern altitude (typically 400 ft AGL). If communication restored, await operator commands. If not restored and fuel critical, execute autonomous landing.</li>
+            </ol>
+        </div>
+
+        <h2>Platform-Specific Considerations</h2>
+        <p>
+            While the core principles apply across all drone types, fixed-wing and rotary-wing platforms have distinct implementation requirements that must be addressed for successful deployment.
+        </p>
+
+        <h3>Fixed-Wing Implementation</h3>
+        <p>
+            Fixed-wing drones maintain flight through forward airspeed over wings. Control is achieved through deflection of aerodynamic surfaces (ailerons, elevator, rudder). Implementations must account for minimum airspeed requirements, stall characteristics, and turning radius limitations.
+        </p>
+        <p>
+            Altitude control in fixed-wing aircraft couples with airspeed - climbing requires increased power and may reduce airspeed, while descending can increase airspeed. The flight controller must coordinate throttle and elevator inputs to achieve desired altitude changes while maintaining safe airspeeds.
+        </p>
+
+        <h3>Multicopter Implementation</h3>
+        <p>
+            Multicopters achieve control through differential motor speeds, directly controlling attitude and thrust. They can hover and translate in any direction, but are less efficient than fixed-wing for long-range missions. Implementations must handle motor failures gracefully - losing one motor on a hexacopter or octocopter is survivable, but quadcopters cannot sustain controlled flight with motor loss.
+        </p>
+
+        <div class="highlight-box">
+            <h3>Summary: Key Takeaways</h3>
+            <ul>
+                <li><strong>Layered Architecture:</strong> Flight control systems implement a modular stack separating hardware abstraction, sensor fusion, attitude control, navigation control, and safety monitoring for maintainability and certification.</li>
+                <li><strong>Sensor Fusion:</strong> Extended Kalman Filters optimally combine GPS, IMU, barometer, and magnetometer data to provide accurate state estimation despite individual sensor limitations.</li>
+                <li><strong>Control Loops:</strong> Cascaded control structure with fast inner loops (400 Hz attitude control) and slower outer loops (50 Hz navigation) ensures stability and performance.</li>
+                <li><strong>GPS-Denied Navigation:</strong> Backup techniques including dead reckoning, visual odometry, and terrain-aided navigation maintain capability when GPS unavailable.</li>
+                <li><strong>Progressive Failsafes:</strong> Lost link procedures escalate from loiter to RTB to autonomous landing based on duration and criticality, ensuring safe outcomes.</li>
+                <li><strong>Battery Management:</strong> Sophisticated monitoring estimates remaining endurance accounting for voltage drop and initiates return-to-base with adequate reserves.</li>
+                <li><strong>Geofencing:</strong> Multiple fence types (altitude, distance, inclusion/exclusion zones) prevent airspace violations and ensure operation within authorized areas.</li>
+            </ul>
+        </div>
+
+        <h2>Review Questions</h2>
+        <ol>
+            <li>Describe the components of the hardware layer in a flight control system. Why are both GPS and inertial sensors necessary for accurate navigation?</li>
+            <li>Explain the cascaded control architecture with inner attitude loops and outer navigation loops. Why do inner loops run at higher frequencies (400 Hz) than outer loops (50 Hz)?</li>
+            <li>How does an Extended Kalman Filter fuse data from multiple sensors? What advantages does this statistical approach provide over simple sensor averaging?</li>
+            <li>What is GPS-denied navigation, and why is it important for military drones? Describe two techniques for navigation without GPS.</li>
+            <li>Compare manual, stabilized, and autonomous flight modes. What are the appropriate use cases for each mode?</li>
+            <li>Explain the geofencing implementation. How do inclusion zones differ from exclusion zones, and what actions should the autopilot take when boundaries are violated?</li>
+            <li>Describe the lost link response sequence specified in WIA-DEF-002. Why does the procedure loiter initially rather than immediately returning to base?</li>
+            <li>What platform-specific differences exist between fixed-wing and multicopter flight control implementations? How do these affect control algorithms and failsafe procedures?</li>
+        </ol>
+
+        <div class="nav-buttons">
+            <a href="chapter-03.html" class="btn">← Previous: API and Interfaces</a>
+            <a href="chapter-05.html" class="btn">Next: Protocols and Communication →</a>
+        </div>
+    </div>
+</body>
+</html>

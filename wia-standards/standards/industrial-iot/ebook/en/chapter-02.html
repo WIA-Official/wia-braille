@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: IIoT Architecture & Communication - WIA-IND-027</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #8B5CF6;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--surface); padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
+        h1 { color: var(--primary); font-size: 2.5em; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; }
+        h2 { color: var(--primary); font-size: 1.8em; margin-top: 40px; margin-bottom: 20px; }
+        h3 { color: var(--primary); font-size: 1.4em; margin-top: 30px; margin-bottom: 15px; }
+        p { margin-bottom: 15px; color: var(--text-dim); }
+        .highlight { background: rgba(139, 92, 246, 0.2); padding: 20px; border-left: 4px solid var(--primary); margin: 20px 0; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 25px 0; background: var(--bg); }
+        th, td { padding: 15px; text-align: left; border: 1px solid var(--border); }
+        th { background: var(--primary); color: var(--text); font-weight: 600; }
+        tr:hover { background: rgba(139, 92, 246, 0.1); }
+        code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-family: 'Courier New', monospace; color: var(--primary); }
+        pre { background: var(--bg); padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; border: 1px solid var(--border); }
+        pre code { padding: 0; background: transparent; }
+        .key-takeaways { background: rgba(139, 92, 246, 0.1); padding: 25px; border-radius: 8px; margin: 30px 0; }
+        .key-takeaways h3 { margin-top: 0; }
+        .key-takeaways ul { margin-left: 20px; }
+        .key-takeaways li { margin: 10px 0; color: var(--text-dim); }
+        .review-questions { background: var(--bg); padding: 25px; border-radius: 8px; margin: 30px 0; border: 2px solid var(--primary); }
+        .review-questions h3 { margin-top: 0; }
+        .review-questions ol { margin-left: 20px; }
+        .review-questions li { margin: 15px 0; color: var(--text-dim); }
+        .navigation { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 2px solid var(--border); }
+        .nav-button { background: var(--primary); color: var(--text); padding: 12px 24px; text-decoration: none; border-radius: 6px; transition: background 0.3s; }
+        .nav-button:hover { background: #7C3AED; }
+        .diagram { background: var(--bg); padding: 20px; border-radius: 8px; margin: 20px 0; font-family: monospace; overflow-x: auto; border: 1px solid var(--border); }
+        ul { margin-left: 20px; margin-bottom: 15px; }
+        li { margin: 8px 0; color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chapter 2: IIoT Architecture & Communication</h1>
+        <div class="highlight">
+            <strong>WIA-IND-027 Standard</strong><br>
+            Understanding the layered architecture and communication patterns that enable robust IIoT systems
+        </div>
+
+        <h2>2.1 Three-Layer IIoT Architecture</h2>
+        <p>The WIA-IND-027 standard defines a three-layer architecture that separates concerns between device control, edge processing, and cloud analytics. This architecture provides scalability, fault tolerance, and optimal resource utilization across the IIoT ecosystem.</p>
+
+        <h3>2.1.1 Layer Responsibilities</h3>
+        <table>
+            <thead>
+                <tr><th>Layer</th><th>Primary Functions</th><th>Latency Requirements</th><th>Typical Hardware</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Device/Field</td><td>Physical control, sensor reading, safety</td><td>&lt;1ms - 100ms</td><td>PLCs, Robots, Sensors</td></tr>
+                <tr><td>Edge Computing</td><td>Protocol translation, local analytics, buffering</td><td>10ms - 1s</td><td>Industrial PCs, Gateways</td></tr>
+                <tr><td>Cloud/Enterprise</td><td>Long-term storage, ML, MES/ERP integration</td><td>1s - minutes</td><td>Cloud VMs, Databases</td></tr>
+            </tbody>
+        </table>
+
+        <h3>2.1.2 Device/Field Layer Details</h3>
+        <p>The field layer operates in real-time, controlling physical processes with deterministic timing. Key characteristics include:</p>
+        <ul>
+            <li><strong>Siemens S7-1500 PLCs:</strong> 1ms scan cycle, PROFINET IRT for motion control, integrated safety (Safety Integrated)</li>
+            <li><strong>Allen-Bradley ControlLogix:</strong> EtherNet/IP communication, 5ms response time, hot-swappable modules</li>
+            <li><strong>ABB Robots:</strong> Real-time path planning, 125μs servo cycle, RobotStudio simulation integration</li>
+            <li><strong>Industrial Sensors:</strong> 4-20mA analog signals, HART protocol for diagnostics, IO-Link digital communication</li>
+        </ul>
+
+        <p>Safety-critical operations at this layer follow SIL (Safety Integrity Level) ratings according to IEC 61508:</p>
+        <table>
+            <thead>
+                <tr><th>SIL Level</th><th>Risk Reduction</th><th>Applications</th><th>Failure Rate (per hour)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>SIL 1</td><td>10-100x</td><td>Non-critical monitoring</td><td>10⁻⁵ to 10⁻⁶</td></tr>
+                <tr><td>SIL 2</td><td>100-1000x</td><td>Standard automation</td><td>10⁻⁶ to 10⁻⁷</td></tr>
+                <tr><td>SIL 3</td><td>1000-10000x</td><td>Critical safety systems</td><td>10⁻⁷ to 10⁻⁸</td></tr>
+                <tr><td>SIL 4</td><td>&gt;10000x</td><td>Life-critical (nuclear, aviation)</td><td>&lt;10⁻⁸</td></tr>
+            </tbody>
+        </table>
+
+        <h3>2.1.3 Edge Computing Layer Implementation</h3>
+        <p>Edge gateways bridge the gap between OT and IT, performing critical data transformation and local intelligence:</p>
+
+        <div class="diagram">
+<pre>┌────────────────────────────────────────────────────────┐
+│              Edge Gateway Architecture                 │
+├────────────────────────────────────────────────────────┤
+│  ┌──────────────────────────────────────────────────┐ │
+│  │  Protocol Adapters Layer                         │ │
+│  │  [OPC-UA Client] [MQTT Pub/Sub] [Modbus Master] │ │
+│  │  [PROFINET Scanner] [EtherNet/IP Adapter]        │ │
+│  └──────────────────────────────────────────────────┘ │
+│                        ↓↓↓                              │
+│  ┌──────────────────────────────────────────────────┐ │
+│  │  Data Normalization Engine                       │ │
+│  │  • Unit conversion (°F→°C, PSI→Bar)             │ │
+│  │  • Timestamp synchronization (NTP)               │ │
+│  │  • Data type mapping (INT16→FLOAT)              │ │
+│  └──────────────────────────────────────────────────┘ │
+│                        ↓↓↓                              │
+│  ┌──────────────────────────────────────────────────┐ │
+│  │  Processing & Analytics Engine                   │ │
+│  │  • Dead-band filtering (50-90% reduction)        │ │
+│  │  • Edge AI inference (TensorFlow Lite)           │ │
+│  │  • Statistical aggregation (min/max/avg)         │ │
+│  │  • Anomaly detection (Z-score, Moving avg)       │ │
+│  └──────────────────────────────────────────────────┘ │
+│                        ↓↓↓                              │
+│  ┌──────────────────────────────────────────────────┐ │
+│  │  Data Router & Storage                           │ │
+│  │  • Local SQLite/InfluxDB (7-30 days)            │ │
+│  │  • Store-and-forward queue (Redis)               │ │
+│  │  • Cloud sync (MQTT/HTTPS)                       │ │
+│  │  • Alert engine (Threshold/Anomaly)              │ │
+│  └──────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────┘</pre>
+        </div>
+
+        <p><strong>Edge Hardware Examples:</strong></p>
+        <ul>
+            <li><strong>Beckhoff C6030:</strong> Intel Core i7, 16GB RAM, fanless -25°C to +60°C, TwinCAT real-time runtime</li>
+            <li><strong>Dell Edge Gateway 3000:</strong> Intel Atom, Ubuntu Snappy Core, cellular/WiFi/Ethernet, AWS Greengrass support</li>
+            <li><strong>Siemens SIMATIC IPC427E:</strong> Ruggedized, RAID storage, 24/7 operation, integrated UPS</li>
+            <li><strong>Advantech UNO-2484G:</strong> Quad-core, 8GB RAM, wide temp -40°C to +70°C, 4x GbE ports</li>
+        </ul>
+
+        <h2>2.2 Network Topologies</h2>
+
+        <h3>2.2.1 Star Topology</h3>
+        <p>All devices connect to a central gateway, simplifying network management but creating a single point of failure:</p>
+        <div class="diagram">
+<pre>        ┌────────────────┐
+        │  Edge Gateway  │
+        │  10.0.1.1      │
+        └────────────────┘
+         ↙   ↓   ↓   ↓   ↘
+    [PLC]  [Sensor][Robot][CNC] [AGV]
+   .10     .20     .30    .40   .50</pre>
+        </div>
+
+        <ul>
+            <li><strong>Advantages:</strong> Simple wiring, easy troubleshooting, centralized security policy</li>
+            <li><strong>Disadvantages:</strong> Gateway failure stops all communication, cable length limited to 100m (Ethernet)</li>
+            <li><strong>Use Cases:</strong> Small factories (10-50 devices), single production line, pilot IIoT projects</li>
+        </ul>
+
+        <h3>2.2.2 Hierarchical Topology</h3>
+        <p>Multi-level structure with line gateways feeding into factory-level aggregators:</p>
+        <div class="diagram">
+<pre>           ┌──────────────────┐
+           │ Factory Gateway  │
+           │ Cloud Sync       │
+           └──────────────────┘
+              ↙            ↘
+    ┌──────────────┐      ┌──────────────┐
+    │ Line A GW    │      │ Line B GW    │
+    │ Local Analytics│    │ Local Analytics│
+    └──────────────┘      └──────────────┘
+       ↙    ↓    ↘            ↙    ↓    ↘
+   [PLC] [Sensor] [Robot] [PLC] [CNC] [AGV]</pre>
+        </div>
+
+        <ul>
+            <li><strong>Advantages:</strong> Scalable to 1000s of devices, fault isolation per line, distributed processing</li>
+            <li><strong>Disadvantages:</strong> Higher cost, complex configuration, multiple failure points</li>
+            <li><strong>Use Cases:</strong> Multi-line factories, campus-wide deployments, large-scale manufacturing</li>
+        </ul>
+
+        <h3>2.2.3 Mesh Topology</h3>
+        <p>Peer-to-peer connectivity with redundant paths, common in WirelessHART and ISA100.11a networks:</p>
+        <div class="diagram">
+<pre>    [Gateway] ←→ [Sensor A]
+        ↕  ×    ×   ↕
+    [Sensor B] ←→ [Sensor C]
+        ↕           ↕
+    [Actuator] ←→ [PLC]</pre>
+        </div>
+
+        <ul>
+            <li><strong>Advantages:</strong> Self-healing, no single point of failure, extended range via multi-hop</li>
+            <li><strong>Disadvantages:</strong> Complex routing, higher latency, difficult troubleshooting</li>
+            <li><strong>Use Cases:</strong> Wireless sensor networks, large areas (oil fields, warehouses), high-reliability requirements</li>
+        </ul>
+
+        <h2>2.3 Communication Patterns</h2>
+
+        <h3>2.3.1 Request/Response (Client/Server)</h3>
+        <p>Synchronous communication where client initiates requests and waits for server responses:</p>
+
+        <pre><code>// OPC-UA Read Request Example (Python)
+from opcua import Client
+
+client = Client("opc.tcp://192.168.1.100:4840")
+client.connect()
+
+# Read temperature from PLC
+node = client.get_node("ns=2;s=Machine_001.Temperature")
+temperature = node.get_value()
+print(f"Temperature: {temperature}°C")
+
+# Write setpoint
+setpoint_node = client.get_node("ns=2;s=Machine_001.Setpoint")
+setpoint_node.set_value(75.0)
+
+client.disconnect()</code></pre>
+
+        <p><strong>Performance Characteristics:</strong></p>
+        <ul>
+            <li><strong>Latency:</strong> 10-100ms typical over Ethernet</li>
+            <li><strong>Throughput:</strong> 100-1000 requests/sec per client</li>
+            <li><strong>Use Cases:</strong> On-demand data retrieval, configuration changes, infrequent polling</li>
+            <li><strong>Limitations:</strong> Scales poorly with many clients, creates network traffic spikes</li>
+        </ul>
+
+        <h3>2.3.2 Publish/Subscribe</h3>
+        <p>Asynchronous event-driven communication through a broker intermediary:</p>
+
+        <pre><code>// MQTT Publish/Subscribe Example (JavaScript)
+const mqtt = require('mqtt');
+const client = mqtt.connect('mqtt://broker.factory.com');
+
+// Publisher (Sensor)
+setInterval(() => {
+  const data = {
+    sensorId: 'temp-001',
+    value: 45.2 + Math.random(),
+    timestamp: Date.now(),
+    unit: 'celsius'
+  };
+
+  client.publish('factory/line-A/temperature',
+                 JSON.stringify(data),
+                 { qos: 1 });  // At least once delivery
+}, 1000);  // Publish every second
+
+// Subscriber (Dashboard)
+client.subscribe('factory/line-A/#');  // Wildcard: all topics under line-A
+
+client.on('message', (topic, message) => {
+  const data = JSON.parse(message.toString());
+  console.log(`${topic}: ${data.value}${data.unit}`);
+
+  if (data.value > 50) {
+    sendAlert('Temperature threshold exceeded');
+  }
+});</code></pre>
+
+        <p><strong>Performance Characteristics:</strong></p>
+        <ul>
+            <li><strong>Latency:</strong> 5-50ms end-to-end</li>
+            <li><strong>Throughput:</strong> 100K+ messages/sec on modern brokers (HiveMQ, VerneMQ)</li>
+            <li><strong>Use Cases:</strong> High-frequency telemetry, one-to-many distribution, event notifications</li>
+            <li><strong>Advantages:</strong> Decoupled clients, bandwidth efficient, scales to millions of devices</li>
+        </ul>
+
+        <h3>2.3.3 Streaming</h3>
+        <p>Continuous data flow for high-frequency sensors and video feeds:</p>
+
+        <pre><code>// Apache Kafka Streaming Example (Java)
+Properties props = new Properties();
+props.put("bootstrap.servers", "kafka-broker:9092");
+props.put("group.id", "vibration-analyzer");
+
+KafkaConsumer&lt;String, byte[]&gt; consumer =
+    new KafkaConsumer&lt;&gt;(props);
+
+consumer.subscribe(Arrays.asList("vibration-sensors"));
+
+while (true) {
+  ConsumerRecords&lt;String, byte[]&gt; records =
+      consumer.poll(Duration.ofMillis(100));
+
+  for (ConsumerRecord&lt;String, byte[]&gt; record : records) {
+    // Process 10kHz vibration data
+    double[] samples = deserialize(record.value());
+    double[] spectrum = fft(samples);
+
+    // Detect bearing fault
+    if (spectrum[bearingFreq] > threshold) {
+      raiseAlert("Bearing fault detected");
+    }
+  }
+}</code></pre>
+
+        <p><strong>Performance Characteristics:</strong></p>
+        <ul>
+            <li><strong>Throughput:</strong> Millions of events/sec (Kafka: 1M+ msg/sec per broker)</li>
+            <li><strong>Use Cases:</strong> Vibration monitoring (10-100 kHz), video analytics (30 fps), high-speed counting</li>
+            <li><strong>Technologies:</strong> Apache Kafka, Apache Pulsar, AWS Kinesis, Azure Event Hubs</li>
+        </ul>
+
+        <h2>2.4 Data Flow Optimization</h2>
+
+        <h3>2.4.1 Dead-band Filtering</h3>
+        <p>Transmit only significant changes, reducing bandwidth by 50-90%:</p>
+
+        <pre><code>// Dead-band Filter Implementation
+class DeadbandFilter {
+  constructor(threshold) {
+    this.threshold = threshold;
+    this.lastTransmitted = null;
+  }
+
+  filter(value) {
+    if (this.lastTransmitted === null) {
+      this.lastTransmitted = value;
+      return { transmit: true, value };
+    }
+
+    const change = Math.abs(value - this.lastTransmitted);
+
+    if (change >= this.threshold) {
+      this.lastTransmitted = value;
+      return { transmit: true, value };
+    }
+
+    return { transmit: false };
+  }
+}
+
+// Usage: Temperature with ±0.5°C deadband
+const filter = new DeadbandFilter(0.5);
+
+const temps = [45.1, 45.15, 45.12, 45.18, 45.6, 45.58, 45.55];
+
+temps.forEach(temp => {
+  const result = filter.filter(temp);
+  if (result.transmit) {
+    console.log(`Transmit: ${temp}°C`);
+    mqtt.publish('sensors/temp-001', temp);
+  } else {
+    console.log(`Suppress: ${temp}°C`);
+  }
+});
+
+// Output:
+// Transmit: 45.1°C   (first value always transmitted)
+// Suppress: 45.15°C  (change 0.05 < 0.5)
+// Suppress: 45.12°C  (change 0.02 < 0.5)
+// Suppress: 45.18°C  (change 0.08 < 0.5)
+// Transmit: 45.6°C   (change 0.5 >= 0.5)
+// Suppress: 45.58°C  (change 0.02 < 0.5)
+// Suppress: 45.55°C  (change 0.05 < 0.5)
+
+// Result: 71% reduction (2 transmissions vs 7 samples)</code></pre>
+
+        <h3>2.4.2 Statistical Sampling</h3>
+        <p>Aggregate high-frequency data into statistical summaries:</p>
+
+        <pre><code>// Statistical Aggregation (1-minute window)
+class StatisticalSampler {
+  constructor(windowMs) {
+    this.windowMs = windowMs;
+    this.samples = [];
+    this.startTime = Date.now();
+  }
+
+  addSample(value) {
+    this.samples.push(value);
+
+    const elapsed = Date.now() - this.startTime;
+
+    if (elapsed >= this.windowMs) {
+      const stats = this.computeStats();
+      this.samples = [];
+      this.startTime = Date.now();
+      return stats;
+    }
+
+    return null;
+  }
+
+  computeStats() {
+    const n = this.samples.length;
+    const mean = this.samples.reduce((a, b) => a + b) / n;
+    const min = Math.min(...this.samples);
+    const max = Math.max(...this.samples);
+
+    const variance = this.samples
+      .map(x => Math.pow(x - mean, 2))
+      .reduce((a, b) => a + b) / n;
+    const stddev = Math.sqrt(variance);
+
+    return { mean, min, max, stddev, count: n };
+  }
+}
+
+// Collect 1000 samples over 10 seconds, transmit 1 summary
+const sampler = new StatisticalSampler(10000);
+
+setInterval(() => {
+  const value = readSensor();  // High-frequency sampling
+  const stats = sampler.addSample(value);
+
+  if (stats) {
+    mqtt.publish('sensors/temp-001/stats', JSON.stringify(stats));
+    console.log(`Mean: ${stats.mean.toFixed(2)}, StdDev: ${stats.stddev.toFixed(2)}`);
+  }
+}, 10);  // Sample every 10ms = 100 Hz
+
+// Result: 99% data reduction (1 message vs 1000 samples)</code></pre>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li><strong>Three-Layer Architecture:</strong> Device/Field (&lt;1ms), Edge (10ms-1s), Cloud (1s+) layers optimize latency vs. scalability tradeoffs</li>
+                <li><strong>Safety Integrity Levels:</strong> SIL 1-4 ratings define failure rates from 10⁻⁵ to &lt;10⁻⁸ per hour for safety-critical systems</li>
+                <li><strong>Edge Processing:</strong> Protocol translation, normalization, filtering, and local analytics reduce cloud bandwidth by 50-90%</li>
+                <li><strong>Network Topologies:</strong> Star (simple, single point of failure), Hierarchical (scalable, distributed), Mesh (self-healing, complex)</li>
+                <li><strong>Communication Patterns:</strong> Request/Response (10-100ms, 100-1000 req/s), Pub/Sub (5-50ms, 100K msg/s), Streaming (millions of events/s)</li>
+                <li><strong>Data Optimization:</strong> Dead-band filtering (50-90% reduction), statistical sampling (99% reduction for high-frequency sensors)</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li><strong>Architecture Design:</strong> A factory has 200 PLCs, 500 sensors, and requires 99.9% uptime. Design a hierarchical topology with appropriate redundancy. How many edge gateways do you need?</li>
+                <li><strong>Latency Analysis:</strong> Calculate end-to-end latency for a temperature alarm: sensor (50ms) → Modbus poll (100ms) → edge processing (20ms) → MQTT publish (30ms) → cloud alert (200ms). Does this meet &lt;1 second requirement?</li>
+                <li><strong>Protocol Selection:</strong> Compare request/response vs pub/sub for 100 sensors reporting every 1 second. Calculate messages/minute and justify your choice.</li>
+                <li><strong>Dead-band Optimization:</strong> A temperature sensor oscillates between 44.8-45.2°C. With 0.5°C deadband, how much bandwidth is saved over 1 hour (1 sample/sec)?</li>
+                <li><strong>SIL Compliance:</strong> A robotic cell requires SIL 3 (10⁻⁷ to 10⁻⁸ failure rate). What redundancy and testing is required? How does this impact architecture?</li>
+                <li><strong>Edge vs Cloud:</strong> You have 50 vibration sensors at 10kHz (10,000 samples/sec). Calculate data rate (bytes/sec) if each sample is 4 bytes. Should processing be edge or cloud?</li>
+                <li><strong>Topology Evaluation:</strong> Compare total cable length for star (gateway in corner) vs hierarchical (3 line gateways) for 30 devices across 300m x 100m factory floor.</li>
+                <li><strong>Statistical Sampling:</strong> Given 1000 pressure samples over 1 minute: mean=1.5 bar, min=1.2, max=1.8, stddev=0.15. How do you detect anomalies from this summary vs. raw data?</li>
+            </ol>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-01.html" class="nav-button">← Previous Chapter</a>
+            <a href="chapter-03.html" class="nav-button">Next Chapter: OPC-UA Protocol →</a>
+        </div>
+    </div>
+</body>
+</html>

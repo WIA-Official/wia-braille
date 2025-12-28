@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Variant Calling and Detection | WIA-BIO-002</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #8B5CF6;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--surface);
+            padding: 3rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 1rem;
+        }
+        h2 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+        h3 {
+            color: var(--primary);
+            font-size: 1.4rem;
+            margin: 2rem 0 1rem;
+        }
+        .chapter-number {
+            color: var(--text-dim);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+        }
+        p {
+            margin: 1rem 0;
+            text-align: justify;
+        }
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 5px;
+        }
+        .info-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 5px;
+        }
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+        li {
+            margin: 0.5rem 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--bg);
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: var(--primary);
+            color: white;
+            font-weight: bold;
+        }
+        tr:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin: 3rem 0 0 0;
+            padding-top: 2rem;
+            border-top: 2px solid var(--border);
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .btn:hover {
+            background: #7C3AED;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+        code {
+            background: var(--bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #A78BFA;
+            font-size: 0.9em;
+        }
+        pre {
+            background: var(--bg);
+            padding: 1.5rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            border-left: 3px solid var(--primary);
+            margin: 1.5rem 0;
+        }
+        .diagram {
+            background: var(--bg);
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            font-family: monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            border: 1px solid var(--border);
+        }
+        .key-takeaways {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.05));
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            border: 2px solid var(--primary);
+        }
+        .review-questions {
+            background: var(--bg);
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            border: 1px solid var(--border);
+        }
+        .question {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: var(--surface);
+            border-radius: 5px;
+            border-left: 3px solid var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">Chapter 5 of 8</p>
+        <h1>Variant Calling and Detection</h1>
+        <p style="font-size: 1.1rem; color: var(--text-dim); margin-top: 1rem;">
+            Mastering the algorithms and techniques for identifying genetic variants from sequencing data, from SNPs to complex structural variations.
+        </p>
+
+        <h2>5.1 The Variant Calling Pipeline</h2>
+        <p>
+            Variant calling is the process of identifying differences between a sequenced genome and a reference genome. This critical step transforms aligned sequencing reads into a catalog of genetic variants—the fundamental currency of genomic medicine. The accuracy of variant calling directly impacts clinical decisions, making it one of the most scrutinized steps in the sequencing workflow.
+        </p>
+        <p>
+            The WIA-BIO-002 standard defines rigorous requirements for variant calling to ensure that identified variants are real biological differences rather than sequencing or alignment artifacts. This involves sophisticated statistical models that account for sequencing errors, mapping quality, strand bias, and numerous other factors that can create false positive calls.
+        </p>
+
+        <div class="diagram">
+Complete Variant Calling Workflow:
+
+RAW READS (FASTQ)
+    ↓
+QUALITY CONTROL
+├─ FastQC: per-base quality, adapter content
+├─ MultiQC: aggregated QC metrics
+└─ Decision: Pass/Fail sequencing run
+    ↓
+ALIGNMENT TO REFERENCE
+├─ BWA-MEM: short-read alignment
+├─ Minimap2: long-read alignment
+└─ Output: SAM/BAM files
+    ↓
+POST-ALIGNMENT PROCESSING
+├─ Coordinate sorting (samtools sort)
+├─ Duplicate marking (Picard MarkDuplicates)
+├─ Base quality recalibration (GATK BQSR)
+└─ Indel realignment (optional)
+    ↓
+VARIANT CALLING
+├─ Germline: GATK HaplotypeCaller, FreeBayes
+├─ Somatic: Mutect2, Strelka2, VarScan2
+├─ Structural: Manta, LUMPY, Sniffles
+└─ Output: Raw VCF files
+    ↓
+VARIANT FILTRATION
+├─ Hard filters: QD, FS, MQ, SOR
+├─ VQSR: machine learning filtration
+└─ Output: Filtered VCF
+    ↓
+ANNOTATION & INTERPRETATION
+        </div>
+
+        <h2>5.2 Germline Variant Calling</h2>
+        <p>
+            Germline variants are inherited genetic differences present in every cell of an individual's body. These variants are crucial for diagnosing hereditary diseases, understanding disease predisposition, and pharmacogenomic applications. The gold standard for germline variant calling is GATK's HaplotypeCaller, which uses local de novo assembly to accurately call variants.
+        </p>
+
+        <h3>5.2.1 GATK HaplotypeCaller Algorithm</h3>
+        <p>
+            HaplotypeCaller employs a sophisticated four-step process that dramatically improves accuracy over naive approaches. First, it identifies "active regions" where reads provide evidence of variation. Second, it performs local de novo assembly of reads in these regions to generate candidate haplotypes. Third, it realigns reads to these candidate haplotypes using a pair-HMM algorithm. Finally, it assigns genotype likelihoods and calls variants.
+        </p>
+
+        <pre>
+GATK HaplotypeCaller Workflow:
+
+1. Active Region Detection
+   - Scan BAM for regions with evidence of variation
+   - Criteria: mismatches, indels, soft-clips
+
+2. Local De Novo Assembly
+   - Extract reads from active region
+   - Build De Bruijn graph
+   - Generate candidate haplotypes
+
+3. Pairwise HMM Alignment
+   - Align each read to each haplotype
+   - Calculate likelihood P(read | haplotype)
+
+4. Genotype Likelihood Calculation
+   - For each possible genotype (AA, AB, BB):
+   - P(genotype | reads) ∝ P(reads | genotype) × P(genotype)
+
+5. Variant Call
+   - Select most likely genotype
+   - Calculate quality scores (GQ, QUAL)
+        </pre>
+
+        <h3>5.2.2 Quality Metrics and Filters</h3>
+        <p>
+            The WIA-BIO-002 standard mandates specific quality thresholds for germline variant calls to ensure clinical-grade accuracy. These filters remove low-quality calls while preserving true variants.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Description</th>
+                    <th>SNP Threshold</th>
+                    <th>Indel Threshold</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>QD (QualByDepth)</td>
+                    <td>Variant quality / depth</td>
+                    <td>QD < 2.0 (filter)</td>
+                    <td>QD < 2.0 (filter)</td>
+                </tr>
+                <tr>
+                    <td>FS (FisherStrand)</td>
+                    <td>Strand bias p-value</td>
+                    <td>FS > 60.0 (filter)</td>
+                    <td>FS > 200.0 (filter)</td>
+                </tr>
+                <tr>
+                    <td>MQ (MappingQuality)</td>
+                    <td>RMS mapping quality</td>
+                    <td>MQ < 40.0 (filter)</td>
+                    <td>N/A</td>
+                </tr>
+                <tr>
+                    <td>SOR (StrandOddsRatio)</td>
+                    <td>Strand bias estimate</td>
+                    <td>SOR > 3.0 (filter)</td>
+                    <td>SOR > 10.0 (filter)</td>
+                </tr>
+                <tr>
+                    <td>ReadPosRankSum</td>
+                    <td>Position in read bias</td>
+                    <td>RPRS < -8.0 (filter)</td>
+                    <td>RPRS < -20.0 (filter)</td>
+                </tr>
+                <tr>
+                    <td>MQRankSum</td>
+                    <td>Mapping quality bias</td>
+                    <td>MQRS < -12.5 (filter)</td>
+                    <td>N/A</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>5.3 Somatic Variant Calling</h2>
+        <p>
+            Somatic variants arise during an individual's lifetime and are present only in specific cells, most importantly in cancer. Detecting somatic variants is significantly more challenging than germline calling because tumor samples are mixtures of normal and tumor cells, tumor cells are often genetically heterogeneous, and somatic variants may be present at low allele frequencies.
+        </p>
+
+        <h3>5.3.1 Tumor-Normal Paired Analysis</h3>
+        <p>
+            The gold standard for somatic variant calling compares tumor tissue to matched normal tissue from the same patient. This paired analysis distinguishes true somatic mutations from germline variants and sequencing artifacts. Mutect2, part of the GATK suite, uses a sophisticated Bayesian model to call somatic variants.
+        </p>
+
+        <pre>
+Mutect2 Somatic Calling:
+
+Input Requirements:
+- Tumor BAM: ≥60× coverage (clinical)
+- Normal BAM: ≥30× coverage
+- Reference genome: hg38 recommended
+- Panel of Normals (PoN): ≥40 normal samples
+- Germline resource: gnomAD population frequencies
+
+Algorithm Steps:
+1. Local assembly in tumor and normal
+2. Calculate likelihoods:
+   - P(read | tumor alt)
+   - P(read | normal alt)
+   - P(read | germline alt)
+3. Apply filters:
+   - Germline filter: remove variants in gnomAD >0.001
+   - PoN filter: remove recurrent artifacts
+   - Contamination filter: estimate normal contamination
+   - Orientation bias filter: remove OxoG artifacts
+4. Calculate LOD scores for somatic status
+5. Output high-confidence somatic variants
+        </pre>
+
+        <h3>5.3.2 Variant Allele Frequency (VAF) Analysis</h3>
+        <p>
+            VAF is crucial for understanding tumor biology and detecting subclonal populations. In a pure diploid tumor sample, a heterozygous somatic variant should have VAF ≈ 0.5. Deviations from this expectation reveal important biological information.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>VAF Range</th>
+                    <th>Interpretation</th>
+                    <th>Biological Meaning</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>0.45-0.55</td>
+                    <td>Clonal heterozygous</td>
+                    <td>Present in all tumor cells, one copy</td>
+                </tr>
+                <tr>
+                    <td>0.9-1.0</td>
+                    <td>Clonal homozygous</td>
+                    <td>Present in all tumor cells, both copies</td>
+                </tr>
+                <tr>
+                    <td>0.2-0.45</td>
+                    <td>Subclonal or normal contamination</td>
+                    <td>Present in subset of tumor cells</td>
+                </tr>
+                <tr>
+                    <td>0.05-0.2</td>
+                    <td>Low-frequency subclone</td>
+                    <td>Minor tumor population</td>
+                </tr>
+                <tr>
+                    <td>0.6-0.9</td>
+                    <td>Copy number gain</td>
+                    <td>Amplification of variant allele</td>
+                </tr>
+                <tr>
+                    <td><0.05</td>
+                    <td>Below detection limit</td>
+                    <td>May be artifact or ultra-rare variant</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>5.4 Structural Variant Detection</h2>
+        <p>
+            Structural variants (SVs) are large-scale genomic alterations typically defined as ≥50 bp in size. SVs include deletions, insertions, duplications, inversions, and translocations. These variants play critical roles in cancer, developmental disorders, and evolution, but are challenging to detect with short-read sequencing.
+        </p>
+
+        <h3>5.4.1 SV Detection Methods</h3>
+        <div class="info-box">
+            <h3>Four Primary Approaches:</h3>
+            <ul>
+                <li><strong>Read-Pair Analysis:</strong> Identifies discordant read pairs where insert size or orientation deviates from expectation. Effective for deletions, inversions, and translocations.</li>
+                <li><strong>Split-Read Analysis:</strong> Detects reads that align partially to two different genomic locations, indicating breakpoint. Provides base-pair resolution of breakpoints.</li>
+                <li><strong>Read-Depth Analysis:</strong> Identifies copy number changes through coverage variations. Detects deletions and duplications but lacks precise breakpoint resolution.</li>
+                <li><strong>Local Assembly:</strong> Assembles reads in complex regions to reconstruct SV structure. Most accurate but computationally intensive.</li>
+            </ul>
+        </div>
+
+        <div class="diagram">
+Structural Variant Signatures:
+
+DELETION (500 bp):
+Normal: ═══════════════════════════════════
+Reads:  ────→           ←────
+        Discordant pairs (insert > expected)
+
+DUPLICATION (Tandem):
+Normal: ═══A═══
+Tumor:  ═══A═══A═══
+Reads:  ────→A→  ←A←────
+        Discordant pairs (insert < expected)
+
+INVERSION:
+Normal: ═══→→→═══
+Tumor:  ═══→←←═══
+Reads:  ────→  →────  (both forward)
+        Same-strand orientation
+
+TRANSLOCATION:
+Chr1:   ═══A═══
+Chr2:   ═══B═══
+Fusion: ═══A═B═══
+Reads:  Chr1─→  ←─Chr2
+        Inter-chromosomal pairs
+        </div>
+
+        <h2>5.5 Variant Quality Control</h2>
+        <p>
+            Quality control doesn't end with variant filtration. The WIA-BIO-002 standard requires comprehensive variant-level and sample-level QC to ensure high-quality variant call sets suitable for clinical use.
+        </p>
+
+        <h3>5.5.1 Variant-Level QC Metrics</h3>
+        <pre>
+Minimum Requirements:
+
+Depth (DP):
+- Germline: ≥10× (heterozygous), ≥6× (homozygous)
+- Somatic: ≥20× (tumor), ≥10× (normal)
+- Clinical: ≥30× (germline), ≥100× (somatic)
+
+Quality Score (QUAL):
+- Minimum: Q30 (99.9% confidence)
+- Clinical: Q60 (99.9999% confidence)
+
+Genotype Quality (GQ):
+- Heterozygous: GQ ≥ 20
+- Homozygous: GQ ≥ 30
+- Clinical reporting: GQ ≥ 50
+
+Allele Balance (AB):
+- Heterozygous expected: 0.2 - 0.8
+- Values outside range suggest:
+  * Copy number variation
+  * Allelic imbalance
+  * Technical artifact
+
+Strand Bias:
+- Fisher's Exact Test p-value > 0.001
+- SOR (Strand Odds Ratio) < 3.0 (SNPs)
+- Both strands must support variant
+        </pre>
+
+        <h3>5.5.2 Sample-Level QC Metrics</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Expected Range</th>
+                    <th>Interpretation if Abnormal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Ti/Tv Ratio</td>
+                    <td>2.0-2.1 (WGS), 3.0-3.3 (WES)</td>
+                    <td>Low: poor quality, High: over-filtering</td>
+                </tr>
+                <tr>
+                    <td>Het/Hom Ratio</td>
+                    <td>1.5-2.0</td>
+                    <td>Consanguinity or contamination</td>
+                </tr>
+                <tr>
+                    <td>Total Variants</td>
+                    <td>4-5 million (WGS), 20-30k (WES)</td>
+                    <td>Outliers suggest QC issues</td>
+                </tr>
+                <tr>
+                    <td>Novel Variants</td>
+                    <td><1% (vs dbSNP)</td>
+                    <td>High: sample swap or contamination</td>
+                </tr>
+                <tr>
+                    <td>dbSNP %</td>
+                    <td>>95%</td>
+                    <td>Low: poor quality or rare population</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>5.6 Multi-Sample Variant Calling</h2>
+        <p>
+            For cohort studies and family-based analyses, joint variant calling across multiple samples provides superior sensitivity and specificity compared to single-sample calling. This approach leverages information across all samples to improve variant detection and genotyping accuracy.
+        </p>
+
+        <div class="info-box">
+            <h3>GATK Joint Genotyping Workflow:</h3>
+            <ol>
+                <li><strong>Per-Sample Calling:</strong> Run HaplotypeCaller in GVCF mode (-ERC GVCF) on each sample independently. Produces genomic VCF with genotype likelihoods at all sites.</li>
+                <li><strong>Database Import:</strong> Import all GVCFs into GenomicsDB, a scalable datastore optimized for variant data.</li>
+                <li><strong>Joint Genotyping:</strong> Run GenotypeGVCFs across all samples simultaneously. Recalculates genotype probabilities considering allele frequencies in the cohort.</li>
+                <li><strong>Variant Quality Score Recalibration:</strong> Apply machine-learning filter (VQSR) using known variant resources to separate true variants from artifacts.</li>
+            </ol>
+        </div>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li><strong>Variant calling transforms alignments</strong> into catalogs of genetic differences using sophisticated statistical models that account for sequencing errors and mapping artifacts.</li>
+                <li><strong>Germline variant calling</strong> uses local de novo assembly (GATK HaplotypeCaller) to achieve high accuracy, with strict quality filters ensuring clinical-grade results.</li>
+                <li><strong>Somatic variant calling</strong> requires matched tumor-normal pairs and specialized algorithms (Mutect2) to detect low-frequency mutations amid normal contamination and tumor heterogeneity.</li>
+                <li><strong>VAF analysis</strong> reveals tumor purity, clonal architecture, and copy number alterations, providing crucial biological insights beyond simple variant presence.</li>
+                <li><strong>Structural variant detection</strong> employs four complementary approaches: read-pairs, split-reads, depth analysis, and local assembly to identify large-scale genomic rearrangements.</li>
+                <li><strong>Quality control</strong> operates at both variant and sample levels, using metrics like Ti/Tv ratio, strand bias, and allele balance to ensure high-quality call sets.</li>
+                <li><strong>Joint genotyping</strong> across multiple samples improves sensitivity and accuracy by leveraging population-level information during variant calling.</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+
+            <div class="question">
+                <p><strong>Question 1:</strong> Explain why GATK HaplotypeCaller performs local de novo assembly rather than simply comparing reads to the reference. What types of variants are particularly improved by this approach?</p>
+            </div>
+
+            <div class="question">
+                <p><strong>Question 2:</strong> A somatic variant in a tumor sample has VAF = 0.25 with 100× coverage. Propose three biological explanations for this VAF and describe how you would distinguish between them.</p>
+            </div>
+
+            <div class="question">
+                <p><strong>Question 3:</strong> Calculate Ti/Tv ratio: In a WGS sample, you observe 3,200,000 transitions and 1,500,000 transversions. Is this ratio acceptable? What does it suggest about data quality?</p>
+            </div>
+
+            <div class="question">
+                <p><strong>Question 4:</strong> Why does the WIA-BIO-002 standard require more lenient FisherStrand thresholds for indels (FS > 200) compared to SNPs (FS > 60)?</p>
+            </div>
+
+            <div class="question">
+                <p><strong>Question 5:</strong> Describe how read-pair, split-read, and depth-based methods would each detect a 5 kb deletion. Which method provides the most precise breakpoint coordinates?</p>
+            </div>
+
+            <div class="question">
+                <p><strong>Question 6:</strong> A clinical WES reports 45,000 variants with Het/Hom ratio of 0.8. What does this unusual ratio suggest, and what follow-up analysis would you recommend?</p>
+            </div>
+
+            <div class="question">
+                <p><strong>Question 7:</strong> Explain why somatic variant calling requires Panel of Normals (PoN). What artifacts does it eliminate, and how is it constructed?</p>
+            </div>
+
+            <div class="question">
+                <p><strong>Question 8:</strong> Compare hard filtering versus VQSR for variant filtration. When is each approach preferred, and what are the tradeoffs?</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="chapter-04.html" class="btn">← Previous Chapter</a>
+            <a href="chapter-06.html" class="btn">Next Chapter →</a>
+        </div>
+    </div>
+</body>
+</html>

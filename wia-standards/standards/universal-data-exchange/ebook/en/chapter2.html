@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Core Architecture and Design Principles - WIA-CORE-003</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.8;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #1e293b;
+            padding: 3rem;
+            border-radius: 15px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 2rem;
+            color: #6B7280;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            background: #0f172a;
+            border-radius: 8px;
+        }
+        .back-link:hover { background: #334155; }
+        .chapter-header {
+            border-bottom: 3px solid #6B7280;
+            padding-bottom: 2rem;
+            margin-bottom: 3rem;
+        }
+        .chapter-number {
+            color: #6B7280;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: #e2e8f0;
+            margin-top: 0.5rem;
+            line-height: 1.3;
+        }
+        h2 {
+            color: #6B7280;
+            margin: 2.5rem 0 1.5rem;
+            font-size: 1.8rem;
+        }
+        h3 {
+            color: #94a3b8;
+            margin: 2rem 0 1rem;
+            font-size: 1.4rem;
+        }
+        p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+        .highlight-box {
+            background: #0f172a;
+            padding: 2rem;
+            border-radius: 10px;
+            border-left: 4px solid #6B7280;
+            margin: 2rem 0;
+        }
+        .code-block {
+            background: #0f172a;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Monaco', monospace;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+        ul, ol {
+            margin: 1.5rem 0 1.5rem 2rem;
+        }
+        li {
+            margin-bottom: 0.75rem;
+            font-size: 1.05rem;
+        }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 2px solid #334155;
+        }
+        .nav-button {
+            padding: 1rem 2rem;
+            background: #6B7280;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .nav-button:hover {
+            background: #4B5563;
+            transform: translateY(-2px);
+        }
+        .principle-box {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1.5rem 0;
+            border-left: 4px solid #6B7280;
+        }
+        .principle-box h4 {
+            color: #6B7280;
+            margin-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Table of Contents</a>
+
+        <div class="chapter-header">
+            <div class="chapter-number">Chapter 2</div>
+            <h1>Core Architecture and Design Principles</h1>
+        </div>
+
+        <p>
+            Building a universal data exchange framework requires more than just clever algorithms and
+            comprehensive format support. It demands a solid architectural foundation built on sound principles
+            that ensure scalability, reliability, and long-term maintainability. This chapter explores the core
+            architecture of WIA-CORE-003 and the design principles that guide its implementation.
+        </p>
+
+        <h2>The Three-Layer Architecture</h2>
+
+        <p>
+            WIA-CORE-003 employs a three-layer architecture that separates concerns and enables independent
+            evolution of each component. This architectural pattern has proven successful in operating systems,
+            networking stacks, and database systems—WIA-CORE-003 adapts it for data exchange.
+        </p>
+
+        <h3>Layer 1: Abstraction Layer</h3>
+
+        <p>
+            The abstraction layer provides a unified representation of data that's independent of any specific
+            format. Think of it as the "lingua franca" of data exchange—a common language that all formats can
+            translate to and from. This layer defines a canonical data model with rich type systems, metadata
+            support, and semantic annotations.
+        </p>
+
+        <p>
+            The abstraction layer's data model supports primitive types (integers, floats, strings, booleans),
+            composite types (arrays, maps, records), and custom types (enumerations, unions, tagged values).
+            It includes metadata fields for versioning, provenance, quality indicators, and business context.
+            Most importantly, it's designed to be lossless—any information expressible in common data formats
+            can be represented in the abstraction layer without losing fidelity.
+        </p>
+
+        <div class="code-block">
+// Abstraction Layer Data Model Example
+
+type UniversalData = {
+    // Core data structure
+    data: Value
+
+    // Metadata
+    metadata: {
+        version: SemanticVersion
+        schema_id: URI
+        created_at: Timestamp
+        source_format: FormatIdentifier
+        quality_score: Float[0.0, 1.0]
+        provenance: ProvenanceChain
+    }
+
+    // Semantic annotations
+    annotations: Map&lt;String, AnnotationValue&gt;
+}
+
+type Value =
+    | Primitive(PrimitiveValue)
+    | Composite(CompositeValue)
+    | Custom(CustomValue)
+
+type PrimitiveValue =
+    | Null
+    | Boolean(bool)
+    | Integer(i64)
+    | Float(f64)
+    | String(string)
+    | Bytes([]byte)
+    | Timestamp(datetime)
+
+type CompositeValue =
+    | Array([]Value)
+    | Map(Map&lt;String, Value&gt;)
+    | Record(Schema, Map&lt;String, Value&gt;)
+        </div>
+
+        <h3>Layer 2: Transformation Layer</h3>
+
+        <p>
+            The transformation layer handles bidirectional conversion between specific formats and the abstraction
+            layer. It consists of format-specific codecs (encoder/decoder pairs) that know how to serialize and
+            deserialize data to/from each supported format while preserving semantics and metadata.
+        </p>
+
+        <p>
+            Each codec implements two interfaces: serialize (abstraction layer → specific format) and deserialize
+            (specific format → abstraction layer). Codecs are composable and can be chained together to perform
+            multi-hop transformations. For example, to convert CSV to Protocol Buffers, the system deserializes
+            CSV to the abstraction layer, then serializes from the abstraction layer to Protobuf.
+        </p>
+
+        <p>
+            The transformation layer also includes mapping engines that handle schema translation. When the source
+            and target schemas differ, the mapping engine applies transformation rules: field renaming, type
+            coercion, value mapping, and structural reorganization. These rules can be defined manually or
+            generated automatically using AI-powered inference.
+        </p>
+
+        <h3>Layer 3: Integration Layer</h3>
+
+        <p>
+            The integration layer provides protocols and adapters for exchanging data with external systems.
+            It supports multiple communication patterns: synchronous request-response (REST, gRPC), asynchronous
+            messaging (Kafka, RabbitMQ), file-based transfer (FTP, S3), and database replication (CDC, ETL).
+        </p>
+
+        <p>
+            This layer handles connection management, authentication, error handling, retry logic, and monitoring.
+            It provides a consistent interface regardless of the underlying transport mechanism, allowing
+            applications to exchange data without knowing whether it's coming from a REST API, a message queue,
+            or a database.
+        </p>
+
+        <h2>Core Design Principles</h2>
+
+        <p>
+            The architecture described above is guided by eight fundamental design principles that inform every
+            aspect of WIA-CORE-003's implementation.
+        </p>
+
+        <div class="principle-box">
+            <h4>Principle 1: Separation of Concerns</h4>
+            <p>
+                Format knowledge is isolated in codecs, schema knowledge in mappings, and transport knowledge in
+                adapters. This separation allows independent evolution—you can add a new format without changing
+                transport logic, or add a new transport without touching format conversion code.
+            </p>
+        </div>
+
+        <div class="principle-box">
+            <h4>Principle 2: Lossless Transformation</h4>
+            <p>
+                Data should flow through the system without losing information. Round-trip conversions
+                (A → abstraction → B → abstraction → A) should preserve all data and metadata. This requires
+                rich type systems, metadata preservation, and careful handling of format-specific features.
+            </p>
+        </div>
+
+        <div class="principle-box">
+            <h4>Principle 3: Schema-First Design</h4>
+            <p>
+                Schemas are first-class citizens. Every data exchange operation references explicit schemas that
+                define structure, types, constraints, and semantics. Schema registries provide centralized schema
+                management with versioning, compatibility checking, and dependency tracking.
+            </p>
+        </div>
+
+        <div class="principle-box">
+            <h4>Principle 4: Fail-Safe Defaults</h4>
+            <p>
+                When faced with ambiguity or uncertainty, the system chooses the safe option. Unknown fields are
+                preserved but flagged. Type mismatches trigger validation errors rather than silent coercion.
+                Schema incompatibilities are detected early and reported clearly.
+            </p>
+        </div>
+
+        <div class="principle-box">
+            <h4>Principle 5: Performance Through Layers</h4>
+            <p>
+                While the three-layer architecture adds abstraction, it shouldn't add significant overhead.
+                Implementations use zero-copy techniques, lazy evaluation, and streaming processing to minimize
+                memory allocation and CPU usage. Direct codec-to-codec paths bypass the abstraction layer when
+                lossless conversion is possible.
+            </p>
+        </div>
+
+        <div class="principle-box">
+            <h4>Principle 6: Extensibility Without Modification</h4>
+            <p>
+                New formats, transformations, and transports can be added without modifying core code. The system
+                uses plugin architectures, interface-based design, and discovery mechanisms to incorporate extensions
+                dynamically. This enables third-party contributions and organization-specific customizations.
+            </p>
+        </div>
+
+        <div class="principle-box">
+            <h4>Principle 7: Observability and Debugging</h4>
+            <p>
+                Data exchange pipelines are instrumented with comprehensive logging, metrics, and tracing.
+                Every transformation records input/output samples, validation results, and performance metrics.
+                Lineage tracking shows data provenance from source to destination, enabling debugging and compliance.
+            </p>
+        </div>
+
+        <div class="principle-box">
+            <h4>Principle 8: Security and Privacy by Design</h4>
+            <p>
+                Security isn't bolted on—it's built into the architecture. Data is encrypted at rest and in transit.
+                Access control policies are enforced at every layer. Personally identifiable information (PII) is
+                detected and handled according to privacy regulations. Audit logs record all data access and
+                transformations.
+            </p>
+        </div>
+
+        <h2>Component Architecture</h2>
+
+        <p>
+            Within the three-layer architecture, WIA-CORE-003 defines several key components that work together
+            to enable universal data exchange.
+        </p>
+
+        <h3>Schema Registry</h3>
+
+        <p>
+            The schema registry serves as the central authority for all data schemas. It stores schema definitions,
+            manages versions, enforces compatibility rules, and provides schema lookup services. Applications
+            register their schemas when they start up, and reference them by ID when exchanging data.
+        </p>
+
+        <p>
+            Schema compatibility checking prevents breaking changes from being deployed accidentally. The registry
+            understands different compatibility modes: backward (new consumers can read old data), forward (old
+            consumers can read new data), full (both directions), and transitive (compatibility across all versions).
+            When a new schema version is registered, the compatibility checker validates it against existing versions
+            and either accepts or rejects it based on the configured policy.
+        </p>
+
+        <h3>Transformation Engine</h3>
+
+        <p>
+            The transformation engine orchestrates data conversion operations. It maintains a codec registry with
+            all available format encoders and decoders, a mapping registry with schema translation rules, and a
+            transformation planner that determines optimal conversion paths.
+        </p>
+
+        <p>
+            When converting between formats, the planner considers multiple factors: quality (lossless vs. lossy),
+            performance (direct codec vs. multi-hop), and capabilities (does the codec support all required features?).
+            For common conversions, the planner caches optimal paths to avoid repeated planning overhead.
+        </p>
+
+        <div class="code-block">
+// Transformation Engine API
+
+interface TransformationEngine {
+    // Convert data from one format to another
+    transform(
+        source_data: bytes,
+        source_format: FormatId,
+        target_format: FormatId,
+        options: TransformOptions
+    ) -> Result&lt;bytes, TransformError&gt;
+
+    // Convert with schema mapping
+    transform_with_mapping(
+        source_data: bytes,
+        source_schema: SchemaId,
+        target_schema: SchemaId,
+        mapping: MappingId,
+        options: TransformOptions
+    ) -> Result&lt;bytes, TransformError&gt;
+
+    // Batch conversion for efficiency
+    transform_batch(
+        items: []TransformRequest
+    ) -> []Result&lt;bytes, TransformError&gt;
+
+    // Streaming conversion for large data
+    transform_stream(
+        source_stream: Stream&lt;bytes&gt;,
+        source_format: FormatId,
+        target_format: FormatId,
+        options: TransformOptions
+    ) -> Stream&lt;Result&lt;bytes, TransformError&gt;&gt;
+}
+        </div>
+
+        <h3>Data Pipeline Manager</h3>
+
+        <p>
+            The pipeline manager enables building complex multi-stage data flows. A pipeline consists of stages
+            (input, transformation, validation, output) connected by data channels. Each stage can use different
+            formats and schemas, with automatic conversion between stages.
+        </p>
+
+        <p>
+            Pipelines support various execution modes: batch processing for large datasets, stream processing for
+            real-time data, and micro-batch for balancing latency and throughput. The manager handles parallelization,
+            backpressure, error recovery, and checkpoint/restart for long-running pipelines.
+        </p>
+
+        <h3>Monitoring and Observability</h3>
+
+        <p>
+            Every component emits metrics, logs, and traces using OpenTelemetry standards. Metrics include
+            transformation counts, error rates, latency percentiles, and throughput. Logs capture validation
+            failures, schema mismatches, and system errors. Distributed traces show end-to-end data flow across
+            multiple services and systems.
+        </p>
+
+        <p>
+            The observability system also includes data quality monitoring. Statistical profiles track data
+            distributions, detect anomalies, and alert when data deviates from expected patterns. Schema drift
+            detection identifies when actual data doesn't match registered schemas, indicating either schema
+            evolution or data quality issues.
+        </p>
+
+        <h2>Deployment Patterns</h2>
+
+        <p>
+            WIA-CORE-003's architecture supports multiple deployment patterns to fit different organizational
+            needs and constraints.
+        </p>
+
+        <h3>Library/SDK Pattern</h3>
+
+        <p>
+            Applications embed the WIA-CORE-003 SDK directly, performing transformations in-process. This pattern
+            offers lowest latency and simplest deployment, but requires applications to include codec libraries
+            and potentially large dependencies.
+        </p>
+
+        <h3>Sidecar Pattern</h3>
+
+        <p>
+            A lightweight transformation service runs alongside applications as a sidecar container. Applications
+            send data to the sidecar via local network calls, and the sidecar handles format conversion. This
+            pattern decouples applications from codec dependencies and enables independent scaling.
+        </p>
+
+        <h3>Gateway Pattern</h3>
+
+        <p>
+            A centralized transformation gateway sits at system boundaries, converting data as it enters or leaves
+            the organization. This pattern provides central governance, monitoring, and security controls, but
+            introduces a potential bottleneck and single point of failure.
+        </p>
+
+        <h3>Distributed Mesh Pattern</h3>
+
+        <p>
+            Multiple transformation nodes form a mesh network, with intelligent routing directing conversion
+            requests to optimal nodes based on load, capabilities, and locality. This pattern scales horizontally
+            and provides fault tolerance, but requires sophisticated orchestration.
+        </p>
+
+        <div class="highlight-box">
+            <h3>Choosing the Right Pattern</h3>
+            <p>
+                The optimal deployment pattern depends on your requirements:
+            </p>
+            <ul>
+                <li><strong>Library/SDK:</strong> Best for latency-sensitive applications with stable dependencies</li>
+                <li><strong>Sidecar:</strong> Ideal for microservices architectures and polyglot environments</li>
+                <li><strong>Gateway:</strong> Suited for regulated industries requiring centralized control</li>
+                <li><strong>Distributed Mesh:</strong> Necessary for internet-scale systems with high availability needs</li>
+            </ul>
+            <p>
+                Many organizations use hybrid approaches: library for internal services, gateway for external
+                integrations, and mesh for high-throughput data pipelines.
+            </p>
+        </div>
+
+        <h2>Summary</h2>
+
+        <p>
+            The architecture and principles described in this chapter form the foundation of WIA-CORE-003.
+            The three-layer design separates format knowledge, transformation logic, and integration concerns,
+            enabling independent evolution and reuse. Eight core principles guide implementation decisions,
+            ensuring systems remain secure, performant, and maintainable as they scale.
+        </p>
+
+        <p>
+            In the next chapter, we'll dive deeper into schema design and evolution, exploring how to define
+            data structures that stand the test of time and adapt gracefully to changing requirements.
+        </p>
+
+        <div class="navigation">
+            <a href="chapter1.html" class="nav-button">← Previous Chapter</a>
+            <a href="chapter3.html" class="nav-button">Next Chapter →</a>
+        </div>
+    </div>
+</body>
+</html>

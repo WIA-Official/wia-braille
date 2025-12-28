@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Latency Engineering and Optimization | WIA-AUG-014</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #8B5CF6; --text: #f1f5f9; --text-dim: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--surface); padding: 3rem; border-radius: 10px; box-shadow: 0 0 50px rgba(139, 92, 246, 0.1); }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; text-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        .chapter-number { color: var(--text-dim); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: rgba(139, 92, 246, 0.1); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: rgba(139, 92, 246, 0.2); color: var(--primary); font-weight: bold; }
+        tr:hover { background: rgba(139, 92, 246, 0.05); }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: 5px; transition: all 0.3s ease; }
+        .btn:hover { background: #7C3AED; transform: translateY(-2px); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', monospace; color: var(--primary); }
+        pre { background: var(--bg); padding: 1.5rem; border-radius: 5px; overflow-x: auto; margin: 1rem 0; border: 1px solid var(--border); }
+        pre code { padding: 0; background: none; }
+        .diagram { background: var(--bg); padding: 2rem; margin: 2rem 0; border-radius: 5px; border: 1px solid var(--border); font-family: monospace; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">Chapter 4</p>
+        <h1>Latency Engineering and Optimization</h1>
+        <p style="font-size: 1.1rem; color: var(--text-dim); margin-top: 1rem;">
+            Mastering the critical art of achieving ultra-low latency for natural HMI control
+        </p>
+
+        <h2>4.1 Why Latency Matters in HMI</h2>
+        <p>
+            Latency - the time delay between signal generation and response - is perhaps the most critical performance metric in human-machine interfaces. While many computer systems can tolerate hundreds of milliseconds of delay, HMI systems must respond within the timeframe of natural biological reflexes to feel intuitive and controllable.
+        </p>
+        <p>
+            Consider reaching for a coffee cup. Your brain sends motor commands, your arm moves, and you continuously adjust based on visual and proprioceptive feedback - all happening in a tightly-coupled loop with delays measured in tens of milliseconds. If an augmentation device introduces significant additional latency, the control loop breaks down. Users report sensations ranging from subtle "lag" to complete loss of embodiment where the device feels alien rather than like part of their body.
+        </p>
+
+        <div class="highlight-box">
+            <h4>Perceptual Thresholds for Latency</h4>
+            <ul>
+                <li><strong>&lt;10ms:</strong> Imperceptible. Device feels like natural body part.</li>
+                <li><strong>10-20ms:</strong> Detectable by trained users but generally acceptable.</li>
+                <li><strong>20-50ms:</strong> Noticeable lag. Fine motor control degraded but gross movements okay.</li>
+                <li><strong>50-100ms:</strong> Significant lag. Control loops unstable. Requires conscious compensation.</li>
+                <li><strong>&gt;100ms:</strong> Severe lag. Most users cannot adapt. Device feels disconnected from intent.</li>
+            </ul>
+        </div>
+
+        <h2>4.2 WIA-AUG-014 Latency Tiers</h2>
+        <p>
+            Recognizing that different applications have different latency requirements, WIA-AUG-014 defines four latency tiers. Devices must declare which tier(s) they support and demonstrate compliance through standardized testing.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Tier</th>
+                    <th>Max Latency</th>
+                    <th>Applications</th>
+                    <th>Example Use Cases</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Tier 1</td>
+                    <td>&lt;10ms</td>
+                    <td>Motor control, balance, postural control, reflex-like responses</td>
+                    <td>Prosthetic hand grip, exoskeleton balance assist, BCI cursor control</td>
+                </tr>
+                <tr>
+                    <td>Tier 2</td>
+                    <td>&lt;50ms</td>
+                    <td>Sensory feedback, grip force modulation, interactive control</td>
+                    <td>Haptic feedback in prosthetics, force-sensitive manipulation</td>
+                </tr>
+                <tr>
+                    <td>Tier 3</td>
+                    <td>&lt;100ms</td>
+                    <td>User interface interactions, menu navigation, non-critical adjustments</td>
+                    <td>Device settings, mode switching, status displays</td>
+                </tr>
+                <tr>
+                    <td>Tier 4</td>
+                    <td>&lt;500ms</td>
+                    <td>Status updates, analytics data, configuration changes</td>
+                    <td>Battery status, usage statistics, firmware updates</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>4.3 Latency Budget Breakdown</h2>
+        <p>
+            Understanding where latency comes from is essential to optimization. The total latency budget must be allocated across multiple stages in the signal processing pipeline. Let's examine the breakdown for a Tier 1 system targeting 10ms total latency:
+        </p>
+
+        <div class="diagram">
+<pre>Tier 1 Latency Budget (10ms total):
+
+┌────────────────────────┬──────────┐
+│ Signal Acquisition     │   2ms    │  ← ADC conversion, electrode impedance
+├────────────────────────┼──────────┤
+│ Preprocessing          │   1ms    │  ← Filtering, artifact removal
+├────────────────────────┼──────────┤
+│ Encoding/Compression   │   1ms    │  ← Signal packet formation
+├────────────────────────┼──────────┤
+│ Transmission           │   2ms    │  ← Physical layer + protocol overhead
+├────────────────────────┼──────────┤
+│ Decoding               │   1ms    │  ← Decompression, error checking
+├────────────────────────┼──────────┤
+│ Motor Execution        │   3ms    │  ← Command to actual motion
+├────────────────────────┼──────────┤
+│ TOTAL                  │  10ms    │
+└────────────────────────┴──────────┘</pre>
+        </div>
+
+        <p>
+            This budget is extremely tight. Every component must be optimized, and there's no room for inefficiency. A single poorly-chosen algorithm or unnecessary data copy can push the system out of spec.
+        </p>
+
+        <h3>Budget Allocation for Other Tiers</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Tier 1 (10ms)</th>
+                    <th>Tier 2 (50ms)</th>
+                    <th>Tier 3 (100ms)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Acquisition</td>
+                    <td>2ms (20%)</td>
+                    <td>5ms (10%)</td>
+                    <td>10ms (10%)</td>
+                </tr>
+                <tr>
+                    <td>Preprocessing</td>
+                    <td>1ms (10%)</td>
+                    <td>10ms (20%)</td>
+                    <td>20ms (20%)</td>
+                </tr>
+                <tr>
+                    <td>Transmission</td>
+                    <td>2ms (20%)</td>
+                    <td>10ms (20%)</td>
+                    <td>20ms (20%)</td>
+                </tr>
+                <tr>
+                    <td>Processing/Decoding</td>
+                    <td>2ms (20%)</td>
+                    <td>15ms (30%)</td>
+                    <td>30ms (30%)</td>
+                </tr>
+                <tr>
+                    <td>Execution</td>
+                    <td>3ms (30%)</td>
+                    <td>10ms (20%)</td>
+                    <td>20ms (20%)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>4.4 Latency Measurement Protocol</h2>
+        <p>
+            WIA-AUG-014 mandates a rigorous latency measurement protocol for certification. Systems must demonstrate consistent performance across diverse conditions.
+        </p>
+
+        <pre><code>interface LatencyMeasurement {
+  measurementId: string;
+  tier: 1 | 2 | 3 | 4;
+
+  components: {
+    acquisition: number;          // ms
+    processing: number;           // ms
+    encoding: number;             // ms
+    transmission: number;         // ms
+    decoding: number;             // ms
+    execution: number;            // ms
+  };
+
+  total: number;                  // ms
+  jitter: number;                 // ms (standard deviation)
+  percentile_50: number;          // Median latency
+  percentile_95: number;          // 95th percentile
+  percentile_99: number;          // 99th percentile
+  compliance: boolean;            // Met tier requirement?
+  timestamp: Date;
+  conditions: {
+    signalType: string;
+    channelCount: number;
+    sampleRate: number;
+    cpuLoad: number;              // 0-100%
+    batteryLevel: number;         // 0-100%
+  };
+}
+
+// Test must pass these criteria for certification:
+// - Mean latency < tier requirement
+// - 95th percentile < tier requirement * 1.2
+// - 99th percentile < tier requirement * 1.5
+// - Jitter < tier requirement * 0.3
+// - Sustained for 10 minutes minimum
+// - Under varied load conditions</code></pre>
+
+        <h2>4.5 Optimization Techniques: Signal Acquisition</h2>
+        <p>
+            The signal acquisition stage is where latency first appears. Every design choice affects the eventual total.
+        </p>
+
+        <h3>ADC Selection and Configuration</h3>
+        <p>
+            Modern analog-to-digital converters introduce latency through conversion time and group delay in their digital filters. Successive-approximation (SAR) ADCs offer the lowest latency (typically &lt;1μs per sample) but require external filtering. Sigma-delta ADCs provide excellent noise performance but higher latency (typically 1-10ms depending on decimation filter).
+        </p>
+
+        <div class="info-box">
+            <h4>ADC Latency Optimization</h4>
+            <ul>
+                <li><strong>Choose SAR over Sigma-Delta for Tier 1:</strong> Accept slightly higher noise for dramatically lower latency</li>
+                <li><strong>Minimize decimation filter length:</strong> Each additional tap adds delay. Use minimal filter that meets SNR requirements</li>
+                <li><strong>Pipeline conversions:</strong> Start next conversion immediately after previous completes</li>
+                <li><strong>Use simultaneous sampling:</strong> For multi-channel systems, sample all channels at once rather than multiplexing</li>
+            </ul>
+        </div>
+
+        <h3>Buffering Strategy</h3>
+        <p>
+            Many systems introduce unnecessary latency through excessive buffering. While buffers smooth out timing jitter, they add delay. For Tier 1 applications, minimal buffering is essential:
+        </p>
+
+        <ul>
+            <li><strong>Single-sample processing:</strong> Process each sample immediately rather than waiting for a buffer to fill</li>
+            <li><strong>Circular buffers:</strong> When buffering is necessary, use circular buffers to minimize memory allocation overhead</li>
+            <li><strong>DMA transfers:</strong> Use direct memory access to move data from ADC to processor without CPU involvement</li>
+        </ul>
+
+        <h2>4.6 Optimization Techniques: Processing and Algorithms</h2>
+        <p>
+            Signal processing algorithms vary dramatically in their latency characteristics. The same filter implemented different ways can have 10x difference in delay.
+        </p>
+
+        <h3>Causal vs. Non-Causal Filtering</h3>
+        <p>
+            Non-causal filters look at future samples to make decisions about current samples. This is fine for offline analysis but introduces latency in real-time systems. WIA-AUG-014 requires strictly causal implementations for Tier 1/2 applications.
+        </p>
+
+        <div class="highlight-box">
+            <h4>Filter Latency Comparison</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Filter Type</th>
+                        <th>Group Delay</th>
+                        <th>Suitable For</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>IIR (Butterworth, 4th order)</td>
+                        <td>~2 samples</td>
+                        <td>Tier 1, very low latency</td>
+                    </tr>
+                    <tr>
+                        <td>FIR (Linear phase, 64 taps)</td>
+                        <td>32 samples</td>
+                        <td>Tier 2/3, low distortion needed</td>
+                    </tr>
+                    <tr>
+                        <td>Wavelet (5-level decomposition)</td>
+                        <td>Variable, ~50-100 samples</td>
+                        <td>Tier 3/4, offline analysis</td>
+                    </tr>
+                    <tr>
+                        <td>Zero-phase FIR (offline)</td>
+                        <td>N/A (non-causal)</td>
+                        <td>Research only, not real-time</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Computational Optimization</h3>
+        <p>
+            Processing time directly contributes to latency. Every microsecond saved in computation reduces total latency.
+        </p>
+
+        <ul>
+            <li><strong>Fixed-point arithmetic:</strong> For embedded systems, fixed-point operations are 5-10x faster than floating-point</li>
+            <li><strong>Lookup tables:</strong> Pre-compute expensive functions (sin, exp, sqrt) and store in tables</li>
+            <li><strong>SIMD instructions:</strong> Process multiple samples simultaneously using vector instructions</li>
+            <li><strong>Hardware acceleration:</strong> Offload FFT, filtering to dedicated DSP or FPGA hardware</li>
+            <li><strong>Algorithm selection:</strong> Choose O(n) algorithms over O(n²) even if constant factors are higher</li>
+        </ul>
+
+        <h2>4.7 Optimization Techniques: Communication</h2>
+        <p>
+            Transmission latency depends on physical layer choice, protocol overhead, and data packetization strategy.
+        </p>
+
+        <h3>Packet Size Optimization</h3>
+        <p>
+            Larger packets amortize protocol overhead but increase latency by requiring more samples before transmission:
+        </p>
+
+        <div class="diagram">
+<pre>Example: 1000 Hz sample rate
+
+Small packets (10 samples):
+  - Packet every 10ms
+  - Average latency: 5ms (waiting for packet to fill)
+  - Protocol overhead: 10% (frequent headers)
+
+Large packets (100 samples):
+  - Packet every 100ms
+  - Average latency: 50ms (waiting for packet to fill)
+  - Protocol overhead: 1% (amortized headers)
+
+Optimal for Tier 1: 2-5 samples per packet
+  - Packet every 2-5ms
+  - Average latency: 1-2.5ms
+  - Protocol overhead: 3-5% (acceptable)</pre>
+        </div>
+
+        <h3>Priority Queuing</h3>
+        <p>
+            When multiple data streams share a physical link, priority queuing ensures low-latency streams aren't delayed by bulk transfers:
+        </p>
+
+        <pre><code>interface PriorityQueue {
+  queues: {
+    critical: Queue&lt;Packet&gt;;      // Tier 1, always sent first
+    high: Queue&lt;Packet&gt;;          // Tier 2, sent if no critical
+    normal: Queue&lt;Packet&gt;;        // Tier 3, sent if no high
+    bulk: Queue&lt;Packet&gt;;          // Tier 4, sent in idle time
+  };
+
+  // Strict priority: Always serve higher priority first
+  // With starvation prevention: Bulk gets minimum bandwidth
+  minBulkBandwidth: number;       // bytes/second
+}</code></pre>
+
+        <h2>4.8 Jitter: The Hidden Enemy</h2>
+        <p>
+            Jitter - variability in latency - can be as problematic as absolute latency. A system that delivers packets in 8ms, 12ms, 9ms, 15ms is worse than one that consistently delivers in 10ms. Jitter causes control instability and perceptual artifacts.
+        </p>
+
+        <h3>Sources of Jitter</h3>
+        <ul>
+            <li><strong>OS scheduling:</strong> Non-real-time operating systems introduce variable delays. Real-time OS or bare-metal programming essential for Tier 1.</li>
+            <li><strong>Wireless retransmissions:</strong> Packet loss and retransmission cause large jitter spikes. Use FEC instead of ARQ.</li>
+            <li><strong>Garbage collection:</strong> Languages with GC (Java, Python) experience pause spikes. Use C/C++/Rust for low-jitter.</li>
+            <li><strong>Interrupt sharing:</strong> High-priority HMI interrupts competing with lower-priority device interrupts.</li>
+        </ul>
+
+        <h3>Jitter Mitigation</h3>
+        <p>
+            WIA-AUG-014 requires jitter &lt; 30% of tier latency budget (e.g., &lt;3ms for Tier 1):
+        </p>
+
+        <ul>
+            <li><strong>Real-time OS with priority inheritance:</strong> Prevent priority inversion</li>
+            <li><strong>Dedicated processing cores:</strong> Pin HMI threads to isolated CPU cores</li>
+            <li><strong>Playout buffers:</strong> Trade small constant latency increase for jitter reduction</li>
+            <li><strong>Clock synchronization:</strong> Use PTP or GPS to synchronize distributed clocks</li>
+        </ul>
+
+        <div class="info-box">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>Latency is the most critical HMI performance metric; &gt;20ms delay noticeably degrades control quality</li>
+                <li>WIA-AUG-014 defines four latency tiers from Tier 1 (&lt;10ms) to Tier 4 (&lt;500ms)</li>
+                <li>Total latency must be budgeted across acquisition, processing, transmission, and execution stages</li>
+                <li>Tier 1 systems require SAR ADCs, IIR filters, minimal buffering, and real-time OS</li>
+                <li>Jitter (latency variability) is as important as mean latency; systems must maintain consistent timing</li>
+                <li>Certification requires demonstrating sustained low latency under varied conditions for 10+ minutes</li>
+                <li>Every design choice affects latency: ADC type, filter selection, packet size, OS, programming language</li>
+            </ul>
+        </div>
+
+        <h2>Review Questions</h2>
+        <ol>
+            <li>Explain why 50ms latency might be acceptable for a computer mouse but unacceptable for a prosthetic hand.</li>
+            <li>A system uses a 256-tap FIR filter at 1000 Hz sample rate. What latency does the filter introduce? Is it suitable for Tier 1?</li>
+            <li>Calculate the packet filling latency for 4-channel EMG sampled at 2000 Hz with 25 samples per packet.</li>
+            <li>Why does WIA-AUG-014 test 95th and 99th percentile latency in addition to mean latency?</li>
+            <li>Compare SAR ADC and Sigma-Delta ADC for a Tier 1 application. Which would you choose and why?</li>
+            <li>Describe three sources of jitter in HMI systems and mitigation strategies for each.</li>
+            <li>A BLE link has 7.5ms baseline latency. How much budget remains for other stages in a Tier 1 system?</li>
+            <li>Explain the tradeoff between packet size and latency. Why not always use minimum-size packets?</li>
+        </ol>
+
+        <div class="nav-buttons">
+            <a href="chapter-03.html" class="btn">← Previous Chapter</a>
+            <a href="chapter-05.html" class="btn">Next Chapter →</a>
+        </div>
+    </div>
+</body>
+</html>

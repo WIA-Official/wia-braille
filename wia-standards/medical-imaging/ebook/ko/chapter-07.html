@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7장: 클라우드 기반 영상 - WIA 의료 영상 표준</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        header { padding: 2rem 0; border-bottom: 2px solid #14B8A6; margin-bottom: 2rem; }
+        .chapter-number { font-size: 1rem; color: #14B8A6; font-weight: 600; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #f8fafc; margin-bottom: 1rem; }
+        h2 { color: #14B8A6; font-size: 1.8rem; margin: 2.5rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(20, 184, 166, 0.3); }
+        h3 { color: #14B8A6; font-size: 1.3rem; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.2rem; color: #cbd5e1; }
+        .chapter-nav { background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .nav-button { padding: 0.75rem 1.5rem; background: #334155; color: #14B8A6; text-decoration: none; border-radius: 6px; transition: all 0.3s ease; border: 1px solid #14B8A6; }
+        .nav-button:hover { background: #14B8A6; color: #0f172a; transform: translateY(-2px); }
+        .highlight-box { background: rgba(20, 184, 166, 0.1); border-left: 4px solid #14B8A6; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: #1e293b; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #14B8A6; color: #0f172a; font-weight: 600; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #334155; }
+        ul, ol { margin: 1rem 0 1rem 2rem; color: #cbd5e1; }
+        li { margin-bottom: 0.5rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0; }
+        .stat-card { background: #1e293b; padding: 1.5rem; border-radius: 8px; border: 1px solid #334155; text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #14B8A6; margin-bottom: 0.5rem; }
+        .stat-label { color: #94a3b8; font-size: 0.9rem; }
+        footer { margin-top: 4rem; padding: 2rem 0; text-align: center; border-top: 2px solid #334155; color: #64748b; }
+        .footer-tagline { font-size: 1.1rem; color: #14B8A6; margin-bottom: 0.5rem; }
+        @media (max-width: 768px) { h1 { font-size: 2rem; } .container { padding: 1rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-number">7장</div>
+            <h1>클라우드 기반 영상</h1>
+        </header>
+
+        <div class="chapter-nav">
+            <a href="chapter-06.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">목차</a>
+            <a href="chapter-08.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <div class="highlight-box">
+            <strong>장 개요:</strong> 클라우드 컴퓨팅은 의료 영상 저장, 처리, 공유 방식을 근본적으로 변화시키고 있습니다. 이 장에서는 클라우드 PACS, 원격 판독, 다기관 협진, 보안, HIPAA 준수, 데이터 백업 전략을 다룹니다.
+        </div>
+
+        <h2>클라우드 의료 영상의 부상</h2>
+
+        <p>전통적인 온프레미스 PACS는 높은 초기 투자 비용, 유지보수 부담, 확장성 한계를 가지고 있습니다. 클라우드 기반 솔루션은 이러한 문제를 해결하며, 언제 어디서나 영상 접근, 자동 백업, 무한 확장성을 제공합니다.</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">45%</div>
+                <div class="stat-label">병원 클라우드 PACS 도입률</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">60%↓</div>
+                <div class="stat-label">CapEx 감소</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">99.99%</div>
+                <div class="stat-label">가용성 SLA</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">$8B+</div>
+                <div class="stat-label">클라우드 PACS 시장(2025)</div>
+            </div>
+        </div>
+
+        <h2>클라우드 PACS 아키텍처</h2>
+
+        <h3>배포 모델</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>모델</th>
+                    <th>설명</th>
+                    <th>장점</th>
+                    <th>단점</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Public Cloud</td>
+                    <td>AWS, Azure, GCP</td>
+                    <td>저렴, 확장성</td>
+                    <td>보안 우려, 규제</td>
+                </tr>
+                <tr>
+                    <td>Private Cloud</td>
+                    <td>전용 클라우드</td>
+                    <td>보안, 제어</td>
+                    <td>높은 비용</td>
+                </tr>
+                <tr>
+                    <td>Hybrid Cloud</td>
+                    <td>온프레미스 + 클라우드</td>
+                    <td>유연성, 점진 전환</td>
+                    <td>복잡성</td>
+                </tr>
+                <tr>
+                    <td>Multi-Cloud</td>
+                    <td>여러 클라우드 활용</td>
+                    <td>벤더 락인 회피</td>
+                    <td>관리 복잡</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>주요 클라우드 서비스</h3>
+
+        <ul>
+            <li><strong>AWS:</strong> S3 (스토리지), EC2 (컴퓨팅), ECS (컨테이너), RDS (DB), HealthLake (FHIR)</li>
+            <li><strong>Azure:</strong> Blob Storage, Virtual Machines, AKS, SQL Database, Health Data Services</li>
+            <li><strong>GCP:</strong> Cloud Storage, Compute Engine, GKE, Cloud SQL, Healthcare API</li>
+            <li><strong>전용 의료:</strong> Ambra Health, LifeImage, Sectra Cloud, Philips HealthSuite</li>
+        </ul>
+
+        <h2>클라우드 스토리지 전략</h2>
+
+        <h3>스토리지 티어링</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>티어</th>
+                    <th>AWS</th>
+                    <th>Azure</th>
+                    <th>액세스 시간</th>
+                    <th>비용/GB/월</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Hot</td>
+                    <td>S3 Standard</td>
+                    <td>Hot Blob</td>
+                    <td>밀리초</td>
+                    <td>$0.023</td>
+                </tr>
+                <tr>
+                    <td>Warm</td>
+                    <td>S3 Intelligent-Tiering</td>
+                    <td>Cool Blob</td>
+                    <td>밀리초</td>
+                    <td>$0.0125</td>
+                </tr>
+                <tr>
+                    <td>Cool</td>
+                    <td>S3 Glacier Instant</td>
+                    <td>Archive</td>
+                    <td>밀리초</td>
+                    <td>$0.004</td>
+                </tr>
+                <tr>
+                    <td>Cold</td>
+                    <td>S3 Glacier Flexible</td>
+                    <td>-</td>
+                    <td>분-시간</td>
+                    <td>$0.0036</td>
+                </tr>
+                <tr>
+                    <td>Archive</td>
+                    <td>S3 Glacier Deep Archive</td>
+                    <td>-</td>
+                    <td>12시간</td>
+                    <td>$0.00099</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>비용 최적화</h3>
+
+        <ul>
+            <li><strong>자동 티어링:</strong> Lifecycle Policy로 오래된 영상 자동 이동</li>
+            <li><strong>압축:</strong> JPEG-LS, JPEG 2000로 50-70% 스토리지 절감</li>
+            <li><strong>중복 제거:</strong> 동일 영상 다중 저장 방지</li>
+            <li><strong>Reserved Capacity:</strong> 장기 약정으로 30-60% 할인</li>
+            <li><strong>Egress 최소화:</strong> 클라우드 내부에서 처리</li>
+        </ul>
+
+        <h2>원격 판독 (Teleradiology)</h2>
+
+        <p>클라우드 PACS는 지리적 제약 없이 전문의가 어디서나 판독할 수 있게 합니다.</p>
+
+        <h3>워크플로우</h3>
+
+        <ol>
+            <li>검사 시설: 영상을 클라우드 PACS로 업로드</li>
+            <li>자동 라우팅: 검사 유형, 긴급도에 따라 판독의 배정</li>
+            <li>판독의: 웹/모바일 뷰어로 영상 리뷰</li>
+            <li>보고서 작성: 음성 인식, 구조화 템플릿</li>
+            <li>결과 전송: 의뢰 기관으로 자동 배포</li>
+        </ol>
+
+        <h3>장점</h3>
+
+        <ul>
+            <li><strong>24/7 커버리지:</strong> 야간/주말에도 신속 판독</li>
+            <li><strong>전문가 접근:</strong> 소규모 병원도 전문의 판독 가능</li>
+            <li><strong>부하 분산:</strong> 과부하 기관에서 여유 있는 기관으로 분배</li>
+            <li><strong>재택 근무:</strong> 판독의 유연한 업무 환경</li>
+            <li><strong>국제 협업:</strong> 시차 활용한 글로벌 판독</li>
+        </ul>
+
+        <h2>다기관 협진</h2>
+
+        <p>복잡한 케이스를 여러 기관 전문가가 함께 리뷰:</p>
+
+        <ul>
+            <li><strong>MDT (Multi-Disciplinary Team):</strong> 종양학, 심장학 등 다학제 회의</li>
+            <li><strong>Second Opinion:</strong> 타 기관 전문의 소견 요청</li>
+            <li><strong>실시간 협업:</strong> 동일 영상을 여러 위치에서 동시 리뷰</li>
+            <li><strong>주석 공유:</strong> 화살표, 측정 결과 실시간 동기화</li>
+            <li><strong>화상 회의 통합:</strong> Zoom, Teams와 영상 뷰어 연동</li>
+        </ul>
+
+        <h2>보안 및 규제 준수</h2>
+
+        <h3>HIPAA 준수</h3>
+
+        <p>미국 의료정보보호법(HIPAA)은 클라우드 의료 데이터의 필수 요구사항입니다:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>요구사항</th>
+                    <th>구현</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>암호화</td>
+                    <td>전송 중 (TLS 1.2+), 저장 시 (AES-256)</td>
+                </tr>
+                <tr>
+                    <td>접근 제어</td>
+                    <td>MFA, 역할 기반 권한</td>
+                </tr>
+                <tr>
+                    <td>감사 로그</td>
+                    <td>모든 액세스 기록, 6년 보관</td>
+                </tr>
+                <tr>
+                    <td>백업</td>
+                    <td>자동 백업, 재해 복구 계획</td>
+                </tr>
+                <tr>
+                    <td>BAA</td>
+                    <td>클라우드 제공자와 Business Associate Agreement 체결</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>추가 규제</h3>
+
+        <ul>
+            <li><strong>GDPR (유럽):</strong> 데이터 지역 제한, Right to be Forgotten</li>
+            <li><strong>한국 개인정보보호법:</strong> 국내 데이터 센터 요구</li>
+            <li><strong>ISO 27001:</strong> 정보 보안 관리 체계 인증</li>
+            <li><strong>SOC 2:</strong> 클라우드 보안 감사 보고서</li>
+        </ul>
+
+        <h3>Zero Trust 아키텍처</h3>
+
+        <ul>
+            <li><strong>원칙:</strong> "절대 신뢰하지 말고, 항상 검증하라"</li>
+            <li><strong>Micro-segmentation:</strong> 네트워크를 작은 세그먼트로 분할</li>
+            <li><strong>Least Privilege:</strong> 최소 권한만 부여</li>
+            <li><strong>MFA 필수:</strong> 모든 접근에 다중 인증</li>
+            <li><strong>연속 검증:</strong> 세션 중에도 지속적 인증</li>
+        </ul>
+
+        <h2>재해 복구 및 백업</h2>
+
+        <h3>백업 전략</h3>
+
+        <ul>
+            <li><strong>3-2-1 규칙:</strong> 3개 복사본, 2종류 매체, 1개 외부 위치</li>
+            <li><strong>RPO (Recovery Point Objective):</strong> 15분 (연속 복제)</li>
+            <li><strong>RTO (Recovery Time Objective):</strong> 4시간 (중요 시스템)</li>
+            <li><strong>지역 복제:</strong> 다른 지리적 리전에 자동 백업</li>
+            <li><strong>정기 테스트:</strong> 분기별 재해 복구 훈련</li>
+        </ul>
+
+        <h3>고가용성(HA)</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>구성요소</th>
+                    <th>HA 전략</th>
+                    <th>목표 가용성</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>PACS 서버</td>
+                    <td>Active-Active 클러스터</td>
+                    <td>99.99%</td>
+                </tr>
+                <tr>
+                    <td>데이터베이스</td>
+                    <td>Multi-AZ 배포, Read Replica</td>
+                    <td>99.95%</td>
+                </tr>
+                <tr>
+                    <td>스토리지</td>
+                    <td>S3 (11 nines 내구성)</td>
+                    <td>99.999999999%</td>
+                </tr>
+                <tr>
+                    <td>네트워크</td>
+                    <td>다중 ISP, CDN</td>
+                    <td>99.9%</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>성능 최적화</h2>
+
+        <h3>CDN (Content Delivery Network)</h3>
+
+        <ul>
+            <li><strong>Edge Location:</strong> 전 세계 캐시 서버</li>
+            <li><strong>지연 시간 감소:</strong> 50-80% 로딩 속도 향상</li>
+            <li><strong>대역폭 절감:</strong> Origin 서버 부하 감소</li>
+            <li><strong>CloudFront, Azure CDN, Cloud CDN</strong></li>
+        </ul>
+
+        <h3>캐싱 전략</h3>
+
+        <ol>
+            <li><strong>Browser Cache:</strong> 최근 조회 영상 로컬 캐시</li>
+            <li><strong>CDN Cache:</strong> 자주 액세스되는 영상 Edge 캐시</li>
+            <li><strong>Application Cache:</strong> Redis, Memcached로 메타데이터 캐시</li>
+            <li><strong>Prefetching:</strong> AI로 다음 조회 영상 예측 및 미리 로드</li>
+        </ol>
+
+        <h2>하이브리드 클라우드 전환</h2>
+
+        <h3>마이그레이션 전략</h3>
+
+        <ul>
+            <li><strong>1단계 (Hot Data):</strong> 최근 90일 영상만 클라우드로</li>
+            <li><strong>2단계 (Warm Data):</strong> 1년 이내 영상 점진 이전</li>
+            <li><strong>3단계 (Cold Data):</strong> 오래된 영상 Glacier로 아카이브</li>
+            <li><strong>4단계 (Full Cloud):</strong> 모든 새 영상 클라우드 직접 저장</li>
+            <li><strong>온프레미스 유지:</strong> 네트워크 다운 시 백업</li>
+        </ul>
+
+        <h3>클라우드 게이트웨이</h3>
+
+        <p>온프레미스 PACS와 클라우드를 연결하는 중간 계층:</p>
+
+        <ul>
+            <li><strong>DICOM Proxy:</strong> 온프레미스 → 클라우드 자동 복제</li>
+            <li><strong>Cache Appliance:</strong> 로컬 캐시로 성능 유지</li>
+            <li><strong>AWS Storage Gateway, Azure Stack</strong></li>
+        </ul>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">80%</div>
+                <div class="stat-label">2030년 클라우드 비율 예상</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">$30B</div>
+                <div class="stat-label">2030년 시장 규모</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">3초</div>
+                <div class="stat-label">평균 영상 로딩 시간</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">글로벌</div>
+                <div class="stat-label">어디서나 접근</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <strong>핵심 요약:</strong> 클라우드 기반 의료 영상은 초기 투자 비용 절감, 무한 확장성, 글로벌 접근성, 자동 백업을 제공하며 의료 기관의 IT 부담을 크게 줄입니다. 하지만 보안, HIPAA 준수, 네트워크 의존성 등을 신중히 고려해야 하며, 하이브리드 접근을 통한 점진적 전환이 권장됩니다. 원격 판독과 다기관 협진은 클라우드의 가장 큰 장점이며, 의료 서비스의 질을 향상시킵니다.
+        </div>
+
+        <div class="chapter-nav" style="margin-top: 3rem;">
+            <a href="chapter-06.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">목차</a>
+            <a href="chapter-08.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <footer>
+            <div class="footer-tagline">弘益人間 (널리 인간을 이롭게 하라)</div>
+            <p>WIA 의료 영상 표준 - 7장: 클라우드 기반 영상</p>
+        </footer>
+    </div>
+</body>
+</html>

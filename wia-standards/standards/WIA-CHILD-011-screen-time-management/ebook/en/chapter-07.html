@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 07: Ecosystem Integration | WIA-CHILD-011</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #F59E0B; --text: #e2e8f0; --text-dim: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        header { border-bottom: 3px solid var(--primary); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.3rem; margin-top: 2rem; margin-bottom: 0.8rem; }
+        p, li { margin-bottom: 1.2rem; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: var(--surface); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: rgba(245, 158, 11, 0.1); }
+        code { background: var(--surface); padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--primary); }
+        pre { background: var(--surface); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1.5rem 0; border-left: 4px solid var(--primary); }
+        pre code { background: none; padding: 0; color: var(--text); }
+        .key-takeaways, .review-questions { background: var(--surface); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--primary); }
+        ul, ol { margin-left: 2rem; margin-bottom: 1.5rem; }
+        .navigation { display: flex; justify-content: space-between; margin: 3rem 0; padding: 1.5rem; background: var(--surface); border-radius: 8px; }
+        .nav-button { color: var(--primary); text-decoration: none; padding: 0.8rem 1.5rem; border: 2px solid var(--primary); border-radius: 6px; transition: all 0.3s; }
+        .nav-button:hover { background: var(--primary); color: white; }
+        .philosophy { text-align: center; margin: 3rem 0; padding: 2rem; background: var(--surface); border-radius: 8px; border: 2px solid var(--primary); }
+        footer { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chapter 07: Ecosystem Integration</h1>
+            <div style="color: var(--text-dim); font-size: 0.9rem;">WIA-CHILD-011 Screen Time Management Standard | Connected Systems</div>
+        </header>
+
+        <h2>Cross-Device Synchronization</h2>
+
+        <p>
+            Modern children use multiple devices throughout the day: smartphone at school, tablet after school, family computer
+            for homework, gaming console on weekends, smart TV in the evening. Effective screen time management requires
+            aggregating usage across all devices to provide accurate total time, prevent limit circumvention through device
+            switching, and maintain consistent policies regardless of which device the child is using.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Synchronization Type</th>
+                    <th>Data Synced</th>
+                    <th>Sync Frequency</th>
+                    <th>Conflict Resolution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Usage Aggregation</td>
+                    <td>Screen time sessions, app usage, quality scores</td>
+                    <td>Real-time (< 5 min)</td>
+                    <td>Merge timelines, deduplicate overlapping sessions</td>
+                </tr>
+                <tr>
+                    <td>Limit Enforcement</td>
+                    <td>Remaining daily time, category balances, active restrictions</td>
+                    <td>Real-time (immediate)</td>
+                    <td>Strictest limit wins across devices</td>
+                </tr>
+                <tr>
+                    <td>Configuration Updates</td>
+                    <td>Limits, categories, downtime schedules, allowed apps</td>
+                    <td>On change (< 1 min)</td>
+                    <td>Parent-initiated change overwrites all devices</td>
+                </tr>
+                <tr>
+                    <td>Context Sharing</td>
+                    <td>Current context (homework, family time, etc.), location</td>
+                    <td>Real-time (continuous)</td>
+                    <td>Most recent context update wins</td>
+                </tr>
+                <tr>
+                    <td>Parental Overrides</td>
+                    <td>Temporary unlocks, bonus time, exceptions</td>
+                    <td>Immediate (< 10 sec)</td>
+                    <td>Override applies to all devices simultaneously</td>
+                </tr>
+                <tr>
+                    <td>Device State</td>
+                    <td>Online/offline status, battery level, location</td>
+                    <td>Every 15 min</td>
+                    <td>Most recent state reported</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Multi-Device Synchronization</h3>
+
+        <pre><code>interface DeviceSyncManager {
+  syncUsage(devices: Device[]): Promise<AggregatedUsage>;
+  syncLimits(childId: string, limits: ScreenTimeLimits): Promise<void>;
+  handleLimitViolation(childId: string, violation: LimitViolation): Promise<void>;
+}
+
+class CrossDeviceSyncEngine {
+  private realTimeSync: RealtimeSyncClient;
+  private conflictResolver: ConflictResolver;
+
+  async aggregateUsageAcrossDevices(childId: string, date: Date): Promise<DailyUsage> {
+    const devices = await this.getChildDevices(childId);
+
+    // Fetch usage from all devices
+    const deviceUsages = await Promise.all(
+      devices.map(d => this.fetchDeviceUsage(d.id, date))
+    );
+
+    // Merge timelines
+    const allSessions = deviceUsages.flatMap(du => du.sessions);
+
+    // Detect and handle overlapping sessions (child using multiple devices simultaneously)
+    const deduplicatedSessions = this.deduplicateOverlappingSessions(allSessions);
+
+    // Calculate aggregated totals
+    return {
+      childId: childId,
+      date: date,
+      totalScreenTime: this.sumDuration(deduplicatedSessions),
+      qualityAdjustedTime: this.sumQualityAdjusted(deduplicatedSessions),
+      byDevice: this.groupByDevice(deduplicatedSessions),
+      byCategory: this.groupByCategory(deduplicatedSessions),
+      sessions: deduplicatedSessions.sort((a, b) => a.startTime - b.startTime)
+    };
+  }
+
+  deduplicateOverlappingSessions(sessions: ScreenSession[]): ScreenSession[] {
+    // Handle case where child uses multiple devices at same time
+    const sorted = sessions.sort((a, b) => a.startTime - b.startTime);
+    const deduplicated: ScreenSession[] = [];
+    const active: ScreenSession[] = [];
+
+    for (const session of sorted) {
+      // Remove ended sessions from active list
+      active.filter(s => s.endTime <= session.startTime);
+
+      // Check if this session overlaps with any active session
+      const overlapping = active.filter(s =>
+        this.sessionsOverlap(s, session)
+      );
+
+      if (overlapping.length === 0) {
+        // No overlap - add normally
+        deduplicated.push(session);
+        active.push(session);
+      } else {
+        // Overlapping sessions - child using multiple devices
+        // Strategy: count time once, but record both devices
+
+        // Split overlapping portion
+        const overlapStart = Math.max(session.startTime, Math.max(...overlapping.map(s => s.startTime)));
+        const overlapEnd = Math.min(session.endTime, Math.min(...overlapping.map(s => s.endTime)));
+
+        // Add non-overlapping portion
+        if (session.startTime < overlapStart) {
+          deduplicated.push({
+            ...session,
+            endTime: overlapStart,
+            duration: overlapStart - session.startTime
+          });
+        }
+
+        // For overlapping portion, create a merged session
+        deduplicated.push({
+          deviceId: 'multiple',
+          devices: [session.deviceId, ...overlapping.map(s => s.deviceId)],
+          startTime: overlapStart,
+          endTime: overlapEnd,
+          duration: overlapEnd - overlapStart,
+          simultaneous: true,
+          apps: [session.app, ...overlapping.map(s => s.app)],
+          category: this.mergeCategories([session.category, ...overlapping.map(s => s.category)]),
+          qualityScore: this.averageQuality([session, ...overlapping]),
+          note: 'Simultaneous use of multiple devices'
+        });
+
+        // Add non-overlapping end portion
+        if (session.endTime > overlapEnd) {
+          deduplicated.push({
+            ...session,
+            startTime: overlapEnd,
+            duration: session.endTime - overlapEnd
+          });
+        }
+      }
+    }
+
+    return deduplicated;
+  }
+
+  async syncLimitEnforcement(childId: string): Promise<void> {
+    const devices = await this.getChildDevices(childId);
+    const currentUsage = await this.getCurrentUsage(childId);
+    const limits = await this.getLimits(childId);
+
+    // Check if any limit is violated
+    const violation = this.checkLimits(currentUsage, limits);
+
+    if (violation) {
+      // Block on ALL devices simultaneously
+      await Promise.all(
+        devices.map(d => this.enforceBlockage(d.id, violation))
+      );
+
+      // Notify parent
+      await this.notifyParent(childId, {
+        type: 'limit_reached',
+        violation: violation,
+        action: 'All devices blocked'
+      });
+    }
+  }
+
+  async handleConfigChange(childId: string, newLimits: ScreenTimeLimits): Promise<void> {
+    const devices = await this.getChildDevices(childId);
+
+    // Push configuration to all devices in parallel
+    const updates = devices.map(async device => {
+      try {
+        await this.pushConfigToDevice(device.id, newLimits);
+        return { device: device.id, success: true };
+      } catch (error) {
+        // Device might be offline
+        await this.queueConfigUpdate(device.id, newLimits);
+        return { device: device.id, success: false, queued: true };
+      }
+    });
+
+    const results = await Promise.all(updates);
+
+    // Log sync status
+    await this.logSyncStatus(childId, results);
+
+    // Verify synchronization
+    await this.verifySyncAcrossDevices(childId);
+  }
+
+  async setupRealtimeSync(childId: string): Promise<void> {
+    const devices = await this.getChildDevices(childId);
+
+    // Establish real-time sync channels
+    for (const device of devices) {
+      await this.realTimeSync.connect(device.id, {
+        onUsageUpdate: async (usage) => {
+          await this.handleRealtimeUsageUpdate(childId, device.id, usage);
+        },
+        onLimitCheck: async () => {
+          const currentUsage = await this.getCurrentUsage(childId);
+          const limits = await this.getLimits(childId);
+          return this.checkLimits(currentUsage, limits);
+        },
+        onContextChange: async (context) => {
+          await this.handleContextChange(childId, device.id, context);
+        }
+      });
+    }
+  }
+}</code></pre>
+
+        <h2>School Schedule Integration</h2>
+
+        <p>
+            Schools play a central role in children's daily routines, and screen time management must align with school
+            schedules. Integration with school calendars, learning management systems (Google Classroom, Canvas, Schoology),
+            and communication platforms enables context-aware policies that support education while preventing interference
+            with learning time.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Integration Point</th>
+                    <th>Data Source</th>
+                    <th>Screen Time Impact</th>
+                    <th>Benefits</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>School Calendar</td>
+                    <td>School district calendar API, Google Calendar</td>
+                    <td>Automatic school day vs. vacation detection, schedule adjustments</td>
+                    <td>No manual calendar updates, appropriate limits for school breaks</td>
+                </tr>
+                <tr>
+                    <td>Class Schedule</td>
+                    <td>Student information system (SIS)</td>
+                    <td>During school hours: block entertainment, allow educational apps</td>
+                    <td>Prevents in-class distraction, supports digital learning tools</td>
+                </tr>
+                <tr>
+                    <td>Homework Assignments</td>
+                    <td>Google Classroom, Canvas, Schoology LMS integration</td>
+                    <td>Homework mode activated when assignments due, unlimited educational</td>
+                    <td>Supports online homework, prevents "I need it for homework" excuses</td>
+                </tr>
+                <tr>
+                    <td>Exam Schedule</td>
+                    <td>School calendar, parent input</td>
+                    <td>Exam week: unlimited study apps, reduced entertainment, earlier bedtime</td>
+                    <td>Optimizes for academic performance, ensures adequate rest</td>
+                </tr>
+                <tr>
+                    <td>Extracurricular Activities</td>
+                    <td>Sports team apps, activity calendars</td>
+                    <td>Delayed homework time, adjusted evening schedule</td>
+                    <td>Accounts for late return home, realistic expectations</td>
+                </tr>
+                <tr>
+                    <td>School Communication</td>
+                    <td>School messaging apps, email notifications</td>
+                    <td>School messages exempt from downtime, parent notified</td>
+                    <td>Ensures important school communications received</td>
+                </tr>
+                <tr>
+                    <td>Digital Learning Tools</td>
+                    <td>Approved app lists from school</td>
+                    <td>School-required apps always allowed, unlimited during school hours</td>
+                    <td>Supports digital curriculum, prevents learning interruption</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>School Integration System</h3>
+
+        <pre><code>class SchoolIntegrationManager {
+  async connectSchoolSystems(childId: string, school: School): Promise<void> {
+    // Connect to school's digital systems
+    const connections = await Promise.all([
+      this.connectCalendar(school.calendarAPI),
+      this.connectLMS(school.lmsType, school.lmsCredentials),
+      this.connectSIS(school.sisAPI),
+      this.importApprovedApps(school.id)
+    ]);
+
+    // Store connections
+    await this.storeSchoolConnections(childId, connections);
+
+    // Sync initial data
+    await this.initialSync(childId);
+  }
+
+  async syncSchoolSchedule(childId: string, date: Date): Promise<void> {
+    const school = await this.getSchoolInfo(childId);
+
+    // Check if it's a school day
+    const isSchoolDay = await this.isSchoolDay(school.id, date);
+
+    if (!isSchoolDay) {
+      // Weekend, holiday, or vacation - apply appropriate schedule
+      await this.applyNonSchoolDaySchedule(childId, date);
+      return;
+    }
+
+    // Get class schedule for the day
+    const classes = await this.getClassSchedule(childId, date);
+
+    // Create time blocks based on class schedule
+    const timeBlocks: TimeBlock[] = [];
+
+    for (const classSession of classes) {
+      timeBlocks.push({
+        start: classSession.startTime,
+        end: classSession.endTime,
+        type: 'class_in_session',
+        restrictions: {
+          entertainment: 'blocked',
+          socialMedia: 'blocked',
+          gaming: 'blocked',
+          educational: 'allowed',
+          schoolApps: 'allowed'
+        }
+      });
+    }
+
+    // Add homework time after school
+    const lastClass = classes[classes.length - 1];
+    const homeworkStart = this.addMinutes(lastClass.endTime, 30);  // 30 min break after school
+
+    timeBlocks.push({
+      start: homeworkStart,
+      end: this.addHours(homeworkStart, 2),
+      type: 'homework_time',
+      restrictions: {
+        entertainment: 'blocked',
+        socialMedia: 'limited_15min',
+        gaming: 'blocked',
+        educational: 'unlimited',
+        research: 'unlimited'
+      }
+    });
+
+    // Apply time blocks to devices
+    await this.applyTimeBlocks(childId, date, timeBlocks);
+  }
+
+  async checkHomeworkRequirements(childId: string): Promise<HomeworkStatus> {
+    const lms = await this.getLMSConnection(childId);
+
+    // Fetch assignments from LMS
+    const assignments = await lms.getAssignments({
+      studentId: childId,
+      dueWithin: '7_days',
+      status: 'not_submitted'
+    });
+
+    // Categorize by urgency
+    const urgent = assignments.filter(a => this.isWithinHours(a.dueDate, 24));
+    const upcoming = assignments.filter(a => this.isWithinHours(a.dueDate, 72) && !urgent.includes(a));
+    const later = assignments.filter(a => !urgent.includes(a) && !upcoming.includes(a));
+
+    return {
+      total: assignments.length,
+      urgent: urgent,
+      upcoming: upcoming,
+      later: later,
+      estimatedTime: this.estimateHomeworkTime(assignments),
+      recommendation: this.generateHomeworkRecommendation(assignments)
+    };
+  }
+
+  async activateHomeworkMode(childId: string, assignment: Assignment): Promise<void> {
+    // When child starts working on homework, enter homework mode
+
+    // Identify required apps/websites for this assignment
+    const requiredResources = this.identifyRequiredResources(assignment);
+
+    // Create temporary whitelist
+    const whitelist = [
+      ...requiredResources.apps,
+      ...this.getGeneralEducationalApps(),
+      'Google Docs',
+      'Microsoft Word',
+      'Calculator',
+      'Notes'
+    ];
+
+    // Block distractions
+    const blocklist = this.getDistractingApps();
+
+    // Apply homework mode
+    await this.applySpecialMode(childId, {
+      mode: 'homework',
+      duration: this.estimateAssignmentTime(assignment),
+      whitelist: whitelist,
+      blocklist: blocklist,
+      allowedWebsites: requiredResources.websites,
+      monitoring: 'focus_tracking',  // Track if child stays focused
+      breakReminders: {
+        interval: 30,  // Remind to take breaks every 30 min
+        duration: 5     // 5-minute break
+      }
+    });
+
+    // Notify parent
+    await this.notifyParent(childId, {
+      type: 'homework_mode_active',
+      assignment: assignment.title,
+      subject: assignment.subject,
+      estimatedTime: this.estimateAssignmentTime(assignment)
+    });
+  }
+
+  async handleExamPeriod(childId: string, examSchedule: Exam[]): Promise<void> {
+    // Finals week / exam period adjustments
+
+    const examPeriodStart = Math.min(...examSchedule.map(e => e.date));
+    const examPeriodEnd = Math.max(...examSchedule.map(e => e.date));
+
+    // Create special exam period schedule
+    await this.applySpecialMode(childId, {
+      mode: 'exam_period',
+      startDate: examPeriodStart,
+      endDate: examPeriodEnd,
+      adjustments: {
+        educationalApps: 'unlimited',
+        studyWebsites: 'unlimited',
+        entertainment: '-50%',  // Cut entertainment in half
+        socialMedia: '-75%',     // Severely limit social media
+        gaming: '-75%',
+        bedtime: '-30min',      // 30 min earlier bedtime for rest
+        breakReminders: true     // Encourage study breaks
+      },
+      examSchedule: examSchedule,  // Show upcoming exams
+      studyPlan: await this.generateStudyPlan(examSchedule)
+    });
+  }
+
+  identifyRequiredResources(assignment: Assignment): RequiredResources {
+    // Parse assignment description to identify required apps/websites
+
+    const description = assignment.description.toLowerCase();
+    const resources: RequiredResources = {
+      apps: [],
+      websites: []
+    };
+
+    // Check for common research requirements
+    if (description.includes('research') || description.includes('find information')) {
+      resources.websites.push(
+        '*.edu',
+        'scholar.google.com',
+        'wikipedia.org',
+        'britannica.com'
+      );
+    }
+
+    // Check for specific tool requirements
+    if (description.includes('google docs') || description.includes('document')) {
+      resources.apps.push('Google Docs');
+      resources.websites.push('docs.google.com');
+    }
+
+    if (description.includes('spreadsheet') || description.includes('data')) {
+      resources.apps.push('Google Sheets', 'Excel');
+    }
+
+    if (description.includes('presentation') || description.includes('slides')) {
+      resources.apps.push('Google Slides', 'PowerPoint', 'Keynote');
+    }
+
+    if (description.includes('khan academy') || description.includes('math practice')) {
+      resources.apps.push('Khan Academy');
+      resources.websites.push('khanacademy.org');
+    }
+
+    // Check for video requirements
+    if (description.includes('watch video') || description.includes('documentary')) {
+      resources.websites.push('youtube.com');  // But monitor what they watch
+    }
+
+    return resources;
+  }
+}</code></pre>
+
+        <h2>Parental Control Coordination</h2>
+
+        <p>
+            In two-parent households, both parents need visibility and control over screen time management. WIA-CHILD-011
+            provides coordinated access, shared reporting, joint decision-making, and conflict resolution when parents disagree.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Single Parent</th>
+                    <th>Two Parents (Coordinated)</th>
+                    <th>Divorced/Separated</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Configuration Access</td>
+                    <td>Full control</td>
+                    <td>Both parents can view/modify, changes notify other parent</td>
+                    <td>Separate profiles, custody schedule-based control</td>
+                </tr>
+                <tr>
+                    <td>Real-Time Monitoring</td>
+                    <td>Direct access</td>
+                    <td>Both parents see same dashboard, activity notifications to both</td>
+                    <td>Each parent sees activity during their custody time</td>
+                </tr>
+                <tr>
+                    <td>Override Authority</td>
+                    <td>Immediate</td>
+                    <td>Either parent can grant overrides, logged for transparency</td>
+                    <td>Only active custodial parent can override</td>
+                </tr>
+                <tr>
+                    <td>Policy Conflicts</td>
+                    <td>N/A</td>
+                    <td>Stricter limit wins, discussion flag for major disagreements</td>
+                    <td>Each household has own rules during custody time</td>
+                </tr>
+                <tr>
+                    <td>Reports & Insights</td>
+                    <td>Direct delivery</td>
+                    <td>Weekly reports to both parents, shared insights</td>
+                    <td>Separate reports for each parent's custody period</td>
+                </tr>
+                <tr>
+                    <td>Emergency Overrides</td>
+                    <td>Direct access</td>
+                    <td>Either parent, notifies other immediately</td>
+                    <td>Either parent regardless of custody, notifies other</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Multi-Parent Coordination</h3>
+
+        <pre><code>class ParentalCoordinationManager {
+  async setupCoParenting(
+    child: ChildProfile,
+    parent1: ParentProfile,
+    parent2: ParentProfile,
+    relationship: CoParentingRelationship
+  ): Promise<void> {
+    // Create shared family account
+    const familyAccount = await this.createFamilyAccount({
+      child: child,
+      parents: [parent1, parent2],
+      relationshipType: relationship.type,  // 'married', 'partnered', 'divorced', 'separated'
+      custodyArrangement: relationship.custodySchedule
+    });
+
+    if (relationship.type === 'divorced' || relationship.type === 'separated') {
+      // Set up split custody management
+      await this.setupSplitCustody(familyAccount, relationship.custodySchedule);
+    } else {
+      // Set up coordinated management
+      await this.setupCoordinatedManagement(familyAccount);
+    }
+  }
+
+  async setupCoordinatedManagement(familyAccount: FamilyAccount): Promise<void> {
+    // Both parents have equal access and visibility
+
+    const policy = {
+      configurationAccess: 'both',
+      overrideAuthority: 'either',
+      notificationStrategy: 'both',
+      conflictResolution: 'stricter_wins',
+      majorChangesRequire: 'discussion_flag'  // Flag for human discussion, don't auto-resolve
+    };
+
+    await this.applyCoordinationPolicy(familyAccount, policy);
+
+    // Set up change notifications
+    await this.setupChangeNotifications(familyAccount, {
+      notifyOnConfigChange: true,
+      notifyOnOverride: true,
+      notifyOnViolation: true,
+      notifyOnWeeklyReport: true
+    });
+  }
+
+  async handlePolicyConflict(
+    childId: string,
+    parent1Change: ConfigChange,
+    parent2Change: ConfigChange
+  ): Promise<Resolution> {
+    // Two parents set different limits - resolve automatically or flag for discussion
+
+    if (this.isMinorConflict(parent1Change, parent2Change)) {
+      // Minor conflict - apply stricter limit
+      const resolution = this.applyStricterLimit(parent1Change, parent2Change);
+
+      await this.notifyParents(childId, {
+        type: 'minor_conflict_resolved',
+        parent1Setting: parent1Change,
+        parent2Setting: parent2Change,
+        resolution: resolution,
+        message: 'Stricter limit applied automatically. You can discuss and adjust if needed.'
+      });
+
+      return resolution;
+    }
+
+    // Major conflict - flag for parent discussion
+    await this.notifyParents(childId, {
+      type: 'major_conflict_needs_discussion',
+      parent1Setting: parent1Change,
+      parent2Setting: parent2Change,
+      message: 'You and your co-parent have set significantly different limits. Please discuss and agree on a unified approach.',
+      currentPolicy: 'Previous settings remain until you agree'
+    });
+
+    // Lock settings until resolved
+    await this.lockSettingsUntilResolved(childId, [parent1Change, parent2Change]);
+
+    return {
+      status: 'pending_discussion',
+      lockedUntilResolved: true
+    };
+  }
+
+  async setupSplitCustody(
+    familyAccount: FamilyAccount,
+    custodySchedule: CustodySchedule
+  ): Promise<void> {
+    // Divorced/separated parents - each has control during their custody time
+
+    const policy = {
+      custodySchedule: custodySchedule,
+      activeParentControl: 'current_custodial_parent',
+      crossCustodyVisibility: 'summary_only',  // Non-custodial parent sees summary, not details
+      transitionProtocol: 'sync_on_transition',  // Sync settings when custody changes
+      emergencyOverride: 'either_parent',  // Either parent can intervene in emergency
+      reportSharing: 'separate_by_custody'
+    };
+
+    await this.applyCoordinationPolicy(familyAccount, policy);
+
+    // Set up automatic custody transitions
+    await this.setupCustodyTransitions(familyAccount, custodySchedule);
+  }
+
+  async handleCustodyTransition(
+    childId: string,
+    fromParent: ParentProfile,
+    toParent: ParentProfile,
+    transitionTime: Date
+  ): Promise<void> {
+    // Child transitioning between parents' homes
+
+    // Sync current usage data
+    const currentUsage = await this.syncAllDevices(childId);
+
+    // Generate transition report for incoming parent
+    const transitionReport = {
+      outgoingParent: fromParent,
+      incomingParent: toParent,
+      transitionTime: transitionTime,
+      recentUsage: await this.getRecentUsage(childId, 3),  // Last 3 days
+      currentDailyUsage: currentUsage,
+      pendingHomework: await this.getHomeworkStatus(childId),
+      upcomingEvents: await this.getUpcomingEvents(childId, 7),
+      notes: await this.getParentalNotes(fromParent.id, childId)
+    };
+
+    // Send to incoming parent
+    await this.sendTransitionReport(toParent, transitionReport);
+
+    // Switch active control
+    await this.switchActiveControl(childId, toParent.id);
+
+    // Apply incoming parent's settings
+    await this.applyParentSettings(childId, toParent.id);
+
+    // Log transition
+    await this.logCustodyTransition(childId, fromParent, toParent, transitionTime);
+  }
+}</code></pre>
+
+        <h2>Health Data Integration</h2>
+
+        <p>
+            Screen time impacts physical health through displacement of exercise and sleep disruption. Integration with health
+            tracking platforms (Apple Health, Google Fit, Fitbit) enables WIA-CHILD-011 to monitor holistic child wellness,
+            alert parents to concerning patterns, and adjust limits when screen time is interfering with health.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Health Metric</th>
+                    <th>Data Source</th>
+                    <th>Screen Time Correlation</th>
+                    <th>Intervention Trigger</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Sleep Duration</td>
+                    <td>Apple Health, Fitbit, manual tracking</td>
+                    <td>Late screen use delays sleep onset by 30-45 min</td>
+                    <td>If sleep < target for 3+ nights, enforce earlier downtime</td>
+                </tr>
+                <tr>
+                    <td>Sleep Quality</td>
+                    <td>Wearable sleep tracking (REM, deep sleep)</td>
+                    <td>Screen before bed reduces REM sleep by 15-20%</td>
+                    <td>If REM < 20% of sleep, extend pre-bed screen-free period</td>
+                </tr>
+                <tr>
+                    <td>Physical Activity</td>
+                    <td>Step counters, exercise apps, Apple Watch, Fitbit</td>
+                    <td>Each screen hour correlates with 3-5 min less activity</td>
+                    <td>If activity < 60 min/day for 5+ days, reduce screen time</td>
+                </tr>
+                <tr>
+                    <td>Sedentary Time</td>
+                    <td>Activity trackers, sedentary alerts</td>
+                    <td>Screen time is primary sedentary activity for children</td>
+                    <td>If sedentary > 6 hours/day, encourage movement breaks</td>
+                </tr>
+                <tr>
+                    <td>Eye Strain</td>
+                    <td>Manual reports, screen brightness/distance sensors</td>
+                    <td>Extended screen use without breaks causes strain</td>
+                    <td>Enforce 20-20-20 rule (every 20 min, 20 sec break, 20 ft distance)</td>
+                </tr>
+                <tr>
+                    <td>Posture</td>
+                    <td>Wearable posture trackers, device angle sensors</td>
+                    <td>Phone/tablet use often involves poor neck posture</td>
+                    <td>Posture alerts, encourage proper device positioning</td>
+                </tr>
+                <tr>
+                    <td>Mood/Mental Health</td>
+                    <td>Mood tracking apps, parent observations</td>
+                    <td>Excessive social media correlates with anxiety/depression</td>
+                    <td>If mood declining with high screen time, reduce limits</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Health Integration System</h3>
+
+        <pre><code>class HealthDataIntegration {
+  async connectHealthPlatforms(childId: string): Promise<void> {
+    // Connect to available health data sources
+    const connections = await Promise.all([
+      this.connectAppleHealth(childId),
+      this.connectGoogleFit(childId),
+      this.connectFitbit(childId)
+    ]);
+
+    // Start monitoring health metrics
+    await this.startHealthMonitoring(childId);
+  }
+
+  async analyzeHealthImpact(childId: string, period: DateRange): Promise<HealthImpactReport> {
+    const screenTime = await this.getScreenTimeData(childId, period);
+    const healthData = await this.getHealthData(childId, period);
+
+    // Analyze correlations
+    const sleepImpact = this.analyzeSleepImpact(screenTime, healthData.sleep);
+    const activityImpact = this.analyzeActivityImpact(screenTime, healthData.activity);
+    const overallWellness = this.analyzeOverallWellness(healthData);
+
+    // Identify concerning patterns
+    const concerns: HealthConcern[] = [];
+
+    if (sleepImpact.averageSleep < sleepImpact.targetSleep - 30) {
+      concerns.push({
+        type: 'insufficient_sleep',
+        severity: 'high',
+        actual: sleepImpact.averageSleep,
+        target: sleepImpact.targetSleep,
+        correlation: sleepImpact.screenTimeCorrelation,
+        recommendation: 'Enforce earlier bedtime, stricter pre-sleep downtime'
+      });
+    }
+
+    if (activityImpact.averageActivity < 60 && activityImpact.screenTimeRatio < 0.5) {
+      concerns.push({
+        type: 'insufficient_physical_activity',
+        severity: 'high',
+        actual: activityImpact.averageActivity,
+        target: 60,  // CDC recommends 60 min/day
+        correlation: activityImpact.screenTimeCorrelation,
+        recommendation: 'Reduce screen time, encourage active gaming, outdoor time'
+      });
+    }
+
+    return {
+      period: period,
+      sleepAnalysis: sleepImpact,
+      activityAnalysis: activityImpact,
+      wellnessScore: overallWellness,
+      concerns: concerns,
+      recommendations: this.generateHealthRecommendations(concerns)
+    };
+  }
+
+  analyzeSleepImpact(screenTime: ScreenTimeData, sleep: SleepData): SleepImpact {
+    const days = screenTime.daily.length;
+
+    // Calculate average sleep
+    const averageSleep = sleep.daily.reduce((sum, d) => sum + d.duration, 0) / days;
+    const targetSleep = this.getTargetSleep(screenTime.childAge);
+
+    // Find correlation between late screen use and poor sleep
+    const lateScreenNights = screenTime.daily.filter(d =>
+      d.sessions.some(s => this.isWithinHourBefore(s.endTime, sleep.daily.find(sd => sd.date === d.date).bedtime))
+    );
+
+    const avgSleepWithLateScreen = lateScreenNights.reduce((sum, night) => {
+      const sleepNight = sleep.daily.find(sd => sd.date === night.date);
+      return sum + sleepNight.duration;
+    }, 0) / lateScreenNights.length;
+
+    const avgSleepWithoutLateScreen = screenTime.daily
+      .filter(d => !lateScreenNights.includes(d))
+      .reduce((sum, night) => {
+        const sleepNight = sleep.daily.find(sd => sd.date === night.date);
+        return sum + sleepNight.duration;
+      }, 0) / (days - lateScreenNights.length);
+
+    return {
+      averageSleep: averageSleep,
+      targetSleep: targetSleep,
+      deficit: targetSleep - averageSleep,
+      lateScreenNights: lateScreenNights.length,
+      avgSleepWithLateScreen: avgSleepWithLateScreen,
+      avgSleepWithoutLateScreen: avgSleepWithoutLateScreen,
+      screenTimeCorrelation: avgSleepWithoutLateScreen - avgSleepWithLateScreen,  // Difference in minutes
+      recommendation: avgSleepWithLateScreen < avgSleepWithoutLateScreen - 20 ?
+        'Late screen use significantly impacts sleep. Enforce 1-hour screen-free period before bed.' :
+        null
+    };
+  }
+
+  async autoAdjustForHealth(childId: string): Promise<void> {
+    const healthImpact = await this.analyzeHealthImpact(childId, { days: 7 });
+
+    // Auto-adjust limits based on health impact
+    if (healthImpact.concerns.some(c => c.severity === 'high')) {
+      const adjustments: LimitAdjustment[] = [];
+
+      for (const concern of healthImpact.concerns.filter(c => c.severity === 'high')) {
+        if (concern.type === 'insufficient_sleep') {
+          // Enforce earlier bedtime
+          adjustments.push({
+            type: 'earlier_downtime',
+            amount: 30,  // 30 minutes earlier
+            reason: 'Health monitoring detected insufficient sleep'
+          });
+        }
+
+        if (concern.type === 'insufficient_physical_activity') {
+          // Reduce overall screen time
+          adjustments.push({
+            type: 'reduce_total_time',
+            amount: -30,  // 30 minutes less per day
+            reason: 'Health monitoring detected insufficient physical activity'
+          });
+        }
+      }
+
+      // Apply adjustments
+      await this.applyHealthBasedAdjustments(childId, adjustments);
+
+      // Notify parent
+      await this.notifyParent(childId, {
+        type: 'health_based_adjustment',
+        concerns: healthImpact.concerns,
+        adjustments: adjustments,
+        message: 'Screen time limits automatically adjusted based on health monitoring'
+      });
+    }
+  }
+}</code></pre>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>Cross-device synchronization aggregates usage across smartphones, tablets, computers, gaming consoles,
+                and smart TVs, preventing limit circumvention through device switching and providing accurate total time.</li>
+
+                <li>School schedule integration connects with school calendars, learning management systems (Google Classroom,
+                Canvas), and class schedules to enable context-aware policies during school hours and homework time.</li>
+
+                <li>Deduplication of overlapping sessions handles cases where children use multiple devices simultaneously,
+                counting time once while recording both devices and maintaining accurate aggregate totals.</li>
+
+                <li>Multi-parent coordination supports married/partnered parents (both access, stricter limit wins), divorced
+                parents (custody schedule-based control), and provides conflict resolution when parents disagree.</li>
+
+                <li>Health data integration connects with Apple Health, Google Fit, and Fitbit to monitor sleep duration/quality,
+                physical activity, and sedentary time, triggering adjustments when screen time impacts health.</li>
+
+                <li>Real-time limit enforcement blocks ALL devices simultaneously when limits are reached, preventing the child
+                from switching to another device after being blocked on one device.</li>
+
+                <li>Homework mode activates automatically based on LMS assignments, creating temporary whitelists for required
+                resources while blocking distractions and tracking focus during study sessions.</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>The deduplication algorithm detects when a child uses multiple devices simultaneously (e.g., watching YouTube
+                on TV while texting on phone). Explain the technical challenge: how do you determine if two sessions overlap
+                versus occur sequentially with a short gap?</li>
+
+                <li>School integration requires parsing assignment descriptions to identify required resources. Design an NLP
+                algorithm that extracts required apps/websites from text like "Research renewable energy using reliable sources
+                and create a Google Slides presentation."</li>
+
+                <li>In a divorced family with 50/50 custody, Parent A sets strict limits (60 min/day) and Parent B sets relaxed
+                limits (180 min/day). Discuss the challenges this creates for the child and propose a technical solution that
+                respects both parents' autonomy while maintaining consistency.</li>
+
+                <li>The health integration system finds that late screen use correlates with 35 minutes less sleep. Before
+                automatically adjusting limits, what confounding variables should be considered? Design an experiment to
+                establish causation.</li>
+
+                <li>A child completes a homework assignment that required 45 minutes of "research" on YouTube. Design an algorithm
+                that determines whether they actually researched educational content or watched entertainment videos while claiming
+                to do homework.</li>
+
+                <li>The multi-parent conflict resolution uses "stricter limit wins" for minor conflicts. Define what constitutes
+                a "minor" versus "major" conflict, and explain scenarios where automatically applying the stricter limit might
+                undermine the more permissive parent's authority.</li>
+
+                <li>Real-time synchronization requires devices to communicate current usage and receive limit updates within
+                seconds. Design a network architecture that handles this for a family with 6 devices across different platforms
+                (iOS, Android, Windows) with varying connectivity (cellular, WiFi, offline).</li>
+
+                <li>The sleep impact analysis calculates that screens within 1 hour of bedtime reduce sleep by an average of
+                32 minutes. Propose three non-screen interventions that could improve sleep outcomes, and discuss whether
+                screen time reduction is the most effective approach or merely treats a symptom.</li>
+            </ol>
+        </div>
+
+        <div class="philosophy">
+            <h3>弘益人間 (Hongik Ingan)</h3>
+            <p><em>"Benefit All Humanity"</em></p>
+            <p style="margin-top: 1rem;">
+                Ecosystem integration recognizes that children don't exist in isolation—they are embedded in families, schools,
+                and communities. Effective screen time management must respect and support these connections rather than
+                operating as a standalone system.
+            </p>
+            <p style="margin-top: 1rem;">
+                By integrating with school systems, coordinating between parents, and connecting with health data, WIA-CHILD-011
+                serves the whole child in their complete context. This holistic approach benefits all humanity by acknowledging
+                that technology is just one aspect of child development, and healthy screen use must harmonize with education,
+                family relationships, and physical wellbeing.
+            </p>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-06.html" class="nav-button">← Previous: Advanced Features</a>
+            <a href="chapter-08.html" class="nav-button">Next: Future Outlook →</a>
+        </div>
+
+        <footer>
+            <p>© 2025 SmileStory Inc. / WIA</p>
+            <p style="margin-top: 0.5rem; color: var(--primary);">弘익人間 (Benefit All Humanity)</p>
+            <p style="margin-top: 0.5rem;">WIA-CHILD-011 Screen Time Management Standard v1.0</p>
+        </footer>
+    </div>
+</body>
+</html>

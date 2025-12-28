@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제1장: 스트리밍 데이터 개요 및 특성 - WIA-DATA-013</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; line-height: 1.8; max-width: 1000px; margin: 0 auto; padding: 40px 20px; background: #0f172a; color: #e2e8f0; }
+        h1, h2, h3 { color: #10B981; margin-top: 40px; }
+        h1 { font-size: 2.5em; border-bottom: 3px solid #10B981; padding-bottom: 15px; }
+        h2 { font-size: 2em; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        h3 { font-size: 1.5em; }
+        code { background: #1e293b; padding: 2px 6px; border-radius: 4px; color: #10B981; font-family: 'Courier New', monospace; }
+        pre { background: #1e293b; border-left: 4px solid #10B981; padding: 20px; border-radius: 8px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #1e293b; }
+        th, td { padding: 12px; text-align: left; border: 1px solid #334155; }
+        th { background: #10B981; color: #0f172a; font-weight: bold; }
+        .highlight { background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10B981; padding: 15px; margin: 20px 0; border-radius: 8px; }
+        .note { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 8px; }
+        ul, ol { margin: 15px 0; padding-left: 30px; }
+        li { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>제1장: 스트리밍 데이터 개요 및 특성</h1>
+
+    <h2>1.1 스트리밍 데이터의 정의와 중요성</h2>
+    <p>
+        스트리밍 데이터는 다양한 소스에서 연속적으로 생성되는 데이터를 의미하며, 센서, 애플리케이션, 디바이스, 시스템 등에서 끊임없이 발생합니다.
+        전통적인 배치 처리와 달리, 스트리밍 데이터는 데이터가 도착하는 즉시 증분적으로 처리되어 즉각적인 인사이트와 행동을 가능하게 합니다.
+    </p>
+
+    <div class="highlight">
+        <strong>핵심 원칙:</strong> 데이터를 저장하고 나중에 처리하는 것이 아니라, 이동 중인 데이터를 처리합니다. 
+        배치 처리 윈도우를 기다리지 않고 이벤트가 발생할 때 분석하여 실시간 의사결정을 가능하게 합니다.
+    </div>
+
+    <h2>1.2 데이터 처리의 진화</h2>
+    <p>
+        컴퓨팅 초기에는 데이터 처리가 주로 배치 지향적이었습니다. 조직은 하루, 주, 월 단위로 데이터를 누적한 후 
+        사용량이 적은 시간에 대량으로 처리했습니다. 이 방식은 과거 보고와 분석에는 효과적이었지만 실시간 인사이트가 필요한 경우에는 부족했습니다.
+    </p>
+
+    <p>
+        디지털 트랜스포메이션, 연결된 디바이스의 확산, 소셜 미디어, IoT 센서의 등장으로 지속적으로 생성되는 데이터가 폭발적으로 증가했습니다. 
+        이러한 변화는 데이터를 처리하고 생각하는 방식의 근본적인 변화를 요구했습니다.
+    </p>
+
+    <h2>1.3 스트리밍 데이터의 5V 특성</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>특성</th>
+                <th>정의</th>
+                <th>스트리밍 데이터에서의 의미</th>
+                <th>실제 예시</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>속도 (Velocity)</strong></td>
+                <td>데이터 생성 속도</td>
+                <td>초당 수천~수백만 이벤트 처리</td>
+                <td>증권 거래소: 초당 10,000+ 거래</td>
+            </tr>
+            <tr>
+                <td><strong>볼륨 (Volume)</strong></td>
+                <td>데이터 양</td>
+                <td>확장 가능한 처리 인프라 필요</td>
+                <td>IoT 센서: 일일 테라바이트급</td>
+            </tr>
+            <tr>
+                <td><strong>다양성 (Variety)</strong></td>
+                <td>데이터 타입</td>
+                <td>다양한 형식과 스키마</td>
+                <td>JSON, Avro, Protobuf, 바이너리</td>
+            </tr>
+            <tr>
+                <td><strong>변동성 (Volatility)</strong></td>
+                <td>유효 기간</td>
+                <td>빠른 처리 필요</td>
+                <td>플래시 세일: 분, 센서: 초</td>
+            </tr>
+            <tr>
+                <td><strong>정확성 (Veracity)</strong></td>
+                <td>데이터 품질</td>
+                <td>실시간 검증 및 정제</td>
+                <td>누락값, 이상치 처리</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>1.4 배치 처리 vs 스트림 처리 상세 비교</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>측면</th>
+                <th>배치 처리</th>
+                <th>스트림 처리</th>
+                <th>하이브리드 접근</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>데이터 범위</strong></td>
+                <td>전체 또는 대부분의 데이터</td>
+                <td>시간 윈도우 내 데이터</td>
+                <td>두 방식 결합 (Lambda)</td>
+            </tr>
+            <tr>
+                <td><strong>지연시간</strong></td>
+                <td>분~시간</td>
+                <td>밀리초~초</td>
+                <td>실시간 + 배치 조정</td>
+            </tr>
+            <tr>
+                <td><strong>복잡도</strong></td>
+                <td>낮음</td>
+                <td>높음 (상태, 윈도우)</td>
+                <td>매우 높음</td>
+            </tr>
+            <tr>
+                <td><strong>리소스 사용</strong></td>
+                <td>주기적 피크</td>
+                <td>지속적 소비</td>
+                <td>두 패턴 모두</td>
+            </tr>
+            <tr>
+                <td><strong>정확성</strong></td>
+                <td>높음 (완전한 데이터)</td>
+                <td>근사값 (윈도우 내)</td>
+                <td>최종 일관성</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>1.5 스트리밍 데이터 파이프라인 구조</h2>
+
+    <h3>1.5.1 데이터 생성 계층</h3>
+    <p>다양한 소스에서 이벤트를 지속적으로 생성:</p>
+    <ul>
+        <li><strong>웹 애플리케이션:</strong> 사용자 클릭, 페이지 뷰, 세션 데이터</li>
+        <li><strong>모바일 앱:</strong> 앱 이벤트, 위치 데이터, 푸시 알림</li>
+        <li><strong>IoT 디바이스:</strong> 센서 측정값, 상태 변경, 경고</li>
+        <li><strong>마이크로서비스:</strong> API 호출, 비즈니스 이벤트, 상태 변경</li>
+        <li><strong>데이터베이스:</strong> CDC (Change Data Capture) 이벤트</li>
+    </ul>
+
+    <h3>1.5.2 데이터 수집 및 전송</h3>
+    <pre><code>// Kafka Producer 설정 예제
+import { Kafka } from 'kafkajs';
+
+const kafka = new Kafka({
+    clientId: 'event-producer',
+    brokers: ['kafka1:9092', 'kafka2:9092', 'kafka3:9092'],
+    retry: {
+        retries: 5,
+        initialRetryTime: 300
+    }
+});
+
+const producer = kafka.producer({
+    allowAutoTopicCreation: true,
+    transactionalId: 'event-producer-1',
+    maxInFlightRequests: 5,
+    idempotent: true  // 정확히 한 번 전송 보장
+});
+
+async function sendEvent(eventType, data) {
+    await producer.connect();
+    
+    const message = {
+        key: data.userId,
+        value: JSON.stringify({
+            eventType,
+            data,
+            timestamp: new Date().toISOString(),
+            version: '1.0'
+        }),
+        headers: {
+            'correlation-id': generateCorrelationId(),
+            'source': 'web-app',
+            'content-type': 'application/json'
+        }
+    };
+
+    await producer.send({
+        topic: 'user-events',
+        messages: [message],
+        compression: 1  // GZIP 압축
+    });
+}
+
+// 사용 예
+await sendEvent('page_view', {
+    userId: 'user-123',
+    page: '/products',
+    sessionId: 'session-456'
+});</code></pre>
+
+    <h3>1.5.3 스트림 저장 및 관리</h3>
+    <p>이벤트는 분산 로그 시스템에 영구 저장됩니다:</p>
+
+    <table>
+        <tr><th>기능</th><th>설명</th><th>Kafka 구현</th></tr>
+        <tr><td>복제</td><td>데이터 안정성 보장</td><td>Replication Factor 3</td></tr>
+        <tr><td>보관</td><td>설정 가능한 보관 기간</td><td>retention.ms (예: 7일)</td></tr>
+        <tr><td>재생</td><td>과거 데이터 재처리</td><td>Offset 관리</td></tr>
+        <tr><td>파티셔닝</td><td>병렬 처리</td><td>Topic Partitions</td></tr>
+    </table>
+
+    <h3>1.5.4 스트림 처리 계층</h3>
+    <pre><code>// Kafka Streams를 사용한 처리 예제
+const { KafkaStreams } = require('kafka-streams');
+
+const config = {
+    kafkaHost: 'localhost:9092',
+    groupId: 'stream-processor',
+    workerPerPartition: 1,
+    options: {
+        sessionTimeout: 10000
+    }
+};
+
+const kafkaStreams = new KafkaStreams(config);
+
+const stream = kafkaStreams.getKStream('user-events');
+
+stream
+    // 필터링: 금액이 1000 이상인 거래만
+    .filter(event => event.amount > 1000)
+    
+    // 변환: 사용자 데이터로 보강
+    .map(event => {
+        return {
+            ...event,
+            userData: getUserData(event.userId),
+            processedAt: new Date().toISOString()
+        };
+    })
+    
+    // 키별 그룹화
+    .keyBy(event => event.userId)
+    
+    // 5분 윈도우 집계
+    .window({
+        windowType: 'tumbling',
+        windowSize: 300000  // 5분
+    })
+    .aggregate((acc, event) => {
+        return {
+            userId: event.userId,
+            count: (acc.count || 0) + 1,
+            totalAmount: (acc.totalAmount || 0) + event.amount,
+            avgAmount: ((acc.totalAmount || 0) + event.amount) / ((acc.count || 0) + 1)
+        };
+    })
+    
+    // 이상 거래 탐지
+    .filter(agg => agg.count > 10)
+    
+    // 알림 전송
+    .forEach(agg => {
+        sendAlert({
+            userId: agg.userId,
+            message: `의심스러운 활동 탐지: ${agg.count}건의 거래`,
+            totalAmount: agg.totalAmount
+        });
+    });
+
+stream.start();</code></pre>
+
+    <h2>1.6 주요 사용 사례 심층 분석</h2>
+
+    <h3>1.6.1 실시간 분석 (Real-Time Analytics)</h3>
+    <div class="highlight">
+        <strong>실제 구현 사례:</strong>
+        <ul>
+            <li><strong>Netflix:</strong> 초당 수백만 이벤트를 처리하여 스트리밍 품질 최적화</li>
+            <li><strong>Uber:</strong> 실시간 위치 추적 및 수요 예측</li>
+            <li><strong>LinkedIn:</strong> 뉴스피드 및 알림 개인화</li>
+        </ul>
+    </div>
+
+    <h3>1.6.2 사기 탐지 시스템</h3>
+    <pre><code>// 실시간 사기 탐지 예제
+class FraudDetector {
+    constructor() {
+        this.riskScorer = new RiskScorer();
+        this.alertService = new AlertService();
+    }
+
+    async detectFraud(transaction) {
+        // 여러 규칙 기반 검사
+        const checks = {
+            amountAnomaly: this.checkAmountAnomaly(transaction),
+            locationAnomaly: this.checkLocationAnomaly(transaction),
+            velocityCheck: this.checkTransactionVelocity(transaction),
+            deviceFingerprint: this.checkDeviceFingerprint(transaction),
+            merchantRisk: this.checkMerchantRisk(transaction)
+        };
+
+        // 위험 점수 계산
+        const riskScore = this.riskScorer.calculate(checks);
+
+        // 임계값 기반 조치
+        if (riskScore > 0.9) {
+            // 높은 위험: 즉시 차단
+            await this.blockTransaction(transaction);
+            await this.alertService.sendUrgent(transaction, riskScore);
+        } else if (riskScore > 0.7) {
+            // 중간 위험: 추가 검증 요청
+            await this.requestAdditionalVerification(transaction);
+        } else if (riskScore > 0.5) {
+            // 낮은 위험: 모니터링
+            await this.flagForReview(transaction);
+        }
+
+        return { riskScore, checks };
+    }
+
+    checkTransactionVelocity(transaction) {
+        // 최근 5분간 거래 횟수 확인
+        const recentTransactions = this.getRecentTransactions(
+            transaction.userId,
+            Date.now() - 300000
+        );
+
+        return recentTransactions.length > 10 ? 0.8 : 0.2;
+    }
+}</code></pre>
+
+    <h3>1.6.3 IoT 및 센서 데이터 처리</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>산업</th>
+                <th>데이터 소스</th>
+                <th>처리 요구사항</th>
+                <th>비즈니스 가치</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>제조업</strong></td>
+                <td>기계 센서, 품질 모니터</td>
+                <td>밀리초 단위 이상 탐지</td>
+                <td>다운타임 최소화, 품질 개선</td>
+            </tr>
+            <tr>
+                <td><strong>에너지</strong></td>
+                <td>스마트 미터, 그리드 센서</td>
+                <td>실시간 부하 균형</td>
+                <td>에너지 효율, 비용 절감</td>
+            </tr>
+            <tr>
+                <td><strong>교통</strong></td>
+                <td>GPS, 교통 카메라</td>
+                <td>실시간 경로 최적화</td>
+                <td>정체 감소, 배송 최적화</td>
+            </tr>
+            <tr>
+                <td><strong>헬스케어</strong></td>
+                <td>환자 모니터, 웨어러블</td>
+                <td>즉각적인 경고</td>
+                <td>생명 구조, 조기 개입</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>1.7 스트리밍 데이터의 장점</h2>
+
+    <h3>1.7.1 비즈니스 영향</h3>
+    <ul>
+        <li><strong>고객 만족도 향상:</strong> 실시간 대응으로 더 나은 경험 제공</li>
+        <li><strong>운영 효율성:</strong> 문제를 조기에 발견하고 해결</li>
+        <li><strong>경쟁 우위:</strong> 시장 변화에 빠르게 대응</li>
+        <li><strong>수익 증대:</strong> 실시간 개인화 및 추천</li>
+    </ul>
+
+    <h3>1.7.2 기술적 이점</h3>
+    <pre><code>// 증분 처리의 효율성
+// 배치 처리: 매시간 전체 데이터 스캔
+SELECT COUNT(*), SUM(amount)
+FROM transactions
+WHERE timestamp >= NOW() - INTERVAL 1 HOUR;
+// 비용: 전체 테이블 스캔
+
+// 스트림 처리: 새 이벤트만 처리
+stream.aggregate({
+    count: 0,
+    sum: 0
+}, (acc, event) => ({
+    count: acc.count + 1,
+    sum: acc.sum + event.amount
+}));
+// 비용: 새 이벤트만 처리</code></pre>
+
+    <h2>1.8 도전 과제와 해결 방법</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>도전 과제</th>
+                <th>원인</th>
+                <th>해결 방법</th>
+                <th>도구/기술</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>상태 관리</strong></td>
+                <td>분산 환경의 상태 동기화</td>
+                <td>State Backend 사용</td>
+                <td>RocksDB, Redis</td>
+            </tr>
+            <tr>
+                <td><strong>정확히 한 번 처리</strong></td>
+                <td>네트워크 재시도, 실패</td>
+                <td>멱등성 + 트랜잭션</td>
+                <td>Kafka Idempotent Producer</td>
+            </tr>
+            <tr>
+                <td><strong>늦게 도착하는 데이터</strong></td>
+                <td>네트워크 지연, 시계 불일치</td>
+                <td>Watermark 사용</td>
+                <td>Flink Watermarks</td>
+            </tr>
+            <tr>
+                <td><strong>백프레셔</strong></td>
+                <td>처리 속도 < 생성 속도</td>
+                <td>흐름 제어, 버퍼링</td>
+                <td>Reactive Streams</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>1.9 스트리밍 기술 스택</h2>
+
+    <h3>1.9.1 메시지 브로커 비교</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>기술</th>
+                <th>처리량</th>
+                <th>지연시간</th>
+                <th>주요 특징</th>
+                <th>적합한 사용 사례</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Apache Kafka</strong></td>
+                <td>매우 높음</td>
+                <td>낮음</td>
+                <td>영구 로그, 재생 가능</td>
+                <td>대규모 이벤트 스트리밍</td>
+            </tr>
+            <tr>
+                <td><strong>Apache Pulsar</strong></td>
+                <td>높음</td>
+                <td>낮음</td>
+                <td>멀티 테넌시, 지리적 복제</td>
+                <td>글로벌 분산 시스템</td>
+            </tr>
+            <tr>
+                <td><strong>Amazon Kinesis</strong></td>
+                <td>높음</td>
+                <td>중간</td>
+                <td>관리형, AWS 통합</td>
+                <td>AWS 생태계</td>
+            </tr>
+            <tr>
+                <td><strong>RabbitMQ</strong></td>
+                <td>중간</td>
+                <td>낮음</td>
+                <td>유연한 라우팅</td>
+                <td>복잡한 메시징 패턴</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>1.10 요약 및 다음 단계</h2>
+
+    <div class="highlight">
+        <strong>핵심 요점:</strong>
+        <ul>
+            <li>스트리밍 데이터는 실시간 인사이트와 즉각적인 행동을 가능하게 합니다</li>
+            <li>배치 처리보다 복잡하지만 현대 비즈니스에 필수적입니다</li>
+            <li>적절한 도구와 아키텍처 선택이 성공의 핵심입니다</li>
+            <li>점진적으로 시작하여 필요에 따라 확장하는 것이 좋습니다</li>
+        </ul>
+    </div>
+
+    <div class="note">
+        <strong>다음 장 미리보기:</strong> 제2장에서는 Lambda, Kappa, 이벤트 주도 아키텍처 등 
+        스트리밍 아키텍처 패턴을 상세히 탐구합니다.
+    </div>
+
+    <p style="text-align: center; margin-top: 50px; color: #64748b;">
+        © 2025 SmileStory Inc. / WIA · 弘益人間 (홍익인간) · Benefit All Humanity
+    </p>
+</body>
+</html>

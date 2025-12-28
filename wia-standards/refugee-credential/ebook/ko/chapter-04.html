@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제4장: Phase 1 - 데이터 형식 표준 - WIA 전자책</title>
+</head>
+<body>
+
+<p><a href="chapter-03.html">이전 장</a> | <a href="index.html">목차</a> | <a href="chapter-05.html">다음 장</a></p>
+
+<hr>
+
+<h1>제4장: Phase 1 - 데이터 형식 표준</h1>
+
+<blockquote>
+<p><strong>홍익인간 (弘益人間)</strong></p>
+<p>"널리 인간을 이롭게 하라"</p>
+<p>표준화된 데이터 형식은 난민 자격증명이 전 세계 어디서나 호환되는 시스템에서 이해되고 처리될 수 있도록 보장합니다. 이 장에서는 완전한 스키마 사양을 정의합니다.</p>
+</blockquote>
+
+<hr>
+
+<h2>4.1 JSON Schema 개요</h2>
+
+<p>모든 WIA 난민 자격증명 데이터는 엄격한 스키마 검증이 있는 JSON 형식을 사용합니다:</p>
+
+<h3>스키마 설계 원칙</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>원칙</strong></td>
+        <td><strong>구현</strong></td>
+    </tr>
+    <tr>
+        <td>확장성</td>
+        <td>지정된 영역에서 추가 속성 허용</td>
+    </tr>
+    <tr>
+        <td>국제화</td>
+        <td>모든 텍스트 필드가 다중 언어 지원</td>
+    </tr>
+    <tr>
+        <td>버전 관리</td>
+        <td>모든 문서에 스키마 버전</td>
+    </tr>
+    <tr>
+        <td>검증</td>
+        <td>JSON Schema Draft 2020-12 호환</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>4.2 RefugeeCredential 루트 스키마</h2>
+
+<p>루트 자격증명 객체 구조:</p>
+
+<pre>
+interface RefugeeCredential {
+  // 메타데이터
+  credentialId: string;        // UUID v4
+  version: string;             // "1.0.0"
+  schemaVersion: string;       // "2025-01"
+  created: string;             // ISO 8601 datetime
+  updated: string;             // ISO 8601 datetime
+  status: CredentialStatus;    // active | suspended | revoked
+
+  // 핵심 데이터
+  holder: HolderIdentity;
+  education: EducationRecord[];
+  competencies: CompetencyRecord[];
+  languages: LanguageAbility[];
+  workExperience: WorkExperience[];
+
+  // 검증
+  verification: VerificationInfo;
+
+  // 서명
+  signatures: DigitalSignature[];
+}
+
+type CredentialStatus = 'active' | 'suspended' | 'revoked';
+</pre>
+
+<h3>루트 문서 예시</h3>
+
+<pre>
+{
+  "credentialId": "550e8400-e29b-41d4-a716-446655440000",
+  "version": "1.0.0",
+  "schemaVersion": "2025-01",
+  "created": "2025-01-15T10:30:00Z",
+  "updated": "2025-03-20T14:45:00Z",
+  "status": "active",
+  "holder": { ... },
+  "education": [ ... ],
+  "competencies": [ ... ],
+  "languages": [ ... ],
+  "workExperience": [ ... ],
+  "verification": { ... },
+  "signatures": [ ... ]
+}
+</pre>
+
+<hr>
+
+<h2>4.3 HolderIdentity 스키마</h2>
+
+<p>완전한 보유자 신원 사양:</p>
+
+<pre>
+interface HolderIdentity {
+  // 탈중앙화 식별자
+  did: string;                 // "did:wia:ref:abc123..."
+
+  // 이름 (다중 문자 지원)
+  names: {
+    original: {
+      script: string;          // "arab" | "cyrl" | "latn" | 등
+      value: string;           // 원래 문자로 된 이름
+    };
+    transliterations: {
+      [languageCode: string]: string;  // ISO 639-1 코드
+    };
+    preferred?: string;        // 선호하는 표시 이름
+  };
+
+  // 인구 통계
+  dateOfBirth: string;         // ISO 8601 date
+  placeOfBirth?: {
+    city?: string;
+    country: string;           // ISO 3166-1 alpha-2
+  };
+  gender?: 'male' | 'female' | 'other' | 'undisclosed';
+
+  // 국적 (여러 개 가능)
+  nationalities: string[];     // ISO 3166-1 alpha-2 코드
+
+  // 생체 바인딩
+  biometricHash?: string;      // 생체 템플릿의 SHA-256
+  biometricType?: 'fingerprint' | 'face' | 'iris';
+
+  // 사진
+  photo?: {
+    data: string;              // Base64 인코딩
+    format: 'jpeg' | 'png';
+    captureDate: string;
+  };
+
+  // 연락처 (선택, 프라이버시 민감)
+  contact?: {
+    email?: string;
+    phone?: string;
+    address?: AddressType;
+  };
+}
+</pre>
+
+<hr>
+
+<h2>4.4 EducationRecord 스키마</h2>
+
+<p>교육 기록은 학력 자격증명을 캡처합니다:</p>
+
+<pre>
+interface EducationRecord {
+  recordId: string;            // UUID v4
+
+  // 기관
+  institution: {
+    wiaId?: string;            // WIA 기관 레지스트리 ID
+    name: MultilingualText;
+    country: string;           // ISO 3166-1 alpha-2
+    city?: string;
+    type: InstitutionType;
+    status: InstitutionStatus;
+  };
+
+  // 자격증명
+  credential: {
+    type: CredentialType;
+    name: MultilingualText;
+    fieldOfStudy: string;      // ISCED-F 2013 코드
+    level: number;             // ISCED 수준 (0-8)
+  };
+
+  // 날짜
+  startDate: string;           // ISO 8601
+  endDate?: string;            // 미완료면 null
+  graduationDate?: string;
+
+  // 세부사항
+  gpa?: {
+    value: number;
+    scale: number;             // 예: 4.0, 10, 100
+    description?: string;      // "magna cum laude"
+  };
+
+  thesis?: {
+    title: MultilingualText;
+    abstract?: MultilingualText;
+    url?: string;              // 온라인으로 이용 가능한 경우
+  };
+
+  // 검증
+  verification: RecordVerification;
+}
+
+type InstitutionType =
+  'university' | 'college' | 'vocational' |
+  'secondary' | 'primary' | 'professional';
+
+type InstitutionStatus =
+  'operational' | 'destroyed' | 'closed' |
+  'relocated' | 'unknown';
+
+type CredentialType =
+  'doctorate' | 'masters' | 'bachelors' |
+  'associate' | 'diploma' | 'certificate' |
+  'secondary' | 'primary';
+</pre>
+
+<h3>ISCED 분야 코드 (예시)</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>코드</strong></td>
+        <td><strong>분야</strong></td>
+    </tr>
+    <tr>
+        <td>0911</td>
+        <td>의학</td>
+    </tr>
+    <tr>
+        <td>0713</td>
+        <td>전기공학</td>
+    </tr>
+    <tr>
+        <td>0114</td>
+        <td>교사 양성</td>
+    </tr>
+    <tr>
+        <td>0421</td>
+        <td>법학</td>
+    </tr>
+    <tr>
+        <td>0611</td>
+        <td>컴퓨터 과학</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>4.5 CompetencyRecord 스키마</h2>
+
+<p>역량 기록은 검증된 기술을 캡처합니다:</p>
+
+<pre>
+interface CompetencyRecord {
+  recordId: string;            // UUID v4
+
+  // 분류
+  domain: string;              // ESCO 직업 코드
+  skillCategory: string;       // ESCO 기술 범주
+  skillName: MultilingualText;
+
+  // 숙련도
+  proficiencyLevel: 1 | 2 | 3 | 4 | 5;  // EQF 정렬
+  proficiencyDescription?: MultilingualText;
+
+  // 평가
+  assessment: {
+    type: AssessmentType;
+    date: string;              // ISO 8601
+    provider: {
+      id: string;
+      name: string;
+      accreditation?: string;
+    };
+    score?: {
+      value: number;
+      maximum: number;
+      percentile?: number;
+    };
+    duration?: number;         // 분
+    proctored: boolean;
+  };
+
+  // 검증
+  confidence: number;          // 0-100
+  verification: RecordVerification;
+}
+
+type AssessmentType =
+  'written_exam' | 'practical_exam' | 'portfolio_review' |
+  'interview' | 'simulation' | 'observation' | 'peer_review';
+</pre>
+
+<h3>ESCO 코드 (예시)</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>코드</strong></td>
+        <td><strong>직업</strong></td>
+    </tr>
+    <tr>
+        <td>2211</td>
+        <td>일반의</td>
+    </tr>
+    <tr>
+        <td>2141</td>
+        <td>산업 엔지니어</td>
+    </tr>
+    <tr>
+        <td>2341</td>
+        <td>초등학교 교사</td>
+    </tr>
+    <tr>
+        <td>2611</td>
+        <td>변호사</td>
+    </tr>
+    <tr>
+        <td>2512</td>
+        <td>소프트웨어 개발자</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>4.6 LanguageAbility 스키마</h2>
+
+<p>CEFR 프레임워크를 사용한 언어 능력:</p>
+
+<pre>
+interface LanguageAbility {
+  recordId: string;            // UUID v4
+
+  // 언어
+  language: string;            // ISO 639-1 코드
+  languageName: MultilingualText;
+
+  // 숙련도 (CEFR)
+  overall: CEFRLevel;
+  reading?: CEFRLevel;
+  writing?: CEFRLevel;
+  listening?: CEFRLevel;
+  speaking?: CEFRLevel;
+
+  // 모국어/유산
+  isNative: boolean;
+  isHeritage?: boolean;
+
+  // 평가
+  assessment?: {
+    testName: string;          // "TOEFL", "IELTS", "TestDaF"
+    date: string;
+    score: string;             // 테스트별 형식
+    expires?: string;
+  };
+
+  // 검증
+  verification: RecordVerification;
+}
+
+type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+</pre>
+
+<h3>CEFR 수준 설명</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>수준</strong></td>
+        <td><strong>설명</strong></td>
+    </tr>
+    <tr>
+        <td>A1</td>
+        <td>입문 - 기본 구문</td>
+    </tr>
+    <tr>
+        <td>A2</td>
+        <td>초급 - 간단한 의사소통</td>
+    </tr>
+    <tr>
+        <td>B1</td>
+        <td>중급 - 독립적 사용</td>
+    </tr>
+    <tr>
+        <td>B2</td>
+        <td>중상급 - 복잡한 주제</td>
+    </tr>
+    <tr>
+        <td>C1</td>
+        <td>고급 - 유창한 표현</td>
+    </tr>
+    <tr>
+        <td>C2</td>
+        <td>숙달 - 원어민 수준</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>4.7 WorkExperience 스키마</h2>
+
+<p>고용 이력 기록:</p>
+
+<pre>
+interface WorkExperience {
+  recordId: string;            // UUID v4
+
+  // 고용주
+  employer: {
+    wiaId?: string;            // WIA 조직 레지스트리
+    name: MultilingualText;
+    industry: string;          // ISIC 코드
+    country: string;
+    city?: string;
+    status: 'operational' | 'closed' | 'destroyed' | 'unknown';
+  };
+
+  // 직위
+  jobTitle: MultilingualText;
+  escoCode: string;            // ESCO 직업 코드
+  employmentType: EmploymentType;
+
+  // 날짜
+  startDate: string;           // ISO 8601
+  endDate?: string;            // 현재면 null
+
+  // 세부사항
+  responsibilities: MultilingualText[];
+  achievements?: MultilingualText[];
+  supervisorName?: string;
+  teamSize?: number;
+
+  // 검증
+  verification: RecordVerification;
+}
+
+type EmploymentType =
+  'full_time' | 'part_time' | 'contract' |
+  'freelance' | 'internship' | 'volunteer';
+</pre>
+
+<hr>
+
+<h2>4.8 VerificationInfo 스키마</h2>
+
+<p>전체 검증 상태 및 증거:</p>
+
+<pre>
+interface VerificationInfo {
+  // 현재 상태
+  level: 1 | 2 | 3 | 4;
+  confidence: number;          // 0-100
+  lastVerified: string;        // ISO 8601
+
+  // 증거 수집
+  evidence: Evidence[];
+
+  // 이력
+  history: VerificationEvent[];
+
+  // 플래그
+  flags?: {
+    inconsistency?: string;
+    pendingReview?: boolean;
+    expedited?: boolean;
+  };
+}
+
+interface Evidence {
+  evidenceId: string;          // UUID v4
+  type: EvidenceType;
+  description: string;
+  source: string;
+  dateCollected: string;
+  weight: number;              // 0-100 기여 가중치
+  hash?: string;               // 증거 파일의 SHA-256
+  url?: string;                // 공개 접근 가능한 경우
+}
+
+type EvidenceType =
+  'peer_attestation' | 'document_scan' | 'assessment_result' |
+  'digital_footprint' | 'institutional_record' | 'portfolio' |
+  'reference_letter' | 'media_coverage' | 'publication';
+</pre>
+
+<hr>
+
+<h2>4.9 디지털 서명 스키마</h2>
+
+<p>진위를 위한 암호화 서명:</p>
+
+<pre>
+interface DigitalSignature {
+  signatureId: string;         // UUID v4
+
+  // 서명자
+  signer: {
+    did: string;               // 서명자의 DID
+    type: SignerType;
+    name?: string;
+  };
+
+  // 서명
+  algorithm: SignatureAlgorithm;
+  signature: string;           // Base64 인코딩
+  signedAt: string;            // ISO 8601
+
+  // 범위
+  scope: 'full' | 'partial';
+  coveredFields?: string[];    // 부분인 경우
+
+  // 체인
+  previousSignature?: string;  // 서명 체인용
+}
+
+type SignerType =
+  'holder' | 'peer' | 'assessor' | 'institution' |
+  'government' | 'wia_node';
+
+type SignatureAlgorithm =
+  'CRYSTALS-Dilithium3' |      // 포스트 양자 (권장)
+  'Ed25519' |                  // 현재 표준
+  'ECDSA-P256';                // 레거시 호환성
+</pre>
+
+<hr>
+
+<h2>4.10 바이너리 형식 (.wiaref)</h2>
+
+<p>효율적인 저장 및 전송을 위해:</p>
+
+<h3>파일 구조</h3>
+
+<pre>
+.wiaref 바이너리 형식:
+
+헤더 (32 바이트):
+  오프셋 0-3:   매직 바이트 "WIAR"
+  오프셋 4-5:   버전 (uint16)
+  오프셋 6-7:   플래그 (uint16)
+  오프셋 8-15:  자격증명 ID (64비트)
+  오프셋 16-23: 타임스탬프 (64비트 Unix)
+  오프셋 24-27: 데이터 길이 (uint32)
+  오프셋 28-31: 예약됨
+
+데이터 섹션:
+  압축된 JSON (zstd)
+
+서명 섹션:
+  길이 (uint32)
+  서명 데이터
+
+푸터:
+  CRC32 체크섬 (4 바이트)
+</pre>
+
+<h3>압축</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>형식</strong></td>
+        <td><strong>일반 JSON</strong></td>
+        <td><strong>.wiaref</strong></td>
+        <td><strong>감소</strong></td>
+    </tr>
+    <tr>
+        <td>기본 자격증명</td>
+        <td>15 KB</td>
+        <td>3 KB</td>
+        <td>80%</td>
+    </tr>
+    <tr>
+        <td>전체 자격증명</td>
+        <td>50 KB</td>
+        <td>8 KB</td>
+        <td>84%</td>
+    </tr>
+    <tr>
+        <td>증거 포함</td>
+        <td>200 KB</td>
+        <td>40 KB</td>
+        <td>80%</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>4.11 검증 규칙</h2>
+
+<p>모든 자격증명은 검증을 통과해야 합니다:</p>
+
+<h3>필수 검증</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>규칙</strong></td>
+        <td><strong>설명</strong></td>
+    </tr>
+    <tr>
+        <td>스키마 준수</td>
+        <td>JSON Schema에 대해 검증해야 함</td>
+    </tr>
+    <tr>
+        <td>날짜 일관성</td>
+        <td>종료일이 시작일 이후</td>
+    </tr>
+    <tr>
+        <td>연령 유효성</td>
+        <td>교육 날짜가 보유자 연령과 일치</td>
+    </tr>
+    <tr>
+        <td>코드 유효성</td>
+        <td>ISCED, ESCO, ISO 코드가 유효해야 함</td>
+    </tr>
+    <tr>
+        <td>서명 유효성</td>
+        <td>모든 서명이 검증되어야 함</td>
+    </tr>
+    <tr>
+        <td>신뢰도 범위</td>
+        <td>0-100, 올바르게 계산됨</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>4.12 장 요약</h2>
+
+<p>이 장의 핵심 내용:</p>
+
+<ul>
+    <li>[REF] JSON Schema가 모든 자격증명 데이터 구조 정의</li>
+    <li>[REF] HolderIdentity가 다중 문자 및 음역 지원</li>
+    <li>[REF] 교육 기록이 ISCED 분류 사용</li>
+    <li>[REF] 역량 기록이 ESCO 직업 코드 사용</li>
+    <li>[REF] 언어 능력이 CEFR 프레임워크 사용</li>
+    <li>[REF] 바이너리 형식 (.wiaref)이 80% 이상 압축 제공</li>
+    <li>[REF] 포스트 양자 서명 (CRYSTALS-Dilithium) 지원</li>
+</ul>
+
+<hr>
+
+<p><a href="chapter-03.html">이전: 표준 개요</a> | <a href="index.html">목차</a> | <a href="chapter-05.html">다음: Phase 2 - 알고리즘</a></p>
+
+<hr>
+
+<p><strong>Copyright 2025 Smilestory Inc. / WIA</strong></p>
+<p>MIT 라이선스로 배포</p>
+
+</body>
+</html>

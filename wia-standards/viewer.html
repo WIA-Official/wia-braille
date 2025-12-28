@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA Spec Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+        }
+        .header h1 a {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header h1 .emoji {
+            background: none !important;
+            -webkit-background-clip: initial !important;
+            -webkit-text-fill-color: initial !important;
+            background-clip: initial !important;
+            color: initial !important;
+        }
+        .header h1 .gradient-text {
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header a.back-btn {
+            color: #00d4ff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 1px solid #00d4ff;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        .header a.back-btn:hover { 
+            background: #00d4ff; 
+            color: #0d1117; 
+        }
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        /* Markdown Styles */
+        .content h1 { 
+            font-size: 2rem; 
+            color: #58a6ff; 
+            margin: 30px 0 20px; 
+            border-bottom: 1px solid #30363d; 
+            padding-bottom: 10px;
+            scroll-margin-top: 100px;
+        }
+        .content h2 { 
+            font-size: 1.5rem; 
+            color: #58a6ff; 
+            margin: 25px 0 15px; 
+            border-bottom: 1px solid #30363d; 
+            padding-bottom: 8px;
+            scroll-margin-top: 100px;
+        }
+        .content h3 { 
+            font-size: 1.25rem; 
+            color: #8b949e; 
+            margin: 20px 0 10px;
+            scroll-margin-top: 100px;
+        }
+        .content h4 { 
+            font-size: 1rem; 
+            color: #8b949e; 
+            margin: 15px 0 10px;
+            scroll-margin-top: 100px;
+        }
+        .content p { margin: 15px 0; }
+        .content ul, .content ol { margin: 15px 0; padding-left: 30px; }
+        .content li { margin: 8px 0; }
+        .content code {
+            background: #161b22;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+            color: #f97583;
+        }
+        .content pre {
+            background: #161b22;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid #30363d;
+        }
+        .content pre code {
+            background: none;
+            padding: 0;
+            color: #c9d1d9;
+        }
+        .content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .content th, .content td {
+            border: 1px solid #30363d;
+            padding: 12px;
+            text-align: left;
+        }
+        .content th {
+            background: #161b22;
+            font-weight: 600;
+        }
+        .content blockquote {
+            border-left: 4px solid #00d4ff;
+            padding-left: 20px;
+            margin: 20px 0;
+            color: #8b949e;
+        }
+        .content a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        .content a:hover {
+            text-decoration: underline;
+        }
+        .error {
+            color: #f85149;
+            text-align: center;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <a href="https://wiastandards.com">
+                <span class="emoji">🤟</span>
+                <span class="gradient-text">WIA Spec Viewer</span>
+            </a>
+        </h1>
+        <a href="javascript:history.back()" class="back-btn">← Back</a>
+    </div>
+    <div class="content" id="content">Loading...</div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const fileUrl = urlParams.get('file');
+        const contentDiv = document.getElementById('content');
+
+        // 텍스트를 ID로 변환
+        function textToId(text) {
+            return text
+                .toLowerCase()
+                .trim()
+                .replace(/[^\w\s가-힣-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '');
+        }
+
+        // 모든 헤딩에 ID 추가
+        function addIdsToHeadings() {
+            document.querySelectorAll('#content h1, #content h2, #content h3, #content h4').forEach(heading => {
+                if (!heading.id) {
+                    const id = textToId(heading.textContent);
+                    if (id) heading.id = id;
+                }
+            });
+        }
+
+        // 해시로 스크롤
+        function scrollToHash(hash) {
+            if (!hash) return;
+            const element = document.getElementById(hash.replace('#', ''));
+            if (element) {
+                element.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+
+        if (!fileUrl) {
+            contentDiv.innerHTML = '<p class="error">No file specified</p>';
+        } else {
+            fetch(fileUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch');
+                    return response.text();
+                })
+                .then(markdown => {
+                    contentDiv.innerHTML = marked.parse(markdown);
+                    addIdsToHeadings();
+                    
+                    setTimeout(() => {
+                        if (window.location.hash) {
+                            scrollToHash(window.location.hash);
+                        }
+                    }, 100);
+                })
+                .catch(error => {
+                    contentDiv.innerHTML = `<p class="error">Failed to load: ${fileUrl}<br><br>Failed to fetch</p>`;
+                });
+        }
+
+        window.addEventListener('hashchange', () => scrollToHash(window.location.hash));
+    </script>
+</body>
+</html>

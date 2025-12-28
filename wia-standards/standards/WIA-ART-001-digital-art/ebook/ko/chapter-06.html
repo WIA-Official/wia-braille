@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>제6장: Phase 3 - 프로토콜 | WIA-ART-001</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface-2:#283548;--primary:#F59E0B;--primary-dark:#D97706;--text:#f1f5f9;--text-dim:#94a3b8;--border:#334155;--gold:#ffd700;--success:#10b981;--warning:#f59e0b;--error:#ef4444;--info:#3b82f6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Malgun Gothic','맑은 고딕',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.9;min-height:100vh}
+.container{max-width:900px;margin:0 auto;padding:2rem}
+header{text-align:center;padding:3rem 0;border-bottom:2px solid var(--primary);margin-bottom:3rem}
+.badge{display:inline-block;background:var(--primary);color:var(--bg);padding:0.5rem 1.5rem;border-radius:2rem;font-weight:600;margin-bottom:1rem}
+h1{font-size:2.5rem;color:var(--primary);margin-bottom:0.5rem}
+.subtitle{color:var(--text-dim);font-size:1.2rem}
+h2{color:var(--primary);font-size:1.8rem;margin:2.5rem 0 1.5rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)}
+h3{color:var(--gold);font-size:1.4rem;margin:2rem 0 1rem}
+p{margin-bottom:1.2rem;text-align:justify;word-break:keep-all}
+.callout{background:var(--surface);border-left:4px solid var(--primary);padding:1.5rem;margin:1.5rem 0;border-radius:0 0.5rem 0.5rem 0}
+.callout.info{border-color:var(--info);background:rgba(59,130,246,0.1)}
+.callout.success{border-color:var(--success);background:rgba(16,185,129,0.1)}
+.callout.warning{border-color:var(--warning);background:rgba(245,158,11,0.1)}
+.callout-title{font-weight:600;margin-bottom:0.5rem}
+pre{background:var(--surface-2);border:1px solid var(--border);border-radius:0.5rem;padding:1.5rem;overflow-x:auto;margin:1.5rem 0;font-family:'Fira Code',monospace;font-size:0.9rem}
+code{background:var(--surface-2);padding:0.2rem 0.5rem;border-radius:0.25rem;font-family:'Fira Code',monospace}
+table{width:100%;border-collapse:collapse;margin:1.5rem 0;background:var(--surface);border-radius:0.5rem;overflow:hidden}
+th,td{padding:1rem;text-align:left;border-bottom:1px solid var(--border)}
+th{background:var(--surface-2);color:var(--primary);font-weight:600}
+tr:hover{background:var(--surface-2)}
+ul,ol{margin:1rem 0 1.5rem 1.5rem}
+li{margin-bottom:0.5rem}
+.nav{display:flex;justify-content:space-between;padding:2rem 0;border-top:1px solid var(--border);margin-top:3rem}
+.nav a{color:var(--primary);text-decoration:none;padding:0.75rem 1.5rem;background:var(--surface);border-radius:0.5rem;transition:all 0.3s}
+.nav a:hover{background:var(--primary);color:var(--bg)}
+.philosophy{text-align:center;padding:2rem;background:linear-gradient(135deg,var(--surface),var(--surface-2));border-radius:1rem;margin:2rem 0}
+.philosophy-text{font-size:1.5rem;color:var(--gold);margin-bottom:0.5rem}
+footer{text-align:center;padding:2rem;color:var(--text-dim);font-size:0.9rem}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<div class="badge">제6장 / 8장</div>
+<h1>Phase 3: 프로토콜</h1>
+<p class="subtitle">WIA-ART-001 - 통신 프로토콜 명세</p>
+</header>
+
+<section id="overview">
+<h2>6.1 프로토콜 개요</h2>
+<p>Phase 3는 시스템 간 실시간 통신을 위한 프로토콜을 정의합니다. 메시지 형식, 전송 메커니즘, 인증, 그리고 신뢰성 보장 방법이 포함됩니다.</p>
+
+<div class="callout info">
+<div class="callout-title">🔄 프로토콜 설계 목표</div>
+<ul>
+<li><strong>신뢰성:</strong> 메시지 전달 보장</li>
+<li><strong>보안:</strong> 모든 통신 암호화</li>
+<li><strong>효율성:</strong> 최소한의 오버헤드</li>
+<li><strong>상호운용성:</strong> 표준 기술 사용</li>
+</ul>
+</div>
+</section>
+
+<section id="message">
+<h2>6.2 메시지 형식</h2>
+
+<h3>6.2.1 표준 메시지 구조</h3>
+<pre><code>{
+  "version": "1.0",
+  "type": "wia-art-001",
+  "messageId": "msg_xK9mN3pQr5tV7wY",
+  "timestamp": "2025-01-15T10:30:00.123Z",
+  "payload": {
+    // 메시지별 내용
+  },
+  "signature": "sha256:abc123...",
+  "metadata": {
+    "sender": "client_id",
+    "correlationId": "correlation_id",
+    "priority": "normal",
+    "ttl": 300
+  }
+}</code></pre>
+
+<h3>6.2.2 메시지 필드</h3>
+<table>
+<thead>
+<tr><th>필드</th><th>타입</th><th>필수</th><th>설명</th></tr>
+</thead>
+<tbody>
+<tr><td>version</td><td>string</td><td>예</td><td>프로토콜 버전</td></tr>
+<tr><td>type</td><td>string</td><td>예</td><td>메시지 타입</td></tr>
+<tr><td>messageId</td><td>string</td><td>예</td><td>고유 메시지 ID</td></tr>
+<tr><td>timestamp</td><td>ISO 8601</td><td>예</td><td>생성 타임스탬프</td></tr>
+<tr><td>payload</td><td>object</td><td>예</td><td>메시지 내용</td></tr>
+<tr><td>signature</td><td>string</td><td>아니오</td><td>암호화 서명</td></tr>
+<tr><td>metadata</td><td>object</td><td>아니오</td><td>라우팅/처리 정보</td></tr>
+</tbody>
+</table>
+
+<h3>6.2.3 메시지 타입</h3>
+<pre><code>// 요청/응답 타입
+artwork.create.request
+artwork.create.response
+artwork.read.request
+artwork.read.response
+
+// 이벤트 타입
+event.artwork.created
+event.artwork.updated
+event.artwork.deleted
+
+// 시스템 타입
+system.heartbeat
+system.ping
+system.pong
+system.ack
+system.error</code></pre>
+</section>
+
+<section id="transport">
+<h2>6.3 전송 메커니즘</h2>
+
+<h3>6.3.1 HTTPS/REST</h3>
+<pre><code>// 동기식 요청/응답
+POST /api/v1/messages HTTP/1.1
+Host: api.wia.org
+Content-Type: application/json
+Authorization: Bearer &lt;token&gt;
+
+{
+  "version": "1.0",
+  "type": "artwork.create.request",
+  ...
+}</code></pre>
+
+<h3>6.3.2 WebSocket</h3>
+<pre><code>// 연결 설정
+const ws = new WebSocket('wss://api.wia.org/art-001/v1/stream');
+
+// 인증
+ws.onopen = () => {
+  ws.send(JSON.stringify({
+    type: 'system.auth',
+    payload: {
+      token: 'Bearer wia_art_sk_...',
+      subscriptions: ['artwork.*', 'event.*']
+    }
+  }));
+};
+
+// 메시지 수신
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  
+  switch (message.type) {
+    case 'event.artwork.created':
+      handleArtworkCreated(message.payload);
+      break;
+    case 'system.heartbeat':
+      // 연결 유지
+      break;
+  }
+};
+
+// 메시지 전송
+ws.send(JSON.stringify({
+  type: 'artwork.create.request',
+  messageId: generateId(),
+  timestamp: new Date().toISOString(),
+  payload: { ... }
+}));</code></pre>
+
+<h3>6.3.3 Server-Sent Events (SSE)</h3>
+<pre><code>// 단방향 이벤트 스트리밍
+const eventSource = new EventSource(
+  'https://api.wia.org/art-001/v1/events?token=...'
+);
+
+eventSource.addEventListener('artwork.created', (event) => {
+  const data = JSON.parse(event.data);
+  console.log('새 작품:', data.artworkId);
+});
+
+eventSource.addEventListener('artwork.updated', (event) => {
+  const data = JSON.parse(event.data);
+  console.log('작품 수정:', data.artworkId);
+});</code></pre>
+</section>
+
+<section id="reliability">
+<h2>6.4 신뢰성 보장</h2>
+
+<h3>6.4.1 메시지 확인 (Acknowledgment)</h3>
+<pre><code>// 클라이언트 → 서버
+{
+  "type": "artwork.create.request",
+  "messageId": "msg_123",
+  "requiresAck": true,
+  ...
+}
+
+// 서버 → 클라이언트 (수신 확인)
+{
+  "type": "system.ack",
+  "payload": {
+    "messageId": "msg_123",
+    "status": "received",
+    "timestamp": "2025-01-15T10:30:00.050Z"
+  }
+}</code></pre>
+
+<h3>6.4.2 재시도 전략</h3>
+<pre><code>class RetryStrategy {
+  constructor(config = {}) {
+    this.maxRetries = config.maxRetries || 3;
+    this.baseDelay = config.baseDelay || 1000;
+    this.maxDelay = config.maxDelay || 30000;
+  }
+  
+  async execute(operation) {
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        if (!this.isRetryable(error)) throw error;
+        
+        const delay = Math.min(
+          this.baseDelay * Math.pow(2, attempt),
+          this.maxDelay
+        );
+        
+        console.log(`재시도 ${attempt + 1}/${this.maxRetries}, ${delay}ms 후`);
+        await this.sleep(delay);
+      }
+    }
+  }
+  
+  isRetryable(error) {
+    return [408, 429, 500, 502, 503, 504].includes(error.status);
+  }
+}</code></pre>
+
+<h3>6.4.3 멱등성 (Idempotency)</h3>
+<div class="callout warning">
+<div class="callout-title">⚠️ 멱등성 키 사용</div>
+<p>쓰기 작업에는 반드시 멱등성 키를 포함하여 중복 처리를 방지해야 합니다.</p>
+</div>
+
+<pre><code>{
+  "type": "artwork.create.request",
+  "messageId": "msg_123",
+  "idempotencyKey": "create_user123_artwork42_20250115",
+  "payload": { ... }
+}
+
+// 서버 동작:
+// 1. 첫 요청: 처리 후 결과 저장
+// 2. 재시도: 저장된 결과 반환 (재처리 안 함)
+// 3. 키 만료: 24시간 후</code></pre>
+</section>
+
+<section id="streaming">
+<h2>6.5 스트리밍 프로토콜</h2>
+
+<h3>6.5.1 청크 업로드</h3>
+<pre><code>// 1단계: 업로드 초기화
+{
+  "type": "upload.init.request",
+  "payload": {
+    "filename": "artwork.tiff",
+    "size": 157286400,
+    "chunkSize": 5242880,
+    "checksum": "sha256:abc123..."
+  }
+}
+
+// 2단계: 업로드 세션 수신
+{
+  "type": "upload.init.response",
+  "payload": {
+    "uploadId": "up_xyz789",
+    "totalChunks": 30,
+    "chunkSize": 5242880,
+    "uploadUrls": [...],
+    "expiresAt": "2025-01-15T14:30:00Z"
+  }
+}
+
+// 3단계: 청크 업로드 (병렬 가능)
+PUT /up_xyz789/chunk/0
+Content-Type: application/octet-stream
+X-Chunk-Checksum: sha256:chunk0hash
+
+// 4단계: 업로드 완료
+{
+  "type": "upload.complete.request",
+  "payload": {
+    "uploadId": "up_xyz789",
+    "chunks": [
+      { "index": 0, "checksum": "sha256:..." },
+      { "index": 1, "checksum": "sha256:..." }
+    ]
+  }
+}</code></pre>
+
+<h3>6.5.2 실시간 이벤트 구독</h3>
+<pre><code>// 구독 요청
+{
+  "type": "stream.subscribe.request",
+  "payload": {
+    "topics": [
+      "artwork.created",
+      "artwork.updated"
+    ],
+    "filters": {
+      "creator": "artist_uuid"
+    }
+  }
+}
+
+// 이벤트 수신
+{
+  "type": "stream.event",
+  "payload": {
+    "topic": "artwork.created",
+    "data": {
+      "artworkId": "art_new123",
+      "title": "새 작품"
+    }
+  }
+}</code></pre>
+</section>
+
+<section id="security">
+<h2>6.6 보안</h2>
+
+<h3>6.6.1 전송 보안</h3>
+<ul>
+<li>TLS 1.3 필수</li>
+<li>인증서 고정 권장 (모바일)</li>
+<li>HSTS 헤더 사용</li>
+<li>완전 순방향 비밀성 (PFS) 암호 스위트</li>
+</ul>
+
+<h3>6.6.2 메시지 서명</h3>
+<pre><code>// 서명 생성
+const signaturePayload = JSON.stringify({
+  messageId: message.messageId,
+  timestamp: message.timestamp,
+  type: message.type,
+  payload: message.payload
+});
+
+const signature = crypto
+  .createHmac('sha256', apiSecret)
+  .update(signaturePayload)
+  .digest('hex');
+
+message.signature = `sha256:${signature}`;
+
+// 서명 검증
+function verifySignature(message, apiSecret) {
+  const [algorithm, hash] = message.signature.split(':');
+  
+  const calculated = crypto
+    .createHmac(algorithm, apiSecret)
+    .update(signaturePayload)
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(hash),
+    Buffer.from(calculated)
+  );
+}</code></pre>
+
+<h3>6.6.3 재생 공격 방지</h3>
+<pre><code>// 타임스탬프 검증 (5분 오차 허용)
+const MAX_CLOCK_SKEW = 300;
+
+function validateTimestamp(timestamp) {
+  const messageTime = new Date(timestamp).getTime();
+  const currentTime = Date.now();
+  const difference = Math.abs(currentTime - messageTime);
+  
+  if (difference > MAX_CLOCK_SKEW * 1000) {
+    throw new Error('요청 타임스탬프가 유효하지 않습니다');
+  }
+}</code></pre>
+</section>
+
+<section id="summary">
+<h2>6.7 장 요약</h2>
+<div class="callout success">
+<div class="callout-title">✅ 핵심 정리</div>
+<ul>
+<li>표준 JSON 메시지 형식으로 상호운용성 보장</li>
+<li>HTTPS, WebSocket, SSE 전송 메커니즘 지원</li>
+<li>확인, 재시도, 멱등성으로 신뢰성 보장</li>
+<li>청크 업로드로 대용량 파일 처리</li>
+<li>TLS 1.3, 메시지 서명으로 보안 강화</li>
+</ul>
+</div>
+
+<h3>복습 문제</h3>
+<ol>
+<li>표준 메시지의 필수 필드 5가지는?</li>
+<li>WebSocket과 SSE의 차이점을 설명하세요.</li>
+<li>멱등성 키의 역할은 무엇인가요?</li>
+<li>재생 공격을 어떻게 방지하나요?</li>
+</ol>
+
+<div class="philosophy">
+<div class="philosophy-text">弘益人間</div>
+<p>신뢰할 수 있는 통신은 창작자와 관객을 연결합니다. 안전한 프로토콜이 예술의 가치를 지킵니다.</p>
+</div>
+</section>
+
+<nav class="nav">
+<a href="chapter-05.html">← 제5장: API 인터페이스</a>
+<a href="chapter-07.html">제7장: Phase 4 - 통합 →</a>
+</nav>
+
+<footer>
+<p>WIA-ART-001 디지털 아트 표준 v1.0</p>
+<p>© 2025 World Industry Association. All rights reserved.</p>
+</footer>
+</div>
+</body>
+</html>

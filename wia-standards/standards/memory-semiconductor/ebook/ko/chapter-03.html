@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>제03장: NAND Flash 메모리 기술 - WIA-SEMI-002</title>
+    <style>
+        :root { --bg: #0f172a; --primary: #8B5CF6; --secondary: #1e293b; --text: #e2e8f0; --text-dim: #94a3b8; --accent: #a78bfa; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: var(--primary); }
+        h1 { font-size: 2.5rem; border-bottom: 3px solid var(--primary); padding-bottom: 1rem; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; margin: 2.5rem 0 1rem; }
+        h3 { font-size: 1.5rem; color: var(--accent); margin: 2rem 0 0.75rem; }
+        h4 { font-size: 1.25rem; color: var(--accent); margin: 1.5rem 0 0.5rem; }
+        p { margin: 1rem 0; }
+        .chapter-nav { background: var(--secondary); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; }
+        .chapter-nav a { color: var(--primary); text-decoration: none; padding: 0.5rem 1rem; border: 2px solid var(--primary); border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: var(--secondary); }
+        th, td { padding: 1rem; border-bottom: 1px solid var(--border); text-align: left; }
+        th { background: var(--bg); color: var(--primary); font-weight: bold; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.75rem 0; }
+        .code-block { background: var(--secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+        .code-block code { font-family: 'Courier New', monospace; color: var(--accent); }
+        .info-box { background: var(--secondary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 1.5rem 0; }
+        .summary { background: var(--secondary); border: 2px solid var(--primary); border-radius: 10px; padding: 2rem; margin: 3rem 0; }
+        footer { text-align: center; margin-top: 4rem; padding: 2rem; border-top: 2px solid var(--primary); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-nav">
+            <a href="chapter-02.html">← 이전 장</a>
+            <span style="color: var(--text-dim);">제03장 / 8</span>
+            <a href="chapter-04.html">다음 장 →</a>
+        </div>
+
+        <h1>제03장: NAND Flash 메모리 기술</h1>
+
+        <p>NAND Flash는 비휘발성 메모리로, SSD, USB 드라이브, 메모리 카드 등에 널리 사용됩니다. 이 장에서는 NAND Flash의 동작 원리, 3D NAND 기술, 웨어 레벨링, 그리고 최신 QLC/PLC 기술을 다룹니다.</p>
+
+        <h2>NAND Flash 기본 원리</h2>
+
+        <h3>1. 플로팅 게이트 트랜지스터</h3>
+        <p>NAND Flash 셀은 플로팅 게이트 트랜지스터를 사용하여 데이터를 저장합니다. 플로팅 게이트에 전자를 저장하거나 제거하여 임계 전압을 변경합니다.</p>
+
+        <div class="info-box">
+            <h4>플로팅 게이트 구조</h4>
+            <ul>
+                <li><strong>컨트롤 게이트(Control Gate):</strong> 읽기/쓰기 전압 인가</li>
+                <li><strong>플로팅 게이트(Floating Gate):</strong> 절연체로 둘러싸인 전하 저장소</li>
+                <li><strong>터널 산화막:</strong> 파울러-노드하임 터널링으로 전자 이동</li>
+                <li><strong>소스/드레인:</strong> 전류 경로</li>
+            </ul>
+        </div>
+
+        <h3>2. 프로그램/소거 동작</h3>
+        <p>NAND Flash는 프로그래밍(쓰기)과 소거가 서로 다른 메커니즘으로 동작합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>동작</th>
+                    <th>메커니즘</th>
+                    <th>시간</th>
+                    <th>단위</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>프로그램</strong></td>
+                    <td>FN 터널링으로 전자 주입</td>
+                    <td>200-500 μs</td>
+                    <td>페이지 단위</td>
+                </tr>
+                <tr>
+                    <td><strong>소거</strong></td>
+                    <td>FN 터널링으로 전자 방출</td>
+                    <td>1.5-3 ms</td>
+                    <td>블록 단위</td>
+                </tr>
+                <tr>
+                    <td><strong>읽기</strong></td>
+                    <td>임계 전압 감지</td>
+                    <td>25-50 μs</td>
+                    <td>페이지 단위</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="code-block">
+            <code>
+// NAND Flash 기본 연산 예시<br>
+class NANDFlashController {<br>
+&nbsp;&nbsp;constructor() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.pageSize = 16384;  // 16KB<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.blockSize = 256;   // 256 페이지/블록<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.planes = 2;<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;async readPage(block, page) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 읽기 명령 발행<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.sendCommand(0x00);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.sendAddress(block, page);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.sendCommand(0x30);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 읽기 완료 대기 (~25μs)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.waitReady();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return this.readData(this.pageSize);<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;async programPage(block, page, data) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 프로그램 명령 발행<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.sendCommand(0x80);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.sendAddress(block, page);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.writeData(data);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.sendCommand(0x10);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 프로그램 완료 대기 (~200μs)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.waitReady();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return this.checkStatus();<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;async eraseBlock(block) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 소거 명령 발행<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.sendCommand(0x60);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.sendAddress(block, 0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.sendCommand(0xD0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 소거 완료 대기 (~2ms)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;await this.waitReady();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return this.checkStatus();<br>
+&nbsp;&nbsp;}<br>
+}
+            </code>
+        </div>
+
+        <h2>멀티 레벨 셀 기술</h2>
+
+        <h3>1. SLC, MLC, TLC, QLC, PLC</h3>
+        <p>NAND Flash는 셀당 저장되는 비트 수에 따라 분류됩니다. 비트 수가 증가하면 용량은 늘어나지만 성능과 내구성은 감소합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>타입</th>
+                    <th>비트/셀</th>
+                    <th>P/E 사이클</th>
+                    <th>속도</th>
+                    <th>비용/GB</th>
+                    <th>주요 용도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>SLC</strong></td>
+                    <td>1</td>
+                    <td>50,000-100,000</td>
+                    <td>가장 빠름</td>
+                    <td>가장 높음</td>
+                    <td>엔터프라이즈, 산업용</td>
+                </tr>
+                <tr>
+                    <td><strong>MLC</strong></td>
+                    <td>2</td>
+                    <td>3,000-10,000</td>
+                    <td>빠름</td>
+                    <td>높음</td>
+                    <td>프로페셔널 SSD</td>
+                </tr>
+                <tr>
+                    <td><strong>TLC</strong></td>
+                    <td>3</td>
+                    <td>500-3,000</td>
+                    <td>중간</td>
+                    <td>중간</td>
+                    <td>소비자 SSD, 스마트폰</td>
+                </tr>
+                <tr>
+                    <td><strong>QLC</strong></td>
+                    <td>4</td>
+                    <td>100-1,000</td>
+                    <td>느림</td>
+                    <td>낮음</td>
+                    <td>읽기 집약적 워크로드</td>
+                </tr>
+                <tr>
+                    <td><strong>PLC</strong></td>
+                    <td>5</td>
+                    <td>100-500</td>
+                    <td>가장 느림</td>
+                    <td>가장 낮음</td>
+                    <td>아카이브, 콜드 스토리지</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <h4>MLC 레벨 구분</h4>
+            <ul>
+                <li><strong>SLC (Single Level Cell):</strong> 2개 상태 (1비트). 임계 전압 1개</li>
+                <li><strong>MLC (Multi Level Cell):</strong> 4개 상태 (2비트). 임계 전압 3개</li>
+                <li><strong>TLC (Triple Level Cell):</strong> 8개 상태 (3비트). 임계 전압 7개</li>
+                <li><strong>QLC (Quad Level Cell):</strong> 16개 상태 (4비트). 임계 전압 15개</li>
+                <li><strong>PLC (Penta Level Cell):</strong> 32개 상태 (5비트). 임계 전압 31개</li>
+            </ul>
+        </div>
+
+        <h2>3D NAND 기술</h2>
+
+        <h3>1. 수직 적층 구조</h3>
+        <p>3D NAND는 메모리 셀을 수직으로 적층하여 면적당 용량을 크게 증가시킵니다. 현재 200층 이상의 적층이 가능합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>세대</th>
+                    <th>레이어 수</th>
+                    <th>셀 타입</th>
+                    <th>용량/칩</th>
+                    <th>출시 연도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1세대</td>
+                    <td>24-32</td>
+                    <td>MLC/TLC</td>
+                    <td>128Gb</td>
+                    <td>2013-2015</td>
+                </tr>
+                <tr>
+                    <td>2세대</td>
+                    <td>48-64</td>
+                    <td>TLC</td>
+                    <td>256Gb</td>
+                    <td>2016-2017</td>
+                </tr>
+                <tr>
+                    <td>3세대</td>
+                    <td>96</td>
+                    <td>TLC/QLC</td>
+                    <td>512Gb-1Tb</td>
+                    <td>2018-2019</td>
+                </tr>
+                <tr>
+                    <td>4세대</td>
+                    <td>128-144</td>
+                    <td>TLC/QLC</td>
+                    <td>1Tb</td>
+                    <td>2020-2021</td>
+                </tr>
+                <tr>
+                    <td>5세대</td>
+                    <td>176-232</td>
+                    <td>TLC/QLC</td>
+                    <td>1Tb-2Tb</td>
+                    <td>2022-2024</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. 3D NAND 아키텍처</h3>
+        <p>3D NAND는 다양한 아키텍처로 구현됩니다. 주요 방식은 다음과 같습니다.</p>
+
+        <ul>
+            <li><strong>BiCS (Bit Cost Scalable):</strong> 도시바/키옥시아의 펀치 앤 플러그 방식</li>
+            <li><strong>V-NAND:</strong> 삼성의 차지 트랩 구조 (CTF) 방식</li>
+            <li><strong>3D NAND:</strong> SK하이닉스/인텔/마이크론의 플로팅 게이트 방식</li>
+        </ul>
+
+        <h2>FTL (Flash Translation Layer)</h2>
+
+        <h3>1. 논리-물리 주소 매핑</h3>
+        <p>FTL은 호스트의 논리 주소를 Flash의 물리 주소로 변환하고, 웨어 레벨링과 가비지 컬렉션을 수행합니다.</p>
+
+        <div class="code-block">
+            <code>
+// 간단한 FTL 구현 예시<br>
+class FlashTranslationLayer {<br>
+&nbsp;&nbsp;constructor(totalBlocks) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.totalBlocks = totalBlocks;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.mappingTable = new Map(); // LBA -> PBA<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.eraseCount = new Array(totalBlocks).fill(0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.freeBlocks = [];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 초기화: 모든 블록을 프리 리스트에 추가<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for (let i = 0; i < totalBlocks; i++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.freeBlocks.push(i);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;write(lba, data) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 프리 블록 할당<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const pba = this.allocateBlock();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 이전 매핑이 있으면 무효화<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if (this.mappingTable.has(lba)) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const oldPBA = this.mappingTable.get(lba);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.invalidateBlock(oldPBA);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 새 매핑 생성<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.mappingTable.set(lba, pba);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.flash.program(pba, data);<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;read(lba) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const pba = this.mappingTable.get(lba);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return pba !== undefined ? this.flash.read(pba) : null;<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;garbageCollection() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 무효 페이지가 많은 블록 선택<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const victim = this.selectVictimBlock();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 유효 페이지 복사<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for (const [lba, pba] of this.mappingTable) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (this.getBlock(pba) === victim) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const data = this.flash.read(pba);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.write(lba, data);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 블록 소거<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.flash.erase(victim);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.eraseCount[victim]++;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.freeBlocks.push(victim);<br>
+&nbsp;&nbsp;}<br>
+}
+            </code>
+        </div>
+
+        <h3>2. 웨어 레벨링</h3>
+        <p>웨어 레벨링은 모든 블록의 소거 횟수를 균등하게 분산시켜 수명을 연장합니다.</p>
+
+        <div class="info-box">
+            <h4>웨어 레벨링 전략</h4>
+            <ul>
+                <li><strong>동적 웨어 레벨링:</strong> 쓰기 시에만 소거 횟수가 적은 블록 선택</li>
+                <li><strong>정적 웨어 레벨링:</strong> 읽기 전용 데이터도 주기적으로 이동시켜 균등화</li>
+                <li><strong>글로벌 웨어 레벨링:</strong> 전체 드라이브에 걸쳐 균등화</li>
+            </ul>
+        </div>
+
+        <h2>ECC와 데이터 무결성</h2>
+
+        <h3>1. 오류 정정 코드</h3>
+        <p>NAND Flash는 비트 오류율이 높아 강력한 ECC가 필수적입니다. QLC/PLC로 갈수록 더 강력한 ECC가 필요합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ECC 알고리즘</th>
+                    <th>정정 능력</th>
+                    <th>오버헤드</th>
+                    <th>적용 대상</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>BCH</strong></td>
+                    <td>수십 비트/1KB</td>
+                    <td>10-15%</td>
+                    <td>SLC, MLC</td>
+                </tr>
+                <tr>
+                    <td><strong>LDPC</strong></td>
+                    <td>수백 비트/4KB</td>
+                    <td>15-20%</td>
+                    <td>TLC, QLC</td>
+                </tr>
+                <tr>
+                    <td><strong>Soft-Decision LDPC</strong></td>
+                    <td>수천 비트/4KB</td>
+                    <td>20-25%</td>
+                    <td>QLC, PLC</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. 리드 리트라이와 리프레시</h3>
+        <p>Flash 셀이 노화되면 읽기 오류가 증가합니다. 이를 해결하기 위한 기법들이 있습니다.</p>
+
+        <ul>
+            <li><strong>리드 리트라이(Read Retry):</strong> 읽기 실패 시 전압 레벨을 조정하여 재시도</li>
+            <li><strong>리프레시(Refresh):</strong> 오래된 데이터를 새 블록에 다시 쓰기</li>
+            <li><strong>데이터 스크러빙(Scrubbing):</strong> 주기적으로 전체 데이터 검사 및 정정</li>
+        </ul>
+
+        <h2>SSD 성능 최적화</h2>
+
+        <h3>1. 오버프로비저닝</h3>
+        <p>SSD는 호스트에 공개되지 않은 여유 용량을 유지하여 성능과 수명을 개선합니다.</p>
+
+        <div class="code-block">
+            <code>
+// 오버프로비저닝 계산<br>
+function calculateOverprovisioning(physicalGB, userGB) {<br>
+&nbsp;&nbsp;const op_space = physicalGB - userGB;<br>
+&nbsp;&nbsp;const op_percentage = (op_space / userGB) * 100;<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;console.log(`물리 용량: ${physicalGB}GB`);<br>
+&nbsp;&nbsp;console.log(`사용자 용량: ${userGB}GB`);<br>
+&nbsp;&nbsp;console.log(`OP 공간: ${op_space}GB (${op_percentage.toFixed(1)}%)`);<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;return {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;physical: physicalGB,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;user: userGB,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;op: op_space,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;percentage: op_percentage<br>
+&nbsp;&nbsp;};<br>
+}<br>
+<br>
+// 예시: 512GB SSD<br>
+// 실제 NAND: 512GB<br>
+// 사용자 용량: 480GB (7% OP)<br>
+calculateOverprovisioning(512, 480);
+            </code>
+        </div>
+
+        <h3>2. SLC 캐싱</h3>
+        <p>TLC/QLC SSD는 일부 용량을 SLC 모드로 운영하여 쓰기 성능을 높입니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>SSD 타입</th>
+                    <th>SLC 캐시 크기</th>
+                    <th>SLC 속도</th>
+                    <th>기본 속도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>TLC (정적)</td>
+                    <td>고정 (예: 20GB)</td>
+                    <td>~500 MB/s</td>
+                    <td>~200 MB/s</td>
+                </tr>
+                <tr>
+                    <td>TLC (동적)</td>
+                    <td>가변 (최대 100GB)</td>
+                    <td>~500 MB/s</td>
+                    <td>~200 MB/s</td>
+                </tr>
+                <tr>
+                    <td>QLC (동적)</td>
+                    <td>가변 (최대 140GB)</td>
+                    <td>~500 MB/s</td>
+                    <td>~80 MB/s</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>인터페이스 기술</h2>
+
+        <h3>1. NVMe 프로토콜</h3>
+        <p>NVMe(Non-Volatile Memory Express)는 PCIe 인터페이스를 통한 고성능 스토리지 프로토콜입니다.</p>
+
+        <div class="info-box">
+            <h4>NVMe 주요 특징</h4>
+            <ul>
+                <li><strong>낮은 레이턴시:</strong> 명령 처리 오버헤드 감소로 ~2.8μs 달성</li>
+                <li><strong>높은 큐 깊이:</strong> 64K 큐, 각 큐당 64K 명령 지원</li>
+                <li><strong>병렬 처리:</strong> 멀티코어 CPU 활용한 병렬 I/O</li>
+                <li><strong>PCIe 대역폭:</strong> PCIe 4.0 x4로 최대 7,000 MB/s 달성</li>
+            </ul>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>인터페이스</th>
+                    <th>프로토콜</th>
+                    <th>대역폭</th>
+                    <th>레이턴시</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>SATA 3.0</td>
+                    <td>AHCI</td>
+                    <td>600 MB/s</td>
+                    <td>~6 μs</td>
+                </tr>
+                <tr>
+                    <td>PCIe 3.0 x4</td>
+                    <td>NVMe</td>
+                    <td>3,500 MB/s</td>
+                    <td>~2.8 μs</td>
+                </tr>
+                <tr>
+                    <td>PCIe 4.0 x4</td>
+                    <td>NVMe</td>
+                    <td>7,000 MB/s</td>
+                    <td>~2.5 μs</td>
+                </tr>
+                <tr>
+                    <td>PCIe 5.0 x4</td>
+                    <td>NVMe</td>
+                    <td>14,000 MB/s</td>
+                    <td>~2.0 μs</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>NAND Flash 신뢰성</h2>
+
+        <h3>1. P/E 사이클과 수명</h3>
+        <p>NAND Flash의 수명은 프로그램/소거 사이클 수로 결정됩니다.</p>
+
+        <div class="code-block">
+            <code>
+// SSD 수명 계산 (TBW - Total Bytes Written)<br>
+function calculateEndurance(capacityGB, pe_cycles, op_factor = 1.07, wa_factor = 3.0) {<br>
+&nbsp;&nbsp;// TBW = 용량 × P/E 사이클 × OP 계수 / WA 계수<br>
+&nbsp;&nbsp;const tbw = (capacityGB * pe_cycles * op_factor) / wa_factor;<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;console.log(`용량: ${capacityGB}GB`);<br>
+&nbsp;&nbsp;console.log(`P/E 사이클: ${pe_cycles}`);<br>
+&nbsp;&nbsp;console.log(`쓰기 증폭: ${wa_factor}x`);<br>
+&nbsp;&nbsp;console.log(`TBW: ${tbw.toFixed(0)}TB`);<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;// 일일 쓰기량 기반 수명 계산<br>
+&nbsp;&nbsp;const daily_write_gb = 50; // 일 50GB 쓰기 가정<br>
+&nbsp;&nbsp;const years = (tbw * 1024) / (daily_write_gb * 365);<br>
+&nbsp;&nbsp;console.log(`예상 수명: ${years.toFixed(1)}년 (일 ${daily_write_gb}GB 쓰기 시)`);<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;return tbw;<br>
+}<br>
+<br>
+// 예시: 1TB TLC SSD (3000 P/E 사이클)<br>
+calculateEndurance(1000, 3000, 1.07, 3.0);
+            </code>
+        </div>
+
+        <h3>2. TRIM과 가비지 컬렉션</h3>
+        <p>TRIM 명령은 OS가 SSD에 삭제된 블록을 알려주어 성능을 유지합니다.</p>
+
+        <ul>
+            <li><strong>TRIM:</strong> 호스트가 삭제된 LBA를 SSD에 통보</li>
+            <li><strong>백그라운드 GC:</strong> 유휴 시간에 가비지 컬렉션 수행</li>
+            <li><strong>포그라운드 GC:</strong> 프리 블록 부족 시 즉시 GC 수행</li>
+        </ul>
+
+        <div class="summary">
+            <h2>요약</h2>
+            <p>NAND Flash는 비휘발성 저장 장치의 핵심 기술로, 3D 적층과 멀티 레벨 셀 기술로 용량을 지속적으로 증가시키고 있습니다. FTL, ECC, 웨어 레벨링 등의 소프트웨어 기술이 성능과 수명을 최적화합니다.</p>
+
+            <h3>핵심 요점</h3>
+            <ul>
+                <li>플로팅 게이트 트랜지스터로 비휘발성 데이터 저장</li>
+                <li>3D NAND는 200층 이상 수직 적층으로 고용량 달성</li>
+                <li>TLC/QLC/PLC로 갈수록 용량 증가, 성능/수명 감소</li>
+                <li>FTL과 ECC로 Flash 한계 극복 및 수명 연장</li>
+                <li>NVMe 프로토콜로 PCIe 대역폭 완전 활용</li>
+            </ul>
+        </div>
+
+        <div class="chapter-nav">
+            <a href="chapter-02.html">← 이전 장</a>
+            <span style="color: var(--text-dim);">제03장 / 8</span>
+            <a href="chapter-04.html">다음 장 →</a>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / 세계산업인증협회 (WIA)</p>
+            <p>弘益人間 (홍익인간) · 널리 인간을 이롭게 하라</p>
+        </footer>
+    </div>
+</body>
+</html>

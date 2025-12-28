@@ -1,0 +1,171 @@
+#!/bin/bash
+# Ebook 목차 페이지 표준화 스크립트
+
+STD=$1
+EMOJI=$2
+PRIMARY=$3
+TITLE_EN=$4
+TITLE_KO=$5
+SUBTITLE_EN=$6
+SUBTITLE_KO=$7
+
+if [ -z "$STD" ] || [ -z "$EMOJI" ]; then
+    echo "Usage: ./standardize-ebook-index.sh <std> <emoji> <color> <title_en> <title_ko> <subtitle_en> <subtitle_ko>"
+    exit 1
+fi
+
+# 백업
+cp /var/www/wiastandards/$STD/ebook/ko/index.html /var/www/wiastandards/$STD/ebook/ko/index.html.bak 2>/dev/null
+cp /var/www/wiastandards/$STD/ebook/en/index.html /var/www/wiastandards/$STD/ebook/en/index.html.bak 2>/dev/null
+
+# KO 목차 생성
+cat > /var/www/wiastandards/$STD/ebook/ko/index.html << EOF
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>WIA ${TITLE_KO} 표준 - 공식 전자책</title>
+    <style>
+        :root{--primary:${PRIMARY};--bg:#0f172a;--bg-card:#1e293b;--text:#f8fafc;--text-muted:#94a3b8;--border:#334155;--gold:#ffd700}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.8}
+        .container{max-width:900px;margin:0 auto;padding:20px}
+        .header{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--border);margin-bottom:30px;flex-wrap:wrap;gap:15px}
+        .header-left{display:flex;align-items:center;gap:15px}
+        .header-logo{color:var(--text);text-decoration:none;font-weight:bold;font-size:1.1rem}
+        .header-logo:hover{color:var(--primary)}
+        .header-title{color:var(--primary);font-size:1rem}
+        .lang-switch{display:flex;gap:5px}
+        .lang-btn{padding:6px 12px;border:1px solid var(--border);background:transparent;color:var(--text-muted);border-radius:6px;text-decoration:none;font-size:.85rem}
+        .lang-btn.active{background:var(--primary);color:white;border-color:var(--primary)}
+        .hero{text-align:center;padding:40px 0}
+        .hero-emoji{font-size:80px;margin-bottom:20px;animation:pulse 2s ease-in-out infinite}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+        .hero h1{font-size:2.5rem;margin-bottom:10px;background:linear-gradient(90deg,var(--primary),#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .hero .subtitle{font-size:1.2rem;color:var(--text-muted);margin-bottom:15px}
+        .hero .philosophy{font-size:1.1rem;color:var(--gold);margin-bottom:20px}
+        .info-box{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:25px;margin:30px 0}
+        .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;text-align:center}
+        .info-item .label{color:var(--text-muted);font-size:.85rem}
+        .info-item .value{color:var(--primary);font-size:1.3rem;font-weight:bold}
+        .section-title{font-size:1.5rem;margin:40px 0 20px;padding-bottom:10px;border-bottom:2px solid var(--primary)}
+        .chapter-list{display:flex;flex-direction:column;gap:12px}
+        .chapter-card{display:flex;align-items:center;gap:15px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:20px;text-decoration:none;color:var(--text);transition:all .2s}
+        .chapter-card:hover{border-color:var(--primary);transform:translateX(5px)}
+        .chapter-num{background:var(--primary);color:white;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0}
+        .chapter-info h3{font-size:1.1rem;margin-bottom:5px}
+        .chapter-info p{color:var(--text-muted);font-size:.9rem}
+        .cta-section{background:linear-gradient(135deg,var(--bg-card),#1a1a2e);border:2px solid var(--primary);border-radius:16px;padding:40px;text-align:center;margin:50px 0}
+        .cta-section h2{font-size:1.8rem;margin-bottom:15px;color:var(--primary)}
+        .cta-section>p{color:var(--text-muted);margin-bottom:25px}
+        .price-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:25px}
+        .price-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:25px}
+        .price-card.featured{border-color:var(--gold);position:relative}
+        .price-card.featured::before{content:'⭐ BEST';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:bold}
+        .price-card h3{font-size:1rem;color:var(--text-muted);margin-bottom:10px}
+        .price-card .price{font-size:2rem;font-weight:bold;color:var(--text)}
+        .price-card .price span{font-size:1rem;color:var(--text-muted)}
+        .cta-btn{display:inline-block;background:linear-gradient(135deg,var(--primary),#2563eb);color:white;padding:16px 40px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:1.1rem;transition:all .2s}
+        .cta-btn:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(59,130,246,.3)}
+        .isbn-box{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:25px;margin-top:30px}
+        .isbn-box h3{color:var(--text-muted);font-size:.9rem;margin-bottom:15px}
+        .isbn-box table{width:100%;font-size:.85rem}
+        .isbn-box td{padding:10px 0;border-bottom:1px solid var(--border)}
+        .isbn-box tr:last-child td{border-bottom:none}
+        .back-links{display:flex;justify-content:center;gap:15px;margin:30px 0;flex-wrap:wrap}
+        .back-link{color:var(--text-muted);text-decoration:none;padding:10px 20px;border:1px solid var(--border);border-radius:8px;font-size:.9rem;transition:all .2s}
+        .back-link:hover{border-color:var(--primary);color:var(--primary)}
+        footer{margin-top:60px;padding:30px 0;border-top:1px solid var(--border);text-align:center}
+        footer .philosophy{color:var(--gold);font-size:1.1rem;margin-bottom:10px}
+        footer p{color:var(--text-muted);margin:5px 0}
+        footer .footer-links{margin-top:15px}
+        footer .footer-links a{color:var(--text-muted);text-decoration:none;margin:0 10px}
+        footer .footer-links a:hover{color:var(--primary)}
+        @media(max-width:768px){.header{flex-direction:column}.hero h1{font-size:1.8rem}.price-cards{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-left">
+                <a href="https://wiastandards.com" class="header-logo" target="_blank">🤟 WIA Standards</a>
+                <span class="header-title">${EMOJI} ${TITLE_KO} 전자책</span>
+            </div>
+            <div class="lang-switch">
+                <a href="../en/" class="lang-btn">EN</a>
+                <a href="../ko/" class="lang-btn active">KO</a>
+            </div>
+        </header>
+        
+        <section class="hero">
+            <div class="hero-emoji">${EMOJI}</div>
+            <h1>WIA ${TITLE_KO} 표준</h1>
+            <p class="subtitle">${SUBTITLE_KO} v1.0.0</p>
+            <p class="philosophy">弘益人間 · 널리 인간을 이롭게 하라</p>
+        </section>
+        
+        <div class="info-box">
+            <div class="info-grid">
+                <div class="info-item"><div class="label">챕터</div><div class="value">8</div></div>
+                <div class="info-item"><div class="label">페이지</div><div class="value">~120</div></div>
+                <div class="info-item"><div class="label">버전</div><div class="value">1.0.0</div></div>
+                <div class="info-item"><div class="label">라이선스</div><div class="value">MIT</div></div>
+            </div>
+        </div>
+        
+        <h2 class="section-title">📚 목차</h2>
+        <div class="chapter-list">
+            <a href="chapter-01.html" class="chapter-card"><div class="chapter-num">1</div><div class="chapter-info"><h3>소개</h3><p>개요, 역사, 시장 규모</p></div></a>
+            <a href="chapter-02.html" class="chapter-card"><div class="chapter-num">2</div><div class="chapter-info"><h3>현재 과제</h3><p>기술적 한계, 표준화 필요성</p></div></a>
+            <a href="chapter-03.html" class="chapter-card"><div class="chapter-num">3</div><div class="chapter-info"><h3>표준 개요</h3><p>4-Phase 구조, 아키텍처</p></div></a>
+            <a href="chapter-04.html" class="chapter-card"><div class="chapter-num">4</div><div class="chapter-info"><h3>Phase 1: 데이터 형식</h3><p>JSON 스키마, 데이터 모델</p></div></a>
+            <a href="chapter-05.html" class="chapter-card"><div class="chapter-num">5</div><div class="chapter-info"><h3>Phase 2: API 인터페이스</h3><p>REST API, 엔드포인트</p></div></a>
+            <a href="chapter-06.html" class="chapter-card"><div class="chapter-num">6</div><div class="chapter-info"><h3>Phase 3: 프로토콜</h3><p>통신 규약, 보안</p></div></a>
+            <a href="chapter-07.html" class="chapter-card"><div class="chapter-num">7</div><div class="chapter-info"><h3>Phase 4: 통합</h3><p>에코시스템, 마이그레이션</p></div></a>
+            <a href="chapter-08.html" class="chapter-card"><div class="chapter-num">8</div><div class="chapter-info"><h3>구현 및 인증</h3><p>체크리스트, WIA 인증</p></div></a>
+        </div>
+        
+        <section class="cta-section">
+            <h2>📚 전체 전자책 구매</h2>
+            <p>완전한 사양서, 구현 가이드, 인증 준비 자료</p>
+            <div class="price-cards">
+                <div class="price-card"><h3>🇺🇸 English</h3><div class="price">\$99 <span>USD</span></div></div>
+                <div class="price-card"><h3>🇰🇷 한국어</h3><div class="price">\$99 <span>USD</span></div></div>
+                <div class="price-card featured"><h3>🌏 Bundle (EN + KO)</h3><div class="price">\$159 <span>USD</span></div></div>
+            </div>
+            <a href="https://wiabooks.store" target="_blank" class="cta-btn">🛒 WIA Books에서 구매</a>
+        </section>
+        
+        <div class="isbn-box">
+            <h3>📋 ISBN 정보</h3>
+            <table>
+                <tr><td style="color:var(--text-muted)">🇺🇸 English</td><td>WIA ${TITLE_EN} Standard: ${SUBTITLE_EN}</td></tr>
+                <tr><td style="color:var(--text-muted)">🇰🇷 한국어</td><td>WIA ${TITLE_KO} 표준: ${SUBTITLE_KO}</td></tr>
+                <tr><td style="color:var(--text-muted)">🌏 Bundle</td><td>WIA ${TITLE_EN} Standard Complete Set (KO/EN)</td></tr>
+            </table>
+        </div>
+        
+        <div class="back-links">
+            <a href="https://${STD}.wiastandards.com/" class="back-link" target="_blank">🏠 랜딩페이지</a>
+            <a href="https://${STD}.wiastandards.com/simulator/" class="back-link" target="_blank">🎮 시뮬레이터</a>
+            <a href="https://cert.wiastandards.com" class="back-link" target="_blank">🏆 인증 받기</a>
+        </div>
+        
+        <footer>
+            <p class="philosophy">弘益人間 · Benefit All Humanity</p>
+            <p>WIA - World Intelligence Alliance</p>
+            <p>© 2025 MIT License</p>
+            <div class="footer-links">
+                <a href="https://wiastandards.com" target="_blank">🏠 Home</a>
+                <a href="https://wiabooks.store" target="_blank">📚 Ebook Store</a>
+                <a href="https://github.com/WIA-Official/wia-standards" target="_blank">GitHub</a>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
+EOF
+
+echo "✅ $STD KO index.html 생성 완료"

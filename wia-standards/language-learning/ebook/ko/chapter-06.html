@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제6장: 보안 및 프라이버시 - WIA-EDU-022</title>
+    <link rel="icon" href="/favicon.ico">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #0f172a; color: #e2e8f0; line-height: 1.8;">
+
+<nav style="margin-bottom: 30px; padding: 15px; background: #1e293b; border-radius: 8px;">
+    <a href="index.html" style="color: #a855f7; text-decoration: none;">📚 목차</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-05.html" style="color: #a855f7; text-decoration: none;">← 이전</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <span style="color: #64748b;">제6장 / 8장</span>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-07.html" style="color: #a855f7; text-decoration: none;">다음 →</a>
+</nav>
+
+<h1 style="color: #a855f7;">제6장: 보안 및 프라이버시</h1>
+
+<blockquote style="background: #1e293b; padding: 20px; border-left: 4px solid #fbbf24; margin: 20px 0;">
+<p style="color: #fbbf24; font-style: italic;">"학습자 데이터는 신성합니다. 보안과 프라이버시는 선택이 아닌 필수입니다."</p>
+</blockquote>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">6.1 보안 원칙</h2>
+
+<p>WIA-EDU-022는 다음 보안 원칙을 준수합니다:</p>
+
+<h3 style="color: #a855f7;">🛡️ CIA 트라이어드</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">원칙</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">설명</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">구현</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>기밀성<br>(Confidentiality)</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">권한 있는 사용자만 데이터 접근</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">암호화, 접근 제어</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>무결성<br>(Integrity)</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">데이터 변조 방지</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">해시, 디지털 서명</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>가용성<br>(Availability)</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">필요할 때 시스템 사용 가능</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">백업, 재해복구</td>
+    </tr>
+</table>
+
+<h3 style="color: #a855f7;">🔒 다층 보안 모델</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto;">
+계층 1: 네트워크 보안
+├─ DDoS 방어
+├─ 방화벽
+└─ IDS/IPS
+
+계층 2: 애플리케이션 보안
+├─ 인증/인가
+├─ 입력 검증
+├─ CSRF/XSS 방어
+└─ Rate Limiting
+
+계층 3: 데이터 보안
+├─ 암호화 (전송/저장)
+├─ 데이터 마스킹
+└─ 접근 로그
+
+계층 4: 물리적 보안
+├─ 데이터센터 보안
+├─ 하드웨어 보안
+└─ 재해 복구
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">6.2 인증 및 인가</h2>
+
+<h3 style="color: #a855f7;">🔐 OAuth 2.0 + OIDC</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+인증 흐름:
+
+1. 사용자 로그인 요청
+   → 인증 서버로 리다이렉트
+
+2. 인증 서버에서 자격증명 확인
+   → 인증 성공 시 Authorization Code 발급
+
+3. Authorization Code로 Access Token 교환
+   POST /oauth/token
+   {
+     "grant_type": "authorization_code",
+     "code": "abc123",
+     "redirect_uri": "https://app.wialanguage.com/callback",
+     "client_id": "your-client-id",
+     "client_secret": "your-client-secret"
+   }
+
+4. Access Token 수신
+   {
+     "access_token": "eyJhbGc...",
+     "token_type": "Bearer",
+     "expires_in": 3600,
+     "refresh_token": "def456",
+     "scope": "learner.read learner.write"
+   }
+
+5. API 요청 시 Access Token 사용
+   Authorization: Bearer eyJhbGc...
+</pre>
+
+<h3 style="color: #a855f7;">👥 역할 기반 접근 제어 (RBAC)</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">역할</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">권한</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">사용 사례</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>learner</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">자신의 데이터 읽기/쓰기</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">일반 학습자</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>instructor</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">콘텐츠 생성/관리, 학습자 조회</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">교사, 강사</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>admin</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">시스템 관리, 사용자 관리</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">플랫폼 관리자</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>content_creator</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">콘텐츠 생성/수정</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">교재 제작자</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">6.3 데이터 암호화</h2>
+
+<h3 style="color: #a855f7;">🔐 전송 중 암호화</h3>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">TLS 1.3</strong> — 모든 API 통신</li>
+    <li><strong style="color: #e2e8f0;">Perfect Forward Secrecy</strong> — 세션 키 유출 시에도 과거 통신 보호</li>
+    <li><strong style="color: #e2e8f0;">HSTS</strong> — HTTP Strict Transport Security</li>
+    <li><strong style="color: #e2e8f0;">Certificate Pinning</strong> — 모바일 앱에서 인증서 고정</li>
+</ul>
+
+<h3 style="color: #a855f7;">💾 저장 시 암호화</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+데이터 유형별 암호화 전략:
+
+1. 개인 식별 정보 (PII)
+   - 알고리즘: AES-256-GCM
+   - 키 관리: AWS KMS / Google Cloud KMS
+   - 필드: 이름, 이메일, 전화번호
+
+2. 민감 학습 데이터
+   - 알고리ズ�: AES-256-GCM
+   - 필드: 음성 녹음, 작문 샘플, 평가 결과
+
+3. 인증 정보
+   - 비밀번호: bcrypt (cost factor 12)
+   - API 키: SHA-256 해시
+
+4. 데이터베이스 전체 암호화
+   - PostgreSQL: Transparent Data Encryption (TDE)
+   - 백업: 암호화된 스냅샷
+
+예제 코드:
+const crypto = require('crypto');
+
+function encryptPII(data, key) {
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+
+  let encrypted = cipher.update(data, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+
+  const authTag = cipher.getAuthTag();
+
+  return {
+    encrypted,
+    iv: iv.toString('hex'),
+    authTag: authTag.toString('hex')
+  };
+}
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">6.4 프라이버시 규정 준수</h2>
+
+<h3 style="color: #a855f7;">📜 GDPR 준수</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">GDPR 요구사항</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">구현</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>동의 획득</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">명시적 동의 UI, 동의 기록 저장</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>데이터 최소화</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">필요한 데이터만 수집</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>정보 접근권</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">GET /learners/{id}/data-export</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>삭제권</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">DELETE /learners/{id} (완전 삭제)</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>데이터 이동권</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">JSON/CSV 형식 다운로드</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>침해 통지</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">72시간 이내 통지 프로세스</td>
+    </tr>
+</table>
+
+<h3 style="color: #a855f7;">🇺🇸 COPPA 준수 (아동 보호)</h3>
+
+<p>13세 미만 아동 데이터 처리 시 특별 조치:</p>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">부모 동의</strong> — 계정 생성 전 부모/보호자 확인</li>
+    <li><strong style="color: #e2e8f0;">데이터 수집 제한</strong> — 교육 목적 외 데이터 수집 금지</li>
+    <li><strong style="color: #e2e8f0;">제3자 공유 금지</strong> — 광고, 마케팅 목적 데이터 공유 불가</li>
+    <li><strong style="color: #e2e8f0;">부모 접근권</strong> — 부모가 자녀 데이터 조회/삭제 가능</li>
+</ul>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">6.5 취약점 방어</h2>
+
+<h3 style="color: #a855f7;">🛡️ OWASP Top 10 대응</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">취약점</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">방어 방법</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>SQL Injection</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Parameterized queries, ORM 사용</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>XSS</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">입력 sanitization, CSP 헤더</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>CSRF</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">CSRF 토큰, SameSite 쿠키</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Broken Authentication</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">MFA, 강력한 세션 관리</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Sensitive Data Exposure</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">암호화, 데이터 마스킹</td>
+    </tr>
+</table>
+
+<h3 style="color: #a855f7;">🔍 보안 헤더</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+// Express.js 보안 헤더 설정
+const helmet = require('helmet');
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https://cdn.wialanguage.com"],
+      connectSrc: ["'self'", "https://api.wialanguage.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'", "https://media.wialanguage.com"],
+      frameSrc: ["'none'"]
+    }
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  noSniff: true,
+  xssFilter: true,
+  frameguard: { action: 'deny' }
+}));
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">6.6 감사 로깅</h2>
+
+<h3 style="color: #a855f7;">📋 감사 이벤트</h3>
+
+<p>다음 이벤트는 모두 로그에 기록되어야 합니다:</p>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">인증 이벤트</strong> — 로그인, 로그아웃, 비밀번호 변경</li>
+    <li><strong style="color: #e2e8f0;">권한 변경</strong> — 역할 할당, 권한 수정</li>
+    <li><strong style="color: #e2e8f0;">민감 데이터 접근</strong> — PII 조회, 수정, 삭제</li>
+    <li><strong style="color: #e2e8f0;">시스템 설정 변경</strong> — 구성 수정, 기능 활성화/비활성화</li>
+    <li><strong style="color: #e2e8f0;">보안 이벤트</strong> — 로그인 실패, 비정상 접근 시도</li>
+</ul>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+감사 로그 형식:
+{
+  "event_id": "audit-uuid",
+  "timestamp": "2025-12-26T15:30:00Z",
+  "event_type": "data_access",
+  "actor": {
+    "user_id": "user-123",
+    "ip_address": "192.168.1.1",
+    "user_agent": "Mozilla/5.0..."
+  },
+  "action": "read",
+  "resource": {
+    "type": "learner_profile",
+    "id": "learner-456"
+  },
+  "outcome": "success",
+  "metadata": {
+    "reason": "progress_review",
+    "session_id": "session-789"
+  }
+}
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">6.7 침해 대응 계획</h2>
+
+<h3 style="color: #a855f7;">🚨 단계별 대응</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto;">
+Phase 1: 탐지 및 분석 (0-4시간)
+├─ 이상 징후 탐지
+├─ 침해 범위 파악
+├─ 영향 받은 데이터 식별
+└─ 보안팀 소집
+
+Phase 2: 격리 및 차단 (4-8시간)
+├─ 공격 벡터 차단
+├─ 영향 받은 시스템 격리
+├─ 추가 침투 방지
+└─ 증거 보존
+
+Phase 3: 제거 및 복구 (8-24시간)
+├─ 악성코드 제거
+├─ 취약점 패치
+├─ 시스템 복원
+└─ 보안 강화
+
+Phase 4: 통지 및 보고 (24-72시간)
+├─ 영향 받은 사용자 통지
+├─ 규제 기관 보고 (GDPR 72시간 규정)
+├─ 언론 대응 (필요시)
+└─ 사후 분석 보고서
+
+Phase 5: 개선 (72시간+)
+├─ 근본 원인 분석
+├─ 프로세스 개선
+├─ 보안 교육 강화
+└─ 모니터링 강화
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">6.8 보안 체크리스트</h2>
+
+<h3 style="color: #a855f7;">✅ 배포 전 필수 확인사항</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">항목</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">확인</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">모든 API가 HTTPS만 사용</td>
+        <td style="border: 1px solid #475569; color: #10b981;">✓</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">인증 토큰 만료 시간 설정</td>
+        <td style="border: 1px solid #475569; color: #10b981;">✓</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">데이터베이스 암호화 활성화</td>
+        <td style="border: 1px solid #475569; color: #10b981;">✓</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">Rate limiting 구현</td>
+        <td style="border: 1px solid #475569; color: #10b981;">✓</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">보안 헤더 설정</td>
+        <td style="border: 1px solid #475569; color: #10b981;">✓</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">입력 검증 및 sanitization</td>
+        <td style="border: 1px solid #475569; color: #10b981;">✓</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">감사 로깅 활성화</td>
+        <td style="border: 1px solid #475569; color: #10b981;">✓</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">정기 백업 설정</td>
+        <td style="border: 1px solid #475569; color: #10b981;">✓</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">침투 테스트 완료</td>
+        <td style="border: 1px solid #475569; color: #10b981;">✓</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">개인정보 처리방침 게시</td>
+        <td style="border: 1px solid #475569; color: #10b981;">✓</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">장 요약</h2>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">보안 영역</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">핵심 요소</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>인증/인가</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">OAuth 2.0, RBAC</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>암호화</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">TLS 1.3, AES-256-GCM</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>프라이버시</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">GDPR, COPPA 준수</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>취약점 방어</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">OWASP Top 10 대응</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>침해 대응</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">5단계 대응 계획</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<nav style="margin-top: 30px; padding: 15px; background: #1e293b; border-radius: 8px; display: flex; justify-content: space-between;">
+    <a href="chapter-05.html" style="color: #a855f7; text-decoration: none;">← 제5장: 구현 가이드</a>
+    <a href="index.html" style="color: #a855f7; text-decoration: none;">📚 목차</a>
+    <a href="chapter-07.html" style="color: #a855f7; text-decoration: none;">제7장: 사례 연구 →</a>
+</nav>
+
+<p style="text-align: center; color: #fbbf24; margin-top: 40px;">弘益人間 · 널리 인간을 이롭게 하라</p>
+<p style="text-align: center; color: #64748b;">© 2025 WIA - World Certification Industry Association</p>
+
+</body>
+</html>

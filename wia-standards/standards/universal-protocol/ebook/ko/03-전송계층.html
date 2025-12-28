@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>제3장: 전송 계층 | WIA-CORE-007</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#f1f5f9;line-height:1.8;padding:2rem}.container{max-width:900px;margin:0 auto;background:#1e293b;padding:3rem;border-radius:15px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}h1{font-size:2.5rem;margin-bottom:1rem;color:#10b981;border-bottom:3px solid #6B7280;padding-bottom:1rem}h2{font-size:2rem;margin:2rem 0 1rem;color:#6B7280}h3{font-size:1.5rem;margin:1.5rem 0 1rem;color:#10b981}p{margin:1rem 0;font-size:1.1rem}code{background:#0f172a;padding:0.2rem 0.5rem;border-radius:3px;font-family:Monaco,monospace;color:#10b981}pre{background:#0f172a;padding:1.5rem;border-radius:8px;overflow-x:auto;margin:1rem 0;border-left:4px solid #6B7280}pre code{background:none;padding:0}.nav{margin:2rem 0;display:flex;justify-content:space-between;padding-top:2rem;border-top:2px solid #334155}.nav a{color:#10b981;text-decoration:none;font-weight:600;padding:0.5rem 1rem;border:2px solid #6B7280;border-radius:5px;transition:all 0.3s}.nav a:hover{background:#6B7280;color:white}.highlight{background:#334155;padding:1.5rem;border-left:4px solid #10b981;border-radius:5px;margin:1.5rem 0}ul,ol{margin:1rem 0 1rem 2rem}li{margin:0.5rem 0;font-size:1.1rem}table{width:100%;border-collapse:collapse;margin:1.5rem 0}th,td{padding:1rem;text-align:left;border:1px solid #334155}th{background:#0f172a;color:#10b981}td{background:#1e293b}.emoji{font-size:1.5em;margin-right:0.5rem}</style>
+</head>
+<body>
+<div class="container">
+<h1><span class="emoji">🚀</span>제3장: 전송 계층</h1>
+<h2>3.1 전송 추상화</h2>
+<p>전송 계층은 엔드포인트 간에 메시지를 이동하는 역할을 담당합니다. 범용 프로토콜은 이 계층을 추상화하여 애플리케이션 코드가 HTTP, WebSocket, gRPC 또는 기타 메커니즘을 사용하는지 알 필요가 없습니다.</p>
+<h3>3.1.1 전송 인터페이스</h3><p>모든 전송은 공통 인터페이스를 구현합니다:</p>
+<pre><code>interface Transport {
+  connect(): Promise&lt;void&gt;;
+  disconnect(): Promise&lt;void&gt;;
+  isConnected(): boolean;
+  send(message: Message): Promise&lt;void&gt;;
+  receive(): AsyncIterableIterator&lt;Message&gt;;
+  on(event: string, handler: Function): void;
+  off(event: string, handler: Function): void;
+  configure(options: TransportOptions): void;
+}</code></pre>
+<h2>3.2 HTTP 전송</h2><p>HTTP는 가장 널리 지원되는 전송입니다. 범용 프로토콜은 요청-응답 패턴에 HTTP를 사용합니다.</p>
+<pre><code>import { HTTPTransport } from '@wia/universal-protocol';
+
+const transport = new HTTPTransport({
+  baseURL: 'https://api.example.com',
+  timeout: 30000,
+  headers: {
+    'User-Agent': 'UniversalProtocol/1.0',
+    'Accept': 'application/json'
+  },
+  retryPolicy: {
+    maxRetries: 3,
+    retryDelay: 1000,
+    retryOn: [408, 429, 500, 502, 503, 504]
+  }
+});</code></pre>
+<h3>3.2.1 HTTP 스트리밍</h3><p>서버 전송 이벤트(SSE)는 HTTP 스트리밍을 가능하게 합니다:</p>
+<pre><code>const transport = new HTTPTransport({
+  baseURL: 'https://api.example.com',
+  streaming: {
+    enabled: true,
+    format: 'server-sent-events'
+  }
+});
+
+for await (const event of protocol.stream('notifications.subscribe')) {
+  console.log('새 알림:', event);
+}</code></pre>
+<h2>3.3 WebSocket 전송</h2><p>WebSocket은 단일 TCP 연결을 통해 전이중 통신을 제공합니다.</p>
+<pre><code>import { WebSocketTransport } from '@wia/universal-protocol';
+
+const transport = new WebSocketTransport({
+  url: 'wss://api.example.com/ws',
+  reconnect: {
+    enabled: true,
+    maxAttempts: 10,
+    delay: 1000,
+    maxDelay: 30000,
+    backoff: 'exponential'
+  },
+  heartbeat: {
+    enabled: true,
+    interval: 30000,
+    timeout: 5000
+  },
+  compression: true
+});</code></pre>
+<h3>3.3.1 WebSocket 기능</h3><ul>
+<li><strong>양방향:</strong> 클라이언트와 서버가 언제든지 메시지를 보낼 수 있습니다</li>
+<li><strong>낮은 지연 시간:</strong> 각 메시지에 대한 HTTP 오버헤드가 없습니다</li>
+<li><strong>영구적:</strong> 연결이 지속적인 통신을 위해 열려 있습니다</li>
+<li><strong>압축:</strong> 메시지 압축에 대한 기본 제공 지원</li>
+</ul>
+<h2>3.4 gRPC 전송</h2><p>gRPC는 HTTP/2 및 Protocol Buffers를 사용하여 고성능 RPC를 제공합니다.</p>
+<pre><code>import { GRPCTransport } from '@wia/universal-protocol';
+
+const transport = new GRPCTransport({
+  host: 'api.example.com',
+  port: 50051,
+  credentials: {
+    type: 'ssl',
+    cert: fs.readFileSync('ca.pem')
+  },
+  keepalive: {
+    time: 60000,
+    timeout: 20000,
+    permitWithoutCalls: true
+  },
+  compression: 'gzip'
+});</code></pre>
+<h2>3.5 MQTT 전송</h2><p>MQTT는 대역폭이 낮은 IoT 및 제약된 네트워크용으로 설계되었습니다.</p>
+<pre><code>import { MQTTTransport } from '@wia/universal-protocol';
+
+const transport = new MQTTTransport({
+  broker: 'mqtt://broker.hivemq.com',
+  clientId: 'device_' + Math.random().toString(16).slice(2),
+  qos: 1,
+  clean: true,
+  keepalive: 60,
+  reconnectPeriod: 5000,
+  topics: {
+    request: 'devices/{deviceId}/request',
+    response: 'devices/{deviceId}/response',
+    events: 'devices/{deviceId}/events'
+  }
+});
+
+protocol.subscribe('sensor.temperature', (data) => {
+  console.log('온도:', data.value);
+});
+
+protocol.publish('sensor.temperature', {
+  deviceId: 'sensor_001',
+  value: 23.5,
+  unit: 'celsius'
+});</code></pre>
+<h2>3.6 사용자 정의 전송</h2><p>특수한 요구 사항에 맞게 사용자 정의 전송을 구현할 수 있습니다:</p>
+<pre><code>import { Transport } from '@wia/universal-protocol';
+
+class CustomTCPTransport implements Transport {
+  private socket: net.Socket;
+
+  async connect(): Promise&lt;void&gt; {
+    return new Promise((resolve, reject) => {
+      this.socket = net.connect({
+        host: this.config.host,
+        port: this.config.port
+      });
+      this.socket.on('connect', () => {
+        this.emit('connected');
+        resolve();
+      });
+      this.socket.on('error', reject);
+    });
+  }
+
+  async send(message: Message): Promise&lt;void&gt; {
+    const buffer = this.serialize(message);
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(buffer.length, 0);
+    this.socket.write(length);
+    this.socket.write(buffer);
+  }
+
+  async* receive(): AsyncIterableIterator&lt;Message&gt; {
+    for await (const chunk of this.socket) {
+      const message = this.deserialize(chunk);
+      yield message;
+    }
+  }
+}</code></pre>
+<h2>3.7 전송 선택 가이드</h2><table>
+<tr><th>전송</th><th>최적 용도</th><th>지연 시간</th><th>대역폭</th></tr>
+<tr><td><strong>HTTP</strong></td><td>웹 API, 간단한 요청-응답</td><td>보통</td><td>보통</td></tr>
+<tr><td><strong>WebSocket</strong></td><td>실시간 웹 앱, 게임</td><td>낮음</td><td>낮음</td></tr>
+<tr><td><strong>gRPC</strong></td><td>마이크로서비스, 고성능 API</td><td>매우 낮음</td><td>낮음</td></tr>
+<tr><td><strong>MQTT</strong></td><td>IoT, 제약된 네트워크</td><td>낮음</td><td>매우 낮음</td></tr>
+<tr><td><strong>AMQP</strong></td><td>엔터프라이즈 메시징, 안정성</td><td>보통</td><td>보통</td></tr>
+</table>
+<h2>3.8 전송 멀티플렉싱</h2><p>서로 다른 목적으로 여러 전송을 동시에 사용합니다:</p>
+<pre><code>// 공개 API용 HTTP
+const httpProtocol = new UniversalProtocol({
+  transport: new HTTPTransport({ baseURL: 'https://api.example.com' })
+});
+
+// 실시간 기능용 WebSocket
+const wsProtocol = new UniversalProtocol({
+  transport: new WebSocketTransport({ url: 'wss://api.example.com/ws' })
+});
+
+// 내부 마이크로서비스용 gRPC
+const grpcProtocol = new UniversalProtocol({
+  transport: new GRPCTransport({ host: 'internal.example.com', port: 50051 })
+});
+
+// 각 시나리오에 적합한 프로토콜 사용
+const userData = await httpProtocol.call('users.get', { id: '123' });
+wsProtocol.subscribe('notifications', handleNotification);
+const internalData = await grpcProtocol.call('internal.getData', params);</code></pre>
+<div class="highlight">
+<h3>전송 모범 사례</h3><ul>
+<li>특정 요구 사항에 따라 전송 선택</li>
+<li>대규모 페이로드에 대해 압축 활성화</li>
+<li>불안정한 네트워크에 대한 재연결 로직 구현</li>
+<li>하트비트를 사용하여 연결 문제를 조기에 감지</li>
+<li>전송 메트릭 모니터링(지연 시간, 처리량, 오류)</li>
+<li>다른 전송으로 애플리케이션 테스트</li>
+</ul>
+</div>
+<div class="nav">
+<a href="02-핵심개념.html">← 이전: 핵심 개념</a>
+<a href="04-인코딩직렬화.html">다음: 인코딩 및 직렬화 →</a>
+</div>
+<footer style="margin-top:3rem;padding-top:2rem;border-top:2px solid #334155;opacity:0.7;text-align:center;">
+<p>&copy; 2025 SmileStory Inc. / WIA | 弘益人間 · 널리 인간을 이롭게 하라</p>
+</footer>
+</div>
+</body>
+</html>

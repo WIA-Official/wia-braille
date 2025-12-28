@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Encoding & Serialization | WIA-CORE-007</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f1f5f9; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 3rem; border-radius: 15px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #10b981; border-bottom: 3px solid #6B7280; padding-bottom: 1rem; }
+        h2 { font-size: 2rem; margin: 2rem 0 1rem; color: #6B7280; }
+        h3 { font-size: 1.5rem; margin: 1.5rem 0 1rem; color: #10b981; }
+        p { margin: 1rem 0; font-size: 1.1rem; }
+        code { background: #0f172a; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: Monaco, monospace; color: #10b981; }
+        pre { background: #0f172a; padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; border-left: 4px solid #6B7280; }
+        pre code { background: none; padding: 0; }
+        .nav { margin: 2rem 0; display: flex; justify-content: space-between; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #10b981; text-decoration: none; font-weight: 600; padding: 0.5rem 1rem; border: 2px solid #6B7280; border-radius: 5px; transition: all 0.3s; }
+        .nav a:hover { background: #6B7280; color: white; }
+        .highlight { background: #334155; padding: 1.5rem; border-left: 4px solid #10b981; border-radius: 5px; margin: 1.5rem 0; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; font-size: 1.1rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 1rem; text-align: left; border: 1px solid #334155; }
+        th { background: #0f172a; color: #10b981; }
+        td { background: #1e293b; }
+        .emoji { font-size: 1.5em; margin-right: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">🔄</span>Chapter 4: Encoding & Serialization</h1>
+
+        <h2>4.1 Why Encoding Matters</h2>
+        <p>The encoding layer converts your data structures into byte sequences for transmission and back. The choice of encoding affects performance, compatibility, and bandwidth usage.</p>
+
+        <h2>4.2 JSON Encoding</h2>
+        <p>JSON is the most popular encoding format due to its human-readability and universal support.</p>
+
+        <pre><code>import { JSONEncoder } from '@wia/universal-protocol';
+
+const protocol = new UniversalProtocol({
+  encoding: 'json',
+  encodingOptions: {
+    pretty: false, // Minified for production
+    dateFormat: 'iso8601',
+    bigintSupport: true
+  }
+});
+
+// Data object
+const data = {
+  userId: '12345',
+  timestamp: new Date(),
+  balance: BigInt('9007199254740991'),
+  metadata: { premium: true }
+};
+
+// Serialized as JSON
+// {"userId":"12345","timestamp":"2025-12-27T10:30:00.000Z","balance":"9007199254740991","metadata":{"premium":true}}</code></pre>
+
+        <h3>4.2.1 JSON Advantages</h3>
+        <ul>
+            <li>Human-readable and debuggable</li>
+            <li>Supported by every language and platform</li>
+            <li>No schema required (flexible structure)</li>
+            <li>Browser-native parsing (JSON.parse)</li>
+        </ul>
+
+        <h3>4.2.2 JSON Limitations</h3>
+        <ul>
+            <li>Larger message size compared to binary formats</li>
+            <li>No native support for binary data (needs base64)</li>
+            <li>Limited type system (no dates, no bigints natively)</li>
+            <li>Parsing overhead in performance-critical scenarios</li>
+        </ul>
+
+        <h2>4.3 Protocol Buffers (Protobuf)</h2>
+        <p>Protocol Buffers is a language-neutral, platform-neutral extensible mechanism for serializing structured data developed by Google.</p>
+
+        <pre><code>// Define schema in .proto file
+syntax = "proto3";
+
+message UserProfile {
+  string user_id = 1;
+  string name = 2;
+  string email = 3;
+  int64 created_at = 4;
+  repeated string roles = 5;
+  map&lt;string, string&gt; metadata = 6;
+}
+
+// Use in TypeScript
+import { ProtobufEncoder } from '@wia/universal-protocol';
+import { UserProfile } from './generated/user_pb';
+
+const protocol = new UniversalProtocol({
+  encoding: 'protobuf',
+  schemas: {
+    'users.getProfile': {
+      request: GetProfileRequest,
+      response: UserProfile
+    }
+  }
+});
+
+const profile = await protocol.call('users.getProfile', {
+  userId: '12345'
+});
+
+// Automatic serialization/deserialization with type safety</code></pre>
+
+        <h3>4.3.1 Protobuf Advantages</h3>
+        <ul>
+            <li>Very compact binary format (3-10x smaller than JSON)</li>
+            <li>Fast serialization and deserialization</li>
+            <li>Strong typing with schema validation</li>
+            <li>Backward and forward compatibility</li>
+            <li>Efficient handling of optional fields</li>
+        </ul>
+
+        <h2>4.4 MessagePack</h2>
+        <p>MessagePack is an efficient binary serialization format like JSON but faster and smaller.</p>
+
+        <pre><code>import { MessagePackEncoder } from '@wia/universal-protocol';
+
+const protocol = new UniversalProtocol({
+  encoding: 'messagepack'
+});
+
+const data = {
+  userId: '12345',
+  scores: [95, 87, 92, 88],
+  metadata: {
+    tags: ['premium', 'verified'],
+    binary: Buffer.from('Hello World')
+  }
+};
+
+// MessagePack efficiently handles:
+// - Integers (1-8 bytes depending on value)
+// - Strings (UTF-8 encoded)
+// - Arrays and Maps
+// - Binary data (no base64 overhead)
+// - null, boolean, floats</code></pre>
+
+        <h3>4.4.1 MessagePack vs JSON</h3>
+        <table>
+            <tr>
+                <th>Feature</th>
+                <th>JSON</th>
+                <th>MessagePack</th>
+            </tr>
+            <tr>
+                <td>Size</td>
+                <td>Baseline</td>
+                <td>~50-70% smaller</td>
+            </tr>
+            <tr>
+                <td>Speed</td>
+                <td>Baseline</td>
+                <td>~2-5x faster</td>
+            </tr>
+            <tr>
+                <td>Human-readable</td>
+                <td>Yes</td>
+                <td>No (binary)</td>
+            </tr>
+            <tr>
+                <td>Binary data</td>
+                <td>Base64 (33% overhead)</td>
+                <td>Native support</td>
+            </tr>
+        </table>
+
+        <h2>4.5 CBOR</h2>
+        <p>Concise Binary Object Representation is an Internet Standard for binary data interchange.</p>
+
+        <pre><code>import { CBOREncoder } from '@wia/universal-protocol';
+
+const protocol = new UniversalProtocol({
+  encoding: 'cbor',
+  encodingOptions: {
+    useTimestamps: true, // Encode dates as CBOR timestamps
+    useRecords: true,    // Use CBOR records for better compression
+    useBigIntExtension: true
+  }
+});
+
+// CBOR features:
+// - Tagged data types (timestamps, UUIDs, etc.)
+// - Indefinite-length arrays and maps
+// - Support for very large integers
+// - Self-describing format</code></pre>
+
+        <h2>4.6 Apache Avro</h2>
+        <p>Avro is a data serialization system with rich schema evolution capabilities.</p>
+
+        <pre><code>import { AvroEncoder } from '@wia/universal-protocol';
+
+// Define Avro schema
+const schema = {
+  type: 'record',
+  name: 'User',
+  fields: [
+    { name: 'id', type: 'string' },
+    { name: 'name', type: 'string' },
+    { name: 'email', type: ['null', 'string'], default: null },
+    { name: 'age', type: 'int' },
+    { name: 'tags', type: { type: 'array', items: 'string' } }
+  ]
+};
+
+const protocol = new UniversalProtocol({
+  encoding: 'avro',
+  schemas: {
+    'users.create': schema
+  }
+});</code></pre>
+
+        <h3>4.6.1 Avro Schema Evolution</h3>
+        <p>Avro excels at schema evolution - the ability to read old data with new schemas:</p>
+
+        <pre><code>// Old schema
+{
+  "type": "record",
+  "name": "User",
+  "fields": [
+    { "name": "id", "type": "string" },
+    { "name": "name", "type": "string" }
+  ]
+}
+
+// New schema (backward compatible)
+{
+  "type": "record",
+  "name": "User",
+  "fields": [
+    { "name": "id", "type": "string" },
+    { "name": "name", "type": "string" },
+    { "name": "email", "type": ["null", "string"], "default": null }, // New optional field
+    { "name": "premium", "type": "boolean", "default": false } // New field with default
+  ]
+}
+
+// Old data can be read with new schema (missing fields use defaults)
+// New data can be read with old schema (extra fields ignored)</code></pre>
+
+        <h2>4.7 XML Encoding</h2>
+        <p>While less common in modern applications, XML is still important for legacy systems and enterprise integration.</p>
+
+        <pre><code>import { XMLEncoder } from '@wia/universal-protocol';
+
+const protocol = new UniversalProtocol({
+  encoding: 'xml',
+  encodingOptions: {
+    declaration: true,
+    formatting: 'pretty',
+    rootElement: 'message'
+  }
+});
+
+// Serialized as:
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;message&gt;
+  &lt;userId&gt;12345&lt;/userId&gt;
+  &lt;name&gt;John Doe&lt;/name&gt;
+  &lt;metadata&gt;
+    &lt;premium&gt;true&lt;/premium&gt;
+  &lt;/metadata&gt;
+&lt;/message&gt;</code></pre>
+
+        <h2>4.8 Custom Encoders</h2>
+        <p>Implement custom encoders for specialized needs:</p>
+
+        <pre><code>import { Encoder } from '@wia/universal-protocol';
+
+class CustomBinaryEncoder implements Encoder {
+  encode(data: any): Buffer {
+    // Your custom encoding logic
+    const buffer = Buffer.alloc(1024);
+    let offset = 0;
+
+    // Write header
+    buffer.writeUInt8(0x01, offset++); // Version
+
+    // Write data
+    if (typeof data.id === 'string') {
+      const idBuffer = Buffer.from(data.id);
+      buffer.writeUInt16BE(idBuffer.length, offset);
+      offset += 2;
+      idBuffer.copy(buffer, offset);
+      offset += idBuffer.length;
+    }
+
+    return buffer.slice(0, offset);
+  }
+
+  decode(buffer: Buffer): any {
+    // Your custom decoding logic
+    let offset = 0;
+
+    const version = buffer.readUInt8(offset++);
+    const idLength = buffer.readUInt16BE(offset);
+    offset += 2;
+    const id = buffer.toString('utf8', offset, offset + idLength);
+
+    return { version, id };
+  }
+}
+
+const protocol = new UniversalProtocol({
+  encoder: new CustomBinaryEncoder()
+});</code></pre>
+
+        <h2>4.9 Encoding Comparison</h2>
+        <table>
+            <tr>
+                <th>Format</th>
+                <th>Size</th>
+                <th>Speed</th>
+                <th>Schema</th>
+                <th>Human-Readable</th>
+                <th>Best For</th>
+            </tr>
+            <tr>
+                <td>JSON</td>
+                <td>Large</td>
+                <td>Medium</td>
+                <td>No</td>
+                <td>Yes</td>
+                <td>Web APIs, debugging</td>
+            </tr>
+            <tr>
+                <td>Protobuf</td>
+                <td>Small</td>
+                <td>Fast</td>
+                <td>Required</td>
+                <td>No</td>
+                <td>Microservices, gRPC</td>
+            </tr>
+            <tr>
+                <td>MessagePack</td>
+                <td>Small</td>
+                <td>Fast</td>
+                <td>No</td>
+                <td>No</td>
+                <td>High-performance apps</td>
+            </tr>
+            <tr>
+                <td>CBOR</td>
+                <td>Small</td>
+                <td>Fast</td>
+                <td>No</td>
+                <td>No</td>
+                <td>IoT, constrained devices</td>
+            </tr>
+            <tr>
+                <td>Avro</td>
+                <td>Small</td>
+                <td>Fast</td>
+                <td>Required</td>
+                <td>No</td>
+                <td>Data pipelines, evolution</td>
+            </tr>
+            <tr>
+                <td>XML</td>
+                <td>Large</td>
+                <td>Slow</td>
+                <td>Optional</td>
+                <td>Yes</td>
+                <td>Legacy systems, SOAP</td>
+            </tr>
+        </table>
+
+        <h2>4.10 Compression</h2>
+        <p>Further reduce message size with compression:</p>
+
+        <pre><code>const protocol = new UniversalProtocol({
+  encoding: 'json',
+  compression: {
+    enabled: true,
+    algorithm: 'gzip', // or 'deflate', 'brotli', 'lz4'
+    level: 6, // 1-9, higher = better compression but slower
+    threshold: 1024 // Only compress messages larger than 1KB
+  }
+});
+
+// Automatic compression/decompression
+// Small messages skip compression overhead
+// Large messages benefit from bandwidth reduction</code></pre>
+
+        <h3>4.10.1 Compression Algorithms</h3>
+        <ul>
+            <li><strong>gzip:</strong> Standard compression, good balance</li>
+            <li><strong>deflate:</strong> Similar to gzip, slightly less overhead</li>
+            <li><strong>brotli:</strong> Better compression ratio, slower (good for static content)</li>
+            <li><strong>lz4:</strong> Very fast, lower compression ratio (good for real-time)</li>
+            <li><strong>zstd:</strong> Modern, configurable speed/ratio tradeoff</li>
+        </ul>
+
+        <h2>4.11 Encoding Best Practices</h2>
+        <div class="highlight">
+            <ul>
+                <li><strong>Start with JSON:</strong> Use JSON during development for easy debugging</li>
+                <li><strong>Optimize later:</strong> Switch to binary formats when performance matters</li>
+                <li><strong>Use schemas:</strong> Define schemas for Protobuf/Avro to catch errors early</li>
+                <li><strong>Benchmark:</strong> Measure actual performance in your use case</li>
+                <li><strong>Consider compatibility:</strong> JSON works everywhere, binary formats may have limited support</li>
+                <li><strong>Enable compression:</strong> For large payloads or slow networks</li>
+                <li><strong>Version your schemas:</strong> Plan for evolution from day one</li>
+            </ul>
+        </div>
+
+        <h2>4.12 Polyglot Encoding</h2>
+        <p>Support multiple encodings simultaneously:</p>
+
+        <pre><code>// Server supports multiple encodings
+const protocol = new UniversalProtocol({
+  encodings: {
+    'json': new JSONEncoder(),
+    'protobuf': new ProtobufEncoder(),
+    'messagepack': new MessagePackEncoder()
+  }
+});
+
+// Client requests preferred encoding
+const result = await protocol.call('users.get', params, {
+  metadata: {
+    'accept-encoding': 'protobuf' // Prefer protobuf
+  }
+});
+
+// Server responds with requested encoding (if supported)
+// Falls back to default if requested encoding unavailable</code></pre>
+
+        <div class="nav">
+            <a href="03-transport-layer.html">← Previous: Transport Layer</a>
+            <a href="05-rpc-patterns.html">Next: RPC Patterns →</a>
+        </div>
+
+        <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; opacity: 0.7; text-align: center;">
+            <p>&copy; 2025 SmileStory Inc. / WIA | 弘益人間 · Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

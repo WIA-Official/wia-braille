@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제4장: Phase 1 - 기초 | WIA-MESH_NETWORK</title>
+    <style>
+        :root { --bg: #0f172a; --bg-secondary: #1e293b; --bg-tertiary: #334155; --primary: #8B5CF6; --text: #f1f5f9; --text-secondary: #cbd5e1; --border: #475569; --success: #10b981; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-secondary); padding: 3rem; border-radius: 10px; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: var(--bg-tertiary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--primary); font-weight: bold; }
+        tr:hover { background: var(--bg-tertiary); }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: var(--bg); text-decoration: none; border-radius: 5px; transition: all 0.3s ease; }
+        .btn:hover { background: var(--success); transform: translateY(-2px); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', monospace; color: var(--success); }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+        .stat-card { background: var(--bg); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid var(--border); }
+        .stat-number { font-size: 2rem; color: var(--primary); font-weight: bold; }
+        .stat-label { color: var(--text-secondary); margin-top: 0.5rem; }
+        pre { background: var(--bg); padding: 1.5rem; border-radius: 5px; overflow-x: auto; margin: 1rem 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">제4장</p>
+        <h1>Phase 1: 기초 인프라 구축</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            메시 네트워크 구현의 첫 단계로 기본 인프라와 노드 설정을 다룹니다.
+        </p>
+
+        <h2>Phase 1 개요</h2>
+        <p>
+            Phase 1은 메시 네트워크 구현의 기초를 다지는 단계입니다. 하드웨어 선택, 초기 설정, 기본 통신 확립, 노드 발견 메커니즘 구현이 이 단계의 주요 목표입니다. 견고한 기초 없이는 상위 기능이 제대로 작동할 수 없으므로 이 단계가 매우 중요합니다.
+        </p>
+
+        <div class="highlight-box">
+            <h3>Phase 1 목표</h3>
+            <ul>
+                <li>적절한 하드웨어 플랫폼 선택</li>
+                <li>물리 계층 및 MAC 계층 설정</li>
+                <li>기본 노드간 통신 확립</li>
+                <li>이웃 발견 프로토콜 구현</li>
+                <li>초기 토폴로지 구축</li>
+                <li>간단한 테스트 시나리오 검증</li>
+            </ul>
+        </div>
+
+        <h2>하드웨어 플랫폼 선택</h2>
+        <p>
+            메시 네트워크의 성능과 기능은 하드웨어 선택에 크게 영향을 받습니다. 응용의 요구사항, 예산, 확장성 계획을 고려하여 적절한 플랫폼을 선택해야 합니다.
+        </p>
+
+        <h3>주요 하드웨어 플랫폼</h3>
+        <table>
+            <thead>
+                <tr><th>플랫폼</th><th>프로세서</th><th>무선</th><th>적합 응용</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>ESP32</strong></td>
+                    <td>Dual-core 240MHz</td>
+                    <td>WiFi, BLE</td>
+                    <td>스마트 홈, IoT 게이트웨이</td>
+                </tr>
+                <tr>
+                    <td><strong>nRF52840</strong></td>
+                    <td>ARM Cortex-M4</td>
+                    <td>BLE, 802.15.4</td>
+                    <td>저전력 센서, Thread</td>
+                </tr>
+                <tr>
+                    <td><strong>CC2652</strong></td>
+                    <td>ARM Cortex-M4</td>
+                    <td>Zigbee, Thread</td>
+                    <td>Zigbee 메시, Matter</td>
+                </tr>
+                <tr>
+                    <td><strong>Raspberry Pi</strong></td>
+                    <td>Quad-core ARM</td>
+                    <td>WiFi, 확장 가능</td>
+                    <td>게이트웨이, 테스트</td>
+                </tr>
+                <tr>
+                    <td><strong>STM32WB</strong></td>
+                    <td>Dual-core M4+M0</td>
+                    <td>BLE, 802.15.4</td>
+                    <td>저전력 메시, 의료</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>하드웨어 선택 기준</h3>
+        <div class="info-box">
+            <p><strong>처리 능력:</strong> 라우팅 테이블 크기, 암호화 연산, 예상 트래픽을 고려합니다. 복잡한 라우팅 프로토콜은 더 강력한 프로세서가 필요합니다.</p>
+            <p><strong>메모리:</strong> RAM은 라우팅 테이블과 버퍼에, Flash는 펌웨어와 설정에 사용됩니다. 최소 256KB RAM, 1MB Flash를 권장합니다.</p>
+            <p><strong>무선 인터페이스:</strong> 주파수 대역, 전송 전력, 수신 감도가 통신 범위를 결정합니다. 2.4GHz는 속도가 빠르고 Sub-GHz는 범위가 넓습니다.</p>
+            <p><strong>전력 소비:</strong> 배터리 기반 노드는 저전력 모드, 슬립 모드가 필수입니다. Active, Idle, Sleep 상태의 전류를 확인합니다.</p>
+            <p><strong>확장성:</strong> GPIO, 센서 인터페이스, 확장 커넥터가 향후 기능 추가를 용이하게 합니다.</p>
+        </div>
+
+        <h2>개발 환경 구축</h2>
+        <p>
+            효율적인 개발을 위해 적절한 도구와 프레임워크를 설정합니다. WIA 표준은 다양한 플랫폼과 개발 환경을 지원합니다.
+        </p>
+
+        <h3>필수 소프트웨어</h3>
+        <ul>
+            <li><strong>IDE:</strong> Visual Studio Code, Eclipse, PlatformIO</li>
+            <li><strong>컴파일러:</strong> ARM GCC, ESP-IDF, Zephyr SDK</li>
+            <li><strong>디버거:</strong> JTAG/SWD 디버거, 시리얼 모니터</li>
+            <li><strong>프로토콜 분석기:</strong> Wireshark, nRF Sniffer</li>
+            <li><strong>WIA SDK:</strong> WIA-MESH_NETWORK 참조 구현</li>
+        </ul>
+
+        <h3>WIA SDK 설치</h3>
+        <p>
+            WIA SDK는 표준 구현을 빠르게 시작할 수 있는 라이브러리와 예제를 제공합니다. 다음은 기본 설치 절차입니다.
+        </p>
+        <pre><code># Git 저장소 복제
+git clone https://github.com/WIA-Official/wia-mesh-sdk.git
+cd wia-mesh-sdk
+
+# 의존성 설치
+./install-deps.sh
+
+# 예제 빌드
+cd examples/basic-mesh
+mkdir build && cd build
+cmake ..
+make
+
+# 펌웨어 플래시
+make flash</code></pre>
+
+        <h2>물리 계층 설정</h2>
+        <p>
+            물리 계층은 실제 무선 통신을 담당합니다. 주파수 채널, 전송 전력, 변조 방식 등을 적절히 설정해야 합니다.
+        </p>
+
+        <h3>채널 선택</h3>
+        <table>
+            <thead>
+                <tr><th>대역</th><th>채널</th><th>장점</th><th>단점</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>2.4 GHz</strong></td>
+                    <td>11-26 (802.15.4)</td>
+                    <td>높은 속도, 작은 안테나</td>
+                    <td>혼잡, WiFi 간섭</td>
+                </tr>
+                <tr>
+                    <td><strong>915 MHz</strong></td>
+                    <td>1-10 (북미)</td>
+                    <td>긴 범위, 장애물 통과</td>
+                    <td>낮은 속도, 지역 제한</td>
+                </tr>
+                <tr>
+                    <td><strong>868 MHz</strong></td>
+                    <td>0 (유럽)</td>
+                    <td>긴 범위, 적은 간섭</td>
+                    <td>단일 채널, 듀티 사이클</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>전송 전력 최적화</h3>
+        <p>
+            전송 전력은 통신 범위와 전력 소비 사이의 트레이드오프입니다. 너무 높으면 간섭을 유발하고 배터리를 소모하며, 너무 낮으면 연결이 불안정합니다.
+        </p>
+        <div class="highlight-box">
+            <p><strong>권장 설정:</strong></p>
+            <ul>
+                <li>실내 환경: 0 dBm ~ +4 dBm</li>
+                <li>실외 환경: +8 dBm ~ +20 dBm</li>
+                <li>장거리 통신: +20 dBm (규제 허용 범위 내)</li>
+                <li>저전력 센서: -12 dBm ~ 0 dBm</li>
+            </ul>
+            <p><strong>적응형 전력 제어:</strong> 링크 품질을 모니터링하여 필요한 최소 전력을 사용합니다. RSSI 피드백으로 동적 조절이 가능합니다.</p>
+        </div>
+
+        <h2>MAC 계층 설정</h2>
+        <p>
+            MAC 계층은 채널 접근을 조정하고 충돌을 방지합니다. IEEE 802.15.4 MAC을 기반으로 메시 네트워크에 최적화된 파라미터를 사용합니다.
+        </p>
+
+        <h3>주요 MAC 파라미터</h3>
+        <table>
+            <thead>
+                <tr><th>파라미터</th><th>설명</th><th>권장값</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>macMinBE</strong></td>
+                    <td>최소 백오프 지수</td>
+                    <td>3</td>
+                </tr>
+                <tr>
+                    <td><strong>macMaxBE</strong></td>
+                    <td>최대 백오프 지수</td>
+                    <td>5</td>
+                </tr>
+                <tr>
+                    <td><strong>macMaxCSMABackoffs</strong></td>
+                    <td>최대 백오프 시도</td>
+                    <td>4</td>
+                </tr>
+                <tr>
+                    <td><strong>macMaxFrameRetries</strong></td>
+                    <td>최대 재전송 횟수</td>
+                    <td>3</td>
+                </tr>
+                <tr>
+                    <td><strong>macAckWaitDuration</strong></td>
+                    <td>ACK 대기 시간</td>
+                    <td>54 symbols</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>이웃 발견 프로토콜</h2>
+        <p>
+            각 노드는 주변의 다른 노드를 발견하고 이웃 테이블을 유지해야 합니다. WIA 표준은 주기적 비컨과 요청-응답 방식을 모두 지원합니다.
+        </p>
+
+        <h3>비컨 기반 발견</h3>
+        <p>
+            각 노드는 주기적으로 비컨을 브로드캐스트하여 자신의 존재를 알립니다. 비컨에는 노드 ID, 능력 정보, 네트워크 상태가 포함됩니다.
+        </p>
+        <pre><code>// 비컨 구조
+struct Beacon {
+    uint16_t node_id;          // 노드 고유 ID
+    uint8_t  hop_count;        // 게이트웨이까지 홉 수
+    uint8_t  load;             // 현재 부하 (0-100)
+    uint16_t sequence;         // 시퀀스 번호
+    uint8_t  capabilities;     // 능력 플래그
+};
+
+// 비컨 전송 (30초 간격)
+void send_beacon() {
+    Beacon beacon;
+    beacon.node_id = my_node_id;
+    beacon.hop_count = distance_to_gateway;
+    beacon.load = get_current_load();
+    beacon.sequence = ++beacon_seq;
+    beacon.capabilities = ROUTER | LOW_POWER;
+
+    broadcast(&beacon, sizeof(beacon));
+}</code></pre>
+
+        <h3>이웃 테이블 관리</h3>
+        <p>
+            수신한 비컨 정보를 기반으로 이웃 테이블을 구성합니다. 타임아웃을 설정하여 오래된 항목을 제거합니다.
+        </p>
+        <div class="info-box">
+            <p><strong>이웃 항목 구조:</strong></p>
+            <ul>
+                <li>노드 ID: 이웃 노드의 고유 식별자</li>
+                <li>RSSI: 수신 신호 강도, 링크 품질 지표</li>
+                <li>LQI: 링크 품질 지수</li>
+                <li>마지막 수신 시간: 타임아웃 판단용</li>
+                <li>홉 카운트: 라우팅 메트릭</li>
+                <li>능력: 라우터, 엔드 디바이스 등</li>
+            </ul>
+            <p><strong>타임아웃:</strong> 비컨 간격의 3배 동안 비컨이 수신되지 않으면 해당 이웃을 테이블에서 제거합니다. (예: 90초)</p>
+        </div>
+
+        <h2>초기 네트워크 형성</h2>
+        <p>
+            첫 번째 노드가 네트워크를 생성하고 다른 노드들이 순차적으로 참여합니다. PAN 코디네이터 역할을 하는 노드가 네트워크 ID를 할당합니다.
+        </p>
+
+        <h3>네트워크 시작 절차</h3>
+        <ol>
+            <li><strong>PAN ID 선택:</strong> 무작위 또는 사전 설정된 PAN ID 사용</li>
+            <li><strong>채널 스캔:</strong> 간섭이 적은 채널 선택 (에너지 검출)</li>
+            <li><strong>네트워크 생성:</strong> 선택한 채널에서 비컨 전송 시작</li>
+            <li><strong>조인 허용:</strong> 새 노드의 참여 요청 승인</li>
+            <li><strong>주소 할당:</strong> 참여 노드에 단축 주소 부여</li>
+        </ol>
+
+        <h3>노드 참여 절차</h3>
+        <pre><code>// 네트워크 참여 코드 예시
+void join_network() {
+    // 1. 비컨 스캔
+    scan_beacons();
+
+    // 2. 최적 네트워크 선택
+    Network* best = select_best_network();
+
+    // 3. 조인 요청 전송
+    send_join_request(best->pan_id);
+
+    // 4. 응답 대기
+    JoinResponse* resp = wait_for_response(TIMEOUT);
+
+    if (resp && resp->status == ACCEPTED) {
+        // 5. 네트워크 파라미터 설정
+        my_short_addr = resp->assigned_addr;
+        network_key = resp->network_key;
+
+        // 6. 네트워크 활동 시작
+        start_routing();
+        send_beacon();
+    }
+}</code></pre>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-number">30초</div>
+                <div class="stat-label">비컨 간격</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">10초</div>
+                <div class="stat-label">조인 타임아웃</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">-85dBm</div>
+                <div class="stat-label">최소 RSSI</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">250kbps</div>
+                <div class="stat-label">데이터 레이트</div>
+            </div>
+        </div>
+
+        <h2>기본 통신 테스트</h2>
+        <p>
+            인프라 구축 후 기본 통신이 제대로 작동하는지 검증합니다. 단순한 핑-퐁 테스트부터 시작하여 점진적으로 복잡한 시나리오를 테스트합니다.
+        </p>
+
+        <h3>테스트 시나리오</h3>
+        <div class="highlight-box">
+            <p><strong>1. 이웃 발견 테스트:</strong></p>
+            <ul>
+                <li>각 노드의 이웃 테이블 확인</li>
+                <li>양방향 링크 검증</li>
+                <li>RSSI 및 LQI 값 모니터링</li>
+            </ul>
+
+            <p><strong>2. 직접 통신 테스트:</strong></p>
+            <ul>
+                <li>인접 노드 간 핑 메시지 교환</li>
+                <li>응답 시간 측정</li>
+                <li>패킷 손실률 확인</li>
+            </ul>
+
+            <p><strong>3. 브로드캐스트 테스트:</strong></p>
+            <ul>
+                <li>브로드캐스트 메시지 전송</li>
+                <li>모든 이웃이 수신하는지 확인</li>
+                <li>브로드캐스트 스톰 방지 메커니즘 검증</li>
+            </ul>
+        </div>
+
+        <h2>문제 해결</h2>
+        <p>
+            Phase 1 구현 중 자주 발생하는 문제와 해결 방법입니다.
+        </p>
+
+        <table>
+            <thead>
+                <tr><th>문제</th><th>원인</th><th>해결 방법</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>노드 발견 실패</td>
+                    <td>채널 불일치, 전력 부족</td>
+                    <td>채널 설정 확인, 전송 전력 증가</td>
+                </tr>
+                <tr>
+                    <td>빈번한 연결 끊김</td>
+                    <td>간섭, 약한 신호</td>
+                    <td>채널 변경, 노드 위치 조정</td>
+                </tr>
+                <tr>
+                    <td>높은 패킷 손실</td>
+                    <td>충돌, 간섭</td>
+                    <td>백오프 파라미터 조정, 재전송 증가</td>
+                </tr>
+                <tr>
+                    <td>비컨 수신 안됨</td>
+                    <td>타이밍 문제, 슬립 모드</td>
+                    <td>동기화 개선, 웨이크업 스케줄 조정</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Phase 1 체크리스트</h2>
+        <div class="info-box">
+            <h3>완료 확인 항목</h3>
+            <ul>
+                <li>✓ 하드웨어 플랫폼 선택 및 준비 완료</li>
+                <li>✓ 개발 환경 및 WIA SDK 설치 완료</li>
+                <li>✓ 물리 계층 파라미터 설정 완료</li>
+                <li>✓ MAC 계층 동작 확인</li>
+                <li>✓ 이웃 발견 프로토콜 구현 및 검증</li>
+                <li>✓ 최소 3개 노드로 네트워크 형성 성공</li>
+                <li>✓ 기본 통신 테스트 통과</li>
+                <li>✓ 문서화 및 설정 백업 완료</li>
+            </ul>
+        </div>
+
+        <h2>요약</h2>
+        <p>
+            Phase 1에서는 메시 네트워크의 기초를 구축했습니다. 하드웨어 선택, 물리/MAC 계층 설정, 이웃 발견, 초기 네트워크 형성을 완료했습니다. 이제 견고한 기반 위에 라우팅 기능을 구현할 준비가 되었습니다.
+        </p>
+        <p>
+            다음 Phase 2에서는 멀티홉 라우팅 프로토콜을 구현하고 네트워크 기능을 확장하겠습니다.
+        </p>
+
+        <div class="nav-buttons">
+            <a href="chapter-03.html" class="btn">← 이전</a>
+            <a href="index.html" class="btn">목차</a>
+            <a href="chapter-05.html" class="btn">다음 →</a>
+        </div>
+    </div>
+</body>
+</html>

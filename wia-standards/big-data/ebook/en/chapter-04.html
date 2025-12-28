@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Phase 1 - Data Format - WIA-DATA-001</title>
+</head>
+<body>
+
+<p><a href="index.html">📊 WIA-DATA-001 Big Data Standard Ebook</a> | Chapter 4 of 8</p>
+
+<hr>
+
+<h1>Chapter 4: Phase 1 - Data Format Specification</h1>
+
+<blockquote>
+<p><strong>Hongik Ingan (弘益人間)</strong></p>
+<p>Standardized data formats are the foundation of interoperability. Phase 1 ensures that data can be reliably exchanged across all systems.</p>
+</blockquote>
+
+<hr>
+
+<h2>4.1 Schema Definition Language (SDL)</h2>
+
+<p>The WIA Schema Definition Language provides a standardized way to describe data structures.</p>
+
+<h3>4.1.1 Basic Schema Structure</h3>
+
+<pre><code>{
+  "namespace": "com.example",
+  "name": "DataRecord",
+  "type": "record",
+  "doc": "Example data record",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string",
+      "doc": "Unique identifier"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "logicalType": "timestamp-millis"
+    },
+    {
+      "name": "value",
+      "type": "double"
+    }
+  ]
+}</code></pre>
+
+<h3>4.1.2 Complex Types</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Example</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Array</td>
+            <td>Ordered collection of items</td>
+            <td>{"type": "array", "items": "string"}</td>
+        </tr>
+        <tr>
+            <td>Map</td>
+            <td>Key-value pairs</td>
+            <td>{"type": "map", "values": "int"}</td>
+        </tr>
+        <tr>
+            <td>Record</td>
+            <td>Structured object with named fields</td>
+            <td>{"type": "record", "fields": [...]}</td>
+        </tr>
+        <tr>
+            <td>Union</td>
+            <td>One of several types</td>
+            <td>["null", "string", "int"]</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>4.2 WIA Binary Format (WBF)</h2>
+
+<p>WBF is the primary serialization format, optimized for big data workloads.</p>
+
+<h3>4.2.1 Design Principles</h3>
+
+<ul>
+    <li><strong>Compact:</strong> Minimal overhead, efficient encoding</li>
+    <li><strong>Fast:</strong> Quick serialization/deserialization</li>
+    <li><strong>Schema-aware:</strong> Embedded schema information</li>
+    <li><strong>Streaming-friendly:</strong> Can process incrementally</li>
+</ul>
+
+<h3>4.2.2 Encoding Rules</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Encoding</th>
+            <th>Size (bytes)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>boolean</td>
+            <td>1 byte (0 or 1)</td>
+            <td>1</td>
+        </tr>
+        <tr>
+            <td>int</td>
+            <td>Variable-length zigzag encoding</td>
+            <td>1-5</td>
+        </tr>
+        <tr>
+            <td>long</td>
+            <td>Variable-length zigzag encoding</td>
+            <td>1-10</td>
+        </tr>
+        <tr>
+            <td>float</td>
+            <td>IEEE 754 single-precision</td>
+            <td>4</td>
+        </tr>
+        <tr>
+            <td>double</td>
+            <td>IEEE 754 double-precision</td>
+            <td>8</td>
+        </tr>
+        <tr>
+            <td>string</td>
+            <td>UTF-8 with length prefix</td>
+            <td>Variable</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>4.3 Alternative Formats</h2>
+
+<h3>4.3.1 JSON Format</h3>
+
+<p>For human readability and debugging:</p>
+
+<pre><code>{
+  "id": "user-12345",
+  "timestamp": 1704067200000,
+  "value": 42.5
+}</code></pre>
+
+<h3>4.3.2 Parquet Format</h3>
+
+<p>For columnar storage and analytics:</p>
+
+<ul>
+    <li>Optimized for read-heavy workloads</li>
+    <li>Excellent compression ratios</li>
+    <li>Predicate pushdown support</li>
+    <li>Compatible with Spark, Hive, Impala</li>
+</ul>
+
+<h3>4.3.3 Avro Format</h3>
+
+<p>For schema evolution and compatibility:</p>
+
+<ul>
+    <li>Self-describing data format</li>
+    <li>Rich schema resolution rules</li>
+    <li>Widely adopted in Hadoop ecosystem</li>
+    <li>Full compatibility with WIA schemas</li>
+</ul>
+
+<hr>
+
+<h2>4.4 Schema Registry</h2>
+
+<h3>4.4.1 Purpose and Benefits</h3>
+
+<p>Centralized schema management provides:</p>
+
+<ul>
+    <li><strong>Version control:</strong> Track schema evolution over time</li>
+    <li><strong>Compatibility checking:</strong> Prevent breaking changes</li>
+    <li><strong>Schema reuse:</strong> Share schemas across teams</li>
+    <li><strong>Documentation:</strong> Auto-generated API docs</li>
+</ul>
+
+<h3>4.4.2 Schema Evolution Rules</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Change Type</th>
+            <th>Backward Compatible</th>
+            <th>Forward Compatible</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Add optional field</td>
+            <td>✅ Yes</td>
+            <td>✅ Yes</td>
+        </tr>
+        <tr>
+            <td>Remove optional field</td>
+            <td>✅ Yes</td>
+            <td>✅ Yes</td>
+        </tr>
+        <tr>
+            <td>Add required field</td>
+            <td>❌ No</td>
+            <td>✅ Yes</td>
+        </tr>
+        <tr>
+            <td>Remove required field</td>
+            <td>✅ Yes</td>
+            <td>❌ No</td>
+        </tr>
+        <tr>
+            <td>Change field type</td>
+            <td>❌ No</td>
+            <td>❌ No</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>4.5 Data Partitioning</h2>
+
+<h3>4.5.1 Partitioning Strategies</h3>
+
+<p>WIA-DATA-001 supports multiple partitioning schemes:</p>
+
+<ul>
+    <li><strong>Time-based:</strong> Daily, hourly, or custom time windows</li>
+    <li><strong>Hash-based:</strong> Distribute by key hash</li>
+    <li><strong>Range-based:</strong> Continuous value ranges</li>
+    <li><strong>List-based:</strong> Explicit value lists</li>
+</ul>
+
+<h3>4.5.2 Partition Metadata</h3>
+
+<pre><code>{
+  "partition_spec": {
+    "type": "time",
+    "field": "event_timestamp",
+    "granularity": "day",
+    "format": "yyyy-MM-dd"
+  }
+}</code></pre>
+
+<hr>
+
+<h2>4.6 Compression</h2>
+
+<h3>4.6.1 Supported Codecs</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Codec</th>
+            <th>Compression Ratio</th>
+            <th>Speed</th>
+            <th>Use Case</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Snappy</td>
+            <td>Medium (2-3x)</td>
+            <td>Very Fast</td>
+            <td>General purpose, real-time</td>
+        </tr>
+        <tr>
+            <td>LZ4</td>
+            <td>Medium (2-3x)</td>
+            <td>Extremely Fast</td>
+            <td>Low latency requirements</td>
+        </tr>
+        <tr>
+            <td>Gzip</td>
+            <td>High (3-5x)</td>
+            <td>Slow</td>
+            <td>Archival, storage optimization</td>
+        </tr>
+        <tr>
+            <td>Zstd</td>
+            <td>Very High (3-6x)</td>
+            <td>Medium</td>
+            <td>Balanced performance</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>4.7 Implementation Examples</h2>
+
+<h3>4.7.1 Python Example</h3>
+
+<pre><code>from wia.data import Schema, WBFWriter
+
+schema = Schema.from_file("user_event.wsd")
+writer = WBFWriter("events.wbf", schema)
+
+for event in events:
+    writer.write({
+        "user_id": event["user"],
+        "timestamp": event["ts"],
+        "event_type": event["type"]
+    })
+
+writer.close()
+</code></pre>
+
+<h3>4.7.2 Java Example</h3>
+
+<pre><code>import com.wia.data.*;
+
+Schema schema = new Schema.Parser().parse(
+    new File("user_event.wsd"));
+WBFWriter writer = new WBFWriter(
+    new File("events.wbf"), schema);
+
+GenericRecord record = new GenericData.Record(schema);
+record.put("user_id", "user-123");
+record.put("timestamp", System.currentTimeMillis());
+record.put("event_type", "click");
+
+writer.append(record);
+writer.close();
+</code></pre>
+
+<hr>
+
+<h2>Chapter Summary</h2>
+
+<h3>Key Takeaways:</h3>
+
+<ol>
+    <li>WIA Schema Definition Language provides flexible, extensible data modeling</li>
+    <li>WIA Binary Format offers optimal performance for big data workloads</li>
+    <li>Multiple serialization formats support different use cases</li>
+    <li>Schema registry enables version control and compatibility management</li>
+    <li>Partitioning and compression optimize storage and query performance</li>
+</ol>
+
+<hr>
+
+<h2>Review Questions</h2>
+
+<ol>
+    <li>What are the four complex types supported in WIA SDL?</li>
+    <li>How does WBF achieve compact encoding for integers?</li>
+    <li>When should you use JSON format instead of WBF?</li>
+    <li>Explain the concept of schema evolution compatibility.</li>
+    <li>What are the trade-offs between different compression codecs?</li>
+    <li>Why is a schema registry important in big data systems?</li>
+</ol>
+
+<hr>
+
+<p><strong>Next:</strong> <a href="chapter-05.html">Chapter 5: Phase 2 - API Interface →</a></p>
+
+<p><a href="index.html">← Back to Table of Contents</a></p>
+
+</body>
+</html>

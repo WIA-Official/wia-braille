@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 3: Feeding Systems - WIA-PET-CARE-ROBOT</title>
+</head>
+<body>
+<p><a href="index.html">Table of Contents</a></p>
+
+<h1>Chapter 3: Feeding Systems</h1>
+
+<blockquote>
+"Hongik Ingan: Proper nutrition, delivered with precision and care, is fundamental to pet wellbeing."
+</blockquote>
+
+<hr>
+
+<h2>3.1 Feeding Configuration</h2>
+
+<pre>
+Feeding System Components
+=========================
+
++-------------------+
+|  Food Container   |
+|  (Level Sensor)   |
++-------------------+
+        |
+        v
++-------------------+
+|    Dispenser      |
+|  (Motor Control)  |
++-------------------+
+        |
+        v
++-------------------+
+|    Food Bowl      |
+|  (Weight Sensor)  |
++-------------------+
+        |
+        v
++-------------------+
+|  Pet Detection    |
+| (RFID/Camera/IR)  |
++-------------------+
+</pre>
+
+<hr>
+
+<h2>3.2 Portion Control</h2>
+
+<table border="1">
+<tr>
+<th>Setting</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+<tr>
+<td>Daily Target</td>
+<td>Total grams per day</td>
+<td>Calculated from pet profile</td>
+</tr>
+<tr>
+<td>Max Single Portion</td>
+<td>Maximum per feeding</td>
+<td>25% of daily</td>
+</tr>
+<tr>
+<td>Min Interval</td>
+<td>Time between feedings</td>
+<td>180 minutes</td>
+</tr>
+<tr>
+<td>Calorie Tracking</td>
+<td>Calculate caloric intake</td>
+<td>Enabled</td>
+</tr>
+<tr>
+<td>Activity Adjustment</td>
+<td>Modify for activity level</td>
+<td>Optional</td>
+</tr>
+<tr>
+<td>Weight Adjustment</td>
+<td>Modify for weight goals</td>
+<td>Optional</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>3.3 Scheduling</h2>
+
+<pre>
+Schedule Configuration
+======================
+
+Schedule Entry:
+  name: "Morning Meal"
+  times:
+    - hour: 7
+      minute: 0
+      flexibility: 15  # minutes
+  portion_grams: 50
+  days_of_week: [1,2,3,4,5,6,7]  # All days
+  enabled: true
+
+Schedule Behaviors:
+  - Execute at scheduled time
+  - Wait for pet presence (optional)
+  - Skip if daily limit reached
+  - Log all dispensing events
+  - Alert on missed meals
+</pre>
+
+<hr>
+
+<h2>3.4 Pet Recognition</h2>
+
+<h3>Recognition Methods</h3>
+
+<table border="1">
+<tr>
+<th>Method</th>
+<th>Accuracy</th>
+<th>Requirements</th>
+<th>Pros/Cons</th>
+</tr>
+<tr>
+<td>RFID Tag</td>
+<td>99.9%</td>
+<td>Collar tag</td>
+<td>Reliable, tag can fall off</td>
+</tr>
+<tr>
+<td>Microchip</td>
+<td>99.9%</td>
+<td>Implanted chip</td>
+<td>Permanent, short range</td>
+</tr>
+<tr>
+<td>Facial Recognition</td>
+<td>95-99%</td>
+<td>Camera, training</td>
+<td>No hardware on pet, lighting dependent</td>
+</tr>
+<tr>
+<td>Weight Detection</td>
+<td>90%</td>
+<td>Weight pad</td>
+<td>Non-invasive, similar weight pets fail</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>3.5 Multi-Pet Management</h2>
+
+<pre>
+Multi-Pet Modes
+===============
+
+INDIVIDUAL Mode:
+  - Each pet has own settings
+  - Access control per pet
+  - Individual daily tracking
+  - Prevents food stealing
+
+SHARED Mode:
+  - Communal feeding
+  - Total household limit
+  - No individual tracking
+  - Simple setup
+
+SEQUENTIAL Mode:
+  - One pet feeds at a time
+  - Door locks during feeding
+  - Fair access ensured
+  - Prevents competition
+</pre>
+
+<h3>Access Control Flow</h3>
+
+<pre>
+Pet Approaches
+     |
+     v
+[Detect Pet ID] --> [Unknown] --> Deny Access
+     |
+     v
+[Check Allowed List] --> [Not Listed] --> Deny Access
+     |
+     v
+[Check Cooldown] --> [Too Soon] --> Deny Access
+     |
+     v
+[Check Daily Limit] --> [Exceeded] --> Deny Access
+     |
+     v
+[Grant Access]
+     |
+     v
+[Dispense Portion]
+     |
+     v
+[Monitor Consumption]
+     |
+     v
+[Record and Lock]
+</pre>
+
+<hr>
+
+<h2>3.6 Dispensing Control</h2>
+
+<pre>
+Dispenser Algorithm
+===================
+
+1. Calculate target portion
+   - Check schedule or manual request
+   - Verify against daily remaining
+   - Apply any adjustments
+
+2. Pre-dispense checks
+   - Verify bowl is present
+   - Check food level sufficient
+   - Confirm pet detected
+
+3. Dispense loop
+   WHILE dispensed < target:
+     - Release small increment (5-10g)
+     - Weigh bowl
+     - Check for jam
+     - Update dispensed total
+
+4. Post-dispense
+   - Log actual amount
+   - Update daily total
+   - Start consumption monitoring
+
+Accuracy Target: +/- 5% of requested portion
+</pre>
+
+<hr>
+
+<h2>3.7 Consumption Monitoring</h2>
+
+<table border="1">
+<tr>
+<th>Metric</th>
+<th>How Measured</th>
+<th>Purpose</th>
+</tr>
+<tr>
+<td>Amount Consumed</td>
+<td>Weight difference</td>
+<td>Track actual intake</td>
+</tr>
+<tr>
+<td>Eating Duration</td>
+<td>Time from start to finish</td>
+<td>Detect changes</td>
+</tr>
+<tr>
+<td>Eating Speed</td>
+<td>Grams per minute</td>
+<td>Identify fast eaters</td>
+</tr>
+<tr>
+<td>Leftover Amount</td>
+<td>Remaining in bowl</td>
+<td>Appetite indicator</td>
+</tr>
+<tr>
+<td>Visit Pattern</td>
+<td>Multiple approaches</td>
+<td>Grazing behavior</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>3.8 Water Integration</h2>
+
+<pre>
+Water System Features
+=====================
+
+Basic:
+  - Level monitoring
+  - Low water alerts
+  - Daily consumption tracking
+
+Fountain Features:
+  - Circulation modes
+    - Continuous
+    - Interval
+    - Motion-activated
+  - Filter monitoring
+  - Temperature control
+
+Smart Features:
+  - Per-pet tracking
+  - Integration with feeding
+  - Health correlation
+  - Automatic refill (plumbed)
+</pre>
+
+<hr>
+
+<h2>3.9 Veterinary Override</h2>
+
+<pre>
+Prescription Feeding
+====================
+
+Veterinary Override Entry:
+  prescribed_grams: 150
+  reason: "Weight management"
+  special_diet: true
+  medication_schedule: [
+    {time: "08:00", with_food: true},
+    {time: "20:00", with_food: true}
+  ]
+  expires_at: "2024-06-15"
+  veterinarian: "Dr. Smith"
+  clinic: "Happy Paws Vet"
+
+System Behavior:
+  - Override normal portions
+  - Enforce strict limits
+  - Medication reminders
+  - Compliance logging
+  - Vet notification option
+</pre>
+
+<hr>
+
+<h2>3.10 Food Management</h2>
+
+<table border="1">
+<tr>
+<th>Food Type</th>
+<th>Storage</th>
+<th>Max Duration</th>
+<th>Notes</th>
+</tr>
+<tr>
+<td>Dry Kibble</td>
+<td>Sealed container</td>
+<td>30+ days</td>
+<td>Humidity control</td>
+</tr>
+<tr>
+<td>Wet Food</td>
+<td>Refrigerated</td>
+<td>24-48 hours</td>
+<td>Per-serving packs</td>
+</tr>
+<tr>
+<td>Fresh Food</td>
+<td>Refrigerated</td>
+<td>2-5 days</td>
+<td>Temperature monitored</td>
+</tr>
+<tr>
+<td>Prescription</td>
+<td>Per manufacturer</td>
+<td>Varies</td>
+<td>Separate container</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>Chapter Summary</h2>
+
+<ul>
+<li>[OK] Precise portion control with multiple settings</li>
+<li>[OK] Flexible scheduling with daily limits</li>
+<li>[OK] Multiple pet recognition methods</li>
+<li>[OK] Multi-pet household support</li>
+<li>[OK] Consumption monitoring and tracking</li>
+<li>[OK] Veterinary prescription support</li>
+</ul>
+
+<hr>
+
+<p><a href="chapter-02.html">Previous: Chapter 2 - Robot Types</a> | <a href="chapter-04.html">Next: Chapter 4 - Interactive Play</a></p>
+
+</body>
+</html>

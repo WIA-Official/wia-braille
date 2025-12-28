@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA EDU-025 Entertainment Robot - Interactive Simulator</title>
+    <style>
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --secondary: #f59e0b;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        /* Top Navigation */
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); margin-bottom: 10px; flex-wrap: wrap; gap: 15px; }
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .nav-home { display: flex; align-items: center; gap: 8px; color: var(--text); text-decoration: none; font-weight: bold; }
+        .nav-home:hover { color: var(--primary); }
+        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-muted); }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--primary); }
+        .breadcrumb .sep { color: var(--border); }
+        .breadcrumb .current { color: var(--primary); font-weight: 500; }
+        .nav-right { display: flex; align-items: center; gap: 25px; flex-wrap: wrap; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--primary); }
+
+        /* Header */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 30px; }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        .lang-switch { display: flex; gap: 10px; }
+        .lang-btn { padding: 8px 16px; border: 1px solid var(--border); background: transparent; color: var(--text); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+        .lang-btn.active { background: var(--primary); border-color: var(--primary); }
+        .lang-btn:hover { border-color: var(--primary); }
+
+        /* Hero */
+        .hero { text-align: center; padding: 40px 0; }
+        .hero h1 { font-size: 2.5rem; margin-bottom: 15px; background: linear-gradient(90deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; }
+
+        /* Tabs */
+        .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+        .tab { padding: 12px 24px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .tab.active { background: var(--primary); border-color: var(--primary); }
+        .tab:hover { border-color: var(--primary); }
+
+        /* Panel */
+        .panel { display: none; background: var(--bg-card); border-radius: 12px; padding: 30px; border: 1px solid var(--border); }
+        .panel.active { display: block; }
+        .panel h2 { margin-bottom: 20px; color: var(--primary); }
+        .panel h3 { margin: 25px 0 15px; color: var(--text); font-size: 1.1rem; }
+
+        /* Form */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 8px; font-size: 1rem; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+
+        /* Radio/Checkbox */
+        .radio-group, .checkbox-group { margin: 10px 0; }
+        .radio-group label, .checkbox-group label { display: block; padding: 8px 12px; margin: 5px 0; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+        .radio-group label:hover, .checkbox-group label:hover { border-color: var(--primary); }
+        .radio-group input, .checkbox-group input { margin-right: 10px; }
+
+        /* Buttons */
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-center { display: flex; justify-content: center; margin-top: 20px; gap: 10px; flex-wrap: wrap; }
+
+        /* Output */
+        .output { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 20px; font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
+
+        /* Table */
+        .styled-table { width: 100%; border-collapse: collapse; margin: 15px 0; background: var(--bg); border-radius: 8px; overflow: hidden; }
+        .styled-table th, .styled-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); }
+        .styled-table th { background: var(--primary); color: white; font-weight: 600; }
+        .styled-table tr:hover { background: rgba(16, 185, 129, 0.1); }
+
+        /* Sub-section */
+        .sub-section { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .sub-section h4 { color: var(--primary); margin-bottom: 15px; font-size: 1rem; }
+
+        /* Status indicators */
+        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .status-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; text-align: center; }
+        .status-value { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        .status-label { font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; }
+        .status-ok { color: var(--primary); }
+        .status-warning { color: var(--warning); }
+        .status-danger { color: var(--danger); }
+
+        /* Footer */
+        footer { margin-top: 60px; padding: 30px 0; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); }
+        footer .philosophy { color: #ffd700; font-size: 1.1rem; margin-bottom: 10px; }
+        footer .links { margin-top: 15px; }
+        footer .links a { color: var(--text-muted); text-decoration: none; margin: 0 10px; }
+        footer .links a:hover { color: var(--primary); }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.8rem; }
+            .top-nav { flex-direction: column; gap: 15px; }
+            .tabs { flex-direction: column; align-items: center; }
+            .tab { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <div class="nav-left">
+                <a href="https://wiastandards.com" class="nav-home" target="_blank">🤟 WIA Standards</a>
+                <div class="breadcrumb">
+                    <a href="https://wiastandards.com" target="_blank">Home</a>
+                    <span class="sep">›</span>
+                    <a href="https://wiastandards.com/#standards" target="_blank">Standards</a>
+                    <span class="sep">›</span>
+                    <span class="current">EDU-025 Entertainment Robot</span>
+                </div>
+            </div>
+            <div class="nav-right">
+                <nav class="nav-links">
+                    <a href="https://cert.wiastandards.com" target="_blank" data-en="🏆 Certification" data-ko="🏆 인증">🏆 Certification</a>
+                    <a href="https://wiabooks.store/reader/simulators/" target="_blank" data-en="🎮 109+ Simulators" data-ko="🎮 109+ 시뮬레이터">🎮 109+ Simulators</a>
+                    <a href="https://wiabooks.store" target="_blank" data-en="📚 Ebook" data-ko="📚 전자책">📚 Ebook</a>
+                    <a href="https://github.com/WIA-Official/wia-standards" target="_blank">GitHub</a>
+                </nav>
+                <div class="lang-switch">
+                    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                    <button class="lang-btn" onclick="setLang('ko')">KO</button>
+                </div>
+            </div>
+        </div>
+
+        <header>
+            <div class="logo">🎭 WIA-EDU-025 ENTERTAINMENT ROBOT</div>
+        </header>
+
+        <section class="hero">
+            <h1 data-en="Entertainment Robot Simulator" data-ko="엔터테인먼트 로봇 시뮬레이터">Entertainment Robot Simulator</h1>
+            <p data-en="Interactive simulator for entertainment robot standards" data-ko="엔터테인먼트 로봇 표준을 위한 인터랙티브 시뮬레이터">Interactive simulator for entertainment robot standards</p>
+        </section>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showPanel(0)" data-en="🎪 Story Robot" data-ko="🎪 스토리 로봇">🎪 Story Robot</div>
+            <div class="tab" onclick="showPanel(1)" data-en="🎬 Performance" data-ko="🎬 공연">🎬 Performance</div>
+            <div class="tab" onclick="showPanel(2)" data-en="💖 Emotional AI" data-ko="💖 감정 AI">💖 Emotional AI</div>
+            <div class="tab" onclick="showPanel(3)" data-en="🎮 Edutainment" data-ko="🎮 에듀테인먼트">🎮 Edutainment</div>
+            <div class="tab" onclick="showPanel(4)" data-en="🏥 Therapeutic" data-ko="🏥 치료">🏥 Therapeutic</div>
+        </div>
+
+        <!-- Panel 1: Story Robot -->
+        <div class="panel active" id="panel-0">
+            <h2 data-en="Interactive Storytelling Robot" data-ko="대화형 스토리텔링 로봇">Interactive Storytelling Robot</h2>
+
+            <div class="sub-section">
+                <h4 data-en="Story Configuration" data-ko="스토리 구성">Story Configuration</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-en="Story Title" data-ko="스토리 제목">Story Title</label>
+                        <input type="text" id="storyTitle" value="The Magic Forest Adventure" placeholder="Enter story title">
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Genre" data-ko="장르">Genre</label>
+                        <select id="storyGenre">
+                            <option value="fantasy">Fantasy</option>
+                            <option value="adventure">Adventure</option>
+                            <option value="education">Educational</option>
+                            <option value="mystery">Mystery</option>
+                            <option value="science">Science Fiction</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Age Group" data-ko="연령대">Age Group</label>
+                        <select id="storyAge">
+                            <option value="3-6">3-6 years (Preschool)</option>
+                            <option value="7-12">7-12 years (Elementary)</option>
+                            <option value="13-18">13-18 years (Teen)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-en="Interactive Elements" data-ko="상호작용 요소">Interactive Elements</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" checked> 🎭 Character choice points</label>
+                        <label><input type="checkbox" checked> 🗣️ Voice interaction</label>
+                        <label><input type="checkbox"> 🎨 Drawing activities</label>
+                        <label><input type="checkbox"> 🎵 Musical elements</label>
+                        <label><input type="checkbox" checked> 🤔 Critical thinking questions</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="generateStory()">🎪 Generate Story Experience</button>
+            </div>
+
+            <div class="output" id="storyOutput" style="display:none;"></div>
+        </div>
+
+        <!-- Panel 2: Performance -->
+        <div class="panel" id="panel-1">
+            <h2 data-en="Performance Robot Configuration" data-ko="공연 로봇 구성">Performance Robot Configuration</h2>
+
+            <div class="sub-section">
+                <h4 data-en="Performance Setup" data-ko="공연 설정">Performance Setup</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-en="Performance Type" data-ko="공연 유형">Performance Type</label>
+                        <select id="perfType">
+                            <option value="theater">Theater Play</option>
+                            <option value="dance">Dance Performance</option>
+                            <option value="music">Musical Performance</option>
+                            <option value="puppet">Puppet Show</option>
+                            <option value="magic">Magic Show</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Duration (minutes)" data-ko="시간 (분)">Duration (minutes)</label>
+                        <input type="number" id="perfDuration" value="15" min="5" max="60">
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Audience Size" data-ko="관객 크기">Audience Size</label>
+                        <select id="audienceSize">
+                            <option value="small">Small (1-10 children)</option>
+                            <option value="medium">Medium (11-30 children)</option>
+                            <option value="large">Large (30+ children)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-en="Educational Objectives" data-ko="교육 목표">Educational Objectives</label>
+                    <textarea id="perfObjectives" rows="3" placeholder="e.g., Teach teamwork, introduce basic science concepts...">Teach emotional awareness and creative expression through interactive performance</textarea>
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="generatePerformance()">🎬 Create Performance Plan</button>
+            </div>
+
+            <div class="output" id="performanceOutput" style="display:none;"></div>
+        </div>
+
+        <!-- Panel 3: Emotional AI -->
+        <div class="panel" id="panel-2">
+            <h2 data-en="Emotional Intelligence System" data-ko="감정 지능 시스템">Emotional Intelligence System</h2>
+
+            <div class="sub-section">
+                <h4 data-en="Emotion Recognition & Response" data-ko="감정 인식 및 응답">Emotion Recognition & Response</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-en="Current Detected Emotion" data-ko="현재 감지된 감정">Current Detected Emotion</label>
+                        <select id="detectedEmotion">
+                            <option value="happy">😊 Happy</option>
+                            <option value="excited">🤩 Excited</option>
+                            <option value="curious">🤔 Curious</option>
+                            <option value="confused">😕 Confused</option>
+                            <option value="frustrated">😤 Frustrated</option>
+                            <option value="sad">😢 Sad</option>
+                            <option value="calm">😌 Calm</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Engagement Level" data-ko="참여도">Engagement Level</label>
+                        <input type="range" id="engagementLevel" min="0" max="100" value="75" oninput="updateEngagement(this.value)">
+                        <div style="text-align: center; margin-top: 5px;"><span id="engagementValue">75%</span></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-en="Response Strategy" data-ko="응답 전략">Response Strategy</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="responseStrategy" value="encourage" checked> Encourage & Motivate</label>
+                        <label><input type="radio" name="responseStrategy" value="comfort"> Comfort & Support</label>
+                        <label><input type="radio" name="responseStrategy" value="challenge"> Challenge & Excite</label>
+                        <label><input type="radio" name="responseStrategy" value="calm"> Calm & Soothe</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-grid">
+                <div class="status-card">
+                    <div class="status-value status-ok">92%</div>
+                    <div class="status-label" data-en="Emotion Accuracy" data-ko="감정 정확도">Emotion Accuracy</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-value status-ok">8.5/10</div>
+                    <div class="status-label" data-en="Child Satisfaction" data-ko="아동 만족도">Child Satisfaction</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-value status-warning">45s</div>
+                    <div class="status-label" data-en="Response Time" data-ko="응답 시간">Response Time</div>
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="generateEmotionalResponse()">💖 Generate Emotional Response</button>
+            </div>
+
+            <div class="output" id="emotionalOutput" style="display:none;"></div>
+        </div>
+
+        <!-- Panel 4: Edutainment -->
+        <div class="panel" id="panel-3">
+            <h2 data-en="Edutainment Game System" data-ko="에듀테인먼트 게임 시스템">Edutainment Game System</h2>
+
+            <div class="sub-section">
+                <h4 data-en="Learning Game Configuration" data-ko="학습 게임 구성">Learning Game Configuration</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-en="Subject Area" data-ko="교과 영역">Subject Area</label>
+                        <select id="gameSubject">
+                            <option value="math">Mathematics</option>
+                            <option value="language">Language Arts</option>
+                            <option value="science">Science</option>
+                            <option value="social">Social Skills</option>
+                            <option value="creativity">Creative Arts</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Difficulty Level" data-ko="난이도">Difficulty Level</label>
+                        <select id="gameDifficulty">
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                            <option value="adaptive">Adaptive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Game Format" data-ko="게임 형식">Game Format</label>
+                        <select id="gameFormat">
+                            <option value="quiz">Interactive Quiz</option>
+                            <option value="puzzle">Puzzle Challenge</option>
+                            <option value="adventure">Story Adventure</option>
+                            <option value="creative">Creative Workshop</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sub-section">
+                <h4 data-en="Gamification Elements" data-ko="게임화 요소">Gamification Elements</h4>
+                <table class="styled-table">
+                    <thead>
+                        <tr>
+                            <th>Element</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>🏆 Points Earned</td>
+                            <td>1,250</td>
+                            <td><span class="status-ok">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td>⭐ Level</td>
+                            <td>Level 7</td>
+                            <td><span class="status-ok">Progressing</span></td>
+                        </tr>
+                        <tr>
+                            <td>🎖️ Badges</td>
+                            <td>12 Earned</td>
+                            <td><span class="status-ok">Unlocked</span></td>
+                        </tr>
+                        <tr>
+                            <td>🎯 Streak</td>
+                            <td>5 Days</td>
+                            <td><span class="status-warning">Active</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="generateGame()">🎮 Launch Edutainment Game</button>
+            </div>
+
+            <div class="output" id="gameOutput" style="display:none;"></div>
+        </div>
+
+        <!-- Panel 5: Therapeutic -->
+        <div class="panel" id="panel-4">
+            <h2 data-en="Therapeutic Companion System" data-ko="치료 동반자 시스템">Therapeutic Companion System</h2>
+
+            <div class="sub-section">
+                <h4 data-en="Therapeutic Configuration" data-ko="치료 구성">Therapeutic Configuration</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-en="Therapeutic Focus" data-ko="치료 초점">Therapeutic Focus</label>
+                        <select id="therapyFocus">
+                            <option value="autism">Autism Support</option>
+                            <option value="anxiety">Anxiety Management</option>
+                            <option value="adhd">ADHD Support</option>
+                            <option value="social">Social Skills Development</option>
+                            <option value="emotional">Emotional Regulation</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Session Type" data-ko="세션 유형">Session Type</label>
+                        <select id="therapySession">
+                            <option value="structured">Structured Activity</option>
+                            <option value="free">Free Play</option>
+                            <option value="guided">Guided Meditation</option>
+                            <option value="conversation">Conversation Practice</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Intensity Level" data-ko="강도 수준">Intensity Level</label>
+                        <select id="therapyIntensity">
+                            <option value="gentle">Gentle</option>
+                            <option value="moderate">Moderate</option>
+                            <option value="intensive">Intensive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-en="Safety Protocols" data-ko="안전 프로토콜">Safety Protocols</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" checked> Parent/Guardian Monitoring</label>
+                        <label><input type="checkbox" checked> Professional Supervision</label>
+                        <label><input type="checkbox" checked> Emergency Stop Available</label>
+                        <label><input type="checkbox" checked> Progress Logging</label>
+                        <label><input type="checkbox" checked> Privacy Compliance (HIPAA/GDPR)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-grid">
+                <div class="status-card">
+                    <div class="status-value status-ok">15</div>
+                    <div class="status-label" data-en="Sessions Completed" data-ko="완료된 세션">Sessions Completed</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-value status-ok">+35%</div>
+                    <div class="status-label" data-en="Skill Improvement" data-ko="기술 향상">Skill Improvement</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-value status-ok">9.2/10</div>
+                    <div class="status-label" data-en="Caregiver Rating" data-ko="보호자 평가">Caregiver Rating</div>
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="generateTherapy()">🏥 Start Therapeutic Session</button>
+            </div>
+
+            <div class="output" id="therapyOutput" style="display:none;"></div>
+        </div>
+
+        <footer>
+            <p class="philosophy">弘益人間 · Benefit All Humanity</p>
+            <p>WIA - World Certification Industry Association</p>
+            <p>© 2025 MIT License</p>
+            <div class="links">
+                <a href="https://wiastandards.com" target="_blank">🏠 Home</a>
+                <a href="https://github.com/WIA-Official/wia-standards" target="_blank">GitHub</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let currentLang = localStorage.getItem('wiaLang') || 'en';
+
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('wiaLang', lang);
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute('data-' + lang);
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+        }
+
+        function showPanel(index) {
+            document.querySelectorAll('.panel').forEach((panel, i) => {
+                panel.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+        }
+
+        function updateEngagement(value) {
+            document.getElementById('engagementValue').textContent = value + '%';
+        }
+
+        function generateStory() {
+            const title = document.getElementById('storyTitle').value;
+            const genre = document.getElementById('storyGenre').value;
+            const age = document.getElementById('storyAge').value;
+
+            const output = document.getElementById('storyOutput');
+            output.style.display = 'block';
+            output.textContent = `{
+  "@context": "https://wiastandards.com/contexts/entertainment-robot",
+  "@type": "InteractiveStory",
+  "storyId": "STORY-${Date.now()}",
+  "title": "${title}",
+  "genre": "${genre}",
+  "targetAge": "${age}",
+  "narrator": {
+    "robotId": "ENT-ROBOT-001",
+    "voice": "friendly-narrator",
+    "expressiveness": "high"
+  },
+  "chapters": [
+    {
+      "chapterId": "CH01",
+      "title": "The Beginning",
+      "duration": 180,
+      "interactionPoints": 3,
+      "emotionalTone": "mysterious-exciting"
+    }
+  ],
+  "learningObjectives": [
+    "Develop imagination and creativity",
+    "Practice decision-making skills",
+    "Build vocabulary and comprehension"
+  ],
+  "interactiveElements": {
+    "choicePoints": 5,
+    "voiceCommands": true,
+    "emotionalResponses": true,
+    "creativeActivities": true
+  },
+  "timestamp": "${new Date().toISOString()}"
+}`;
+        }
+
+        function generatePerformance() {
+            const type = document.getElementById('perfType').value;
+            const duration = document.getElementById('perfDuration').value;
+            const audience = document.getElementById('audienceSize').value;
+
+            const output = document.getElementById('performanceOutput');
+            output.style.display = 'block';
+            output.textContent = `{
+  "@context": "https://wiastandards.com/contexts/entertainment-robot",
+  "@type": "PerformanceProgram",
+  "performanceId": "PERF-${Date.now()}",
+  "type": "${type}",
+  "duration": ${duration},
+  "audienceSize": "${audience}",
+  "performers": [
+    {
+      "robotId": "ENT-ROBOT-001",
+      "role": "main-character",
+      "capabilities": ["acting", "singing", "dancing", "emotion-display"]
+    }
+  ],
+  "acts": [
+    {
+      "actNumber": 1,
+      "title": "Opening",
+      "duration": ${Math.floor(duration / 3)},
+      "activities": ["introduction", "audience-warmup", "story-setup"]
+    },
+    {
+      "actNumber": 2,
+      "title": "Main Performance",
+      "duration": ${Math.floor(duration / 2)},
+      "activities": ["main-story", "interactive-segments", "educational-moments"]
+    },
+    {
+      "actNumber": 3,
+      "title": "Finale",
+      "duration": ${Math.floor(duration / 6)},
+      "activities": ["conclusion", "q-and-a", "farewell"]
+    }
+  ],
+  "educationalValue": {
+    "primaryObjectives": ["creative-expression", "emotional-awareness"],
+    "skills": ["observation", "participation", "critical-thinking"]
+  },
+  "timestamp": "${new Date().toISOString()}"
+}`;
+        }
+
+        function generateEmotionalResponse() {
+            const emotion = document.getElementById('detectedEmotion').value;
+            const engagement = document.getElementById('engagementLevel').value;
+            const strategy = document.querySelector('input[name="responseStrategy"]:checked').value;
+
+            const output = document.getElementById('emotionalOutput');
+            output.style.display = 'block';
+            output.textContent = `{
+  "@context": "https://wiastandards.com/contexts/entertainment-robot",
+  "@type": "EmotionalResponse",
+  "responseId": "EMO-${Date.now()}",
+  "detectedEmotion": "${emotion}",
+  "engagementLevel": ${engagement},
+  "responseStrategy": "${strategy}",
+  "robotResponse": {
+    "expression": "matching-${emotion}",
+    "tone": "supportive-warm",
+    "message": "I can see you're feeling ${emotion}. That's wonderful! Let's do something fun together!",
+    "suggestedActivity": "interactive-story"
+  },
+  "adaptations": {
+    "pace": "moderate",
+    "complexity": "age-appropriate",
+    "interactivity": "high"
+  },
+  "emotionalIntelligence": {
+    "recognitionAccuracy": 0.92,
+    "responseAppropriate": true,
+    "childSafetyCheck": "passed"
+  },
+  "timestamp": "${new Date().toISOString()}"
+}`;
+        }
+
+        function generateGame() {
+            const subject = document.getElementById('gameSubject').value;
+            const difficulty = document.getElementById('gameDifficulty').value;
+            const format = document.getElementById('gameFormat').value;
+
+            const output = document.getElementById('gameOutput');
+            output.style.display = 'block';
+            output.textContent = `{
+  "@context": "https://wiastandards.com/contexts/entertainment-robot",
+  "@type": "EdutainmentGame",
+  "gameId": "GAME-${Date.now()}",
+  "subject": "${subject}",
+  "difficulty": "${difficulty}",
+  "format": "${format}",
+  "gameFlow": {
+    "introduction": "Engaging story-based intro",
+    "tutorial": "Interactive robot-guided tutorial",
+    "gameplay": "Adaptive challenges with immediate feedback",
+    "conclusion": "Celebration and reward ceremony"
+  },
+  "gamification": {
+    "points": true,
+    "levels": true,
+    "badges": true,
+    "leaderboard": false,
+    "rewards": ["virtual-stickers", "certificate", "unlock-stories"]
+  },
+  "learningMechanics": {
+    "scaffolding": true,
+    "immediateFeeback": true,
+    "adaptiveDifficulty": true,
+    "multimodalInput": ["voice", "touch", "gesture"]
+  },
+  "entertainmentElements": {
+    "storytelling": true,
+    "humor": true,
+    "surprises": true,
+    "celebration": true
+  },
+  "timestamp": "${new Date().toISOString()}"
+}`;
+        }
+
+        function generateTherapy() {
+            const focus = document.getElementById('therapyFocus').value;
+            const session = document.getElementById('therapySession').value;
+            const intensity = document.getElementById('therapyIntensity').value;
+
+            const output = document.getElementById('therapyOutput');
+            output.style.display = 'block';
+            output.textContent = `{
+  "@context": "https://wiastandards.com/contexts/entertainment-robot",
+  "@type": "TherapeuticSession",
+  "sessionId": "THERAPY-${Date.now()}",
+  "therapeuticFocus": "${focus}",
+  "sessionType": "${session}",
+  "intensity": "${intensity}",
+  "protocol": {
+    "warmup": {
+      "duration": 300,
+      "activities": ["greeting", "mood-check", "relaxation"]
+    },
+    "mainActivity": {
+      "duration": 900,
+      "type": "${session}",
+      "supervision": "required",
+      "adaptations": "enabled"
+    },
+    "cooldown": {
+      "duration": 300,
+      "activities": ["reflection", "positive-reinforcement", "goodbye"]
+    }
+  },
+  "safetyProtocols": {
+    "guardianMonitoring": true,
+    "professionalSupervision": true,
+    "emergencyStop": true,
+    "privacyCompliance": ["HIPAA", "GDPR", "COPPA"]
+  },
+  "progressTracking": {
+    "metrics": ["engagement", "skill-improvement", "emotional-regulation"],
+    "reporting": "confidential",
+    "dataRetention": "HIPAA-compliant"
+  },
+  "robotConfiguration": {
+    "behavior": "calm-supportive",
+    "pace": "${intensity}",
+    "responses": "predictable-structured"
+  },
+  "timestamp": "${new Date().toISOString()}"
+}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setLang(currentLang);
+        });
+    </script>
+</body>
+</html>

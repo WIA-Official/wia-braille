@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>챕터 5: 수확량 예측 및 예보 - WIA-AGRI-006</title>
+    <style>
+        body {font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background: #0f172a; color: #f8fafc; line-height: 1.8; max-width: 900px; margin: 0 auto; padding: 40px 20px;}
+        h1, h2, h3 { color: #84CC16; margin-top: 2em; }
+        h1 { border-bottom: 3px solid #84CC16; padding-bottom: 10px; }
+        code { background: #1e293b; padding: 2px 6px; border-radius: 4px; }
+        pre { background: #1e293b; padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid #84CC16; }
+        .info-box { background: #1e293b; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #60a5fa; }
+        .nav-links { display: flex; justify-content: space-between; margin: 40px 0; padding: 20px 0; border-top: 1px solid #334155; }
+        footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid #334155; text-align: center; color: #94a3b8; }
+        a { color: #60a5fa; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <nav><a href="index.html">← 목차로 돌아가기</a></nav>
+    <h1>챕터 5: 수확량 예측 및 예보</h1>
+
+    <h2>5.1 왜 수확량 예측이 중요한가</h2>
+    <p>정확한 수확량 예측은 다음을 가능하게 합니다:</p>
+    <ul>
+        <li><strong>시장 계획:</strong> 최적 가격에 작물 선판매</li>
+        <li><strong>물류:</strong> 수확 인력 및 장비 준비</li>
+        <li><strong>보험:</strong> 보장 범위 확인 및 청구 제출</li>
+        <li><strong>재무 계획:</strong> 수익 예측, 현금 흐름 관리</li>
+    </ul>
+
+    <h2>5.2 예측 입력</h2>
+    <h3>생육 지표</h3>
+    <pre><code>수확량 모델 입력:
+- 시간 경과에 따른 초장
+- 엽면적지수(LAI)
+- 위성/드론 이미지의 NDVI
+- 생육단계 진행 (BBCH 코드)
+- 생체량 축적
+</code></pre>
+
+    <h3>환경 데이터</h3>
+    <ul>
+        <li>온도 (생장 적산온도)</li>
+        <li>강수량 (누적, 시기)</li>
+        <li>일사량</li>
+        <li>토양 수분</li>
+    </ul>
+
+    <h2>5.3 예측 모델</h2>
+    <h3>머신러닝 접근법</h3>
+    <pre><code>import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+
+# 특성: 초장, LAI, 엽록소, 온도, 강수량
+X_train = [[45, 3.8, 42, 25, 500], ...]
+y_train = [5500, ...]  # 실제 수확량
+
+model = RandomForestRegressor(n_estimators=100)
+model.fit(X_train, y_train)
+
+# 현재 작물 수확량 예측
+current_data = [[50, 4.2, 45, 26, 520]]
+predicted_yield = model.predict(current_data)
+print(f"예상 수확량: {predicted_yield[0]} kg/ha")
+</code></pre>
+
+    <h2>5.4 수확량 예보 API</h2>
+    <pre><code>GET /forecast/yield/CROP-2025-001
+
+응답:
+{
+  "yieldPrediction": {
+    "value": 5500,
+    "unit": "kg/ha",
+    "confidence": 0.82,
+    "range": {"min": 4800, "max": 6200}
+  },
+  "harvestDate": {
+    "estimated": "2025-09-01",
+    "range": {"earliest": "2025-08-28", "latest": "2025-09-05"}
+  },
+  "factors": {
+    "weather": {"impact": 0.15, "description": "유리한 강수량"},
+    "diseaseRisk": {"impact": -0.05, "description": "낮은 병해 압력"}
+  }
+}</code></pre>
+
+    <h2>5.5 시나리오 분석</h2>
+    <p>관리 결정을 최적화하기 위해 "만약" 시나리오를 테스트합니다.</p>
+
+    <pre><code>POST /forecast/scenario
+{
+  "cropId": "CROP-2025-001",
+  "scenario": {
+    "weatherOverride": {"rainfall": "+20%", "temperature": "+2°C"},
+    "interventions": ["extra_fertilizer", "pest_control"]
+  }
+}
+
+응답:
+{
+  "baselineYield": 5500,
+  "scenarioYield": 6200,
+  "difference": "+12.7%",
+  "recommendation": "투자 정당화됨"
+}</code></pre>
+
+    <div class="info-box">
+        <h3>📊 예측 정확도</h3>
+        <p>초기 계절 (파종 후 30일): ±25% 정확도<br>
+           중기 계절 (60일): ±15% 정확도<br>
+           말기 계절 (수확 2주 전): ±5% 정확도</p>
+    </div>
+
+    <h2>5.6 실제 적용</h2>
+    <p><strong>사례 연구:</strong> 브라질 옥수수 농민들은 수확량 예측을 사용하여 선도 계약을 협상했습니다. 정확한 예측(실제 대비 8% 이내)으로 3개월 전 가격을 고정하여 현물 시장 판매 대비 헥타르당 15만원 증가.</p>
+
+    <div class="nav-links">
+        <a href="chapter4.html">← 챕터 4</a>
+        <a href="chapter6.html">챕터 6 →</a>
+    </div>
+
+    <footer>
+        <p>弘益人間 (널리 인간을 이롭게 하라)</p>
+        <p>WIA-AGRI-006 작물 모니터링 표준 | © 2025 MIT 라이선스</p>
+    </footer>
+</body>
+</html>

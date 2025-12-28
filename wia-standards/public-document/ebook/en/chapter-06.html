@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Chapter 06: Access Control - WIA-SOC-013</title>
+<style>body{font-family:-apple-system,sans-serif;max-width:800px;margin:0 auto;padding:40px 20px;background:#0f172a;color:#f8fafc;line-height:1.8}h1,h2{color:#10B981}h2{margin-top:40px;border-bottom:2px solid #334155;padding-bottom:10px}pre{background:#1e293b;padding:20px;border-radius:8px}code{color:#34D399}.nav a{color:#10B981;text-decoration:none;margin-right:20px}.highlight{background:rgba(16,185,129,0.1);padding:20px;border-left:4px solid #10B981;margin:20px 0}table{width:100%;border-collapse:collapse}th,td{padding:12px;border-bottom:1px solid #334155}th{background:#1e293b;color:#10B981}ul{margin:15px 0;padding-left:30px}li{margin:8px 0}</style></head><body>
+<div class="nav"><a href="index.html">← TOC</a><a href="chapter-05.html">← Prev</a><a href="chapter-07.html">Next →</a></div>
+<h1>Chapter 06: Access Control and Privacy Protection</h1><blockquote class="highlight"><strong>弘익人間</strong> - "Privacy is a fundamental right that must be protected in digital document systems."</blockquote>
+<h2>06.1 Role-Based Access Control (RBAC)</h2><p>RBAC assigns permissions based on organizational roles:</p><ul><li>Administrator: Full access to all documents and system configuration</li><li>Registrar: Create and issue new documents within jurisdiction</li><li>Verifier: Read-only access to verify document authenticity</li><li>Citizen: Access only to own documents</li><li>Auditor: Read-only access to audit logs</li></ul><pre><code>const rbac = {
+  roles: {
+    admin: ['create','read','update','delete','configure'],
+    registrar: ['create','read','update'],
+    verifier: ['read','verify'],
+    citizen: ['read-own'],
+    auditor: ['read-logs']
+  }
+};</code></pre>
+<h2>06.2 Attribute-Based Access Control (ABAC)</h2><p>ABAC enables fine-grained access policies based on attributes:</p><pre><code>const policy = {
+  subject: {department:'legal',clearance:'level-3'},
+  resource: {type:'birthCertificate',classification:'confidential'},
+  action: 'read',
+  environment: {time:'business-hours',location:'on-premises'},
+  decision: 'allow'
+};</code></pre>
+<h2>06.3 Encryption</h2><p>All documents encrypted at rest (AES-256-GCM) and in transit (TLS 1.3). End-to-end encryption for sensitive documents ensures only authorized parties can decrypt contents.</p><pre><code>import {DocumentEncryption} from 'wia-soc-013';
+const encrypted=await DocumentEncryption.encrypt({
+  document:pdfFile,
+  algorithm:'AES-256-GCM',
+  recipients:['citizen-public-key','registrar-public-key']
+});</code></pre>
+<h2>06.4 Zero-Knowledge Proofs</h2><p>Prove attributes without revealing document contents:</p><pre><code>const proof=await document.createZKProof({
+  reveal:['ageOver18'],
+  hide:['name','dateOfBirth','address']
+});
+const valid=await proof.verify();</code></pre>
+<h2>06.5 Data Minimization</h2><p>Collect and disclose only necessary information. Support selective disclosure for privacy-preserving verification.</p>
+<h2>06.6 GDPR Compliance</h2><ul><li>Right to Access: Citizens can download all their documents</li><li>Right to Erasure: Delete digitized copies (blockchain anchors remain for audit)</li><li>Right to Portability: Export documents in standard formats</li><li>Consent Management: Explicit consent required for document sharing</li></ul>
+<h2>06.7 Audit Logging</h2><p>Comprehensive logs of all access and modifications:</p><pre><code>const log={
+  timestamp:'2025-01-15T10:30:00Z',
+  event:'document.accessed',
+  actor:'user:citizen-456',
+  documentId:'doc:wia:soc013:abc123',
+  purpose:'passport-application',
+  consentId:'consent-789',
+  ipAddress:'192.168.1.100'
+};</code></pre>
+<h2>06.8 Consent Management</h2><p>All document sharing requires explicit, informed, and revocable consent:</p><pre><code>const consent=await ConsentService.request({
+  citizen:'citizen-456',
+  requester:'passport-office',
+  documents:['birth-cert','ssn-card'],
+  purpose:'passport-application',
+  expiresAt:'2025-12-31'
+});
+if(consent.granted){
+  await DocumentService.share({documentIds:consent.documents,recipient:consent.requester});
+}</code></pre>
+<h2>06.9 Data Residency and Sovereignty</h2><p>Documents must be stored in jurisdictionally appropriate locations. Some countries require data to remain within national borders. WIA-SOC-013 supports multi-region deployments with data residency controls.</p>
+<h2>06.10 Incident Response</h2><p>In case of security breaches, immediate revocation of compromised credentials, forensic analysis of audit logs, notification of affected citizens, and regulatory reporting as required.</p>
+<div class="nav" style="margin-top:40px;padding-top:20px;border-top:1px solid #334155"><a href="chapter-05.html">← Prev</a><a href="index.html">TOC</a><a href="chapter-07.html">Next →</a></div></body></html>

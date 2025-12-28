@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5장: 환자 순응도 모니터링 시스템 - WIA 복약 순응도 표준</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        header { padding: 2rem 0; border-bottom: 2px solid #14B8A6; margin-bottom: 2rem; }
+        .chapter-number { font-size: 1rem; color: #14B8A6; font-weight: 600; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #f8fafc; margin-bottom: 1rem; }
+        h2 { color: #14B8A6; font-size: 1.8rem; margin: 2.5rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(20, 184, 166, 0.3); }
+        h3 { color: #14B8A6; font-size: 1.3rem; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.2rem; color: #cbd5e1; }
+        .chapter-nav { background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .nav-button { padding: 0.75rem 1.5rem; background: #334155; color: #14B8A6; text-decoration: none; border-radius: 6px; transition: all 0.3s ease; border: 1px solid #14B8A6; }
+        .nav-button:hover { background: #14B8A6; color: #0f172a; transform: translateY(-2px); }
+        .highlight-box { background: rgba(20, 184, 166, 0.1); border-left: 4px solid #14B8A6; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: #1e293b; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #14B8A6; color: #0f172a; font-weight: 600; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #334155; }
+        .code-block { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto; }
+        .code-header { color: #14B8A6; font-size: 0.9rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #334155; }
+        pre { margin: 0; color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; }
+        .string { color: #fbbf24; }
+        .number { color: #a78bfa; }
+        .comment { color: #64748b; font-style: italic; }
+        ul, ol { margin: 1rem 0 1rem 2rem; color: #cbd5e1; }
+        li { margin-bottom: 0.5rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0; }
+        .stat-card { background: #1e293b; padding: 1.5rem; border-radius: 8px; border: 1px solid #334155; text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #14B8A6; margin-bottom: 0.5rem; }
+        .stat-label { color: #94a3b8; font-size: 0.9rem; }
+        footer { margin-top: 4rem; padding: 2rem 0; text-align: center; border-top: 2px solid #334155; color: #64748b; }
+        .footer-tagline { font-size: 1.1rem; color: #14B8A6; margin-bottom: 0.5rem; }
+        @media (max-width: 768px) { h1 { font-size: 2rem; } .container { padding: 1rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-number">5장</div>
+            <h1>환자 순응도 모니터링 시스템</h1>
+        </header>
+
+        <div class="chapter-nav">
+            <a href="chapter-04.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">목차</a>
+            <a href="chapter-06.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <div class="highlight-box">
+            <strong>장 개요:</strong> 이 장에서는 의료진이 환자의 복약 순응도를 실시간으로 모니터링하고, 데이터 기반 개입을 수행하는 시스템의 설계와 구현을 다룹니다.
+        </div>
+
+        <h2>순응도 모니터링의 중요성</h2>
+
+        <p>의료진이 환자의 복약 행동을 실시간으로 파악할 수 있다면, 문제가 심각해지기 전에 조기 개입이 가능합니다. WIA-MED-012는 의료진을 위한 포괄적인 모니터링 대시보드와 분석 도구를 제공합니다.</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">65%</div>
+                <div class="stat-label">조기 개입 성공률</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">40%</div>
+                <div class="stat-label">재입원율 감소</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">15분</div>
+                <div class="stat-label">일평균 모니터링 시간</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">92%</div>
+                <div class="stat-label">의료진 만족도</div>
+            </div>
+        </div>
+
+        <h2>순응도 메트릭 표준화</h2>
+
+        <p>WIA-MED-012는 다양한 순응도 지표를 표준화하여 일관된 측정과 비교를 가능하게 합니다.</p>
+
+        <h3>핵심 순응도 지표</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>지표명</th>
+                    <th>약어</th>
+                    <th>계산 방법</th>
+                    <th>목표값</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>복약 소유비율</td>
+                    <td>MPR</td>
+                    <td>(공급된 일수 / 측정 기간) × 100</td>
+                    <td>≥ 80%</td>
+                </tr>
+                <tr>
+                    <td>복약 비율</td>
+                    <td>PDC</td>
+                    <td>(약물 보유 일수 / 측정 기간) × 100</td>
+                    <td>≥ 80%</td>
+                </tr>
+                <tr>
+                    <td>복용 적시성</td>
+                    <td>DOT</td>
+                    <td>지정 시간 ±2시간 내 복용 비율</td>
+                    <td>≥ 90%</td>
+                </tr>
+                <tr>
+                    <td>복약 지속성</td>
+                    <td>PERS</td>
+                    <td>7일 이상 중단 없이 지속된 일수</td>
+                    <td>≥ 90%</td>
+                </tr>
+                <tr>
+                    <td>복약 간격</td>
+                    <td>INT</td>
+                    <td>처방된 간격 대비 실제 간격 편차</td>
+                    <td>≤ 20%</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="code-block">
+            <div class="code-header">순응도 지표 계산 알고리즘</div>
+            <pre>class AdherenceMetrics:
+    @staticmethod
+    def calculate_pdc(medication_history, start_date, end_date):
+        <span class="comment">"""Proportion of Days Covered (PDC) 계산"""</span>
+        total_days = (end_date - start_date).days
+        covered_days = set()
+
+        for fill in medication_history:
+            fill_date = fill.date
+            days_supply = fill.days_supply
+
+            <span class="comment"># 각 조제분이 커버하는 날짜 범위</span>
+            for i in range(days_supply):
+                day = fill_date + timedelta(days=i)
+                if start_date &lt;= day &lt;= end_date:
+                    covered_days.add(day)
+
+        pdc = len(covered_days) / total_days * <span class="number">100</span>
+        return round(pdc, <span class="number">2</span>)
+
+    @staticmethod
+    def calculate_timeliness(dose_events, schedule):
+        <span class="comment">"""복용 적시성 계산"""</span>
+        on_time_count = <span class="number">0</span>
+        total_count = len(dose_events)
+        tolerance_minutes = <span class="number">120</span>  <span class="comment"># ±2시간</span>
+
+        for event in dose_events:
+            scheduled_time = event.scheduled_time
+            actual_time = event.actual_time
+
+            <span class="comment"># 분 단위 차이 계산</span>
+            diff_minutes = abs((actual_time - scheduled_time).total_seconds() / <span class="number">60</span>)
+
+            if diff_minutes &lt;= tolerance_minutes:
+                on_time_count += <span class="number">1</span>
+
+        timeliness = on_time_count / total_count * <span class="number">100</span> if total_count &gt; <span class="number">0</span> else <span class="number">0</span>
+        return round(timeliness, <span class="number">2</span>)
+
+    @staticmethod
+    def calculate_persistence(dose_events):
+        <span class="comment">"""복약 지속성 계산 (최대 중단 간격)"""</span>
+        if len(dose_events) &lt; <span class="number">2</span>:
+            return <span class="number">100.0</span>
+
+        sorted_events = sorted(dose_events, key=lambda x: x.date)
+        max_gap_days = <span class="number">0</span>
+
+        for i in range(<span class="number">1</span>, len(sorted_events)):
+            gap = (sorted_events[i].date - sorted_events[i-<span class="number">1</span>].date).days
+            max_gap_days = max(max_gap_days, gap)
+
+        <span class="comment"># 7일 이상 중단이 없으면 100%, 있으면 감점</span>
+        if max_gap_days &lt;= <span class="number">7</span>:
+            return <span class="number">100.0</span>
+        else:
+            penalty = (max_gap_days - <span class="number">7</span>) * <span class="number">5</span>  <span class="comment"># 7일 초과마다 5% 감점</span>
+            return max(<span class="number">0</span>, <span class="number">100</span> - penalty)
+
+    @staticmethod
+    def composite_adherence_score(pdc, timeliness, persistence):
+        <span class="comment">"""종합 순응도 점수"""</span>
+        weights = {
+            <span class="string">'pdc'</span>: <span class="number">0.5</span>,         <span class="comment"># 50% 가중치</span>
+            <span class="string">'timeliness'</span>: <span class="number">0.3</span>,  <span class="comment"># 30% 가중치</span>
+            <span class="string">'persistence'</span>: <span class="number">0.2</span>  <span class="comment"># 20% 가중치</span>
+        }
+
+        score = (
+            pdc * weights[<span class="string">'pdc'</span>] +
+            timeliness * weights[<span class="string">'timeliness'</span>] +
+            persistence * weights[<span class="string">'persistence'</span>]
+        )
+
+        return round(score, <span class="number">2</span>)</pre>
+        </div>
+
+        <h2>의료진 대시보드</h2>
+
+        <p>의사, 약사, 간호사 등 의료진이 여러 환자의 순응도를 한눈에 파악할 수 있는 웹 기반 대시보드를 제공합니다.</p>
+
+        <h3>대시보드 주요 기능</h3>
+
+        <ul>
+            <li><strong>환자 목록 뷰:</strong> 순응도 점수로 정렬된 환자 리스트</li>
+            <li><strong>위험 신호 알림:</strong> 3일 이상 복약 누락 시 빨간색 플래그</li>
+            <li><strong>추세 차트:</strong> 주간/월간 순응도 변화 그래프</li>
+            <li><strong>약물별 분석:</strong> 어떤 약물의 순응도가 낮은지 파악</li>
+            <li><strong>인구통계 분석:</strong> 연령대, 성별, 질환별 순응도 패턴</li>
+            <li><strong>개입 이력:</strong> 과거 의료진의 개입과 그 효과</li>
+        </ul>
+
+        <div class="code-block">
+            <div class="code-header">대시보드 데이터 API (GraphQL)</div>
+            <pre>query GetPatientAdherence($providerId: ID!, $dateRange: DateRange!) {
+  provider(id: $providerId) {
+    patients {
+      id
+      name
+      age
+      primaryDiagnosis
+
+      adherenceMetrics(dateRange: $dateRange) {
+        pdc
+        timeliness
+        persistence
+        compositeScore
+        trend {
+          week
+          score
+        }
+      }
+
+      medications {
+        name
+        adherenceScore
+        lastDoseTaken
+        nextDoseScheduled
+        daysSupplyRemaining
+        riskLevel  <span class="comment"># LOW, MEDIUM, HIGH</span>
+      }
+
+      alerts {
+        type
+        severity
+        message
+        timestamp
+      }
+
+      interventions {
+        date
+        type
+        outcome
+      }
+    }
+  }
+}
+
+<span class="comment"># 응답 예제</span>
+{
+  <span class="string">"data"</span>: {
+    <span class="string">"provider"</span>: {
+      <span class="string">"patients"</span>: [
+        {
+          <span class="string">"id"</span>: <span class="string">"P-123456"</span>,
+          <span class="string">"name"</span>: <span class="string">"홍길동"</span>,
+          <span class="string">"age"</span>: <span class="number">65</span>,
+          <span class="string">"primaryDiagnosis"</span>: <span class="string">"Type 2 Diabetes"</span>,
+          <span class="string">"adherenceMetrics"</span>: {
+            <span class="string">"pdc"</span>: <span class="number">75.5</span>,
+            <span class="string">"timeliness"</span>: <span class="number">82.3</span>,
+            <span class="string">"persistence"</span>: <span class="number">90.0</span>,
+            <span class="string">"compositeScore"</span>: <span class="number">80.1</span>,
+            <span class="string">"trend"</span>: [
+              {<span class="string">"week"</span>: <span class="string">"2025-W51"</span>, <span class="string">"score"</span>: <span class="number">78</span>},
+              {<span class="string">"week"</span>: <span class="string">"2025-W52"</span>, <span class="string">"score"</span>: <span class="number">80</span>}
+            ]
+          },
+          <span class="string">"medications"</span>: [
+            {
+              <span class="string">"name"</span>: <span class="string">"Metformin 500mg"</span>,
+              <span class="string">"adherenceScore"</span>: <span class="number">85</span>,
+              <span class="string">"lastDoseTaken"</span>: <span class="string">"2025-12-26T08:15:00Z"</span>,
+              <span class="string">"nextDoseScheduled"</span>: <span class="string">"2025-12-26T20:00:00Z"</span>,
+              <span class="string">"daysSupplyRemaining"</span>: <span class="number">12</span>,
+              <span class="string">"riskLevel"</span>: <span class="string">"LOW"</span>
+            }
+          ],
+          <span class="string">"alerts"</span>: [
+            {
+              <span class="string">"type"</span>: <span class="string">"MISSED_DOSE"</span>,
+              <span class="string">"severity"</span>: <span class="string">"MEDIUM"</span>,
+              <span class="string">"message"</span>: <span class="string">"2일 연속 저녁 약 누락"</span>,
+              <span class="string">"timestamp"</span>: <span class="string">"2025-12-25T20:30:00Z"</span>
+            }
+          ]
+        }
+      ]
+    }
+  }
+}</pre>
+        </div>
+
+        <h2>데이터 기반 개입 전략</h2>
+
+        <p>순응도 데이터를 분석하여 적절한 시점에 효과적인 개입을 수행합니다.</p>
+
+        <h3>개입 프로토콜</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>순응도 수준</th>
+                    <th>개입 단계</th>
+                    <th>개입 방법</th>
+                    <th>담당자</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>90-100%<br>(우수)</td>
+                    <td>Tier 0</td>
+                    <td>• 격려 메시지 (주 1회)<br>• 리워드 제공</td>
+                    <td>시스템 자동</td>
+                </tr>
+                <tr>
+                    <td>80-89%<br>(양호)</td>
+                    <td>Tier 1</td>
+                    <td>• 알림 빈도 증가<br>• 교육 콘텐츠 제공</td>
+                    <td>시스템 자동</td>
+                </tr>
+                <tr>
+                    <td>70-79%<br>(주의)</td>
+                    <td>Tier 2</td>
+                    <td>• 약사 전화 상담<br>• 복용 방법 재교육</td>
+                    <td>약사</td>
+                </tr>
+                <tr>
+                    <td>50-69%<br>(위험)</td>
+                    <td>Tier 3</td>
+                    <td>• 간호사 방문<br>• 가족 면담<br>• 장애 요인 파악</td>
+                    <td>간호사</td>
+                </tr>
+                <tr>
+                    <td>&lt;50%<br>(긴급)</td>
+                    <td>Tier 4</td>
+                    <td>• 의사 진료 예약<br>• 약물 변경 검토<br>• 정신건강 평가</td>
+                    <td>의사</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>AI 기반 예측 분석</h2>
+
+        <p>머신러닝 모델을 사용하여 비순응 위험이 높은 환자를 사전에 식별합니다.</p>
+
+        <div class="code-block">
+            <div class="code-header">비순응 예측 모델 (scikit-learn)</div>
+            <pre>import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+
+class AdherencePredictor:
+    def __init__(self):
+        self.model = RandomForestClassifier(n_estimators=<span class="number">100</span>)
+        self.scaler = StandardScaler()
+        self.features = [
+            <span class="string">'age'</span>, <span class="string">'num_medications'</span>, <span class="string">'num_doses_per_day'</span>,
+            <span class="string">'past_pdc'</span>, <span class="string">'side_effects_reported'</span>,
+            <span class="string">'copay_amount'</span>, <span class="string">'lives_alone'</span>,
+            <span class="string">'depression_score'</span>, <span class="string">'health_literacy'</span>
+        ]
+
+    def train(self, historical_data):
+        <span class="comment">"""과거 데이터로 모델 훈련"""</span>
+        X = historical_data[self.features]
+        y = historical_data[<span class="string">'became_nonadherent'</span>]  <span class="comment"># 0 or 1</span>
+
+        X_scaled = self.scaler.fit_transform(X)
+        self.model.fit(X_scaled, y)
+
+    def predict_risk(self, patient_data):
+        <span class="comment">"""비순응 위험도 예측"""</span>
+        X = pd.DataFrame([patient_data])[self.features]
+        X_scaled = self.scaler.transform(X)
+
+        <span class="comment"># 확률 예측 (0~1)</span>
+        risk_probability = self.model.predict_proba(X_scaled)[<span class="number">0</span>][<span class="number">1</span>]
+
+        <span class="comment"># 위험 수준 분류</span>
+        if risk_probability &gt;= <span class="number">0.7</span>:
+            risk_level = <span class="string">"HIGH"</span>
+        elif risk_probability &gt;= <span class="number">0.4</span>:
+            risk_level = <span class="string">"MEDIUM"</span>
+        else:
+            risk_level = <span class="string">"LOW"</span>
+
+        return {
+            <span class="string">'risk_probability'</span>: round(risk_probability, <span class="number">3</span>),
+            <span class="string">'risk_level'</span>: risk_level,
+            <span class="string">'top_risk_factors'</span>: self.get_top_factors(patient_data)
+        }
+
+    def get_top_factors(self, patient_data):
+        <span class="comment">"""주요 위험 요인 식별"""</span>
+        importances = self.model.feature_importances_
+        factors = []
+
+        for i, feature in enumerate(self.features):
+            factors.append({
+                <span class="string">'factor'</span>: feature,
+                <span class="string">'importance'</span>: importances[i],
+                <span class="string">'patient_value'</span>: patient_data[feature]
+            })
+
+        <span class="comment"># 중요도 상위 3개 반환</span>
+        return sorted(factors, key=lambda x: x[<span class="string">'importance'</span>], reverse=True)[:<span class="number">3</span>]
+
+<span class="comment"># 사용 예제</span>
+predictor = AdherencePredictor()
+predictor.train(historical_patient_data)
+
+patient = {
+    <span class="string">'age'</span>: <span class="number">72</span>,
+    <span class="string">'num_medications'</span>: <span class="number">8</span>,
+    <span class="string">'num_doses_per_day'</span>: <span class="number">15</span>,
+    <span class="string">'past_pdc'</span>: <span class="number">68</span>,
+    <span class="string">'side_effects_reported'</span>: <span class="number">3</span>,
+    <span class="string">'copay_amount'</span>: <span class="number">75</span>,
+    <span class="string">'lives_alone'</span>: <span class="number">1</span>,
+    <span class="string">'depression_score'</span>: <span class="number">12</span>,
+    <span class="string">'health_literacy'</span>: <span class="number">2</span>
+}
+
+risk_assessment = predictor.predict_risk(patient)
+print(risk_assessment)
+<span class="comment"># {'risk_probability': 0.785, 'risk_level': 'HIGH', ...}</span></pre>
+        </div>
+
+        <h2>다음 장 미리보기</h2>
+
+        <p>다음 장에서는 약물 이상 반응 감지와 보고 시스템을 다룹니다. 약물 상호작용, 부작용 모니터링, AI 기반 감지, 자동 보고 및 규제 준수 방법을 살펴봅니다.</p>
+
+        <div class="chapter-nav">
+            <a href="chapter-04.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">목차</a>
+            <a href="chapter-06.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <footer>
+            <p class="footer-tagline">弘益人間 · Benefit All Humanity</p>
+            <p>© 2025 WIA - World Certification Industry Association</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WIA-HOME Simulator - P2P Personal Web Server</title>
+</head>
+<body>
+
+<h1>WIA-HOME Simulator</h1>
+<p>P2P Personal Web Server - "Build-Owner Free Home"</p>
+
+<hr>
+
+<h2>Navigation</h2>
+<ul>
+<li><a href="#overview">1. Overview</a></li>
+<li><a href="#server">2. Personal Server</a></li>
+<li><a href="#p2p">3. P2P Network</a></li>
+<li><a href="#cloner">4. Site Cloner</a></li>
+<li><a href="#templates">5. Business Templates</a></li>
+<li><a href="#shop">6. Shop Demo</a></li>
+<li><a href="#booking">7. Booking Demo</a></li>
+<li><a href="#api">8. API Reference</a></li>
+</ul>
+
+<hr>
+
+<h2 id="overview">1. Overview</h2>
+
+<pre>
+WIA-HOME: Build-Owner Free Digital Home
+========================================
+
+Problem:
+  - Domain: $10-50/year
+  - Hosting: $5-100/month
+  - SSL: $0-200/year
+  - Development: ???
+  - Total: Tens of thousands per year
+
+Solution:
+  - Your PC is the server
+  - Free domain (yourname.wia.home)
+  - P2P network hosting
+  - No landlord, forever yours
+
+Philosophy:
+  Hongik Ingan - Everyone deserves
+  a home in the digital world
+</pre>
+
+<h3>Architecture</h3>
+<pre>
+Traditional:
+  User -> AWS/Cloud -> Website
+           |
+         Pay rent
+
+WIA-HOME:
+  Visitor -> Your PC/Laptop <- Your home!
+                |
+            P2P Network
+            No landlord
+</pre>
+
+<hr>
+
+<h2 id="server">2. Personal Server Demo</h2>
+
+<h3>Server Control Panel</h3>
+<pre>
++------------------------------------------+
+|  [MY-BAKERY] Server Control              |
++------------------------------------------+
+|                                          |
+|  Status: <span id="serverStatus">Stopped</span>                       |
+|  Domain: <span id="serverDomain">happy-bakery.wia.shop</span>          |
+|                                          |
+|  [<button onclick="startServer()">Start Server</button>] [<button onclick="stopServer()">Stop Server</button>]     |
+|                                          |
++------------------------------------------+
+</pre>
+
+<h3>Resource Monitor</h3>
+<pre id="resourceMonitor">
+Resources (when running):
+  CPU:        0%
+  Memory:     0 MB
+  Bandwidth:  0 KB/s
+  Visitors:   0 active
+</pre>
+
+<h3>Server Log</h3>
+<pre id="serverLog" style="height:150px; overflow-y:scroll; border:1px solid #ccc; padding:5px;">
+[System] Ready to start...
+</pre>
+
+<script>
+var serverRunning = false;
+var visitors = 0;
+var logLines = ['[System] Ready to start...'];
+
+function addLog(msg) {
+    var time = new Date().toLocaleTimeString();
+    logLines.push('[' + time + '] ' + msg);
+    if (logLines.length > 20) logLines.shift();
+    document.getElementById('serverLog').textContent = logLines.join('\n');
+}
+
+function startServer() {
+    if (serverRunning) return;
+    serverRunning = true;
+    document.getElementById('serverStatus').textContent = 'Starting...';
+    addLog('Starting WIA-HOME server...');
+
+    setTimeout(function() {
+        document.getElementById('serverStatus').textContent = 'Running';
+        addLog('P2P network joined');
+        addLog('Domain registered: happy-bakery.wia.shop');
+        addLog('TLS-LITE enabled');
+        addLog('Server running on port 8080');
+        addLog('Ready to accept visitors!');
+        updateResources();
+    }, 1500);
+}
+
+function stopServer() {
+    if (!serverRunning) return;
+    serverRunning = false;
+    document.getElementById('serverStatus').textContent = 'Stopping...';
+    addLog('Gracefully shutting down...');
+
+    setTimeout(function() {
+        document.getElementById('serverStatus').textContent = 'Stopped';
+        addLog('Server stopped');
+        visitors = 0;
+    }, 1000);
+}
+
+function updateResources() {
+    if (!serverRunning) return;
+
+    var cpu = Math.floor(Math.random() * 15) + 5;
+    var memory = Math.floor(Math.random() * 50) + 100;
+    var bandwidth = Math.floor(Math.random() * 200) + 50;
+
+    if (Math.random() > 0.7) {
+        visitors = Math.min(visitors + 1, 10);
+        addLog('Visitor connected from ' + randomIP());
+    }
+    if (Math.random() > 0.8 && visitors > 0) {
+        visitors--;
+        addLog('Visitor disconnected');
+    }
+
+    document.getElementById('resourceMonitor').textContent =
+        'Resources:\n' +
+        '  CPU:        ' + cpu + '%\n' +
+        '  Memory:     ' + memory + ' MB\n' +
+        '  Bandwidth:  ' + bandwidth + ' KB/s\n' +
+        '  Visitors:   ' + visitors + ' active';
+
+    setTimeout(updateResources, 2000);
+}
+
+function randomIP() {
+    return Math.floor(Math.random()*256) + '.' +
+           Math.floor(Math.random()*256) + '.' +
+           Math.floor(Math.random()*256) + '.' +
+           Math.floor(Math.random()*256);
+}
+</script>
+
+<hr>
+
+<h2 id="p2p">3. P2P Network</h2>
+
+<h3>Network Visualization</h3>
+<pre>
+P2P Mesh Network
+================
+
+      [Peer A]--------[Peer B]
+        /  \            /  \
+       /    \          /    \
+      /      \        /      \
+ [Peer C]----[YOUR PC]----[Peer D]
+      \      /        \      /
+       \    /          \    /
+        \  /            \  /
+      [Peer E]--------[Peer F]
+              \      /
+               \    /
+             [Relay Node]
+             (For NAT traversal)
+</pre>
+
+<h3>NAT Traversal Demo</h3>
+<pre>
+NAT Type Detection
+==================
+
+Your NAT Type: <span id="natType">Detecting...</span>
+
+Types:
+  [OK] Open        - Direct connection possible
+  [OK] Full Cone   - Port forwarding works
+  [i]  Restricted  - May need relay
+  [!]  Symmetric   - Relay required
+
+<button onclick="detectNAT()">Detect NAT Type</button>
+</pre>
+
+<pre id="natResult"></pre>
+
+<script>
+function detectNAT() {
+    document.getElementById('natType').textContent = 'Detecting...';
+
+    setTimeout(function() {
+        var types = ['Open', 'Full Cone', 'Restricted', 'Symmetric'];
+        var probs = [0.1, 0.3, 0.4, 0.2];
+        var rand = Math.random();
+        var cumulative = 0;
+        var selected = 'Unknown';
+
+        for (var i = 0; i < types.length; i++) {
+            cumulative += probs[i];
+            if (rand < cumulative) {
+                selected = types[i];
+                break;
+            }
+        }
+
+        document.getElementById('natType').textContent = selected;
+
+        var result = 'NAT Detection Result\n' +
+                     '====================\n\n' +
+                     'Type: ' + selected + '\n\n';
+
+        if (selected === 'Open' || selected === 'Full Cone') {
+            result += 'Status: [OK] Direct connections possible\n';
+            result += 'Relay: Not required\n';
+            result += 'Performance: Optimal';
+        } else if (selected === 'Restricted') {
+            result += 'Status: [i] May need relay for some peers\n';
+            result += 'Relay: Occasionally used\n';
+            result += 'Performance: Good';
+        } else {
+            result += 'Status: [!] Relay required for connections\n';
+            result += 'Relay: Always used\n';
+            result += 'Performance: Acceptable';
+        }
+
+        document.getElementById('natResult').textContent = result;
+    }, 2000);
+}
+</script>
+
+<hr>
+
+<h2 id="cloner">4. Site Cloner</h2>
+
+<h3>Benchmark & Clone</h3>
+<pre>
+Clone Mode: Create your site by benchmarking others
+===============================================
+
+Step 1: Enter competitor URL
+  URL: <input type="text" id="cloneUrl" value="https://famous-bakery.com" size="40">
+
+Step 2: <button onclick="analyzeSite()">Analyze Site</button>
+
+Step 3: Review analysis and customize
+</pre>
+
+<pre id="analysisResult">
+Analysis result will appear here...
+</pre>
+
+<h3>Customization</h3>
+<pre>
+My Business Info
+================
+
+Name:     <input type="text" id="bizName" value="Happy Bakery" size="30">
+Phone:    <input type="text" id="bizPhone" value="010-1234-5678" size="20">
+Address:  <input type="text" id="bizAddress" value="Seoul Gangnam" size="30">
+Hours:    <input type="text" id="bizHours" value="09:00-21:00" size="20">
+
+Primary Color: <input type="color" id="bizColor" value="#E8B87D">
+
+<button onclick="cloneSite()">Create My Site</button>
+</pre>
+
+<pre id="cloneResult"></pre>
+
+<script>
+function analyzeSite() {
+    var url = document.getElementById('cloneUrl').value;
+    document.getElementById('analysisResult').textContent = 'Analyzing ' + url + '...';
+
+    setTimeout(function() {
+        var result =
+'Site Analysis Result\n' +
+'====================\n\n' +
+'URL: ' + url + '\n\n' +
+'Structure:\n' +
+'  Pages: 8 detected\n' +
+'  - Home, About, Menu, Gallery\n' +
+'  - Contact, Blog, Order, FAQ\n' +
+'  Layout: Single column with hero\n' +
+'  Navigation: Horizontal menu\n\n' +
+'Features:\n' +
+'  [OK] Shop (product catalog)\n' +
+'  [OK] Contact form\n' +
+'  [OK] Social links\n' +
+'  [OK] Image gallery\n' +
+'  [ ] Blog\n' +
+'  [ ] Booking system\n\n' +
+'Tech Stack:\n' +
+'  Framework: React\n' +
+'  CMS: Custom\n' +
+'  Hosting: AWS ($50/month estimated)\n\n' +
+'Performance:\n' +
+'  Load time: 2.3 seconds\n' +
+'  Size: 4.2 MB\n' +
+'  Score: 72/100\n\n' +
+'Recommendations:\n' +
+'  [i] Add booking for reservations\n' +
+'  [i] Optimize images (could save 60%)\n' +
+'  [i] Add blog for SEO\n\n' +
+'Ready to clone with your customization!';
+
+        document.getElementById('analysisResult').textContent = result;
+    }, 2500);
+}
+
+function cloneSite() {
+    var name = document.getElementById('bizName').value;
+    var color = document.getElementById('bizColor').value;
+
+    document.getElementById('cloneResult').textContent = 'Creating your site...';
+
+    setTimeout(function() {
+        var slug = name.toLowerCase().replace(/\s+/g, '-');
+        var result =
+'Site Created Successfully!\n' +
+'==========================\n\n' +
+'Domain: ' + slug + '.wia.shop\n\n' +
+'Generated:\n' +
+'  [OK] Home page with hero image\n' +
+'  [OK] Menu page with products\n' +
+'  [OK] About page\n' +
+'  [OK] Contact page with form\n' +
+'  [OK] Gallery page\n' +
+'  [OK] Order system\n\n' +
+'Customization Applied:\n' +
+'  Name: ' + name + '\n' +
+'  Primary Color: ' + color + '\n' +
+'  Phone: ' + document.getElementById('bizPhone').value + '\n' +
+'  Address: ' + document.getElementById('bizAddress').value + '\n' +
+'  Hours: ' + document.getElementById('bizHours').value + '\n\n' +
+'Optimizations:\n' +
+'  [OK] Images compressed (60% smaller)\n' +
+'  [OK] Lazy loading enabled\n' +
+'  [OK] Mobile responsive\n' +
+'  [OK] SEO meta tags added\n\n' +
+'Cost Comparison:\n' +
+'  Original site: ~$50/month hosting\n' +
+'  Your WIA-HOME: $0 (your PC is server)\n' +
+'  Annual savings: $600+\n\n' +
+'Start server to go live!';
+
+        document.getElementById('cloneResult').textContent = result;
+    }, 3000);
+}
+</script>
+
+<hr>
+
+<h2 id="templates">5. Business Templates</h2>
+
+<h3>Industry Templates</h3>
+<pre>
+Available Templates
+===================
+
+Select industry:
+<select id="templateSelect" onchange="showTemplateInfo()">
+  <option value="bakery">Bakery</option>
+  <option value="restaurant">Restaurant</option>
+  <option value="cafe">Cafe</option>
+  <option value="hairSalon">Hair Salon</option>
+  <option value="clinic">Clinic</option>
+  <option value="academy">Academy</option>
+  <option value="photographer">Photographer</option>
+  <option value="designer">Designer</option>
+</select>
+</pre>
+
+<pre id="templateInfo">
+Select a template to see details...
+</pre>
+
+<script>
+var templates = {
+    bakery: {
+        name: 'Bakery Template',
+        features: ['Product Catalog', 'Online Order', 'Payment', 'Gallery'],
+        pages: ['Home', 'Menu', 'Order', 'About', 'Contact'],
+        integrations: ['Kakao Pay', 'Naver Pay', 'Bank Transfer']
+    },
+    restaurant: {
+        name: 'Restaurant Template',
+        features: ['Menu Display', 'Reservation', 'Delivery Link', 'Reviews'],
+        pages: ['Home', 'Menu', 'Reservation', 'Gallery', 'Location'],
+        integrations: ['Baemin', 'Yogiyo', 'Coupang Eats', 'Naver Place']
+    },
+    cafe: {
+        name: 'Cafe Template',
+        features: ['Menu', 'Location Map', 'Instagram Feed', 'Stamp Card'],
+        pages: ['Home', 'Menu', 'Gallery', 'Location', 'Contact'],
+        integrations: ['Instagram', 'Naver Place', 'Kakao Map']
+    },
+    hairSalon: {
+        name: 'Hair Salon Template',
+        features: ['Portfolio', 'Booking', 'Price List', 'Staff Intro'],
+        pages: ['Home', 'Services', 'Portfolio', 'Booking', 'Staff'],
+        integrations: ['Naver Booking', 'Kakao Hairshop']
+    },
+    clinic: {
+        name: 'Clinic Template',
+        features: ['Departments', 'Doctors', 'Appointment', 'Location'],
+        pages: ['Home', 'Services', 'Doctors', 'Appointment', 'Location'],
+        integrations: ['Naver Place', 'Kakao Map']
+    },
+    academy: {
+        name: 'Academy Template',
+        features: ['Courses', 'Schedule', 'Enrollment', 'Reviews'],
+        pages: ['Home', 'Courses', 'Schedule', 'Enrollment', 'FAQ'],
+        integrations: ['Naver Academy']
+    },
+    photographer: {
+        name: 'Photographer Template',
+        features: ['Portfolio Gallery', 'Pricing', 'Booking', 'Blog'],
+        pages: ['Home', 'Portfolio', 'Services', 'Pricing', 'Contact'],
+        integrations: ['Instagram', 'Kakao Channel']
+    },
+    designer: {
+        name: 'Designer Template',
+        features: ['Portfolio', 'Services', 'Quote Request', 'Blog'],
+        pages: ['Home', 'Portfolio', 'About', 'Services', 'Contact'],
+        integrations: ['Behance', 'Dribbble']
+    }
+};
+
+function showTemplateInfo() {
+    var selected = document.getElementById('templateSelect').value;
+    var t = templates[selected];
+
+    var info =
+t.name + '\n' +
+'='.repeat(t.name.length) + '\n\n' +
+'Features:\n';
+
+    for (var i = 0; i < t.features.length; i++) {
+        info += '  [OK] ' + t.features[i] + '\n';
+    }
+
+    info += '\nPages:\n';
+    for (var j = 0; j < t.pages.length; j++) {
+        info += '  - ' + t.pages[j] + '\n';
+    }
+
+    info += '\nIntegrations:\n';
+    for (var k = 0; k < t.integrations.length; k++) {
+        info += '  - ' + t.integrations[k] + '\n';
+    }
+
+    info += '\nCost: $0 (WIA-HOME is free!)';
+
+    document.getElementById('templateInfo').textContent = info;
+}
+
+showTemplateInfo();
+</script>
+
+<hr>
+
+<h2 id="shop">6. Shop Demo</h2>
+
+<h3>Product Management</h3>
+<pre>
+Add Product
+===========
+
+Name:  <input type="text" id="productName" value="Chocolate Cake" size="25">
+Price: <input type="number" id="productPrice" value="35000" size="10"> KRW
+Stock: <input type="number" id="productStock" value="10" size="5">
+
+<button onclick="addProduct()">Add Product</button>
+</pre>
+
+<h3>Product List</h3>
+<pre id="productList">
+Products
+========
+
+ID    Name                Price      Stock
+----  ------------------  ---------  -----
+001   Salt Bread          3,000      50
+002   Croissant           4,000      30
+003   Baguette            5,000      20
+</pre>
+
+<h3>Order Simulation</h3>
+<pre>
+Incoming Order
+==============
+
+<button onclick="simulateOrder()">Simulate Order</button>
+</pre>
+
+<pre id="orderResult"></pre>
+
+<script>
+var products = [
+    {id: '001', name: 'Salt Bread', price: 3000, stock: 50},
+    {id: '002', name: 'Croissant', price: 4000, stock: 30},
+    {id: '003', name: 'Baguette', price: 5000, stock: 20}
+];
+var nextId = 4;
+
+function renderProducts() {
+    var result = 'Products\n========\n\nID    Name                Price      Stock\n----  ------------------  ---------  -----\n';
+    for (var i = 0; i < products.length; i++) {
+        var p = products[i];
+        result += p.id.padEnd(6) + p.name.padEnd(20) + p.price.toLocaleString().padStart(9) + p.stock.toString().padStart(7) + '\n';
+    }
+    document.getElementById('productList').textContent = result;
+}
+
+function addProduct() {
+    var name = document.getElementById('productName').value;
+    var price = parseInt(document.getElementById('productPrice').value);
+    var stock = parseInt(document.getElementById('productStock').value);
+
+    products.push({
+        id: nextId.toString().padStart(3, '0'),
+        name: name,
+        price: price,
+        stock: stock
+    });
+    nextId++;
+
+    renderProducts();
+}
+
+function simulateOrder() {
+    var items = [];
+    var total = 0;
+    var numItems = Math.floor(Math.random() * 3) + 1;
+
+    for (var i = 0; i < numItems; i++) {
+        var p = products[Math.floor(Math.random() * products.length)];
+        var qty = Math.floor(Math.random() * 3) + 1;
+        items.push({product: p, quantity: qty});
+        total += p.price * qty;
+    }
+
+    var payment = ['Kakao Pay', 'Naver Pay', 'Bank Transfer'][Math.floor(Math.random() * 3)];
+
+    var result =
+'New Order Received!\n' +
+'===================\n\n' +
+'Order ID: ORD-' + Date.now() + '\n' +
+'Time: ' + new Date().toLocaleString() + '\n\n' +
+'Items:\n';
+
+    for (var j = 0; j < items.length; j++) {
+        var item = items[j];
+        result += '  ' + item.product.name + ' x ' + item.quantity + ' = ' + (item.product.price * item.quantity).toLocaleString() + ' KRW\n';
+    }
+
+    result += '\nTotal: ' + total.toLocaleString() + ' KRW\n';
+    result += 'Payment: ' + payment + '\n\n';
+    result += 'Customer: Kim ' + ['Minsu', 'Jiwon', 'Yuna', 'Donghyun'][Math.floor(Math.random() * 4)] + '\n';
+    result += 'Phone: 010-' + Math.floor(Math.random() * 9000 + 1000) + '-' + Math.floor(Math.random() * 9000 + 1000) + '\n';
+    result += 'Status: [OK] Payment Confirmed';
+
+    document.getElementById('orderResult').textContent = result;
+}
+</script>
+
+<hr>
+
+<h2 id="booking">7. Booking Demo</h2>
+
+<h3>Service Setup</h3>
+<pre>
+Services
+========
+
+Service       Duration    Price
+------------  ----------  ----------
+Haircut       30 min      15,000 KRW
+Perm          120 min     80,000 KRW
+Color         90 min      60,000 KRW
+
+Availability
+============
+
+Days: Mon, Tue, Wed, Thu, Fri, Sat
+Hours: 10:00 - 20:00
+Slot Duration: 30 minutes
+</pre>
+
+<h3>Calendar View</h3>
+<pre id="calendarView">
+December 2025
+=============
+
+Mon   Tue   Wed   Thu   Fri   Sat   Sun
+1     2     3     4     5     6     7
+[2]   [3]   [1]   [4]   [2]   [5]   -
+
+8     9     10    11    12    13    14
+[1]   [2]   [3]   [2]   [4]   [3]   -
+
+[n] = number of bookings
+</pre>
+
+<h3>Booking Simulation</h3>
+<pre>
+<button onclick="simulateBooking()">Simulate New Booking</button>
+</pre>
+
+<pre id="bookingResult"></pre>
+
+<script>
+function simulateBooking() {
+    var services = [
+        {name: 'Haircut', duration: 30, price: 15000},
+        {name: 'Perm', duration: 120, price: 80000},
+        {name: 'Color', duration: 90, price: 60000}
+    ];
+    var service = services[Math.floor(Math.random() * services.length)];
+    var hour = Math.floor(Math.random() * 10) + 10;
+    var minute = Math.random() > 0.5 ? '00' : '30';
+    var day = Math.floor(Math.random() * 28) + 1;
+
+    var names = ['Park Jimin', 'Lee Soyeon', 'Choi Minho', 'Kim Yuri', 'Jung Haneul'];
+    var name = names[Math.floor(Math.random() * names.length)];
+
+    var result =
+'New Booking Received!\n' +
+'=====================\n\n' +
+'Booking ID: BKG-' + Date.now() + '\n' +
+'Created: ' + new Date().toLocaleString() + '\n\n' +
+'Service: ' + service.name + '\n' +
+'Duration: ' + service.duration + ' minutes\n' +
+'Price: ' + service.price.toLocaleString() + ' KRW\n\n' +
+'Date: December ' + day + ', 2025\n' +
+'Time: ' + hour + ':' + minute + '\n\n' +
+'Customer: ' + name + '\n' +
+'Phone: 010-' + Math.floor(Math.random() * 9000 + 1000) + '-' + Math.floor(Math.random() * 9000 + 1000) + '\n\n' +
+'Notifications Sent:\n' +
+'  [OK] Kakao Talk to customer\n' +
+'  [OK] Kakao Talk to owner\n\n' +
+'Status: Confirmed';
+
+    document.getElementById('bookingResult').textContent = result;
+}
+</script>
+
+<hr>
+
+<h2 id="api">8. API Reference</h2>
+
+<h3>Core API</h3>
+<pre>
+WIA-HOME API
+============
+
+import { WIAHome } from '@anthropic/wia-home';
+
+// Create home
+const home = new WIAHome({
+  name: 'My Shop',
+  domain: 'myshop.wia.shop'
+});
+
+// Start server
+await home.start();
+
+// Check status
+console.log(home.status);      // 'running'
+console.log(home.domain);      // 'myshop.wia.shop'
+console.log(home.stats.visitors.today);
+</pre>
+
+<h3>Quick Start API</h3>
+<pre>
+// 5-minute site creation
+const mySite = await WIAHome.quickStart({
+  benchmark: 'https://competitor.com',
+  myInfo: {
+    name: 'Happy Bakery',
+    phone: '010-1234-5678',
+    address: 'Seoul Gangnam',
+    hours: '09:00-21:00'
+  }
+});
+
+await mySite.start();
+// Live at: happy-bakery.wia.shop
+</pre>
+
+<h3>Clone API</h3>
+<pre>
+// Analyze competitor
+const analysis = await WIAHome.analyze('https://example.com');
+
+// Clone with customization
+const mySite = await WIAHome.clone('https://example.com', {
+  customize: {
+    name: 'My Shop',
+    colors: { primary: '#3498db' }
+  },
+  features: {
+    shop: true,
+    booking: true
+  }
+});
+</pre>
+
+<h3>Intent API (Father Integration)</h3>
+<pre>
+// Natural language site creation
+const mySite = await WIAHome.fromIntent(`
+  I run a local bakery.
+  Show bread types and prices.
+  Enable reservations.
+  Connect Instagram.
+`);
+
+// Father (INTENT) designs the house!
+await mySite.start();
+</pre>
+
+<h3>Shop API</h3>
+<pre>
+// Add product
+await home.shop.addProduct({
+  name: 'Chocolate Cake',
+  price: 35000,
+  description: 'Fresh ingredients...',
+  images: [cakeImage],
+  inventory: 10
+});
+
+// Set payment
+home.shop.setPayment({
+  kakaoPay: true,
+  naverPay: true,
+  bankTransfer: { enabled: true }
+});
+</pre>
+
+<h3>Booking API</h3>
+<pre>
+// Setup booking system
+home.booking.setup({
+  availability: {
+    days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
+    hours: { start: '10:00', end: '20:00' },
+    slotDuration: 60
+  },
+  services: [
+    { name: 'Haircut', duration: 30, price: 15000 },
+    { name: 'Perm', duration: 120, price: 80000 }
+  ],
+  notifications: {
+    newBooking: ['kakao', 'sms']
+  }
+});
+</pre>
+
+<h3>Events API</h3>
+<pre>
+home.on('server_started', (e) => {
+  console.log('Home open!');
+});
+
+home.on('visitor_connected', (e) => {
+  console.log('Guest arrived!');
+});
+
+home.on('order_received', (e) => {
+  console.log('Order received!');
+});
+
+home.on('booking_received', (e) => {
+  console.log('Booking received!');
+});
+</pre>
+
+<hr>
+
+<h2>Philosophy</h2>
+
+<pre>
+Hongik Ingan - Benefit All Humanity
+
+A home is a human right.
+The same applies to the digital world.
+
+The right not to be dependent on platforms,
+The right to own your own space,
+The right to keep it forever.
+
+Small business owners, freelancers, students, everyone.
+
+A world without landlords,
+A world without rent,
+A world that is forever yours.
+
+- WIA-HOME -
+</pre>
+
+<hr>
+
+<p>WIA - World Industry Association</p>
+<p>License: MIT</p>
+
+</body>
+</html>

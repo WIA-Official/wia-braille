@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 7: Pub/Sub Messaging | WIA-CORE-007</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f1f5f9; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 3rem; border-radius: 15px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #10b981; border-bottom: 3px solid #6B7280; padding-bottom: 1rem; }
+        h2 { font-size: 2rem; margin: 2rem 0 1rem; color: #6B7280; }
+        h3 { font-size: 1.5rem; margin: 1.5rem 0 1rem; color: #10b981; }
+        p { margin: 1rem 0; font-size: 1.1rem; }
+        code { background: #0f172a; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: Monaco, monospace; color: #10b981; }
+        pre { background: #0f172a; padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; border-left: 4px solid #6B7280; }
+        pre code { background: none; padding: 0; }
+        .nav { margin: 2rem 0; display: flex; justify-content: space-between; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #10b981; text-decoration: none; font-weight: 600; padding: 0.5rem 1rem; border: 2px solid #6B7280; border-radius: 5px; transition: all 0.3s; }
+        .nav a:hover { background: #6B7280; color: white; }
+        .highlight { background: #334155; padding: 1.5rem; border-left: 4px solid #10b981; border-radius: 5px; margin: 1.5rem 0; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; font-size: 1.1rem; }
+        .emoji { font-size: 1.5em; margin-right: 0.5rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 1rem; text-align: left; border: 1px solid #334155; }
+        th { background: #0f172a; color: #10b981; }
+        td { background: #1e293b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">📢</span>Chapter 7: Pub/Sub Messaging</h1>
+
+        <h2>7.1 Publish-Subscribe Fundamentals</h2>
+        <p>Pub/Sub (Publish-Subscribe) is a messaging pattern where publishers send messages without knowledge of subscribers, and subscribers receive messages based on their interests.</p>
+
+        <h3>7.1.1 Basic Pub/Sub</h3>
+        <pre><code>// Publisher
+protocol.publish('user.registered', {
+  userId: 'user_12345',
+  email: 'user@example.com',
+  timestamp: new Date()
+});
+
+// Subscriber 1: Send welcome email
+protocol.subscribe('user.registered', async (event) => {
+  await emailService.sendWelcomeEmail(event.email);
+});
+
+// Subscriber 2: Create analytics profile
+protocol.subscribe('user.registered', async (event) => {
+  await analytics.createProfile(event.userId);
+});
+
+// Subscriber 3: Initialize user settings
+protocol.subscribe('user.registered', async (event) => {
+  await settingsService.initializeDefaults(event.userId);
+});</code></pre>
+
+        <h2>7.2 Topic Patterns</h2>
+
+        <h3>7.2.1 Exact Topics</h3>
+        <pre><code>// Exact match subscription
+protocol.subscribe('orders.created', handleOrderCreated);
+protocol.subscribe('orders.cancelled', handleOrderCancelled);
+protocol.subscribe('orders.completed', handleOrderCompleted);
+
+// Publish to exact topic
+protocol.publish('orders.created', orderData);</code></pre>
+
+        <h3>7.2.2 Wildcard Topics</h3>
+        <pre><code>// Single-level wildcard (+)
+protocol.subscribe('orders.+', handleAnyOrderEvent);
+// Matches: orders.created, orders.cancelled, orders.completed
+// Doesn't match: orders.items.updated
+
+// Multi-level wildcard (#)
+protocol.subscribe('orders.#', handleAllOrderEvents);
+// Matches: orders.created, orders.items.updated, orders.payment.processed
+
+// Combining wildcards
+protocol.subscribe('users.+.profile.#', handleUserProfileEvents);
+// Matches: users.123.profile.updated, users.456.profile.avatar.changed</code></pre>
+
+        <h3>7.2.3 Topic Hierarchies</h3>
+        <pre><code>// Hierarchical topic structure
+const topics = {
+  // User events
+  'users.created': {},
+  'users.updated': {},
+  'users.deleted': {},
+  'users.profile.updated': {},
+  'users.settings.changed': {},
+
+  // Order events
+  'orders.placed': {},
+  'orders.confirmed': {},
+  'orders.shipped': {},
+  'orders.delivered': {},
+  'orders.cancelled': {},
+  'orders.payment.initiated': {},
+  'orders.payment.completed': {},
+  'orders.payment.failed': {},
+
+  // Inventory events
+  'inventory.item.added': {},
+  'inventory.item.removed': {},
+  'inventory.stock.low': {},
+  'inventory.stock.out': {}
+};</code></pre>
+
+        <h2>7.3 Delivery Guarantees</h2>
+
+        <h3>7.3.1 At-Most-Once (QoS 0)</h3>
+        <pre><code>// Fire and forget - fastest but may lose messages
+protocol.publish('analytics.pageview', pageData, {
+  qos: 0
+});
+
+// Subscriber might miss some messages
+protocol.subscribe('analytics.pageview', handlePageview, {
+  qos: 0
+});</code></pre>
+
+        <h3>7.3.2 At-Least-Once (QoS 1)</h3>
+        <pre><code>// Guaranteed delivery but may receive duplicates
+protocol.publish('orders.placed', orderData, {
+  qos: 1
+});
+
+// Subscriber must handle potential duplicates
+protocol.subscribe('orders.placed', async (event) => {
+  const isProcessed = await checkIfProcessed(event.orderId);
+
+  if (!isProcessed) {
+    await processOrder(event);
+    await markAsProcessed(event.orderId);
+  }
+}, {
+  qos: 1
+});</code></pre>
+
+        <h3>7.3.3 Exactly-Once (QoS 2)</h3>
+        <pre><code>// Guaranteed exactly-once delivery (slowest but most reliable)
+protocol.publish('payment.completed', paymentData, {
+  qos: 2
+});
+
+// Subscriber never receives duplicates
+protocol.subscribe('payment.completed', async (event) => {
+  await processPayment(event); // Safe to process without deduplication
+}, {
+  qos: 2
+});</code></pre>
+
+        <h2>7.4 Message Filtering</h2>
+
+        <h3>7.4.1 Content-Based Filtering</h3>
+        <pre><code>// Subscribe with filter
+protocol.subscribe('orders.placed', handleHighValueOrder, {
+  filter: (event) => event.amount > 1000
+});
+
+protocol.subscribe('orders.placed', handleInternationalOrder, {
+  filter: (event) => event.country !== 'US'
+});
+
+// SQL-like filtering
+protocol.subscribe('orders.placed', handleFilteredOrder, {
+  filter: "amount > 1000 AND country = 'US' AND status = 'pending'"
+});</code></pre>
+
+        <h3>7.4.2 Attribute-Based Filtering</h3>
+        <pre><code>// Filter by message attributes
+protocol.subscribe('notifications', handleNotification, {
+  attributes: {
+    priority: 'high',
+    category: 'security'
+  }
+});
+
+// Publish with attributes
+protocol.publish('notifications', notificationData, {
+  attributes: {
+    priority: 'high',
+    category: 'security',
+    userId: '12345'
+  }
+});</code></pre>
+
+        <h2>7.5 Message Durability</h2>
+
+        <h3>7.5.1 Persistent Messages</h3>
+        <pre><code>// Persist messages to disk
+protocol.publish('critical.events', eventData, {
+  persistent: true,
+  ttl: 86400000 // 24 hours
+});
+
+// Durable subscriptions
+protocol.subscribe('critical.events', handleEvent, {
+  durable: true,
+  subscriptionName: 'critical-processor'
+});
+
+// Resume from last position after restart
+const lastProcessed = await storage.get('lastProcessedId');
+
+protocol.subscribe('critical.events', handleEvent, {
+  durable: true,
+  subscriptionName: 'critical-processor',
+  resumeFrom: lastProcessed
+});</code></pre>
+
+        <h3>7.5.2 Dead Letter Queues</h3>
+        <pre><code>// Configure dead letter queue for failed messages
+protocol.subscribe('orders.process', async (event) => {
+  try {
+    await processOrder(event);
+  } catch (error) {
+    // Throw error to trigger DLQ after max retries
+    throw error;
+  }
+}, {
+  deadLetterQueue: {
+    topic: 'orders.failed',
+    maxRetries: 3,
+    retryDelay: 5000
+  }
+});
+
+// Process failed messages
+protocol.subscribe('orders.failed', async (event) => {
+  console.error('Order processing failed:', event);
+  await notifyAdministrator(event);
+  await logFailure(event);
+});</code></pre>
+
+        <h2>7.6 Fan-Out Patterns</h2>
+
+        <h3>7.6.1 Fan-Out to Multiple Services</h3>
+        <pre><code>// Single event triggers multiple actions
+protocol.publish('user.purchased', {
+  userId: 'user123',
+  productId: 'prod456',
+  amount: 99.99
+});
+
+// Email service
+protocol.subscribe('user.purchased', async (event) => {
+  await sendPurchaseConfirmation(event);
+});
+
+// Analytics service
+protocol.subscribe('user.purchased', async (event) => {
+  await trackPurchase(event);
+});
+
+// Inventory service
+protocol.subscribe('user.purchased', async (event) => {
+  await updateInventory(event.productId);
+});
+
+// Recommendation service
+protocol.subscribe('user.purchased', async (event) => {
+  await updateRecommendations(event.userId);
+});</code></pre>
+
+        <h3>7.6.2 Competing Consumers</h3>
+        <pre><code>// Multiple consumers compete for messages (load balancing)
+// Consumer 1
+protocol.subscribe('tasks.process', processTask, {
+  group: 'task-processors'
+});
+
+// Consumer 2
+protocol.subscribe('tasks.process', processTask, {
+  group: 'task-processors'
+});
+
+// Consumer 3
+protocol.subscribe('tasks.process', processTask, {
+  group: 'task-processors'
+});
+
+// Each message is delivered to only one consumer in the group</code></pre>
+
+        <h2>7.7 Event Sourcing</h2>
+
+        <h3>7.7.1 Event Store</h3>
+        <pre><code>// Store all events for replay
+const eventStore = new EventStore(protocol);
+
+// Publish events
+await eventStore.append('order-123', {
+  type: 'OrderPlaced',
+  data: { items, total, customer }
+});
+
+await eventStore.append('order-123', {
+  type: 'OrderConfirmed',
+  data: { confirmedAt: new Date() }
+});
+
+await eventStore.append('order-123', {
+  type: 'OrderShipped',
+  data: { trackingNumber, shippedAt: new Date() }
+});
+
+// Replay events to rebuild state
+const order = await eventStore.replay('order-123', (state, event) => {
+  switch (event.type) {
+    case 'OrderPlaced':
+      return { ...event.data, status: 'pending' };
+    case 'OrderConfirmed':
+      return { ...state, status: 'confirmed', ...event.data };
+    case 'OrderShipped':
+      return { ...state, status: 'shipped', ...event.data };
+    default:
+      return state;
+  }
+}, {});</code></pre>
+
+        <h3>7.7.2 Event Projection</h3>
+        <pre><code>// Create read models from events
+protocol.subscribe('orders.#', async (event) => {
+  const projection = projections[event.type];
+
+  if (projection) {
+    await projection.update(event);
+  }
+});
+
+const projections = {
+  'OrderPlaced': {
+    update: async (event) => {
+      await db.orders.insert({
+        id: event.orderId,
+        status: 'pending',
+        total: event.total,
+        createdAt: event.timestamp
+      });
+    }
+  },
+
+  'OrderShipped': {
+    update: async (event) => {
+      await db.orders.update(event.orderId, {
+        status: 'shipped',
+        shippedAt: event.timestamp,
+        trackingNumber: event.trackingNumber
+      });
+    }
+  }
+};</code></pre>
+
+        <h2>7.8 Monitoring and Observability</h2>
+
+        <pre><code>// Track pub/sub metrics
+protocol.on('message.published', (event) => {
+  metrics.increment('messages.published', {
+    topic: event.topic
+  });
+});
+
+protocol.on('message.delivered', (event) => {
+  metrics.increment('messages.delivered', {
+    topic: event.topic,
+    subscriber: event.subscriber
+  });
+});
+
+protocol.on('message.failed', (event) => {
+  metrics.increment('messages.failed', {
+    topic: event.topic,
+    error: event.error.code
+  });
+  logger.error('Message delivery failed', event);
+});
+
+// Monitor subscriber lag
+protocol.subscribe('orders.placed', handleOrder, {
+  metrics: {
+    enabled: true,
+    reportInterval: 10000
+  }
+});
+
+protocol.on('subscriber.metrics', (stats) => {
+  console.log({
+    subscriber: stats.name,
+    messagesProcessed: stats.processed,
+    messagesPending: stats.pending,
+    processingRate: stats.rate,
+    averageLatency: stats.latency,
+    errors: stats.errors
+  });
+});</code></pre>
+
+        <div class="highlight">
+            <h3>Pub/Sub Best Practices</h3>
+            <ul>
+                <li>Use clear, hierarchical topic naming conventions</li>
+                <li>Choose appropriate QoS levels based on requirements</li>
+                <li>Implement idempotent subscribers for at-least-once delivery</li>
+                <li>Use dead letter queues for failed message handling</li>
+                <li>Monitor subscriber lag and processing rates</li>
+                <li>Consider message size and batching for performance</li>
+                <li>Implement circuit breakers for external dependencies</li>
+                <li>Use consumer groups for load balancing</li>
+                <li>Design for eventual consistency in distributed systems</li>
+                <li>Document your event schema and versioning strategy</li>
+            </ul>
+        </div>
+
+        <div class="nav">
+            <a href="06-event-streaming.html">← Previous: Event Streaming</a>
+            <a href="08-advanced-features.html">Next: Advanced Features →</a>
+        </div>
+
+        <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; opacity: 0.7; text-align: center;">
+            <p>&copy; 2025 SmileStory Inc. / WIA | 弘益人間 · Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제4장: API 명세 - WIA 스트리밍</title>
+    <link rel="icon" href="/favicon.ico">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #0f172a; color: #e2e8f0; line-height: 1.8;">
+
+<nav style="margin-bottom: 30px; padding: 15px; background: #1e293b; border-radius: 8px;">
+    <a href="index.html" style="color: #a855f7; text-decoration: none;">📚 목차</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <span style="color: #64748b;">제4장 / 8장</span>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-03.html" style="color: #a855f7; text-decoration: none;">← 이전</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-05.html" style="color: #a855f7; text-decoration: none;">다음 →</a>
+</nav>
+
+<h1 style="color: #a855f7;">제4장: API 명세</h1>
+
+<blockquote style="background: #1e293b; padding: 20px; border-left: 4px solid #fbbf24; margin: 20px 0;">
+<p style="color: #fbbf24; font-style: italic;">"좋은 API는 개발자가 바로 이해하고 사용할 수 있습니다."</p>
+</blockquote>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.1 WIA 스트리밍 API 개요</h2>
+
+<p>WIA 스트리밍 API는 RESTful 원칙을 따르며, 교육 콘텐츠 관리를 위한 표준 인터페이스를 제공합니다.</p>
+
+<h3 style="color: #a855f7;">4.1.1 API 계층 구조</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #a855f7; overflow-x: auto;">
+<span style="color: #fbbf24;">WIA Streaming API 구조:</span>
+
+<span style="color: #94a3b8;">📡 REST API</span>       — 콘텐츠 관리 (CRUD)
+<span style="color: #94a3b8;">🔌 WebSocket API</span>  — 실시간 이벤트
+<span style="color: #94a3b8;">📦 SDK</span>            — JavaScript, Python, Go
+<span style="color: #94a3b8;">🎮 Player API</span>     — 플레이어 제어
+</pre>
+
+<h3 style="color: #a855f7;">4.1.2 베이스 URL</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #fbbf24;">Production:</span>  <span style="color: #94a3b8;">https://api.wiastreaming.com/v1</span>
+<span style="color: #fbbf24;">Sandbox:</span>     <span style="color: #94a3b8;">https://sandbox.wiastreaming.com/v1</span>
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.2 인증 (Authentication)</h2>
+
+<h3 style="color: #a855f7;">4.2.1 API 키 인증</h3>
+
+<p>모든 요청은 API 키를 헤더에 포함해야 합니다.</p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">GET /videos</span>
+<span style="color: #fbbf24;">Authorization:</span> <span style="color: #94a3b8;">Bearer wia_sk_live_abc123...</span>
+<span style="color: #fbbf24;">Content-Type:</span> <span style="color: #94a3b8;">application/json</span>
+</pre>
+
+<h3 style="color: #a855f7;">4.2.2 OAuth 2.0 (선택)</h3>
+
+<p>사용자 대신 API 호출 시 OAuth 2.0 사용:</p>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">흐름</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">용도</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Authorization Code</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">웹 애플리케이션</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Client Credentials</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">서버 간 통신</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.3 비디오 관리 API</h2>
+
+<h3 style="color: #a855f7;">4.3.1 비디오 업로드</h3>
+
+<p><strong style="color: #fbbf24;">POST /videos</strong></p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">// 요청</span>
+<span style="color: #94a3b8;">{</span>
+  <span style="color: #fbbf24;">"title"</span>: <span style="color: #10b981;">"WIA 스트리밍 표준 - 제1강"</span>,
+  <span style="color: #fbbf24;">"description"</span>: <span style="color: #10b981;">"적응형 비트레이트 스트리밍 소개"</span>,
+  <span style="color: #fbbf24;">"file_url"</span>: <span style="color: #10b981;">"https://upload.example.com/video.mp4"</span>,
+  <span style="color: #fbbf24;">"metadata"</span>: <span style="color: #94a3b8;">{</span>
+    <span style="color: #fbbf24;">"category"</span>: <span style="color: #10b981;">"computer-science"</span>,
+    <span style="color: #fbbf24;">"tags"</span>: [<span style="color: #10b981;">"streaming"</span>, <span style="color: #10b981;">"video"</span>, <span style="color: #10b981;">"education"</span>],
+    <span style="color: #fbbf24;">"language"</span>: <span style="color: #10b981;">"ko-KR"</span>,
+    <span style="color: #fbbf24;">"level"</span>: <span style="color: #10b981;">"intermediate"</span>
+  <span style="color: #94a3b8;">}</span>
+<span style="color: #94a3b8;">}</span>
+
+<span style="color: #64748b;">// 응답</span>
+<span style="color: #94a3b8;">{</span>
+  <span style="color: #fbbf24;">"id"</span>: <span style="color: #10b981;">"vid_abc123"</span>,
+  <span style="color: #fbbf24;">"status"</span>: <span style="color: #10b981;">"processing"</span>,
+  <span style="color: #fbbf24;">"created_at"</span>: <span style="color: #10b981;">"2025-01-15T10:30:00Z"</span>,
+  <span style="color: #fbbf24;">"processing_progress"</span>: <span style="color: #fbbf24;">0</span>
+<span style="color: #94a3b8;">}</span>
+</pre>
+
+<h3 style="color: #a855f7;">4.3.2 비디오 조회</h3>
+
+<p><strong style="color: #fbbf24;">GET /videos/:id</strong></p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">// 응답</span>
+<span style="color: #94a3b8;">{</span>
+  <span style="color: #fbbf24;">"id"</span>: <span style="color: #10b981;">"vid_abc123"</span>,
+  <span style="color: #fbbf24;">"title"</span>: <span style="color: #10b981;">"WIA 스트리밍 표준 - 제1강"</span>,
+  <span style="color: #fbbf24;">"status"</span>: <span style="color: #10b981;">"ready"</span>,
+  <span style="color: #fbbf24;">"duration"</span>: <span style="color: #fbbf24;">2730</span>,
+  <span style="color: #fbbf24;">"playback"</span>: <span style="color: #94a3b8;">{</span>
+    <span style="color: #fbbf24;">"hls"</span>: <span style="color: #10b981;">"https://cdn.example.com/vid_abc123/master.m3u8"</span>,
+    <span style="color: #fbbf24;">"dash"</span>: <span style="color: #10b981;">"https://cdn.example.com/vid_abc123/manifest.mpd"</span>
+  <span style="color: #94a3b8;">}</span>,
+  <span style="color: #fbbf24;">"qualities"</span>: [
+    <span style="color: #94a3b8;">{</span><span style="color: #fbbf24;">"resolution"</span>: <span style="color: #10b981;">"1920x1080"</span>, <span style="color: #fbbf24;">"bitrate"</span>: <span style="color: #fbbf24;">5000000</span><span style="color: #94a3b8;">}</span>,
+    <span style="color: #94a3b8;">{</span><span style="color: #fbbf24;">"resolution"</span>: <span style="color: #10b981;">"1280x720"</span>, <span style="color: #fbbf24;">"bitrate"</span>: <span style="color: #fbbf24;">2500000</span><span style="color: #94a3b8;">}</span>,
+    <span style="color: #94a3b8;">{</span><span style="color: #fbbf24;">"resolution"</span>: <span style="color: #10b981;">"854x480"</span>, <span style="color: #fbbf24;">"bitrate"</span>: <span style="color: #fbbf24;">1000000</span><span style="color: #94a3b8;">}</span>
+  ],
+  <span style="color: #fbbf24;">"subtitles"</span>: [
+    <span style="color: #94a3b8;">{</span><span style="color: #fbbf24;">"language"</span>: <span style="color: #10b981;">"ko-KR"</span>, <span style="color: #fbbf24;">"url"</span>: <span style="color: #10b981;">"https://cdn.../ko.vtt"</span><span style="color: #94a3b8;">}</span>,
+    <span style="color: #94a3b8;">{</span><span style="color: #fbbf24;">"language"</span>: <span style="color: #10b981;">"en-US"</span>, <span style="color: #fbbf24;">"url"</span>: <span style="color: #10b981;">"https://cdn.../en.vtt"</span><span style="color: #94a3b8;">}</span>
+  ]
+<span style="color: #94a3b8;">}</span>
+</pre>
+
+<h3 style="color: #a855f7;">4.3.3 비디오 목록</h3>
+
+<p><strong style="color: #fbbf24;">GET /videos</strong></p>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">파라미터</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">타입</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">설명</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>page</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">integer</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">페이지 번호 (기본: 1)</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>limit</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">integer</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">페이지당 항목 수 (기본: 20)</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>status</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">string</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">processing, ready, error</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>category</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">string</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">카테고리 필터</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.4 라이브 스트리밍 API</h2>
+
+<h3 style="color: #a855f7;">4.4.1 라이브 스트림 생성</h3>
+
+<p><strong style="color: #fbbf24;">POST /streams</strong></p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">// 요청</span>
+<span style="color: #94a3b8;">{</span>
+  <span style="color: #fbbf24;">"title"</span>: <span style="color: #10b981;">"실시간 코딩 강의"</span>,
+  <span style="color: #fbbf24;">"scheduled_start"</span>: <span style="color: #10b981;">"2025-01-20T14:00:00Z"</span>,
+  <span style="color: #fbbf24;">"settings"</span>: <span style="color: #94a3b8;">{</span>
+    <span style="color: #fbbf24;">"latency_mode"</span>: <span style="color: #10b981;">"low"</span>,
+    <span style="color: #fbbf24;">"dvr_enabled"</span>: <span style="color: #fbbf24;">true</span>,
+    <span style="color: #fbbf24;">"auto_record"</span>: <span style="color: #fbbf24;">true</span>
+  <span style="color: #94a3b8;">}</span>
+<span style="color: #94a3b8;">}</span>
+
+<span style="color: #64748b;">// 응답</span>
+<span style="color: #94a3b8;">{</span>
+  <span style="color: #fbbf24;">"id"</span>: <span style="color: #10b981;">"stream_xyz789"</span>,
+  <span style="color: #fbbf24;">"status"</span>: <span style="color: #10b981;">"idle"</span>,
+  <span style="color: #fbbf24;">"ingest"</span>: <span style="color: #94a3b8;">{</span>
+    <span style="color: #fbbf24;">"rtmp_url"</span>: <span style="color: #10b981;">"rtmp://live.wiastreaming.com/app"</span>,
+    <span style="color: #fbbf24;">"stream_key"</span>: <span style="color: #10b981;">"sk_abc123def456"</span>
+  <span style="color: #94a3b8;">}</span>,
+  <span style="color: #fbbf24;">"playback"</span>: <span style="color: #94a3b8;">{</span>
+    <span style="color: #fbbf24;">"hls"</span>: <span style="color: #10b981;">"https://live.wiastreaming.com/stream_xyz789/index.m3u8"</span>,
+    <span style="color: #fbbf24;">"webrtc"</span>: <span style="color: #10b981;">"https://webrtc.wiastreaming.com/stream_xyz789"</span>
+  <span style="color: #94a3b8;">}</span>
+<span style="color: #94a3b8;">}</span>
+</pre>
+
+<h3 style="color: #a855f7;">4.4.2 스트림 제어</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">엔드포인트</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">메서드</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">동작</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>/streams/:id/start</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">POST</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">스트림 시작</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>/streams/:id/stop</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">POST</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">스트림 종료</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>/streams/:id/stats</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">GET</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">실시간 통계</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.5 분석 및 통계 API</h2>
+
+<h3 style="color: #a855f7;">4.5.1 재생 통계</h3>
+
+<p><strong style="color: #fbbf24;">GET /analytics/videos/:id</strong></p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #94a3b8;">{</span>
+  <span style="color: #fbbf24;">"video_id"</span>: <span style="color: #10b981;">"vid_abc123"</span>,
+  <span style="color: #fbbf24;">"period"</span>: <span style="color: #10b981;">"2025-01-01/2025-01-31"</span>,
+  <span style="color: #fbbf24;">"metrics"</span>: <span style="color: #94a3b8;">{</span>
+    <span style="color: #fbbf24;">"total_views"</span>: <span style="color: #fbbf24;">15234</span>,
+    <span style="color: #fbbf24;">"unique_viewers"</span>: <span style="color: #fbbf24;">8921</span>,
+    <span style="color: #fbbf24;">"total_watch_time"</span>: <span style="color: #fbbf24;">125430</span>,
+    <span style="color: #fbbf24;">"avg_watch_time"</span>: <span style="color: #fbbf24;">823</span>,
+    <span style="color: #fbbf24;">"completion_rate"</span>: <span style="color: #fbbf24;">0.68</span>,
+    <span style="color: #fbbf24;">"engagement_rate"</span>: <span style="color: #fbbf24;">0.82</span>
+  <span style="color: #94a3b8;">}</span>,
+  <span style="color: #fbbf24;">"quality_distribution"</span>: <span style="color: #94a3b8;">{</span>
+    <span style="color: #fbbf24;">"1080p"</span>: <span style="color: #fbbf24;">0.45</span>,
+    <span style="color: #fbbf24;">"720p"</span>: <span style="color: #fbbf24;">0.35</span>,
+    <span style="color: #fbbf24;">"480p"</span>: <span style="color: #fbbf24;">0.15</span>,
+    <span style="color: #fbbf24;">"360p"</span>: <span style="color: #fbbf24;">0.05</span>
+  <span style="color: #94a3b8;">}</span>,
+  <span style="color: #fbbf24;">"qoe_metrics"</span>: <span style="color: #94a3b8;">{</span>
+    <span style="color: #fbbf24;">"avg_startup_time"</span>: <span style="color: #fbbf24;">2.3</span>,
+    <span style="color: #fbbf24;">"buffering_ratio"</span>: <span style="color: #fbbf24;">0.012</span>,
+    <span style="color: #fbbf24;">"error_rate"</span>: <span style="color: #fbbf24;">0.003</span>
+  <span style="color: #94a3b8;">}</span>
+<span style="color: #94a3b8;">}</span>
+</pre>
+
+<h3 style="color: #a855f7;">4.5.2 실시간 시청자 통계</h3>
+
+<p><strong style="color: #fbbf24;">GET /analytics/streams/:id/realtime</strong></p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #94a3b8;">{</span>
+  <span style="color: #fbbf24;">"stream_id"</span>: <span style="color: #10b981;">"stream_xyz789"</span>,
+  <span style="color: #fbbf24;">"current_viewers"</span>: <span style="color: #fbbf24;">1247</span>,
+  <span style="color: #fbbf24;">"peak_viewers"</span>: <span style="color: #fbbf24;">1893</span>,
+  <span style="color: #fbbf24;">"viewer_trend"</span>: [
+    <span style="color: #94a3b8;">{</span><span style="color: #fbbf24;">"timestamp"</span>: <span style="color: #10b981;">"14:00"</span>, <span style="color: #fbbf24;">"count"</span>: <span style="color: #fbbf24;">350</span><span style="color: #94a3b8;">}</span>,
+    <span style="color: #94a3b8;">{</span><span style="color: #fbbf24;">"timestamp"</span>: <span style="color: #10b981;">"14:05"</span>, <span style="color: #fbbf24;">"count"</span>: <span style="color: #fbbf24;">820</span><span style="color: #94a3b8;">}</span>,
+    <span style="color: #94a3b8;">{</span><span style="color: #fbbf24;">"timestamp"</span>: <span style="color: #10b981;">"14:10"</span>, <span style="color: #fbbf24;">"count"</span>: <span style="color: #fbbf24;">1247</span><span style="color: #94a3b8;">}</span>
+  ],
+  <span style="color: #fbbf24;">"geo_distribution"</span>: <span style="color: #94a3b8;">{</span>
+    <span style="color: #fbbf24;">"KR"</span>: <span style="color: #fbbf24;">0.65</span>,
+    <span style="color: #fbbf24;">"US"</span>: <span style="color: #fbbf24;">0.15</span>,
+    <span style="color: #fbbf24;">"JP"</span>: <span style="color: #fbbf24;">0.10</span>,
+    <span style="color: #fbbf24;">"Other"</span>: <span style="color: #fbbf24;">0.10</span>
+  <span style="color: #94a3b8;">}</span>
+<span style="color: #94a3b8;">}</span>
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.6 WebSocket API (실시간 이벤트)</h2>
+
+<h3 style="color: #a855f7;">4.6.1 연결</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">// JavaScript 예시</span>
+<span style="color: #fbbf24;">const</span> <span style="color: #94a3b8;">ws</span> = <span style="color: #fbbf24;">new</span> WebSocket(<span style="color: #10b981;">'wss://ws.wiastreaming.com/v1'</span>);
+
+ws.onopen = () => {
+  ws.send(JSON.stringify({
+    <span style="color: #fbbf24;">type</span>: <span style="color: #10b981;">'auth'</span>,
+    <span style="color: #fbbf24;">token</span>: <span style="color: #10b981;">'wia_sk_live_...'</span>
+  }));
+
+  ws.send(JSON.stringify({
+    <span style="color: #fbbf24;">type</span>: <span style="color: #10b981;">'subscribe'</span>,
+    <span style="color: #fbbf24;">channel</span>: <span style="color: #10b981;">'stream:stream_xyz789'</span>
+  }));
+};
+
+ws.onmessage = (event) => {
+  <span style="color: #fbbf24;">const</span> data = JSON.parse(event.data);
+  console.log(<span style="color: #10b981;">'Event:'</span>, data);
+};
+</pre>
+
+<h3 style="color: #a855f7;">4.6.2 이벤트 타입</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">이벤트</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">설명</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>stream.started</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">라이브 스트림 시작됨</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>stream.stopped</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">라이브 스트림 종료됨</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>video.ready</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">비디오 처리 완료</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>viewer.joined</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">새 시청자 입장</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>viewer.left</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">시청자 퇴장</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.7 SDK</h2>
+
+<h3 style="color: #a855f7;">4.7.1 JavaScript/TypeScript SDK</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">// 설치</span>
+<span style="color: #94a3b8;">npm install @wia/streaming-sdk</span>
+
+<span style="color: #64748b;">// 사용</span>
+<span style="color: #fbbf24;">import</span> { WIAStreaming } <span style="color: #fbbf24;">from</span> <span style="color: #10b981;">'@wia/streaming-sdk'</span>;
+
+<span style="color: #fbbf24;">const</span> client = <span style="color: #fbbf24;">new</span> WIAStreaming({
+  apiKey: <span style="color: #10b981;">'wia_sk_live_...'</span>
+});
+
+<span style="color: #64748b;">// 비디오 업로드</span>
+<span style="color: #fbbf24;">const</span> video = <span style="color: #fbbf24;">await</span> client.videos.upload({
+  title: <span style="color: #10b981;">'강의 제목'</span>,
+  file: videoFile
+});
+
+<span style="color: #64748b;">// 라이브 스트림 생성</span>
+<span style="color: #fbbf24;">const</span> stream = <span style="color: #fbbf24;">await</span> client.streams.create({
+  title: <span style="color: #10b981;">'실시간 강의'</span>,
+  settings: {
+    latencyMode: <span style="color: #10b981;">'low'</span>,
+    dvrEnabled: <span style="color: #fbbf24;">true</span>
+  }
+});
+
+console.log(<span style="color: #10b981;">'RTMP URL:'</span>, stream.ingest.rtmpUrl);
+console.log(<span style="color: #10b981;">'Stream Key:'</span>, stream.ingest.streamKey);
+</pre>
+
+<h3 style="color: #a855f7;">4.7.2 Python SDK</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;"># 설치</span>
+<span style="color: #94a3b8;">pip install wia-streaming</span>
+
+<span style="color: #64748b;"># 사용</span>
+<span style="color: #fbbf24;">from</span> wia_streaming <span style="color: #fbbf24;">import</span> WIAStreaming
+
+client = WIAStreaming(api_key=<span style="color: #10b981;">'wia_sk_live_...'</span>)
+
+<span style="color: #64748b;"># 비디오 업로드</span>
+video = client.videos.upload(
+    title=<span style="color: #10b981;">'강의 제목'</span>,
+    file_path=<span style="color: #10b981;">'/path/to/video.mp4'</span>
+)
+
+<span style="color: #64748b;"># 통계 조회</span>
+stats = client.analytics.get_video_stats(video.id)
+<span style="color: #fbbf24;">print</span>(<span style="color: #10b981;">f'총 조회수: {stats.total_views}'</span>)
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.8 플레이어 API</h2>
+
+<h3 style="color: #a855f7;">4.8.1 플레이어 임베드</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">&lt;!-- HTML --&gt;</span>
+<span style="color: #94a3b8;">&lt;div id="wia-player"&gt;&lt;/div&gt;</span>
+<span style="color: #94a3b8;">&lt;script src="https://player.wiastreaming.com/v1/player.js"&gt;&lt;/script&gt;</span>
+
+<span style="color: #64748b;">// JavaScript</span>
+<span style="color: #fbbf24;">const</span> player = <span style="color: #fbbf24;">new</span> WIAPlayer(<span style="color: #10b981;">'wia-player'</span>, {
+  videoId: <span style="color: #10b981;">'vid_abc123'</span>,
+  autoplay: <span style="color: #fbbf24;">false</span>,
+  controls: <span style="color: #fbbf24;">true</span>,
+  subtitles: <span style="color: #10b981;">'ko-KR'</span>,
+  quality: <span style="color: #10b981;">'auto'</span>
+});
+
+<span style="color: #64748b;">// 이벤트 리스닝</span>
+player.on(<span style="color: #10b981;">'play'</span>, () => console.log(<span style="color: #10b981;">'재생 시작'</span>));
+player.on(<span style="color: #10b981;">'pause'</span>, () => console.log(<span style="color: #10b981;">'일시정지'</span>));
+player.on(<span style="color: #10b981;">'ended'</span>, () => console.log(<span style="color: #10b981;">'재생 완료'</span>));
+
+<span style="color: #64748b;">// 프로그래밍 방식 제어</span>
+player.play();
+player.pause();
+player.seek(<span style="color: #fbbf24;">120</span>); <span style="color: #64748b;">// 2분으로 이동</span>
+player.setQuality(<span style="color: #10b981;">'720p'</span>);
+</pre>
+
+<h3 style="color: #a855f7;">4.8.2 플레이어 이벤트</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">이벤트</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">트리거 시점</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>ready</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">플레이어 초기화 완료</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>play</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">재생 시작</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>pause</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">일시정지</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>timeupdate</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">재생 위치 변경 (250ms마다)</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>qualitychange</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">화질 변경</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>buffering</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">버퍼링 발생</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>error</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">오류 발생</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.9 에러 처리</h2>
+
+<h3 style="color: #a855f7;">4.9.1 HTTP 상태 코드</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">코드</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">의미</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">설명</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #10b981;"><strong>200</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">OK</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">요청 성공</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #10b981;"><strong>201</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Created</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">리소스 생성 성공</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #ef4444;"><strong>400</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Bad Request</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">잘못된 요청</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #ef4444;"><strong>401</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Unauthorized</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">인증 실패</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #ef4444;"><strong>404</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Not Found</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">리소스 없음</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #ef4444;"><strong>429</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Too Many Requests</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">요청 한도 초과</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #ef4444;"><strong>500</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Internal Server Error</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">서버 오류</td>
+    </tr>
+</table>
+
+<h3 style="color: #a855f7;">4.9.2 에러 응답 형식</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444; overflow-x: auto;">
+<span style="color: #94a3b8;">{</span>
+  <span style="color: #fbbf24;">"error"</span>: <span style="color: #94a3b8;">{</span>
+    <span style="color: #fbbf24;">"code"</span>: <span style="color: #10b981;">"video_not_found"</span>,
+    <span style="color: #fbbf24;">"message"</span>: <span style="color: #10b981;">"비디오를 찾을 수 없습니다"</span>,
+    <span style="color: #fbbf24;">"details"</span>: <span style="color: #10b981;">"ID 'vid_xyz' 에 해당하는 비디오가 존재하지 않습니다"</span>,
+    <span style="color: #fbbf24;">"request_id"</span>: <span style="color: #10b981;">"req_abc123"</span>
+  <span style="color: #94a3b8;">}</span>
+<span style="color: #94a3b8;">}</span>
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">장 요약</h2>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">API 계층</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">주요 기능</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>REST API</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">비디오 관리, 스트림 제어, 분석</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>WebSocket</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">실시간 이벤트, 시청자 통계</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>SDK</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">JavaScript, Python, Go 라이브러리</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Player API</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">플레이어 임베드, 이벤트, 제어</td>
+    </tr>
+</table>
+
+<nav style="margin-top: 30px; padding: 15px; background: #1e293b; border-radius: 8px; display: flex; justify-content: space-between;">
+    <a href="chapter-03.html" style="color: #a855f7; text-decoration: none;">← 제3장: 데이터 형식</a>
+    <a href="chapter-05.html" style="color: #a855f7; text-decoration: none;">제5장: 구현 가이드 →</a>
+</nav>
+
+<p style="text-align: center; color: #fbbf24; margin-top: 40px;">弘益人間 · 널리 인간을 이롭게 하라</p>
+<p style="text-align: center; color: #64748b;">© 2025 WIA - 세계지능연합</p>
+
+</body>
+</html>

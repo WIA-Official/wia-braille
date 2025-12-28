@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제4장: API 명세 - WIA-EDU-022</title>
+    <link rel="icon" href="/favicon.ico">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #0f172a; color: #e2e8f0; line-height: 1.8;">
+
+<nav style="margin-bottom: 30px; padding: 15px; background: #1e293b; border-radius: 8px;">
+    <a href="index.html" style="color: #a855f7; text-decoration: none;">📚 목차</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-03.html" style="color: #a855f7; text-decoration: none;">← 이전</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <span style="color: #64748b;">제4장 / 8장</span>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-05.html" style="color: #a855f7; text-decoration: none;">다음 →</a>
+</nav>
+
+<h1 style="color: #a855f7;">제4장: API 명세</h1>
+
+<blockquote style="background: #1e293b; padding: 20px; border-left: 4px solid #fbbf24; margin: 20px 0;">
+<p style="color: #fbbf24; font-style: italic;">"잘 설계된 API는 개발자와 학습자 모두에게 투명한 다리입니다."</p>
+</blockquote>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.1 API 개요</h2>
+
+<p>WIA-EDU-022는 <strong style="color: #a855f7;">RESTful API</strong>와 <strong style="color: #a855f7;">GraphQL</strong>을 모두 지원합니다.</p>
+
+<h3 style="color: #a855f7;">🌐 Base URL</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto;">
+Production:  https://api.wialanguage.com/v1
+Staging:     https://api-staging.wialanguage.com/v1
+Development: http://localhost:3000/v1
+</pre>
+
+<h3 style="color: #a855f7;">🔐 인증</h3>
+
+<p>모든 API 요청은 Bearer 토큰으로 인증됩니다:</p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto;">
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.2 학습자 관리 API</h2>
+
+<h3 style="color: #a855f7;">👤 프로필 조회</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+GET /learners/{learner_id}
+
+Response 200 OK:
+{
+  "id": "learner-123",
+  "display_name": "김학습",
+  "native_language": "ko",
+  "learning_languages": [
+    {
+      "language": "en",
+      "level": "B1",
+      "study_hours": 187.5
+    }
+  ],
+  "created_at": "2024-06-01T00:00:00Z"
+}
+</pre>
+
+<h3 style="color: #a855f7;">✏️ 프로필 업데이트</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+PATCH /learners/{learner_id}
+
+Request Body:
+{
+  "learning_preferences": {
+    "daily_goal_minutes": 30,
+    "reminder_enabled": true,
+    "reminder_times": ["09:00", "20:00"]
+  }
+}
+
+Response 200 OK:
+{
+  "id": "learner-123",
+  "updated_at": "2025-12-26T14:35:00Z",
+  "message": "Profile updated successfully"
+}
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.3 콘텐츠 API</h2>
+
+<h3 style="color: #a855f7;">📚 콘텐츠 검색</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+GET /content/search?language=en&level=B1&type=lesson&limit=10
+
+Response 200 OK:
+{
+  "total": 247,
+  "page": 1,
+  "per_page": 10,
+  "results": [
+    {
+      "id": "content-456",
+      "title": "Present Perfect Tense",
+      "type": "lesson",
+      "difficulty": 55,
+      "duration": 25,
+      "rating": 4.3,
+      "completion_rate": 0.87
+    },
+    ...
+  ]
+}
+</pre>
+
+<h3 style="color: #a855f7;">📖 콘텐츠 상세 조회</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+GET /content/{content_id}
+
+Response 200 OK:
+{
+  "id": "content-456",
+  "type": "lesson",
+  "metadata": {
+    "title": "Present Perfect Tense",
+    "language": "en",
+    "level": "B1",
+    "duration": 25
+  },
+  "learning_objectives": [...],
+  "sections": [
+    {
+      "type": "explanation",
+      "content": "...",
+      "media": {
+        "video_url": "https://cdn.wia.edu/videos/...",
+        "captions_url": "https://cdn.wia.edu/captions/..."
+      }
+    },
+    {
+      "type": "exercise",
+      "questions": [...]
+    }
+  ]
+}
+</pre>
+
+<h3 style="color: #a855f7;">🎯 개인화 추천</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+GET /learners/{learner_id}/recommendations?count=5
+
+Response 200 OK:
+{
+  "recommendations": [
+    {
+      "content_id": "content-789",
+      "title": "Business Email Writing",
+      "reason": "Matches your learning goals",
+      "relevance_score": 0.92,
+      "estimated_benefit": 0.78
+    },
+    {
+      "content_id": "content-234",
+      "title": "Irregular Verbs Review",
+      "reason": "Strengthen weak area",
+      "relevance_score": 0.88,
+      "estimated_benefit": 0.85
+    }
+  ],
+  "generated_at": "2025-12-26T14:40:00Z"
+}
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.4 진도 추적 API</h2>
+
+<h3 style="color: #a855f7;">📊 진도 기록</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+POST /progress/events
+
+Request Body:
+{
+  "learner_id": "learner-123",
+  "event_type": "lesson_completed",
+  "content_id": "content-456",
+  "session_id": "session-abc",
+  "started_at": "2025-12-26T14:00:00Z",
+  "completed_at": "2025-12-26T14:25:00Z",
+  "performance": {
+    "score": 85,
+    "max_score": 100,
+    "duration_seconds": 1500
+  }
+}
+
+Response 201 Created:
+{
+  "event_id": "event-xyz",
+  "recorded_at": "2025-12-26T14:25:01Z",
+  "learner_stats_updated": true,
+  "xp_earned": 150,
+  "level_up": false
+}
+</pre>
+
+<h3 style="color: #a855f7;">📈 진도 조회</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+GET /learners/{learner_id}/progress?language=en&from=2025-12-01
+
+Response 200 OK:
+{
+  "learner_id": "learner-123",
+  "language": "en",
+  "period": {
+    "start": "2025-12-01T00:00:00Z",
+    "end": "2025-12-26T23:59:59Z"
+  },
+  "statistics": {
+    "total_study_time_minutes": 780,
+    "lessons_completed": 23,
+    "exercises_attempted": 156,
+    "average_score": 82.3,
+    "current_streak_days": 23,
+    "longest_streak_days": 45
+  },
+  "skill_progress": {
+    "grammar": {
+      "start_level": 70,
+      "current_level": 82,
+      "improvement": 12
+    },
+    "vocabulary": {
+      "start_level": 75,
+      "current_level": 91,
+      "improvement": 16
+    },
+    "listening": {
+      "start_level": 65,
+      "current_level": 72,
+      "improvement": 7
+    },
+    "speaking": {
+      "start_level": 58,
+      "current_level": 68,
+      "improvement": 10
+    }
+  }
+}
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.5 평가 API</h2>
+
+<h3 style="color: #a855f7;">🎓 평가 제출</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+POST /assessments/{assessment_id}/submit
+
+Request Body:
+{
+  "learner_id": "learner-123",
+  "answers": [
+    {
+      "question_id": "q1",
+      "answer": "has lived",
+      "time_taken_ms": 3500
+    },
+    {
+      "question_id": "q2",
+      "answer": "have been studying",
+      "time_taken_ms": 4200
+    }
+  ]
+}
+
+Response 200 OK:
+{
+  "result_id": "result-999",
+  "score": {
+    "raw": 18,
+    "max": 20,
+    "percentage": 90
+  },
+  "cefr_level": "B2",
+  "detailed_feedback": [
+    {
+      "question_id": "q1",
+      "correct": true,
+      "explanation": "Correct use of present perfect"
+    },
+    {
+      "question_id": "q2",
+      "correct": true,
+      "explanation": "Excellent understanding of duration"
+    }
+  ],
+  "next_steps": "You're ready for advanced B2 content"
+}
+</pre>
+
+<h3 style="color: #a855f7;">📋 평가 결과 조회</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+GET /learners/{learner_id}/assessments/history
+
+Response 200 OK:
+{
+  "assessments": [
+    {
+      "id": "result-999",
+      "type": "proficiency_test",
+      "taken_at": "2025-12-15T10:00:00Z",
+      "overall_score": 90,
+      "cefr_level": "B2",
+      "skill_scores": {
+        "listening": 88,
+        "reading": 91,
+        "speaking": 87,
+        "writing": 92
+      }
+    },
+    ...
+  ]
+}
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.6 음성 처리 API</h2>
+
+<h3 style="color: #a855f7;">🎤 발음 평가</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+POST /speech/pronunciation
+
+Request (multipart/form-data):
+{
+  "audio": [binary data],
+  "reference_text": "She sells seashells by the seashore",
+  "language": "en"
+}
+
+Response 200 OK:
+{
+  "assessment_id": "pron-abc",
+  "overall_score": 74,
+  "scores": {
+    "accuracy": 78,
+    "fluency": 72,
+    "completeness": 100,
+    "prosody": 65
+  },
+  "word_analysis": [
+    {
+      "word": "sells",
+      "accuracy": 68,
+      "issues": [
+        {
+          "type": "substitution",
+          "expected": "/s/",
+          "actual": "/θ/",
+          "suggestion": "Practice /s/ sound placement"
+        }
+      ]
+    }
+  ],
+  "recommendations": [
+    "Focus on /s/ pronunciation",
+    "Try minimal pairs: sell-shell"
+  ]
+}
+</pre>
+
+<h3 style="color: #a855f7;">🔊 텍스트 음성 변환</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+POST /speech/synthesize
+
+Request Body:
+{
+  "text": "Hello, how are you today?",
+  "language": "en",
+  "voice": "en-US-neural-female",
+  "speed": 1.0,
+  "pitch": 0
+}
+
+Response 200 OK:
+{
+  "audio_url": "https://cdn.wia.edu/tts/abc123.mp3",
+  "duration_ms": 2300,
+  "phonemes": [
+    {"phoneme": "h", "duration": 80},
+    {"phoneme": "ə", "duration": 60},
+    {"phoneme": "l", "duration": 90},
+    ...
+  ]
+}
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.7 어휘 관리 API</h2>
+
+<h3 style="color: #a855f7;">📖 단어 추가</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+POST /learners/{learner_id}/vocabulary
+
+Request Body:
+{
+  "word": "serendipity",
+  "language": "en",
+  "context": "Finding that book was pure serendipity."
+}
+
+Response 201 Created:
+{
+  "vocabulary_id": "vocab-xyz",
+  "word_info": {
+    "text": "serendipity",
+    "pos": "noun",
+    "ipa": "/ˌser.ənˈdɪp.ə.ti/",
+    "audio_url": "...",
+    "definitions": [...],
+    "examples": [...]
+  },
+  "review_schedule": {
+    "next_review": "2025-12-27T00:00:00Z",
+    "interval_days": 1
+  }
+}
+</pre>
+
+<h3 style="color: #a855f7;">🔄 복습 단어 조회</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+GET /learners/{learner_id}/vocabulary/due?limit=20
+
+Response 200 OK:
+{
+  "due_count": 15,
+  "words": [
+    {
+      "id": "vocab-xyz",
+      "word": "serendipity",
+      "last_reviewed": "2025-12-25T00:00:00Z",
+      "next_review": "2025-12-26T00:00:00Z",
+      "mastery_level": "familiar",
+      "repetition_number": 5
+    },
+    ...
+  ]
+}
+</pre>
+
+<h3 style="color: #a855f7;">✅ 복습 기록</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+POST /vocabulary/{vocab_id}/review
+
+Request Body:
+{
+  "response_quality": 4,
+  "response_time_ms": 2300,
+  "activity_type": "flashcard"
+}
+
+Response 200 OK:
+{
+  "updated_schedule": {
+    "next_review": "2025-12-31T00:00:00Z",
+    "interval_days": 5,
+    "ease_factor": 2.4
+  },
+  "mastery_level": "mastered"
+}
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.8 대화 연습 API</h2>
+
+<h3 style="color: #a855f7;">💬 AI 대화 세션</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+POST /conversation/sessions
+
+Request Body:
+{
+  "learner_id": "learner-123",
+  "language": "en",
+  "scenario": "restaurant_ordering",
+  "difficulty": "B1"
+}
+
+Response 201 Created:
+{
+  "session_id": "conv-session-123",
+  "scenario": "restaurant_ordering",
+  "ai_character": {
+    "name": "Server",
+    "personality": "friendly",
+    "voice": "en-US-neural-male"
+  },
+  "initial_message": {
+    "text": "Good evening! Welcome to our restaurant. May I take your order?",
+    "audio_url": "..."
+  }
+}
+</pre>
+
+<h3 style="color: #a855f7;">💬 대화 메시지 전송</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+POST /conversation/sessions/{session_id}/message
+
+Request Body:
+{
+  "message": "I'd like to order a steak, please.",
+  "audio": [optional binary data]
+}
+
+Response 200 OK:
+{
+  "message_id": "msg-456",
+  "evaluation": {
+    "grammar_score": 95,
+    "vocabulary_appropriateness": 90,
+    "fluency": 85,
+    "corrections": []
+  },
+  "ai_response": {
+    "text": "Excellent choice! How would you like your steak cooked?",
+    "audio_url": "...",
+    "suggested_replies": [
+      "Medium rare, please.",
+      "Well done.",
+      "What do you recommend?"
+    ]
+  }
+}
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.9 오류 처리</h2>
+
+<p>표준화된 오류 응답 형식:</p>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">코드</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">의미</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">예시</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>400</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Bad Request</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Invalid input data</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>401</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Unauthorized</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Missing/invalid token</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>403</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Forbidden</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Insufficient permissions</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>404</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Not Found</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Resource doesn't exist</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>429</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Too Many Requests</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Rate limit exceeded</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>500</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Internal Server Error</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Server-side issue</td>
+    </tr>
+</table>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; color: #94a3b8; overflow-x: auto; font-size: 0.9em;">
+Error Response Format:
+{
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "The 'language' field is required",
+    "details": {
+      "field": "language",
+      "constraint": "required"
+    },
+    "request_id": "req-abc123",
+    "timestamp": "2025-12-26T14:50:00Z"
+  }
+}
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">4.10 Rate Limiting</h2>
+
+<p>API 사용량 제한:</p>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">티어</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">요청/분</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">요청/일</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Free</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">60</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">10,000</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Basic</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">300</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">100,000</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Pro</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1,000</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1,000,000</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Enterprise</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Custom</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Unlimited</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">장 요약</h2>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">API 카테고리</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">주요 엔드포인트</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>학습자 관리</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">프로필 CRUD, 선호도 설정</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>콘텐츠</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">검색, 상세, 개인화 추천</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>진도 추적</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">이벤트 기록, 통계 조회</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>평가</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">제출, 채점, 결과 조회</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>음성 처리</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">발음 평가, TTS</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>어휘</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">추가, 복습, SRS</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>대화</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">AI 챗봇, 실시간 평가</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<nav style="margin-top: 30px; padding: 15px; background: #1e293b; border-radius: 8px; display: flex; justify-content: space-between;">
+    <a href="chapter-03.html" style="color: #a855f7; text-decoration: none;">← 제3장: 데이터 형식</a>
+    <a href="index.html" style="color: #a855f7; text-decoration: none;">📚 목차</a>
+    <a href="chapter-05.html" style="color: #a855f7; text-decoration: none;">제5장: 구현 가이드 →</a>
+</nav>
+
+<p style="text-align: center; color: #fbbf24; margin-top: 40px;">弘益人間 · 널리 인간을 이롭게 하라</p>
+<p style="text-align: center; color: #64748b;">© 2025 WIA - World Certification Industry Association</p>
+
+</body>
+</html>

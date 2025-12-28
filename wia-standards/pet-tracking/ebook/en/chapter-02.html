@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 2: GPS and Location Technologies - WIA-PET-TRACKING</title>
+</head>
+<body>
+<p><a href="index.html">← Table of Contents</a></p>
+
+<h1>Chapter 2: GPS and Location Technologies</h1>
+
+<blockquote>
+"弘益人間: Precise location technology ensures that no matter where our pets wander, we can always guide them home."
+</blockquote>
+
+<hr>
+
+<h2>2.1 Understanding Global Navigation Satellite Systems (GNSS)</h2>
+
+<p>Global Navigation Satellite Systems provide the foundation for modern pet tracking. Unlike cellular-based positioning, GNSS works anywhere on Earth with a clear view of the sky, making it ideal for tracking pets who may wander into areas without cellular coverage.</p>
+
+<h3>How GNSS Works</h3>
+
+<p>GNSS positioning relies on measuring the time it takes for radio signals to travel from satellites to a receiver. Each satellite broadcasts its precise location and the exact time the signal was transmitted. The receiver calculates its distance from each satellite by measuring signal travel time, then uses trilateration to determine its position.</p>
+
+<pre>
+TRILATERATION PROCESS
+=====================
+
+1. Receive signals from at least 4 satellites
+2. Measure signal travel time from each satellite
+3. Calculate distance: distance = time × speed_of_light
+4. Create sphere around each satellite with calculated radius
+5. Find intersection point of all spheres = receiver position
+
+Minimum Requirements:
+  - 3 satellites: 2D position (latitude, longitude)
+  - 4 satellites: 3D position (latitude, longitude, altitude)
+  - More satellites: Improved accuracy and error correction
+</pre>
+
+<h3>Major GNSS Constellations</h3>
+
+<table border="1">
+<tr>
+<th>System</th>
+<th>Operator</th>
+<th>Satellites</th>
+<th>Frequency Bands</th>
+<th>Coverage</th>
+<th>Accuracy</th>
+<th>First Launch</th>
+</tr>
+<tr>
+<td>GPS</td>
+<td>USA (DoD)</td>
+<td>31 operational</td>
+<td>L1, L2, L5</td>
+<td>Global</td>
+<td>5-10m</td>
+<td>1978</td>
+</tr>
+<tr>
+<td>GLONASS</td>
+<td>Russia</td>
+<td>24 operational</td>
+<td>G1, G2, G3</td>
+<td>Global</td>
+<td>5-10m</td>
+<td>1982</td>
+</tr>
+<tr>
+<td>Galileo</td>
+<td>European Union</td>
+<td>30 operational</td>
+<td>E1, E5, E6</td>
+<td>Global</td>
+<td>1-5m</td>
+<td>2011</td>
+</tr>
+<tr>
+<td>BeiDou</td>
+<td>China</td>
+<td>35 operational</td>
+<td>B1, B2, B3</td>
+<td>Global</td>
+<td>5-10m</td>
+<td>2000</td>
+</tr>
+<tr>
+<td>QZSS</td>
+<td>Japan</td>
+<td>7 operational</td>
+<td>L1, L2, L5</td>
+<td>Asia-Pacific</td>
+<td>1-5m</td>
+<td>2010</td>
+</tr>
+<tr>
+<td>NavIC</td>
+<td>India</td>
+<td>8 operational</td>
+<td>L5, S-band</td>
+<td>Regional (India)</td>
+<td>5-10m</td>
+<td>2013</td>
+</tr>
+</table>
+
+<h3>Multi-GNSS Benefits</h3>
+
+<p>Pet trackers that support multiple GNSS systems offer significant advantages:</p>
+
+<ul>
+<li><strong>More Satellites</strong>: Access to 100+ satellites instead of 30, improving availability</li>
+<li><strong>Better Accuracy</strong>: Multiple signals allow better error correction (3-5m vs. 8-10m)</li>
+<li><strong>Faster Fix</strong>: Time-to-first-fix reduced from 30-60 seconds to 10-20 seconds</li>
+<li><strong>Urban Performance</strong>: Better positioning in cities where buildings block some satellites</li>
+<li><strong>Forest Coverage</strong>: Improved tracking under tree canopy</li>
+<li><strong>Global Reliability</strong>: No single point of failure; works even if one system degrades</li>
+</ul>
+
+<hr>
+
+<h2>2.2 GPS Accuracy and Error Sources</h2>
+
+<p>Understanding GPS accuracy and error sources is critical for implementing reliable pet tracking systems. Accuracy requirements differ based on use case: finding a lost pet requires different precision than monitoring play area boundaries.</p>
+
+<h3>Factors Affecting GPS Accuracy</h3>
+
+<table border="1">
+<tr>
+<th>Error Source</th>
+<th>Typical Impact</th>
+<th>Mitigation Strategy</th>
+</tr>
+<tr>
+<td>Atmospheric Delay</td>
+<td>2-5 meters</td>
+<td>Multi-frequency GNSS, SBAS corrections</td>
+</tr>
+<tr>
+<td>Multipath Reflection</td>
+<td>5-10 meters</td>
+<td>Advanced antenna design, signal processing</td>
+</tr>
+<tr>
+<td>Satellite Geometry</td>
+<td>Variable (HDOP)</td>
+<td>Multi-GNSS for more satellites</td>
+</tr>
+<tr>
+<td>Satellite Clock Error</td>
+<td>1-2 meters</td>
+<td>Differential GPS, corrections</td>
+</tr>
+<tr>
+<td>Ephemeris Error</td>
+<td>1-3 meters</td>
+<td>Regular satellite data updates</td>
+</tr>
+<tr>
+<td>Signal Obstruction</td>
+<td>10-50+ meters</td>
+<td>Hybrid positioning (Wi-Fi, cellular)</td>
+</tr>
+<tr>
+<td>Receiver Noise</td>
+<td>0.5-2 meters</td>
+<td>High-quality receiver chipsets</td>
+</tr>
+</table>
+
+<h3>Dilution of Precision (DOP)</h3>
+
+<p>Geometric Dilution of Precision (GDOP) measures how satellite geometry affects positioning accuracy. Better satellite distribution yields better accuracy.</p>
+
+<pre>
+DOP VALUES AND INTERPRETATION
+==============================
+
+HDOP (Horizontal DOP):
+  &lt; 1.0   Ideal      - Excellent positioning
+  1.0-2.0 Excellent  - Very good for all applications
+  2.0-5.0 Good       - Acceptable for most uses
+  5.0-10  Moderate   - Use with caution
+  &gt; 10    Poor       - Should not be used
+
+VDOP (Vertical DOP):
+  Similar scale but for altitude accuracy
+
+PDOP (Position DOP):
+  3D position (combines HDOP and VDOP)
+  &lt; 3.0 is considered good
+
+TDOP (Time DOP):
+  Affects timestamp accuracy
+  Important for velocity calculations
+</pre>
+
+<h3>WIA-PET-TRACKING Accuracy Requirements</h3>
+
+<p>The standard defines accuracy requirements based on conformance level:</p>
+
+<table border="1">
+<tr>
+<th>Conformance Level</th>
+<th>Horizontal Accuracy</th>
+<th>Vertical Accuracy</th>
+<th>HDOP Threshold</th>
+</tr>
+<tr>
+<td>Basic</td>
+<td>≤ 15 meters (95% confidence)</td>
+<td>≤ 30 meters</td>
+<td>&lt; 10</td>
+</tr>
+<tr>
+<td>Standard</td>
+<td>≤ 10 meters (95% confidence)</td>
+<td>≤ 20 meters</td>
+<td>&lt; 5</td>
+</tr>
+<tr>
+<td>Advanced</td>
+<td>≤ 5 meters (95% confidence)</td>
+<td>≤ 10 meters</td>
+<td>&lt; 3</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>2.3 Assisted GPS (A-GPS) and Quick Fix</h2>
+
+<p>Assisted GPS dramatically reduces the time needed to acquire a GPS position, which is crucial for battery-powered pet trackers. Traditional GPS can take 30-90 seconds for a "cold start" fix; A-GPS reduces this to 5-15 seconds.</p>
+
+<h3>How A-GPS Works</h3>
+
+<ol>
+<li><strong>Assistance Data Download</strong>: Device downloads satellite almanac and ephemeris data via cellular/Wi-Fi</li>
+<li><strong>Approximate Location</strong>: Network provides coarse position based on cell tower location</li>
+<li><strong>Time Synchronization</strong>: Accurate time from network helps decode satellite signals faster</li>
+<li><strong>Satellite Predictions</strong>: Device knows which satellites should be visible, where to look</li>
+<li><strong>Fast Acquisition</strong>: Receiver locks onto satellites in seconds instead of minutes</li>
+</ol>
+
+<h3>GPS Start Types</h3>
+
+<table border="1">
+<tr>
+<th>Start Type</th>
+<th>Conditions</th>
+<th>Time to Fix</th>
+<th>Data Required</th>
+</tr>
+<tr>
+<td>Hot Start</td>
+<td>Recent fix (&lt;2 hours), same location</td>
+<td>1-5 seconds</td>
+<td>None (cached data valid)</td>
+</tr>
+<tr>
+<td>Warm Start</td>
+<td>Recent fix but moved, or 2-4 hours old</td>
+<td>10-30 seconds</td>
+<td>Current almanac helpful</td>
+</tr>
+<tr>
+<td>Cold Start</td>
+<td>No recent data or moved far</td>
+<td>30-90 seconds</td>
+<td>Full almanac + ephemeris</td>
+</tr>
+<tr>
+<td>A-GPS Assisted</td>
+<td>Any, with cellular/Wi-Fi connection</td>
+<td>5-15 seconds</td>
+<td>Assistance data from server</td>
+</tr>
+</table>
+
+<h3>A-GPS Data Format</h3>
+
+<pre>
+{
+  "assistanceData": {
+    "timestamp": "2025-12-25T10:00:00Z",
+    "validUntil": "2025-12-25T16:00:00Z",
+    "approximateLocation": {
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "uncertainty": 5000
+    },
+    "visibleSatellites": [
+      {
+        "system": "GPS",
+        "prn": 12,
+        "elevation": 45,
+        "azimuth": 120,
+        "signalStrength": -135
+      },
+      {
+        "system": "GPS",
+        "prn": 25,
+        "elevation": 60,
+        "azimuth": 240,
+        "signalStrength": -132
+      }
+    ],
+    "almanac": "base64_encoded_almanac_data",
+    "ephemeris": "base64_encoded_ephemeris_data"
+  }
+}
+</pre>
+
+<hr>
+
+<h2>2.4 Indoor and Hybrid Positioning</h2>
+
+<p>Pets spend significant time indoors where GPS signals are weak or unavailable. Hybrid positioning systems combine multiple technologies to provide continuous tracking both indoors and outdoors.</p>
+
+<h3>Indoor Positioning Technologies</h3>
+
+<table border="1">
+<tr>
+<th>Technology</th>
+<th>Accuracy</th>
+<th>Coverage</th>
+<th>Power</th>
+<th>Infrastructure</th>
+</tr>
+<tr>
+<td>Wi-Fi Positioning</td>
+<td>10-50 meters</td>
+<td>Urban/residential</td>
+<td>Medium</td>
+<td>Public Wi-Fi database</td>
+</tr>
+<tr>
+<td>Bluetooth Beacons</td>
+<td>1-5 meters</td>
+<td>Equipped spaces</td>
+<td>Low</td>
+<td>Requires beacon installation</td>
+</tr>
+<tr>
+<td>Cellular Triangulation</td>
+<td>50-500 meters</td>
+<td>Wide (urban)</td>
+<td>Medium</td>
+<td>Carrier network</td>
+</tr>
+<tr>
+<td>UWB (Ultra-Wideband)</td>
+<td>10-50 cm</td>
+<td>Limited (equipped)</td>
+<td>Medium</td>
+<td>Requires UWB anchors</td>
+</tr>
+<tr>
+<td>Magnetic Fingerprinting</td>
+<td>1-3 meters</td>
+<td>Pre-mapped areas</td>
+<td>Very Low</td>
+<td>Magnetic map required</td>
+</tr>
+</table>
+
+<h3>Wi-Fi Positioning System (WPS)</h3>
+
+<p>Wi-Fi positioning is the most practical indoor solution for pet trackers:</p>
+
+<ol>
+<li><strong>Scan for Wi-Fi Access Points</strong>: Device detects nearby Wi-Fi SSIDs and MAC addresses</li>
+<li><strong>Report to Positioning Service</strong>: Send list of detected APs to cloud service</li>
+<li><strong>Database Lookup</strong>: Service queries global Wi-Fi location database (Google, Apple, Skyhook, etc.)</li>
+<li><strong>Calculate Position</strong>: Estimate location based on known AP positions and signal strengths</li>
+<li><strong>Return Coordinates</strong>: Provide latitude/longitude with uncertainty radius</li>
+</ol>
+
+<pre>
+{
+  "positionRequest": {
+    "method": "wifi",
+    "wifiAccessPoints": [
+      {
+        "macAddress": "00:11:22:33:44:55",
+        "ssid": "HomeNetwork",
+        "signalStrength": -45,
+        "frequency": 2437,
+        "channel": 6
+      },
+      {
+        "macAddress": "AA:BB:CC:DD:EE:FF",
+        "ssid": "NeighborWiFi",
+        "signalStrength": -67,
+        "frequency": 5180,
+        "channel": 36
+      }
+    ]
+  },
+  "positionResponse": {
+    "location": {
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "accuracy": 25,
+      "source": "wifi"
+    },
+    "confidence": 0.85
+  }
+}
+</pre>
+
+<h3>Hybrid Positioning Strategy</h3>
+
+<p>The WIA-PET-TRACKING standard recommends a cascading approach:</p>
+
+<pre>
+POSITIONING METHOD PRIORITY
+============================
+
+1st Choice: Multi-GNSS (Outdoor)
+   - Accuracy: 5-10m
+   - Use when HDOP &lt; 5 and 8+ satellites visible
+   - Power: Medium
+
+2nd Choice: Wi-Fi Positioning (Indoor/Urban)
+   - Accuracy: 10-50m
+   - Use when 3+ APs detected with good signal
+   - Power: Medium
+   - Fallback when GNSS unavailable
+
+3rd Choice: Cellular Triangulation
+   - Accuracy: 50-500m
+   - Use when Wi-Fi unavailable
+   - Power: Low (reuse cellular connection)
+   - Provides coarse location
+
+4th Choice: Last Known Position
+   - Accuracy: N/A (historical)
+   - Use when all positioning methods fail
+   - Power: None
+   - Report staleness in metadata
+
+Dead Reckoning (Supplementary):
+   - Use accelerometer/gyroscope for short-term tracking
+   - Estimate movement from last known position
+   - Accuracy degrades quickly (&gt;50m after 5 minutes)
+   - Useful for detecting movement vs. stationary
+</pre>
+
+<hr>
+
+<h2>2.5 Location Data Format Specification</h2>
+
+<p>Standardized location data formats ensure interoperability across all WIA-PET-TRACKING implementations.</p>
+
+<h3>Core Location Data Structure</h3>
+
+<pre>
+{
+  "trackerId": "TRK-ABC123",
+  "petId": "PET-789XYZ",
+  "timestamp": "2025-12-25T10:30:45.123Z",
+  "location": {
+    "latitude": 37.774929,
+    "longitude": -122.419418,
+    "accuracy": 8.5,
+    "altitude": 52.3,
+    "altitudeAccuracy": 15.0,
+    "heading": 275.5,
+    "speed": 1.2
+  },
+  "positioning": {
+    "method": "multi-gnss",
+    "gnss": {
+      "satellites": 12,
+      "systems": ["GPS", "GLONASS", "Galileo"],
+      "hdop": 0.9,
+      "vdop": 1.2,
+      "pdop": 1.5
+    },
+    "confidence": 0.95
+  },
+  "device": {
+    "battery": {
+      "level": 78,
+      "charging": false,
+      "voltage": 3.87,
+      "estimatedHours": 36
+    },
+    "network": {
+      "type": "4G-LTE",
+      "signal": -68,
+      "carrier": "Global Carrier"
+    },
+    "firmware": "2.4.1"
+  },
+  "metadata": {
+    "sequenceNumber": 12847,
+    "updateReason": "scheduled",
+    "environment": "outdoor"
+  }
+}
+</pre>
+
+<h3>Field Definitions</h3>
+
+<table border="1">
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+<tr>
+<td>trackerId</td>
+<td>string</td>
+<td>Yes</td>
+<td>Unique device identifier</td>
+</tr>
+<tr>
+<td>petId</td>
+<td>string</td>
+<td>No</td>
+<td>Associated pet identifier</td>
+</tr>
+<tr>
+<td>timestamp</td>
+<td>ISO 8601</td>
+<td>Yes</td>
+<td>UTC time when position was determined</td>
+</tr>
+<tr>
+<td>latitude</td>
+<td>float64</td>
+<td>Yes</td>
+<td>WGS84 latitude in decimal degrees (-90 to 90)</td>
+</tr>
+<tr>
+<td>longitude</td>
+<td>float64</td>
+<td>Yes</td>
+<td>WGS84 longitude in decimal degrees (-180 to 180)</td>
+</tr>
+<tr>
+<td>accuracy</td>
+<td>float32</td>
+<td>Yes</td>
+<td>Horizontal accuracy in meters (68% confidence)</td>
+</tr>
+<tr>
+<td>altitude</td>
+<td>float32</td>
+<td>No</td>
+<td>Height above WGS84 ellipsoid in meters</td>
+</tr>
+<tr>
+<td>altitudeAccuracy</td>
+<td>float32</td>
+<td>No</td>
+<td>Vertical accuracy in meters</td>
+</tr>
+<tr>
+<td>heading</td>
+<td>float32</td>
+<td>No</td>
+<td>Direction of travel in degrees (0-360, 0=North)</td>
+</tr>
+<tr>
+<td>speed</td>
+<td>float32</td>
+<td>No</td>
+<td>Ground speed in meters per second</td>
+</tr>
+<tr>
+<td>method</td>
+<td>enum</td>
+<td>Yes</td>
+<td>Positioning method: gnss, multi-gnss, wifi, cellular, hybrid</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>2.6 Coordinate Systems and Datums</h2>
+
+<p>Different map systems and countries use different coordinate reference systems. The WIA-PET-TRACKING standard mandates WGS84 for data exchange but provides conversion guidance.</p>
+
+<h3>Common Coordinate Systems</h3>
+
+<table border="1">
+<tr>
+<th>System</th>
+<th>Used By</th>
+<th>Characteristics</th>
+</tr>
+<tr>
+<td>WGS84</td>
+<td>GPS, global standard</td>
+<td>Earth-centered, modern, accurate worldwide</td>
+</tr>
+<tr>
+<td>NAD83</td>
+<td>North America</td>
+<td>North America-specific, very close to WGS84</td>
+</tr>
+<tr>
+<td>ETRS89</td>
+<td>Europe</td>
+<td>European standard, fixed to Eurasian plate</td>
+</tr>
+<tr>
+<td>GCJ-02</td>
+<td>China (mandatory)</td>
+<td>Offset from WGS84 for national security</td>
+</tr>
+<tr>
+<td>BD-09</td>
+<td>Baidu Maps (China)</td>
+<td>Further offset from GCJ-02</td>
+</tr>
+</table>
+
+<h3>WGS84 Coordinate Format</h3>
+
+<p>All WIA-PET-TRACKING implementations MUST use WGS84 (World Geodetic System 1984) coordinates in decimal degrees format:</p>
+
+<ul>
+<li><strong>Latitude</strong>: -90.0 to +90.0 (negative = South, positive = North)</li>
+<li><strong>Longitude</strong>: -180.0 to +180.0 (negative = West, positive = East)</li>
+<li><strong>Precision</strong>: Minimum 6 decimal places (≈0.11m resolution)</li>
+<li><strong>Format</strong>: Decimal degrees, NOT degrees-minutes-seconds</li>
+</ul>
+
+<pre>
+COORDINATE EXAMPLES
+===================
+
+San Francisco, USA:
+  Latitude:  37.774929°N  =  37.774929
+  Longitude: 122.419418°W = -122.419418
+
+Tokyo, Japan:
+  Latitude:  35.689487°N  =  35.689487
+  Longitude: 139.691711°E =  139.691711
+
+Sydney, Australia:
+  Latitude:  33.868820°S  = -33.868820
+  Longitude: 151.209290°E =  151.209290
+
+Precision Levels:
+  3 decimals = ~111m    (neighborhood)
+  4 decimals = ~11m     (building)
+  5 decimals = ~1.1m    (tree/person)
+  6 decimals = ~0.11m   (recommended)
+  7 decimals = ~1.1cm   (surveying)
+</pre>
+
+<hr>
+
+<h2>2.7 Timestamp Standards and Time Zones</h2>
+
+<p>Accurate timestamps are critical for tracking, especially for analyzing movement patterns and geofence violations.</p>
+
+<h3>ISO 8601 Format Requirements</h3>
+
+<p>All timestamps MUST use ISO 8601 format in UTC timezone:</p>
+
+<pre>
+TIMESTAMP FORMAT
+================
+
+Format:    YYYY-MM-DDTHH:MM:SS.sssZ
+Example:   2025-12-25T10:30:45.123Z
+
+Components:
+  YYYY     = 4-digit year (2025)
+  MM       = 2-digit month (01-12)
+  DD       = 2-digit day (01-31)
+  T        = Separator (literal 'T')
+  HH       = Hour (00-23)
+  MM       = Minute (00-59)
+  SS       = Second (00-59)
+  .sss     = Milliseconds (optional but recommended)
+  Z        = UTC indicator (literal 'Z')
+
+DO NOT USE:
+  ✗ Local time zones (2025-12-25T10:30:45-08:00)
+  ✗ Ambiguous formats (12/25/2025 10:30 AM)
+  ✗ Unix timestamps alone (1735122645)
+  ✗ Date-only or time-only formats
+
+ALWAYS USE:
+  ✓ UTC timezone (Z suffix)
+  ✓ 24-hour format
+  ✓ ISO 8601 complete format
+  ✓ Millisecond precision when available
+</pre>
+
+<h3>Time Synchronization</h3>
+
+<p>Pet trackers MUST maintain accurate time through:</p>
+
+<ol>
+<li><strong>GNSS Time</strong>: GPS satellites broadcast highly accurate time (± 40 nanoseconds)</li>
+<li><strong>NTP Sync</strong>: Network Time Protocol when connected to internet</li>
+<li><strong>Cellular Time</strong>: Network-provided time as backup</li>
+<li><strong>RTC (Real-Time Clock)</strong>: Hardware clock for timekeeping between syncs</li>
+</ol>
+
+<p>Devices SHALL synchronize time at least:</p>
+<ul>
+<li>Every GPS fix (automatic from GNSS time)</li>
+<li>Every network connection (via NTP)</li>
+<li>After power cycle or firmware update</li>
+</ul>
+
+<hr>
+
+<h2>2.8 Distance and Area Calculations</h2>
+
+<p>Accurate distance calculations are essential for geofencing, movement tracking, and lost pet recovery radius determination.</p>
+
+<h3>Haversine Formula</h3>
+
+<p>The Haversine formula calculates great-circle distances between two points on Earth's surface:</p>
+
+<pre>
+HAVERSINE DISTANCE FORMULA
+==========================
+
+Given two points:
+  Point A: (lat1, lon1)
+  Point B: (lat2, lon2)
+
+Calculations:
+  Δlat = lat2 - lat1
+  Δlon = lon2 - lon1
+
+  a = sin²(Δlat/2) + cos(lat1) × cos(lat2) × sin²(Δlon/2)
+  c = 2 × atan2(√a, √(1-a))
+
+  distance = R × c
+
+Where:
+  R = Earth's radius ≈ 6371 km (or 3959 miles)
+  All angles in radians
+
+Example Code (JavaScript):
+  function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371; // km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  function toRad(deg) {
+    return deg * Math.PI / 180;
+  }
+</pre>
+
+<h3>Distance Accuracy vs. Method</h3>
+
+<table border="1">
+<tr>
+<th>Calculation Method</th>
+<th>Accuracy</th>
+<th>Use Case</th>
+<th>Complexity</th>
+</tr>
+<tr>
+<td>Haversine Formula</td>
+<td>±0.5% (&lt;50m error at 10km)</td>
+<td>Most pet tracking applications</td>
+<td>Low</td>
+</tr>
+<tr>
+<td>Vincenty Formula</td>
+<td>±0.01% (mm accuracy)</td>
+<td>Precision surveying, research</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Equirectangular</td>
+<td>±5% (inaccurate at poles)</td>
+<td>Quick approximations only</td>
+<td>Very Low</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>Chapter Summary</h2>
+
+<p><strong>Key Takeaways:</strong></p>
+
+<ol>
+<li><strong>Multi-GNSS Advantage</strong>: Supporting multiple satellite systems (GPS, GLONASS, Galileo, BeiDou) provides 3-5m accuracy, faster fixes, and better reliability than single-system trackers.</li>
+<li><strong>Accuracy Factors</strong>: GPS accuracy depends on satellite geometry (DOP), atmospheric conditions, multipath reflections, and obstructions. Understanding these factors enables better system design.</li>
+<li><strong>Assisted GPS</strong>: A-GPS reduces time-to-first-fix from 30-90 seconds to 5-15 seconds, critical for battery efficiency in pet trackers.</li>
+<li><strong>Hybrid Positioning</strong>: Combining GNSS, Wi-Fi positioning, and cellular triangulation provides continuous tracking both indoors and outdoors.</li>
+<li><strong>WGS84 Standard</strong>: All implementations must use WGS84 coordinates in decimal degrees with ISO 8601 UTC timestamps for interoperability.</li>
+</ol>
+
+<hr>
+
+<h2>Review Questions</h2>
+
+<ol>
+<li>Explain how GNSS trilateration works and why at least 4 satellites are needed for a 3D position fix.</li>
+<li>What is HDOP, and why is an HDOP value below 5 important for reliable pet tracking?</li>
+<li>Compare the advantages and disadvantages of GPS-only vs. multi-GNSS tracking systems.</li>
+<li>How does Assisted GPS (A-GPS) reduce time-to-first-fix, and why is this important for battery-powered pet trackers?</li>
+<li>Describe the cascading positioning strategy for hybrid indoor/outdoor tracking. Which method should be tried first, and why?</li>
+<li>Why does the WIA-PET-TRACKING standard require ISO 8601 UTC timestamps instead of local time zones?</li>
+</ol>
+
+<hr>
+
+<p><a href="chapter-03.html">Next Chapter: Real-time Tracking Systems →</a></p>
+
+<p><a href="index.html">← Back to Table of Contents</a></p>
+
+<hr>
+
+<p><strong>弘益人間 · Benefit All Humanity</strong></p>
+<p>© 2025 WIA - World Certification Industry Association | MIT License</p>
+
+</body>
+</html>

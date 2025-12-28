@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA Crop Monitoring - Interactive Simulator</title>
+    <style>
+        :root {
+            --primary: #84CC16;
+            --primary-dark: #65A30D;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .nav-home {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav-home:hover { color: var(--primary); }
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .breadcrumb a {
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+        .breadcrumb a:hover { color: var(--primary); }
+        .breadcrumb .sep { color: var(--border); }
+        .breadcrumb .current {
+            color: var(--primary);
+            font-weight: 500;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--primary); }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .lang-switch {
+            display: flex;
+            gap: 10px;
+        }
+        .lang-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .lang-btn:hover { border-color: var(--primary); }
+        header {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+        .hero {
+            text-align: center;
+            padding: 40px 0;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 24px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .tab:hover { border-color: var(--primary); }
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid var(--border);
+        }
+        .panel.active { display: block; }
+        .panel h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .output {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .output.success { border-color: var(--secondary); }
+        .output.error { border-color: var(--danger); }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .stat-card .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .qr-display {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .qr-code {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        footer {
+            margin-top: 60px;
+            padding: 30px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+        footer .philosophy { color: #ffd700; font-size: 1.1rem; margin-bottom: 10px; }
+        footer p { color: var(--text-muted); margin: 5px 0; }
+        @media (max-width: 768px) {
+            .tabs { flex-direction: column; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <div class="nav-left">
+                <a href="https://wiastandards.com" class="nav-home" target="_blank">🤟 WIA Standards</a>
+                <div class="breadcrumb">
+                    <a href="https://wiastandards.com" target="_blank">Home</a>
+                    <span class="sep">›</span>
+                    <a href="../" target="_blank">Crop Monitoring</a>
+                    <span class="sep">›</span>
+                    <span class="current">Simulator</span>
+                </div>
+            </div>
+            <div class="nav-links">
+                <a href="https://wiabooks.store/crop-monitoring/" target="_blank" data-en="📚 Ebook" data-ko="📚 전자책">📚 Ebook</a>
+                <div class="lang-switch">
+                    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                    <button class="lang-btn" onclick="setLang('ko')">KO</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hero -->
+        <div class="hero">
+            <h1 data-en="🌿 Crop Monitoring Simulator" data-ko="🌿 작물 모니터링 시뮬레이터">🌿 Crop Monitoring Simulator</h1>
+            <p data-en="Experience real-time crop health intelligence" data-ko="실시간 작물 건강 인텔리전스 체험">Experience real-time crop health intelligence</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)" data-en="📊 Data Format" data-ko="📊 데이터 형식">📊 Data Format</div>
+            <div class="tab" onclick="switchTab(1)" data-en="🔢 Algorithms" data-ko="🔢 알고리즘">🔢 Algorithms</div>
+            <div class="tab" onclick="switchTab(2)" data-en="📡 Protocol" data-ko="📡 프로토콜">📡 Protocol</div>
+            <div class="tab" onclick="switchTab(3)" data-en="🔗 Integration" data-ko="🔗 통합">🔗 Integration</div>
+            <div class="tab" onclick="switchTab(4)" data-en="📱 QR & VC" data-ko="📱 QR & VC">📱 QR & VC</div>
+        </div>
+
+        <!-- Panel 1: Data Format -->
+        <div class="panel active">
+            <h2 data-en="📊 Crop Growth Data Generator" data-ko="📊 작물 생육 데이터 생성기">📊 Crop Growth Data Generator</h2>
+
+            <div class="form-group">
+                <label data-en="Crop Type" data-ko="작물 종류">Crop Type</label>
+                <select id="cropType">
+                    <option value="rice">Rice (벼)</option>
+                    <option value="cabbage">Cabbage (배추)</option>
+                    <option value="pepper">Pepper (고추)</option>
+                    <option value="tomato">Tomato (토마토)</option>
+                    <option value="corn">Corn (옥수수)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Growth Stage" data-ko="생육 단계">Growth Stage</label>
+                <select id="growthStage">
+                    <option value="seedling">Seedling (묘목기)</option>
+                    <option value="vegetative">Vegetative (영양생장기)</option>
+                    <option value="flowering">Flowering (개화기)</option>
+                    <option value="fruiting">Fruiting (결실기)</option>
+                    <option value="maturity">Maturity (성숙기)</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" onclick="generateCropData()" data-en="🌱 Generate Data" data-ko="🌱 데이터 생성">🌱 Generate Data</button>
+            <div id="cropDataOutput" class="output"></div>
+        </div>
+
+        <!-- Panel 2: Algorithms -->
+        <div class="panel">
+            <h2 data-en="🔢 Growth Prediction & Disease Risk" data-ko="🔢 생육 예측 & 병해 위험도">🔢 Growth Prediction & Disease Risk</h2>
+
+            <div class="form-group">
+                <label data-en="Plant Height (cm)" data-ko="식물 높이 (cm)">Plant Height (cm)</label>
+                <input type="number" id="plantHeight" value="45" min="0" max="300">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Leaf Area Index (LAI)" data-ko="엽면적 지수 (LAI)">Leaf Area Index (LAI)</label>
+                <input type="number" id="lai" value="3.5" min="0" max="10" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Chlorophyll Content (SPAD)" data-ko="엽록소 함량 (SPAD)">Chlorophyll Content (SPAD)</label>
+                <input type="number" id="chlorophyll" value="42" min="0" max="60">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Temperature (°C)" data-ko="온도 (°C)">Temperature (°C)</label>
+                <input type="number" id="temperature" value="25" min="0" max="50">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Humidity (%)" data-ko="습도 (%)">Humidity (%)</label>
+                <input type="number" id="humidity" value="70" min="0" max="100">
+            </div>
+
+            <button class="btn btn-primary" onclick="calculatePrediction()" data-en="📈 Calculate Prediction" data-ko="📈 예측 계산">📈 Calculate Prediction</button>
+            <div id="predictionOutput" class="output"></div>
+        </div>
+
+        <!-- Panel 3: Protocol -->
+        <div class="panel">
+            <h2 data-en="📡 Sensor Data Streaming Protocol" data-ko="📡 센서 데이터 스트리밍 프로토콜">📡 Sensor Data Streaming Protocol</h2>
+
+            <div class="form-group">
+                <label data-en="Camera/Sensor ID" data-ko="카메라/센서 ID">Camera/Sensor ID</label>
+                <input type="text" id="sensorId" value="CAM-FIELD-001">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Field Location (GPS)" data-ko="필드 위치 (GPS)">Field Location (GPS)</label>
+                <input type="text" id="gpsLocation" value="37.5665, 126.9780">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Streaming Interval (seconds)" data-ko="스트리밍 간격 (초)">Streaming Interval (seconds)</label>
+                <input type="number" id="streamInterval" value="60" min="10" max="3600">
+            </div>
+
+            <button class="btn btn-primary" onclick="generateProtocol()" data-en="📡 Generate Protocol Message" data-ko="📡 프로토콜 메시지 생성">📡 Generate Protocol Message</button>
+            <div id="protocolOutput" class="output"></div>
+        </div>
+
+        <!-- Panel 4: Integration -->
+        <div class="panel">
+            <h2 data-en="🔗 AI Disease Detection & Integration" data-ko="🔗 AI 병해 감지 & 통합">🔗 AI Disease Detection & Integration</h2>
+
+            <div class="form-group">
+                <label data-en="Upload Crop Image (simulated)" data-ko="작물 이미지 업로드 (시뮬레이션)">Upload Crop Image (simulated)</label>
+                <select id="cropImage">
+                    <option value="healthy">Healthy Leaf (건강한 잎)</option>
+                    <option value="blight">Blight Disease (역병)</option>
+                    <option value="rust">Rust Disease (녹병)</option>
+                    <option value="pest">Pest Damage (해충 피해)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Integration Services" data-ko="통합 서비스">Integration Services</label>
+                <select id="integrationService">
+                    <option value="weather">Weather Forecast API</option>
+                    <option value="marketplace">Agricultural Marketplace</option>
+                    <option value="insurance">Crop Insurance API</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" onclick="runAIDetection()" data-en="🤖 Run AI Detection" data-ko="🤖 AI 감지 실행">🤖 Run AI Detection</button>
+            <div id="aiOutput" class="output"></div>
+        </div>
+
+        <!-- Panel 5: QR & VC -->
+        <div class="panel">
+            <h2 data-en="📱 Crop Certification QR Code" data-ko="📱 작물 인증 QR 코드">📱 Crop Certification QR Code</h2>
+
+            <div class="form-group">
+                <label data-en="Farm Name" data-ko="농장 이름">Farm Name</label>
+                <input type="text" id="farmName" value="Green Valley Farm">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Crop Batch ID" data-ko="작물 배치 ID">Crop Batch ID</label>
+                <input type="text" id="batchId" value="CROP-2025-001">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Certification Type" data-ko="인증 유형">Certification Type</label>
+                <select id="certType">
+                    <option value="organic">Organic (유기농)</option>
+                    <option value="gapg">GAP Certified (GAP 인증)</option>
+                    <option value="pestfree">Pesticide-Free (무농약)</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" onclick="generateQR()" data-en="📱 Generate QR Code" data-ko="📱 QR 코드 생성">📱 Generate QR Code</button>
+            <div id="qrOutput"></div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p class="philosophy" data-en="弘益人間 · Benefit All Humanity" data-ko="弘益人間 · 널리 인간을 이롭게 하라">弘益人間 · Benefit All Humanity</p>
+            <p>WIA AGRI-006 - Crop Monitoring Standard</p>
+            <p>© 2025 MIT License</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        let currentLang = localStorage.getItem('wiaLang') || 'en';
+
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('wiaLang', lang);
+            document.querySelectorAll('[data-en]').forEach(el => {
+                if (el.tagName === 'INPUT' || el.tagName === 'BUTTON') {
+                    return;
+                }
+                el.textContent = el.getAttribute('data-' + lang);
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+        }
+
+        function switchTab(index) {
+            const tabs = document.querySelectorAll('.tab');
+            const panels = document.querySelectorAll('.panel');
+            tabs.forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            panels.forEach((panel, i) => {
+                panel.classList.toggle('active', i === index);
+            });
+        }
+
+        function generateCropData() {
+            const cropType = document.getElementById('cropType').value;
+            const stage = document.getElementById('growthStage').value;
+
+            const data = {
+                cropId: "WIA-CROP-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
+                cropType: cropType,
+                growthStage: stage,
+                timestamp: new Date().toISOString(),
+                measurements: {
+                    heightCm: Math.floor(Math.random() * 100 + 20),
+                    leafAreaIndex: (Math.random() * 5 + 1).toFixed(2),
+                    chlorophyllSPAD: Math.floor(Math.random() * 30 + 30),
+                    soilMoisture: Math.floor(Math.random() * 40 + 40) + "%",
+                    temperature: Math.floor(Math.random() * 15 + 20) + "°C"
+                },
+                healthStatus: "healthy",
+                estimatedYield: Math.floor(Math.random() * 500 + 1000) + " kg/ha"
+            };
+
+            document.getElementById('cropDataOutput').textContent = JSON.stringify(data, null, 2);
+            document.getElementById('cropDataOutput').className = 'output success';
+        }
+
+        function calculatePrediction() {
+            const height = parseFloat(document.getElementById('plantHeight').value);
+            const lai = parseFloat(document.getElementById('lai').value);
+            const chlorophyll = parseFloat(document.getElementById('chlorophyll').value);
+            const temp = parseFloat(document.getElementById('temperature').value);
+            const humidity = parseFloat(document.getElementById('humidity').value);
+
+            const growthRate = (height * lai * chlorophyll / 100).toFixed(2);
+            const diseaseRisk = ((100 - chlorophyll) * (humidity / 100) * 2).toFixed(1);
+            const yieldPrediction = (growthRate * 50).toFixed(0);
+
+            const result = {
+                growthRate: growthRate + " units/day",
+                diseaseRisk: diseaseRisk + "%",
+                riskLevel: diseaseRisk > 50 ? "HIGH" : diseaseRisk > 30 ? "MEDIUM" : "LOW",
+                estimatedYield: yieldPrediction + " kg/ha",
+                recommendations: []
+            };
+
+            if (diseaseRisk > 50) {
+                result.recommendations.push("⚠️ High disease risk detected - inspect crops");
+            }
+            if (chlorophyll < 35) {
+                result.recommendations.push("🌱 Low chlorophyll - consider nitrogen fertilizer");
+            }
+            if (humidity > 80) {
+                result.recommendations.push("💧 High humidity - improve ventilation");
+            }
+
+            document.getElementById('predictionOutput').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('predictionOutput').className = 'output success';
+        }
+
+        function generateProtocol() {
+            const sensorId = document.getElementById('sensorId').value;
+            const gps = document.getElementById('gpsLocation').value;
+            const interval = document.getElementById('streamInterval').value;
+
+            const protocol = {
+                protocol: "WIA-CROP-STREAM-v1.0",
+                sensorId: sensorId,
+                location: {
+                    gps: gps,
+                    fieldId: "FIELD-" + Math.random().toString(36).substr(2, 6).toUpperCase()
+                },
+                streamConfig: {
+                    intervalSeconds: parseInt(interval),
+                    dataTypes: ["image", "temperature", "humidity", "soil_moisture"],
+                    compression: "h264",
+                    resolution: "1920x1080"
+                },
+                endpoint: "wss://crop-stream.wiastandards.com/sensor/" + sensorId,
+                authentication: {
+                    token: "wia_" + Math.random().toString(36).substr(2, 32)
+                }
+            };
+
+            document.getElementById('protocolOutput').textContent = JSON.stringify(protocol, null, 2);
+            document.getElementById('protocolOutput').className = 'output success';
+        }
+
+        function runAIDetection() {
+            const imageType = document.getElementById('cropImage').value;
+            const service = document.getElementById('integrationService').value;
+
+            const diseases = {
+                healthy: { confidence: 0.95, disease: "None", action: "Continue monitoring" },
+                blight: { confidence: 0.87, disease: "Late Blight", action: "Apply fungicide immediately" },
+                rust: { confidence: 0.92, disease: "Rust Disease", action: "Remove infected leaves" },
+                pest: { confidence: 0.89, disease: "Aphid Infestation", action: "Apply organic pesticide" }
+            };
+
+            const result = {
+                aiModel: "WIA-CropVision-v2.1",
+                detection: diseases[imageType],
+                integrationResponse: {},
+                timestamp: new Date().toISOString()
+            };
+
+            if (service === 'weather') {
+                result.integrationResponse = {
+                    service: "Weather Forecast",
+                    forecast: "25°C, 70% humidity, rain expected in 2 days"
+                };
+            } else if (service === 'marketplace') {
+                result.integrationResponse = {
+                    service: "Marketplace",
+                    bestPrice: "$2.50/kg",
+                    buyers: 5
+                };
+            } else {
+                result.integrationResponse = {
+                    service: "Insurance",
+                    coverage: "Active",
+                    claimEligible: imageType !== 'healthy'
+                };
+            }
+
+            document.getElementById('aiOutput').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('aiOutput').className = 'output success';
+        }
+
+        function generateQR() {
+            const farmName = document.getElementById('farmName').value;
+            const batchId = document.getElementById('batchId').value;
+            const certType = document.getElementById('certType').value;
+
+            const vcData = {
+                "@context": ["https://www.w3.org/2018/credentials/v1"],
+                "type": ["VerifiableCredential", "CropCertification"],
+                "issuer": "did:wia:crop-monitoring",
+                "issuanceDate": new Date().toISOString(),
+                "credentialSubject": {
+                    farmName: farmName,
+                    batchId: batchId,
+                    certificationType: certType,
+                    harvestDate: "2025-06-15",
+                    verificationUrl: "https://verify.wiastandards.com/crop/" + batchId
+                }
+            };
+
+            const output = document.getElementById('qrOutput');
+            output.innerHTML = '<div class="qr-display"><div id="qrcode" class="qr-code"></div></div>';
+            output.innerHTML += '<div class="output success" style="margin-top: 20px">' +
+                JSON.stringify(vcData, null, 2) + '</div>';
+
+            new QRCode(document.getElementById("qrcode"), {
+                text: JSON.stringify(vcData),
+                width: 256,
+                height: 256
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setLang(currentLang);
+        });
+    </script>
+</body>
+</html>

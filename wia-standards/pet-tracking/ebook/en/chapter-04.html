@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 4: Geofencing and Safe Zones - WIA-PET-TRACKING</title>
+</head>
+<body>
+<p><a href="index.html">← Table of Contents</a></p>
+
+<h1>Chapter 4: Geofencing and Safe Zones</h1>
+
+<blockquote>
+"弘益人間: Virtual boundaries create real peace of mind—know instantly when your pet ventures beyond safety."
+</blockquote>
+
+<hr>
+
+<h2>4.1 Geofencing Fundamentals</h2>
+
+<p>A geofence is a virtual geographic boundary defined by GPS coordinates. When a pet tracker crosses this boundary, the system triggers predefined actions such as sending alerts to the owner. Geofencing is one of the most valuable features of modern pet tracking systems.</p>
+
+<h3>Geofence Types</h3>
+
+<table border="1">
+<tr>
+<th>Type</th>
+<th>Shape</th>
+<th>Use Case</th>
+<th>Complexity</th>
+</tr>
+<tr>
+<td>Circular</td>
+<td>Center point + radius</td>
+<td>Home, park, general areas</td>
+<td>Low</td>
+</tr>
+<tr>
+<td>Rectangular</td>
+<td>Bounding box (lat/lng min/max)</td>
+<td>City blocks, yards</td>
+<td>Low</td>
+</tr>
+<tr>
+<td>Polygonal</td>
+<td>Series of coordinate points</td>
+<td>Property lines, complex areas</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Corridor</td>
+<td>Line + buffer distance</td>
+<td>Walking routes, trails</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Multi-Zone</td>
+<td>Multiple connected areas</td>
+<td>Home + backyard + park</td>
+<td>High</td>
+</tr>
+</table>
+
+<h3>Circular Geofence Data Format</h3>
+
+<pre>
+{
+  "geofenceId": "GEO-HOME-001",
+  "name": "Home",
+  "type": "circular",
+  "active": true,
+  "center": {
+    "latitude": 37.774929,
+    "longitude": -122.419418
+  },
+  "radius": 100,
+  "triggers": {
+    "entry": true,
+    "exit": true,
+    "dwell": {
+      "enabled": true,
+      "duration": 300
+    }
+  },
+  "actions": {
+    "notifications": [
+      {
+        "type": "push",
+        "recipients": ["owner@example.com"],
+        "message": "Buddy has left the Home zone"
+      },
+      {
+        "type": "email",
+        "recipients": ["owner@example.com"],
+        "subject": "Pet Alert: Geofence Exit"
+      }
+    ],
+    "webhooks": [
+      {
+        "url": "https://api.example.com/pet-alerts",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer token123"
+        }
+      }
+    ]
+  },
+  "schedule": {
+    "allDay": false,
+    "activeHours": {
+      "start": "06:00",
+      "end": "22:00"
+    },
+    "daysOfWeek": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+  },
+  "metadata": {
+    "created": "2025-01-15T10:00:00Z",
+    "lastModified": "2025-12-20T14:30:00Z",
+    "color": "#4CAF50",
+    "icon": "home"
+  }
+}
+</pre>
+
+<hr>
+
+<h2>4.2 Geofence Detection Algorithms</h2>
+
+<p>Accurate and efficient geofence detection is critical for minimizing false alerts while ensuring real boundary crossings are caught.</p>
+
+<h3>Point-in-Circle Algorithm</h3>
+
+<p>For circular geofences, detection is straightforward using distance calculation:</p>
+
+<pre>
+CIRCULAR GEOFENCE DETECTION
+============================
+
+Given:
+  Geofence center: (centerLat, centerLng)
+  Geofence radius: R meters
+  Pet location: (petLat, petLng)
+  Location accuracy: A meters
+
+Calculate:
+  distance = haversine(centerLat, centerLng, petLat, petLng)
+
+Determine State:
+  IF distance + A &lt; R:
+    INSIDE (definitely inside fence)
+  ELSE IF distance - A &gt; R:
+    OUTSIDE (definitely outside fence)
+  ELSE:
+    UNCERTAIN (within accuracy margin)
+
+Handling Uncertainty:
+  - Maintain previous state if uncertain
+  - Only trigger alert on definite crossing
+  - Require multiple consecutive readings for confirmation
+
+Example:
+  Center: 37.7749, -122.4194
+  Radius: 100m
+  Pet: 37.7760, -122.4195
+  Accuracy: ±8.5m
+
+  distance = 122.4m
+  122.4 - 8.5 = 113.9m &gt; 100m → OUTSIDE ✓
+
+  Alert: "Pet has exited Home zone"
+</pre>
+
+<h3>Point-in-Polygon Algorithm</h3>
+
+<p>For complex polygonal geofences, use the ray casting algorithm:</p>
+
+<pre>
+RAY CASTING ALGORITHM
+=====================
+
+Given polygon vertices: [(lat1,lng1), (lat2,lng2), ..., (latN,lngN)]
+Point to test: (testLat, testLng)
+
+Algorithm:
+1. Cast a ray from point to infinity (horizontally to the right)
+2. Count how many polygon edges the ray intersects
+3. If count is odd → point is INSIDE
+   If count is even → point is OUTSIDE
+
+Pseudocode:
+function pointInPolygon(point, vertices):
+  x = point.longitude
+  y = point.latitude
+  inside = false
+
+  j = vertices.length - 1
+  for i = 0 to vertices.length - 1:
+    xi = vertices[i].longitude
+    yi = vertices[i].latitude
+    xj = vertices[j].longitude
+    yj = vertices[j].latitude
+
+    if ((yi &gt; y) != (yj &gt; y)) and
+       (x &lt; (xj - xi) * (y - yi) / (yj - yi) + xi):
+      inside = !inside
+
+    j = i
+
+  return inside
+
+Example:
+  Polygon: Backyard boundary with 8 vertices
+  Point: Pet's current location
+  Result: Inside or Outside
+</pre>
+
+<h3>Debouncing and Hysteresis</h3>
+
+<p>To prevent alert spam from GPS jitter near boundaries, implement debouncing:</p>
+
+<table border="1">
+<tr>
+<th>Technique</th>
+<th>Description</th>
+<th>Parameters</th>
+</tr>
+<tr>
+<td>Time-based Debouncing</td>
+<td>Require state change to persist for N seconds</td>
+<td>Debounce time: 30-60 seconds</td>
+</tr>
+<tr>
+<td>Count-based Debouncing</td>
+<td>Require N consecutive readings in new state</td>
+<td>Count threshold: 3-5 readings</td>
+</tr>
+<tr>
+<td>Hysteresis Buffer</td>
+<td>Different thresholds for entry vs. exit</td>
+<td>Exit at R+10m, Enter at R-10m</td>
+</tr>
+<tr>
+<td>Accuracy Filtering</td>
+<td>Ignore readings with poor accuracy</td>
+<td>Minimum accuracy: &lt;25 meters</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>4.3 Safe Zone Management</h2>
+
+<p>Effective geofence management requires thoughtful zone configuration and organization.</p>
+
+<h3>Common Safe Zone Types</h3>
+
+<pre>
++------------------------+-------------------+--------------------+
+| Zone Type              | Typical Radius    | Alert Behavior     |
++------------------------+-------------------+--------------------+
+| Home                   | 50-150m           | Exit alerts        |
+| Backyard               | 10-30m            | Exit alerts        |
+| Dog Park               | 100-500m          | Entry/exit         |
+| Vet Clinic             | 50-100m           | Entry notification |
+| Pet Sitter Home        | 50-100m           | Entry/exit         |
+| Walking Route          | 25-50m corridor   | Deviation alerts   |
+| Restricted Area        | Variable          | Entry warnings     |
+| Temporary Safe Zone    | Variable          | Time-limited       |
++------------------------+-------------------+--------------------+
+</pre>
+
+<h3>Geofence Priority and Overlap</h3>
+
+<p>When multiple geofences overlap, prioritization determines which alerts fire:</p>
+
+<pre>
+{
+  "geofences": [
+    {
+      "id": "GEO-HOME",
+      "priority": 1,
+      "radius": 150,
+      "behavior": "allow"
+    },
+    {
+      "id": "GEO-BACKYARD",
+      "priority": 2,
+      "radius": 30,
+      "behavior": "allow",
+      "parentZone": "GEO-HOME"
+    },
+    {
+      "id": "GEO-STREET",
+      "priority": 3,
+      "radius": 500,
+      "behavior": "warn-only"
+    },
+    {
+      "id": "GEO-DANGEROUS-ROAD",
+      "priority": 10,
+      "type": "polygon",
+      "behavior": "alert-immediately"
+    }
+  ],
+  "rules": {
+    "multipleZones": "highest-priority-wins",
+    "nestedZones": "child-overrides-parent",
+    "conflictResolution": "most-restrictive"
+  }
+}
+</pre>
+
+<hr>
+
+<h2>4.4 Dynamic and Temporary Geofences</h2>
+
+<p>Not all geofences are permanent. The standard supports dynamic zones that activate based on conditions or time.</p>
+
+<h3>Time-Based Activation</h3>
+
+<pre>
+{
+  "geofenceId": "GEO-TEMP-CAMPING",
+  "name": "Camping Trip Safe Zone",
+  "type": "circular",
+  "center": {
+    "latitude": 36.1234,
+    "longitude": -118.5678
+  },
+  "radius": 200,
+  "temporal": {
+    "startTime": "2025-07-15T14:00:00Z",
+    "endTime": "2025-07-18T10:00:00Z",
+    "autoDelete": true
+  },
+  "triggers": {
+    "exit": true
+  }
+}
+</pre>
+
+<h3>Location-Following Geofences</h3>
+
+<p>For traveling with pets, geofences can follow a reference point:</p>
+
+<pre>
+{
+  "geofenceId": "GEO-MOBILE-SAFE",
+  "name": "Near Owner",
+  "type": "circular",
+  "followTarget": "OWNER-SMARTPHONE-GPS",
+  "radius": 50,
+  "updateInterval": 60,
+  "triggers": {
+    "exit": true,
+    "distanceThreshold": 75
+  },
+  "conditions": {
+    "activeWhen": "owner-and-pet-outside-home"
+  }
+}
+</pre>
+
+<hr>
+
+<h2>4.5 Geofence Events and Notifications</h2>
+
+<p>When geofence events occur, the system must reliably deliver notifications to appropriate recipients.</p>
+
+<h3>Event Types</h3>
+
+<table border="1">
+<tr>
+<th>Event</th>
+<th>Trigger</th>
+<th>Priority</th>
+<th>Typical Action</th>
+</tr>
+<tr>
+<td>Entry</td>
+<td>Pet enters geofence</td>
+<td>Low-Medium</td>
+<td>Informational notification</td>
+</tr>
+<tr>
+<td>Exit</td>
+<td>Pet leaves geofence</td>
+<td>High</td>
+<td>Immediate alert</td>
+</tr>
+<tr>
+<td>Dwell</td>
+<td>Pet stays in area for X minutes</td>
+<td>Low</td>
+<td>Activity log entry</td>
+</tr>
+<tr>
+<td>Loitering</td>
+<td>Pet remains in unexpected area</td>
+<td>Medium</td>
+<td>Warning notification</td>
+</tr>
+<tr>
+<td>Rapid Exit/Entry</td>
+<td>Multiple crossings in short time</td>
+<td>Medium</td>
+<td>Possible GPS issue alert</td>
+</tr>
+<tr>
+<td>Approach</td>
+<td>Pet moving toward boundary</td>
+<td>Low</td>
+<td>Proactive warning (optional)</td>
+</tr>
+</table>
+
+<h3>Notification Payload</h3>
+
+<pre>
+{
+  "eventId": "EVT-20251225-12345",
+  "eventType": "geofence_exit",
+  "timestamp": "2025-12-25T10:32:10.456Z",
+  "trackerId": "TRK-ABC123",
+  "petId": "PET-789XYZ",
+  "petName": "Buddy",
+  "geofence": {
+    "id": "GEO-HOME-001",
+    "name": "Home",
+    "type": "circular"
+  },
+  "location": {
+    "latitude": 37.7760,
+    "longitude": -122.4195,
+    "accuracy": 8.5,
+    "distanceFromCenter": 124.5
+  },
+  "context": {
+    "previousState": "inside",
+    "newState": "outside",
+    "crossingDirection": "outbound",
+    "timeInsideZone": 14400,
+    "lastKnownInsideLocation": {
+      "latitude": 37.7750,
+      "longitude": -122.4193,
+      "timestamp": "2025-12-25T10:28:00Z"
+    }
+  },
+  "severity": "high",
+  "recommendedAction": "Check pet's location and ensure safety"
+}
+</pre>
+
+<hr>
+
+<h2>4.6 Geofence Analytics and Insights</h2>
+
+<p>Analyzing geofence activity over time provides valuable insights into pet behavior and safety patterns.</p>
+
+<h3>Zone Activity Metrics</h3>
+
+<table border="1">
+<tr>
+<th>Metric</th>
+<th>Calculation</th>
+<th>Insight</th>
+</tr>
+<tr>
+<td>Time in Zone</td>
+<td>Sum of duration inside geofence</td>
+<td>Primary location identification</td>
+</tr>
+<tr>
+<td>Entry/Exit Count</td>
+<td>Number of boundary crossings</td>
+<td>Activity level, routine patterns</td>
+</tr>
+<tr>
+<td>Average Dwell Time</td>
+<td>Mean duration per visit</td>
+<td>Typical behavior in area</td>
+</tr>
+<tr>
+<td>Exit Velocity</td>
+<td>Speed when leaving zone</td>
+<td>Casual walk vs. escape detection</td>
+</tr>
+<tr>
+<td>Favorite Zones</td>
+<td>Ranked by time spent</td>
+<td>Preferred locations</td>
+</tr>
+<tr>
+<td>Boundary Approaches</td>
+<td>Count of near-miss exits</td>
+<td>Testing boundaries, exploration</td>
+</tr>
+</table>
+
+<h3>Weekly Geofence Report</h3>
+
+<pre>
+WEEKLY GEOFENCE ACTIVITY REPORT
+Buddy - Dec 18-24, 2025
+=====================================
+
+Zone: Home (150m radius)
+  Time Inside:      142.5 hours (85% of week)
+  Exit Events:      14
+  Entry Events:     14
+  Avg Stay:         10.2 hours per visit
+  Longest Stay:     18.5 hours (overnight)
+
+Zone: Dog Park (300m radius)
+  Time Inside:      8.5 hours (5% of week)
+  Exit Events:      4
+  Entry Events:     4
+  Avg Stay:         2.1 hours per visit
+  Peak Times:       11 AM - 1 PM
+
+Zone: Walking Route (50m corridor)
+  Time Inside:      3.2 hours (2% of week)
+  Exit Events:      28 (14 walks)
+  Avg Walk:         13.7 minutes
+  Completion Rate:  100% (stayed on route)
+
+Alerts Generated:   6
+  Home Exit:        3 (all expected)
+  Park Entry:       2
+  Low Battery:      1
+
+Behavior Insights:
+  ✓ Regular routine maintained
+  ✓ All exits during normal hours
+  ✓ Park visits consistent with weekday pattern
+  ⚠ One unusual late-night exit (11:45 PM Thu)
+    → Investigated: Emergency vet visit
+</pre>
+
+<hr>
+
+<h2>4.7 Advanced Geofencing Techniques</h2>
+
+<p>Beyond basic circular zones, advanced geofencing enables sophisticated safety features.</p>
+
+<h3>Adaptive Geofences</h3>
+
+<p>Geofences that automatically adjust based on learned behavior:</p>
+
+<pre>
+{
+  "geofenceId": "GEO-ADAPTIVE-HOME",
+  "name": "Home (Adaptive)",
+  "type": "circular",
+  "adaptive": {
+    "enabled": true,
+    "learningPeriod": 30,
+    "baseRadius": 100,
+    "maxRadius": 200,
+    "minRadius": 50,
+    "adjustmentFactor": 0.1,
+    "criteria": {
+      "normalActivityZone": "95th percentile of locations",
+      "excludeOutliers": true,
+      "updateFrequency": "weekly"
+    }
+  },
+  "currentRadius": 127,
+  "lastAdjustment": "2025-12-18T00:00:00Z",
+  "nextReview": "2025-12-25T00:00:00Z"
+}
+</pre>
+
+<h3>Confidence-Based Alerts</h3>
+
+<p>Reduce false alerts by requiring high-confidence detections:</p>
+
+<table border="1">
+<tr>
+<th>Confidence Level</th>
+<th>Criteria</th>
+<th>Alert Behavior</th>
+</tr>
+<tr>
+<td>High (&gt;90%)</td>
+<td>Accuracy &lt;10m, 5+ satellites, 3+ consecutive readings</td>
+<td>Immediate alert</td>
+</tr>
+<tr>
+<td>Medium (70-90%)</td>
+<td>Accuracy &lt;20m, 4+ satellites, 2+ consecutive readings</td>
+<td>Alert after 60-second confirmation</td>
+</tr>
+<tr>
+<td>Low (&lt;70%)</td>
+<td>Accuracy &gt;20m, &lt;4 satellites, single reading</td>
+<td>No alert, wait for better fix</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>4.8 Geofence Configuration Best Practices</h2>
+
+<p>Guidelines for creating effective geofences:</p>
+
+<h3>Size Recommendations</h3>
+
+<ul>
+<li><strong>Minimum Radius</strong>: 25 meters (to account for GPS accuracy)</li>
+<li><strong>Home Zone</strong>: 50-150 meters (covers property + small margin)</li>
+<li><strong>Park/Open Area</strong>: 100-500 meters (allows free roaming)</li>
+<li><strong>Walking Route</strong>: 25-50 meter corridor (detects straying)</li>
+<li><strong>Maximum Zones per Pet</strong>: 20-50 (system dependent)</li>
+</ul>
+
+<h3>Alert Fatigue Prevention</h3>
+
+<pre>
+ALERT MANAGEMENT STRATEGIES
+============================
+
+Problem: Too many alerts → User ignores them
+
+Solutions:
+
+1. Smart Scheduling
+   - Disable alerts during known walk times
+   - Quiet hours (e.g., 10 PM - 6 AM)
+   - Snooze for temporary situations
+
+2. Alert Consolidation
+   - Group multiple events in single notification
+   - "Buddy left Home at 10:32 AM and entered Park at 10:45 AM"
+
+3. Adaptive Thresholds
+   - Learn normal patterns
+   - Only alert on anomalies
+
+4. Priority Levels
+   - Critical: Immediate delivery (restricted areas)
+   - High: Standard delivery (home exit)
+   - Medium: Batched delivery (park entry)
+   - Low: Log only (expected movements)
+
+5. User Preferences
+   - Allow per-zone notification settings
+   - Do Not Disturb mode
+   - Notification channels (push, email, SMS)
+
+Example Configuration:
+{
+  "notificationRules": {
+    "homeExit": {
+      "enabled": true,
+      "quietHours": {"start": "22:00", "end": "06:00"},
+      "methods": ["push", "email"]
+    },
+    "parkEntry": {
+      "enabled": true,
+      "methods": ["push"]
+    },
+    "dogPark": {
+      "enabled": false,
+      "reason": "Expected location"
+    }
+  },
+  "consolidation": {
+    "enabled": true,
+    "windowMinutes": 15
+  }
+}
+</pre>
+
+<hr>
+
+<h2>Chapter Summary</h2>
+
+<p><strong>Key Takeaways:</strong></p>
+
+<ol>
+<li><strong>Geofence Types</strong>: Circular geofences are simplest and most common, but polygonal and corridor geofences enable complex safety zones for properties and routes.</li>
+<li><strong>Detection Algorithms</strong>: Point-in-circle and ray-casting algorithms detect boundary crossings, while debouncing prevents false alerts from GPS jitter.</li>
+<li><strong>Smart Alerts</strong>: Confidence-based alerting, time-based debouncing, and hysteresis buffers reduce false positives and alert fatigue.</li>
+<li><strong>Dynamic Zones</strong>: Temporary, time-scheduled, and adaptive geofences provide flexibility for travel, camping, and learning normal behavior patterns.</li>
+<li><strong>Analytics Value</strong>: Tracking time-in-zone, entry/exit counts, and activity patterns reveals pet behavior insights and helps identify anomalies.</li>
+</ol>
+
+<hr>
+
+<h2>Review Questions</h2>
+
+<ol>
+<li>Explain the difference between circular and polygonal geofences. When would you use each type?</li>
+<li>Describe the ray casting algorithm for point-in-polygon detection. Why is an odd number of intersections important?</li>
+<li>What is geofence debouncing, and why is it necessary for pet tracking systems?</li>
+<li>How do adaptive geofences work, and what advantages do they provide over static zones?</li>
+<li>Design a geofence configuration for a typical household with a backyard. Include radius sizes and alert settings.</li>
+<li>What strategies can prevent alert fatigue when using multiple geofences? Provide at least three specific techniques.</li>
+</ol>
+
+<hr>
+
+<p><a href="chapter-05.html">Next Chapter: Lost Pet Recovery Protocols →</a></p>
+
+<p><a href="index.html">← Back to Table of Contents</a></p>
+
+<hr>
+
+<p><strong>弘益人間 · Benefit All Humanity</strong></p>
+<p>© 2025 WIA - World Certification Industry Association | MIT License</p>
+
+</body>
+</html>

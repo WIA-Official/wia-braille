@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7장: 데이터 분석과 예측 건강 | WIA-MED-010</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; }
+        .header { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 40px 20px; border-bottom: 3px solid #10B981; }
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+        .chapter-number { color: #10B981; font-size: 1.2em; margin-bottom: 10px; }
+        h1 { color: #10B981; font-size: 2.5em; margin-bottom: 20px; }
+        h2 { color: #10B981; font-size: 1.8em; margin-top: 40px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #334155; }
+        h3 { color: #34d399; font-size: 1.3em; margin-top: 30px; margin-bottom: 15px; }
+        p { color: #cbd5e1; margin-bottom: 15px; }
+        .back-link { display: inline-block; color: #10B981; text-decoration: none; margin-bottom: 20px; }
+        code { background: #1e293b; color: #10B981; padding: 2px 8px; border-radius: 4px; font-family: 'Courier New', monospace; }
+        pre { background: #1e293b; border: 2px solid #334155; border-radius: 8px; padding: 20px; overflow-x: auto; margin: 20px 0; }
+        pre code { background: none; padding: 0; }
+        .callout { background: #1e293b; border-left: 5px solid #10B981; padding: 20px; margin: 25px 0; border-radius: 5px; }
+        ul, ol { margin-left: 30px; margin-bottom: 15px; }
+        li { color: #cbd5e1; margin-bottom: 10px; }
+        .summary { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 30px; border-radius: 10px; margin: 40px 0; }
+        .review-questions { background: #1e293b; padding: 30px; border-radius: 10px; margin: 40px 0; }
+        .review-questions ol { counter-reset: question; list-style: none; margin-left: 0; }
+        .review-questions li { counter-increment: question; margin-bottom: 20px; padding-left: 40px; position: relative; }
+        .review-questions li:before { content: counter(question); position: absolute; left: 0; top: 0; background: #10B981; color: #0f172a; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .navigation { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 2px solid #334155; }
+        .nav-button { background: #10B981; color: #0f172a; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <a href="index.html" class="back-link">← 목차로 돌아가기</a>
+            <div class="chapter-number">7장</div>
+            <h1>데이터 분석과 예측 건강</h1>
+        </div>
+    </div>
+
+    <div class="container">
+        <p style="font-size: 1.2em; color: #94a3b8; margin-bottom: 30px;">
+            RPM의 진정한 가치는 단순히 데이터를 수집하는 것이 아니라, 그 데이터로부터 실행 가능한
+            인사이트를 도출하는 것입니다. 이 장에서는 머신러닝을 활용한 예측 모델링, 이상 탐지,
+            위험 예측, 그리고 개인화된 건강 인사이트 생성을 다룹니다.
+        </p>
+
+        <h2>예측 분석의 기초</h2>
+
+        <h3>데이터 전처리</h3>
+        <p>
+            고품질 예측 모델은 깨끗하고 정규화된 데이터에서 시작됩니다:
+        </p>
+
+        <pre><code>import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler, RobustScaler
+from sklearn.impute import SimpleImputer, KNNImputer
+
+class RPMDataPreprocessor:
+    def __init__(self):
+        self.scaler = RobustScaler()  # 이상치에 강건
+        self.imputer = KNNImputer(n_neighbors=5)
+
+    def preprocess_vital_signs(self, df):
+        """
+        생체신호 데이터 전처리
+        """
+        # 1. 이상치 제거 (생리학적으로 불가능한 값)
+        df = self.remove_physiological_outliers(df)
+
+        # 2. 결측값 처리
+        df = self.handle_missing_values(df)
+
+        # 3. 피처 엔지니어링
+        df = self.engineer_features(df)
+
+        # 4. 정규화
+        df = self.normalize_features(df)
+
+        return df
+
+    def remove_physiological_outliers(self, df):
+        """
+        생리학적으로 불가능한 값 제거
+        """
+        physiological_ranges = {
+            'heart_rate': (30, 220),
+            'systolic_bp': (70, 250),
+            'diastolic_bp': (40, 140),
+            'spo2': (70, 100),
+            'respiratory_rate': (8, 40),
+            'temperature': (35.0, 42.0)
+        }
+
+        for column, (min_val, max_val) in physiological_ranges.items():
+            if column in df.columns:
+                df.loc[(df[column] < min_val) | (df[column] > max_val), column] = np.nan
+
+        return df
+
+    def handle_missing_values(self, df):
+        """
+        결측값 처리 전략
+        """
+        # 시계열 데이터는 전방/후방 채우기
+        time_series_cols = ['heart_rate', 'spo2', 'temperature']
+        df[time_series_cols] = df[time_series_cols].fillna(method='ffill', limit=3)
+
+        # 나머지는 KNN 대체
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        df[numeric_cols] = self.imputer.fit_transform(df[numeric_cols])
+
+        return df
+
+    def engineer_features(self, df):
+        """
+        파생 피처 생성
+        """
+        # 맥압 (Pulse Pressure)
+        if 'systolic_bp' in df.columns and 'diastolic_bp' in df.columns:
+            df['pulse_pressure'] = df['systolic_bp'] - df['diastolic_bp']
+
+        # 평균 동맥압 (MAP)
+            df['mean_arterial_pressure'] = df['diastolic_bp'] + (df['pulse_pressure'] / 3)
+
+        # 심박수 변동성 (롤링 윈도우)
+        if 'heart_rate' in df.columns:
+            df['hr_std_1h'] = df['heart_rate'].rolling(window=12, min_periods=1).std()
+            df['hr_range_1h'] = (
+                df['heart_rate'].rolling(window=12).max() -
+                df['heart_rate'].rolling(window=12).min()
+            )
+
+        # 시간 기반 피처
+        if 'timestamp' in df.columns:
+            df['hour'] = pd.to_datetime(df['timestamp']).dt.hour
+            df['day_of_week'] = pd.to_datetime(df['timestamp']).dt.dayofweek
+            df['is_weekend'] = df['day_of_week'].isin([5, 6]).astype(int)
+
+        return df
+
+    def normalize_features(self, df):
+        """
+        피처 정규화
+        """
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        df[numeric_cols] = self.scaler.fit_transform(df[numeric_cols])
+
+        return df
+</code></pre>
+
+        <h2>머신러닝 기반 위험 예측</h2>
+
+        <h3>재입원 위험 예측 모델</h3>
+        <p>
+            심부전 환자의 30일 재입원 위험을 예측하는 모델:
+        </p>
+
+        <pre><code>from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import roc_auc_score, classification_report
+import xgboost as xgb
+
+class ReadmissionRiskPredictor:
+    def __init__(self):
+        self.model = None
+        self.feature_importance = None
+
+    def prepare_features(self, patient_data):
+        """
+        재입원 예측을 위한 피처 준비
+        """
+        features = {}
+
+        # 1. 인구통계학적 요인
+        features['age'] = patient_data['age']
+        features['gender_male'] = 1 if patient_data['gender'] == 'M' else 0
+
+        # 2. 임상 지표
+        features['ejection_fraction'] = patient_data['ejection_fraction']
+        features['nyha_class'] = patient_data['nyha_class']  # I-IV
+        features['comorbidity_count'] = len(patient_data['comorbidities'])
+
+        # 3. 최근 바이탈 사인 트렌드 (퇴원 후 7일)
+        recent_vitals = patient_data['vitals_7days']
+        features['weight_change_7d'] = recent_vitals['weight'][-1] - recent_vitals['weight'][0]
+        features['avg_hr'] = np.mean(recent_vitals['heart_rate'])
+        features['hr_variability'] = np.std(recent_vitals['heart_rate'])
+        features['avg_bp_systolic'] = np.mean(recent_vitals['systolic_bp'])
+        features['min_spo2'] = np.min(recent_vitals['spo2'])
+
+        # 4. 증상 점수
+        features['dyspnea_score'] = patient_data['current_dyspnea']
+        features['dyspnea_worsening'] = int(
+            patient_data['current_dyspnea'] > patient_data['baseline_dyspnea']
+        )
+        features['edema_present'] = patient_data['edema_score']
+
+        # 5. 약물 순응도
+        features['medication_adherence'] = patient_data['medication_adherence_rate']
+
+        # 6. 의료 이용 이력
+        features['er_visits_6m'] = patient_data['er_visits_last_6_months']
+        features['hospitalizations_1y'] = patient_data['hospitalizations_last_year']
+        features['days_since_discharge'] = patient_data['days_since_discharge']
+
+        # 7. 사회경제적 요인
+        features['lives_alone'] = patient_data['lives_alone']
+        features['has_caregiver'] = patient_data['has_caregiver']
+
+        return pd.DataFrame([features])
+
+    def train_model(self, X_train, y_train):
+        """
+        XGBoost 모델 훈련
+        """
+        self.model = xgb.XGBClassifier(
+            n_estimators=200,
+            max_depth=6,
+            learning_rate=0.1,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            random_state=42
+        )
+
+        self.model.fit(X_train, y_train)
+
+        # 피처 중요도 저장
+        self.feature_importance = pd.DataFrame({
+            'feature': X_train.columns,
+            'importance': self.model.feature_importances_
+        }).sort_values('importance', ascending=False)
+
+        return self.model
+
+    def predict_risk(self, patient_data):
+        """
+        개별 환자의 재입원 위험 예측
+        """
+        features = self.prepare_features(patient_data)
+
+        # 확률 예측
+        risk_prob = self.model.predict_proba(features)[0][1]
+
+        # 위험 분류
+        if risk_prob >= 0.7:
+            risk_category = 'high'
+            recommendation = '집중 모니터링, 조기 외래 방문, 간호사 주간 전화'
+        elif risk_prob >= 0.4:
+            risk_category = 'medium'
+            recommendation = '주 2회 모니터링, 증상 악화 시 연락'
+        else:
+            risk_category = 'low'
+            recommendation = '표준 모니터링 프로토콜'
+
+        # 주요 위험 요인 식별
+        top_risk_factors = self.identify_top_risk_factors(features)
+
+        return {
+            'risk_probability': risk_prob,
+            'risk_category': risk_category,
+            'recommendation': recommendation,
+            'top_risk_factors': top_risk_factors
+        }
+
+    def identify_top_risk_factors(self, patient_features):
+        """
+        환자별 주요 위험 요인 식별
+        """
+        risk_factors = []
+
+        # 피처 중요도와 환자 값 조합
+        for _, row in self.feature_importance.head(5).iterrows():
+            feature = row['feature']
+            value = patient_features[feature].values[0]
+            importance = row['importance']
+
+            risk_factors.append({
+                'factor': feature,
+                'value': value,
+                'importance': importance
+            })
+
+        return risk_factors
+</code></pre>
+
+        <h2>이상 탐지 (Anomaly Detection)</h2>
+
+        <h3>비지도 학습 기반 이상 탐지</h3>
+        <pre><code>from sklearn.ensemble import IsolationForest
+from sklearn.svm import OneClassSVM
+import numpy as np
+
+class VitalSignAnomalyDetector:
+    def __init__(self):
+        self.model = IsolationForest(
+            contamination=0.05,  # 5%를 이상치로 가정
+            random_state=42
+        )
+        self.baseline_stats = None
+
+    def fit_baseline(self, historical_data):
+        """
+        환자의 정상 패턴 학습
+        """
+        # 최근 30일 데이터로 기준선 설정
+        self.baseline_stats = {
+            'mean': historical_data.mean(),
+            'std': historical_data.std(),
+            'percentiles': {
+                5: historical_data.quantile(0.05),
+                95: historical_data.quantile(0.95)
+            }
+        }
+
+        # Isolation Forest 훈련
+        self.model.fit(historical_data)
+
+        return self
+
+    def detect_anomalies(self, new_data):
+        """
+        새로운 데이터에서 이상 감지
+        """
+        # Isolation Forest 예측
+        predictions = self.model.predict(new_data)
+        anomaly_scores = self.model.score_samples(new_data)
+
+        anomalies = []
+
+        for idx, (pred, score) in enumerate(zip(predictions, anomaly_scores)):
+            if pred == -1:  # 이상치
+                anomaly_info = {
+                    'index': idx,
+                    'timestamp': new_data.index[idx],
+                    'anomaly_score': score,
+                    'severity': self.classify_severity(score),
+                    'affected_metrics': self.identify_affected_metrics(new_data.iloc[idx])
+                }
+                anomalies.append(anomaly_info)
+
+        return anomalies
+
+    def classify_severity(self, score):
+        """
+        이상 점수로 심각도 분류
+        """
+        if score < -0.5:
+            return 'high'
+        elif score < -0.3:
+            return 'medium'
+        else:
+            return 'low'
+
+    def identify_affected_metrics(self, data_point):
+        """
+        어떤 지표가 이상인지 식별
+        """
+        affected = []
+
+        for metric, value in data_point.items():
+            baseline_mean = self.baseline_stats['mean'][metric]
+            baseline_std = self.baseline_stats['std'][metric]
+
+            # Z-score 계산
+            z_score = abs((value - baseline_mean) / baseline_std)
+
+            if z_score > 3:  # 3 표준편차 이상
+                affected.append({
+                    'metric': metric,
+                    'current_value': value,
+                    'baseline_mean': baseline_mean,
+                    'z_score': z_score
+                })
+
+        return affected
+</code></pre>
+
+        <h2>시계열 예측</h2>
+
+        <h3>LSTM을 사용한 혈당 예측</h3>
+        <pre><code>import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+
+class GlucoseForecastModel:
+    def __init__(self, lookback=12):  # 1시간 (5분 간격)
+        self.lookback = lookback
+        self.model = None
+
+    def build_model(self, input_shape):
+        """
+        LSTM 모델 구축
+        """
+        model = Sequential([
+            LSTM(64, return_sequences=True, input_shape=input_shape),
+            Dropout(0.2),
+            LSTM(32, return_sequences=False),
+            Dropout(0.2),
+            Dense(16, activation='relu'),
+            Dense(1)  # 혈당 값 예측
+        ])
+
+        model.compile(
+            optimizer='adam',
+            loss='mse',
+            metrics=['mae']
+        )
+
+        self.model = model
+        return model
+
+    def prepare_sequences(self, data):
+        """
+        시계열 데이터를 LSTM 입력 형태로 변환
+        """
+        X, y = [], []
+
+        for i in range(len(data) - self.lookback - 12):  # 1시간 후 예측
+            X.append(data[i:i + self.lookback])
+            y.append(data[i + self.lookback + 12])  # 1시간 후
+
+        return np.array(X), np.array(y)
+
+    def predict_hypoglycemia_risk(self, current_glucose_sequence):
+        """
+        1시간 후 저혈당 위험 예측
+        """
+        # 혈당 값 예측
+        predicted_glucose = self.model.predict(
+            current_glucose_sequence.reshape(1, self.lookback, -1)
+        )[0][0]
+
+        # 저혈당 위험 평가
+        if predicted_glucose < 70:
+            risk = 'high'
+            recommendation = '탄수화물 15g 섭취, 15분 후 재측정'
+        elif predicted_glucose < 80:
+            risk = 'medium'
+            recommendation = '간식 준비, 활동 조정'
+        else:
+            risk = 'low'
+            recommendation = '정상 활동 유지'
+
+        return {
+            'predicted_glucose': predicted_glucose,
+            'prediction_time': '1 hour',
+            'hypoglycemia_risk': risk,
+            'recommendation': recommendation
+        }
+</code></pre>
+
+        <h2>개인화된 건강 인사이트</h2>
+
+        <h3>패턴 인식과 권장사항 생성</h3>
+        <pre><code>class PersonalizedHealthInsights:
+    def analyze_activity_patterns(self, patient_data):
+        """
+        활동 패턴 분석 및 인사이트 생성
+        """
+        insights = []
+
+        # 요일별 활동 패턴
+        df = pd.DataFrame(patient_data['daily_steps'])
+        df['day_of_week'] = pd.to_datetime(df['date']).dt.dayofweek
+
+        weekday_avg = df[df['day_of_week'] < 5]['steps'].mean()
+        weekend_avg = df[df['day_of_week'] >= 5]['steps'].mean()
+
+        if weekend_avg < weekday_avg * 0.6:
+            insights.append({
+                'category': 'activity',
+                'insight': f'주말 활동량이 평일의 {weekend_avg/weekday_avg*100:.0f}%입니다',
+                'recommendation': '주말에도 규칙적인 산책이나 운동을 유지하세요',
+                'impact': '심혈관 건강 개선, 혈당 조절 향상'
+            })
+
+        # 혈압과 스트레스 상관관계
+        if 'stress_score' in patient_data:
+            correlation = np.corrcoef(
+                patient_data['stress_score'],
+                patient_data['systolic_bp']
+            )[0, 1]
+
+            if correlation > 0.5:
+                insights.append({
+                    'category': 'stress_bp',
+                    'insight': '스트레스 수준과 혈압 사이에 강한 상관관계가 있습니다',
+                    'recommendation': '명상, 심호흡, 요가 등 스트레스 관리 기법 시도',
+                    'impact': '혈압 평균 5-10 mmHg 감소 가능'
+                })
+
+        # 수면과 혈당 관계
+        if 'sleep_hours' in patient_data and 'glucose' in patient_data:
+            poor_sleep_days = df[df['sleep_hours'] < 6]
+            good_sleep_days = df[df['sleep_hours'] >= 7]
+
+            if len(poor_sleep_days) > 0 and len(good_sleep_days) > 0:
+                glucose_diff = (
+                    poor_sleep_days['fasting_glucose'].mean() -
+                    good_sleep_days['fasting_glucose'].mean()
+                )
+
+                if glucose_diff > 10:
+                    insights.append({
+                        'category': 'sleep_glucose',
+                        'insight': f'수면 부족 시 공복 혈당이 평균 {glucose_diff:.0f} mg/dL 높습니다',
+                        'recommendation': '하루 7-8시간 수면 목표 설정',
+                        'impact': '혈당 조절 개선, 인슐린 민감도 향상'
+                    })
+
+        return insights
+
+    def generate_weekly_report(self, patient_data):
+        """
+        주간 건강 리포트 생성
+        """
+        report = {
+            'period': f"{patient_data['start_date']} - {patient_data['end_date']}",
+            'summary': {},
+            'achievements': [],
+            'areas_for_improvement': [],
+            'personalized_insights': []
+        }
+
+        # 목표 달성도
+        if patient_data['avg_steps'] >= patient_data['step_goal']:
+            report['achievements'].append('걸음 수 목표 달성! 🎉')
+
+        if patient_data['medication_adherence'] >= 0.9:
+            report['achievements'].append('약물 복용 90% 이상 달성')
+
+        # 개선 영역
+        if patient_data['avg_sleep_hours'] < 7:
+            report['areas_for_improvement'].append({
+                'area': '수면',
+                'current': f"{patient_data['avg_sleep_hours']:.1f}시간",
+                'goal': '7-8시간',
+                'tip': '취침 1시간 전 화면 사용 줄이기'
+            })
+
+        # 패턴 기반 인사이트
+        report['personalized_insights'] = self.analyze_activity_patterns(patient_data)
+
+        return report
+</code></pre>
+
+        <div class="callout">
+            <h3>弘益人間: AI의 윤리적 사용</h3>
+            <p>
+                예측 모델은 강력하지만, 책임감 있게 사용해야 합니다. 모델의 예측이 절대적 진리가 아니라
+                확률적 추정임을 명확히 해야 합니다. 특히 고위험 예측은 의료진의 임상적 판단과 결합되어야
+                하며, 환자에게 불필요한 불안을 주지 않도록 소통 방식에 주의해야 합니다. 기술은 의사결정을
+                돕는 도구이지, 인간의 판단을 대체하는 것이 아닙니다.
+            </p>
+        </div>
+
+        <div class="summary">
+            <h2 style="margin-top: 0;">장 요약</h2>
+            <ul>
+                <li>데이터 전처리: 생리학적 이상치 제거, KNN 결측값 대체, 피처 엔지니어링 (맥압, MAP, HRV), RobustScaler 정규화</li>
+                <li>재입원 예측: XGBoost로 30일 위험 예측, 피처 중요도 분석, 70% 이상 고위험 분류</li>
+                <li>이상 탐지: Isolation Forest로 비정상 패턴 감지, Z-score로 영향 받은 지표 식별</li>
+                <li>시계열 예측: LSTM으로 1시간 후 혈당 예측, 저혈당 조기 경보</li>
+                <li>개인화 인사이트: 활동 패턴, 스트레스-혈압 상관관계, 수면-혈당 관계 분석</li>
+                <li>모델 성능: 교차 검증, ROC-AUC, 피처 중요도로 평가</li>
+                <li>윤리적 고려: 예측은 확률적 추정, 의료진 판단 결합 필수, 환자 소통 신중</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h2 style="margin-top: 0;">복습 질문</h2>
+            <ol>
+                <li>RPM 데이터 전처리에서 생리학적 범위를 사용하여 이상치를 제거하는 이유와 방법을 설명하세요.</li>
+                <li>시계열 건강 데이터의 결측값을 처리하는 전략을 2가지 이상 제시하고, 각각의 장단점을 비교하세요.</li>
+                <li>심부전 환자의 30일 재입원 위험 예측 모델에 포함되어야 할 피처를 7가지 범주로 분류하여 설명하세요.</li>
+                <li>Isolation Forest 알고리즘이 이상 탐지에 어떻게 사용되는지 설명하고, contamination 파라미터의 의미를 서술하세요.</li>
+                <li>LSTM 네트워크를 사용하여 혈당을 예측하는 과정을 단계별로 설명하세요.</li>
+                <li>Z-score를 사용하여 특정 바이탈 사인이 개인 기준선에서 얼마나 벗어났는지 판단하는 방법을 설명하세요.</li>
+                <li>활동 패턴, 스트레스-혈압, 수면-혈당 관계를 분석하여 개인화된 건강 인사이트를 생성하는 과정을 설명하세요.</li>
+                <li>머신러닝 모델의 피처 중요도를 분석하여 환자별 주요 위험 요인을 식별하는 방법을 제시하세요.</li>
+                <li>예측 모델의 성능을 평가하는 지표(ROC-AUC, 정확도, 정밀도, 재현율)를 설명하고, 의료 분야에서 어떤 지표가 더 중요한지 논의하세요.</li>
+                <li>AI 예측 모델을 RPM 시스템에 통합할 때 윤리적으로 고려해야 할 사항을 弘益人間 철학과 연결하여 논의하세요.</li>
+            </ol>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-06.html" class="nav-button">← 이전 장</a>
+            <a href="chapter-08.html" class="nav-button">다음 장 →</a>
+        </div>
+    </div>
+
+    <footer style="background: #1e293b; padding: 40px 20px; text-align: center; margin-top: 60px; border-top: 2px solid #10B981;">
+        <p style="color: #94a3b8;">&copy; 2025 SmileStory Inc. / WIA - 원격 환자 모니터링 표준</p>
+        <p style="color: #10B981; font-weight: 600; margin-top: 10px;">弘益人間 · Benefit All Humanity</p>
+    </footer>
+</body>
+</html>

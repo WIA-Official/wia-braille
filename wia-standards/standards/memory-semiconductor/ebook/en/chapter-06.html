@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 6: Memory Protocols and Interfaces - WIA-SEMI-002</title>
+    <style>
+        :root { --bg: #0f172a; --primary: #8B5CF6; --secondary: #1e293b; --text: #e2e8f0; --text-dim: #94a3b8; --accent: #a78bfa; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: var(--primary); }
+        h1 { font-size: 2.5rem; border-bottom: 3px solid var(--primary); padding-bottom: 1rem; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; margin: 2.5rem 0 1rem; }
+        h3 { font-size: 1.5rem; color: var(--accent); margin: 2rem 0 0.75rem; }
+        h4 { font-size: 1.25rem; color: var(--text); margin: 1.5rem 0 0.5rem; }
+        p { margin: 1rem 0; }
+        .chapter-nav { background: var(--secondary); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; }
+        .chapter-nav a { color: var(--primary); text-decoration: none; padding: 0.5rem 1rem; border: 2px solid var(--primary); border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: var(--secondary); }
+        th, td { padding: 1rem; border-bottom: 1px solid var(--border); text-align: left; }
+        th { background: var(--bg); color: var(--primary); }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.75rem 0; }
+        code { background: var(--bg); color: var(--accent); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Courier New', monospace; }
+        pre { background: var(--secondary); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1.5rem 0; border-left: 4px solid var(--primary); }
+        pre code { background: none; padding: 0; }
+        .summary, .questions { background: var(--secondary); border: 2px solid var(--primary); border-radius: 10px; padding: 2rem; margin: 3rem 0; }
+        .info-box { background: var(--secondary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 1.5rem 0; border-radius: 5px; }
+        footer { text-align: center; margin-top: 4rem; padding: 2rem; border-top: 2px solid var(--primary); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-nav">
+            <a href="chapter-05.html">← Previous</a>
+            <span style="color: var(--text-dim);">Chapter 6 of 8</span>
+            <a href="chapter-07.html">Next →</a>
+        </div>
+
+        <h1>Chapter 6: Memory Protocols and Interfaces</h1>
+
+        <p>Memory protocols define how processors communicate with memory devices, specifying command structures, timing requirements, and electrical characteristics. Understanding these protocols is essential for memory controller design, system optimization, and troubleshooting. This chapter covers JEDEC standards, DDR command protocols, NAND Flash interfaces, HBM protocols, and the emerging CXL memory standard.</p>
+
+        <h2>6.1 JEDEC Standards Organization</h2>
+
+        <p>JEDEC (Joint Electron Device Engineering Council) develops open standards for the microelectronics industry, ensuring interoperability across manufacturers. Founded in 1958, JEDEC has published hundreds of standards covering memory semiconductors, from basic specifications to advanced testing methodologies. These standards enable a competitive marketplace where memory from different manufacturers can work together seamlessly.</p>
+
+        <p>Key memory standards include:</p>
+
+        <table>
+            <thead>
+                <tr><th>Standard</th><th>Memory Type</th><th>Description</th><th>Key Features</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>JESD79-4</strong></td><td>DDR4 SDRAM</td><td>DDR4 functional specification and timing</td><td>Up to 3200 MT/s, 16 banks</td></tr>
+                <tr><td><strong>JESD79-5</strong></td><td>DDR5 SDRAM</td><td>DDR5 functional specification</td><td>Up to 8400 MT/s, 32 banks, on-die ECC</td></tr>
+                <tr><td><strong>JESD209-4</strong></td><td>LPDDR4</td><td>Low power DDR4 for mobile devices</td><td>4266 MT/s, 0.6V I/O</td></tr>
+                <tr><td><strong>JESD209-5</strong></td><td>LPDDR5</td><td>Low power DDR5 for mobile</td><td>6400 MT/s, WCK clock, 0.5V I/O</td></tr>
+                <tr><td><strong>JESD235A</strong></td><td>HBM2</td><td>High Bandwidth Memory 2nd gen</td><td>256 GB/s per stack, 1024-bit interface</td></tr>
+                <tr><td><strong>JESD238</strong></td><td>HBM3</td><td>High Bandwidth Memory 3rd gen</td><td>819 GB/s per stack, 16 channels</td></tr>
+                <tr><td><strong>JESD22</strong></td><td>All devices</td><td>Reliability test methods</td><td>HTOL, TC, HAST, ESD testing</td></tr>
+            </tbody>
+        </table>
+
+        <h2>6.2 DDR Command Structure and Protocol</h2>
+
+        <h3>6.2.1 Basic Command Set</h3>
+
+        <p>DDR SDRAM uses a set of commands encoded on control pins. Each command performs a specific function in the memory access sequence:</p>
+
+        <ul>
+            <li><strong>ACTIVATE:</strong> Opens a row for read/write access, loading row data into sense amplifiers</li>
+            <li><strong>READ:</strong> Initiates read from activated row, data appears after CAS latency</li>
+            <li><strong>WRITE:</strong> Initiates write to activated row, data must be provided at correct timing</li>
+            <li><strong>PRECHARGE:</strong> Closes an open row, writing back any modified data</li>
+            <li><strong>REFRESH:</strong> Refreshes DRAM cells to prevent data loss from capacitor leakage</li>
+            <li><strong>MODE REGISTER SET (MRS):</strong> Configures operating parameters like CAS latency, burst length</li>
+            <li><strong>NOP:</strong> No operation, used to meet timing requirements</li>
+        </ul>
+
+        <h3>6.2.2 Command Encoding</h3>
+
+        <p>Commands are encoded using control signals: /CS (chip select), /RAS (row address strobe), /CAS (column address strobe), /WE (write enable). The combination of these signals determines which command is executed:</p>
+
+        <table>
+            <thead>
+                <tr><th>Command</th><th>/CS</th><th>/RAS</th><th>/CAS</th><th>/WE</th><th>Function</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>ACTIVATE</strong></td><td>0</td><td>0</td><td>1</td><td>1</td><td>Open row for access</td></tr>
+                <tr><td><strong>READ</strong></td><td>0</td><td>1</td><td>0</td><td>1</td><td>Initiate read operation</td></tr>
+                <tr><td><strong>WRITE</strong></td><td>0</td><td>1</td><td>0</td><td>0</td><td>Initiate write operation</td></tr>
+                <tr><td><strong>PRECHARGE</strong></td><td>0</td><td>0</td><td>1</td><td>0</td><td>Close open row</td></tr>
+                <tr><td><strong>REFRESH</strong></td><td>0</td><td>0</td><td>0</td><td>1</td><td>Refresh cells</td></tr>
+                <tr><td><strong>MRS</strong></td><td>0</td><td>0</td><td>0</td><td>0</td><td>Mode Register Set</td></tr>
+                <tr><td><strong>NOP</strong></td><td>0</td><td>1</td><td>1</td><td>1</td><td>No Operation</td></tr>
+                <tr><td><strong>DESELECT</strong></td><td>1</td><td>X</td><td>X</td><td>X</td><td>Chip not selected</td></tr>
+            </tbody>
+        </table>
+
+        <h3>6.2.3 DDR Read Sequence Example</h3>
+
+        <p>A typical read operation follows this sequence:</p>
+
+        <pre><code>// Example DDR4 read operation sequence
+1. ACTIVATE (Bank=2, Row=0x1234)
+   - Opens row 0x1234 in bank 2
+   - Must wait tRCD (14 cycles for DDR4-3200)
+
+2. Wait 14 clock cycles (tRCD)
+
+3. READ (Bank=2, Column=0x040, Auto-Precharge=1)
+   - Issues read to column 0x040
+   - Auto-precharge will close row after burst completes
+   - Data appears after tCL cycles (14 cycles for DDR4-3200)
+
+4. Wait 14 clock cycles (tCL)
+
+5. Data Transfer
+   - Burst of 8 transfers (BL8)
+   - Data on both rising and falling clock edges
+   - Total 4 clock cycles for burst
+
+6. PRECHARGE automatic (due to auto-precharge flag)
+   - Row closes, bank ready for next activate after tRP</code></pre>
+
+        <h2>6.3 DDR Timing Parameters</h2>
+
+        <h3>6.3.1 Critical Timing Constraints</h3>
+
+        <p>DDR timing ensures data integrity and proper operation. Violating timing parameters can cause data corruption, system instability, or device damage. Memory controllers must carefully schedule commands to meet all constraints:</p>
+
+        <ul>
+            <li><strong>tCL (CAS Latency):</strong> Delay from READ command to data output. Higher frequencies require higher latency to allow signal propagation. DDR4 ranges from 14-22 cycles, DDR5 from 32-52 cycles.</li>
+            <li><strong>tRCD (RAS to CAS Delay):</strong> Minimum time from ACTIVATE to READ/WRITE. Required to allow row data to stabilize in sense amplifiers before column access.</li>
+            <li><strong>tRP (Row Precharge):</strong> Time to close a row before opening another. Ensures previous row data is properly written back to cells.</li>
+            <li><strong>tRAS (Row Active Time):</strong> Minimum time a row must remain open. Prevents data loss from premature precharge.</li>
+            <li><strong>tRC (Row Cycle Time):</strong> Minimum time between activations to same bank. Sum of tRAS + tRP plus overhead.</li>
+            <li><strong>tRFC (Refresh Cycle Time):</strong> Time required to refresh all rows. Increases with capacity (350ns for 8Gb, 550ns for 16Gb DDR4).</li>
+            <li><strong>tCCD (Column-to-Column Delay):</strong> Minimum time between column commands. Varies by bank group (tCCD_S for same group, tCCD_L for different groups).</li>
+            <li><strong>tWR (Write Recovery):</strong> Time from end of write burst to PRECHARGE. Ensures write data is committed before row closes.</li>
+        </ul>
+
+        <div class="info-box">
+            <h4>DDR4-3200 Timing Example</h4>
+            <p>For DDR4-3200 with tCL=14, tRCD=14, tRP=14:</p>
+            <p>Total read latency = tRCD + tCL = 14 + 14 = 28 cycles = 17.5ns</p>
+            <p>This represents the time from ACTIVATE command to first data output. Page hits (accessing same row) avoid the tRCD delay and achieve much lower latency.</p>
+        </div>
+
+        <h3>6.3.2 DDR4 vs DDR5 Timing Comparison</h3>
+
+        <table>
+            <thead>
+                <tr><th>Parameter</th><th>DDR4-3200</th><th>DDR5-4800</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Clock Period</strong></td><td>0.625 ns</td><td>0.417 ns</td><td>DDR5 runs 1.5x faster</td></tr>
+                <tr><td><strong>tCL</strong></td><td>14 tCK (8.75ns)</td><td>40 tCK (16.67ns)</td><td>Absolute latency increases</td></tr>
+                <tr><td><strong>tRCD</strong></td><td>14 tCK (8.75ns)</td><td>39 tCK (16.25ns)</td><td>Row access overhead</td></tr>
+                <tr><td><strong>tRP</strong></td><td>14 tCK (8.75ns)</td><td>39 tCK (16.25ns)</td><td>Precharge time</td></tr>
+                <tr><td><strong>tRFC</strong></td><td>350-550 ns</td><td>295 ns (per bank)</td><td>DDR5 uses per-bank refresh</td></tr>
+                <tr><td><strong>Burst Length</strong></td><td>8</td><td>16</td><td>DDR5 doubles burst size</td></tr>
+            </tbody>
+        </table>
+
+        <h2>6.4 Signal Integrity and Electrical Characteristics</h2>
+
+        <h3>6.4.1 On-Die Termination (ODT)</h3>
+
+        <p>DDR2 and later include on-die termination resistors to improve signal integrity at high frequencies. ODT provides controlled impedance matching to reduce reflections and ringing on signal lines. The termination resistance can be dynamically enabled/disabled and configured to different values:</p>
+
+        <ul>
+            <li><strong>RTT_NOM:</strong> Nominal termination when not actively driving (40Ω, 48Ω, 60Ω, 120Ω options)</li>
+            <li><strong>RTT_WR:</strong> Write termination, active during writes (80Ω, 120Ω, 240Ω, or disabled)</li>
+            <li><strong>RTT_PARK:</strong> Park termination for idle ranks in multi-rank systems</li>
+        </ul>
+
+        <p>ODT is programmed through mode registers and can be adjusted based on system topology, frequency, and number of ranks.</p>
+
+        <h3>6.4.2 Data Bus Inversion (DBI)</h3>
+
+        <p>DBI reduces simultaneous switching noise and power consumption by inverting data patterns with more than 50% ones. An additional DBI pin indicates when data is inverted. The receiver inverts the data back to original form:</p>
+
+        <pre><code>// DBI Algorithm
+if (count_ones(data_byte) > 4) {
+    data_byte = ~data_byte;  // Invert all bits
+    DBI_pin = 1;             // Signal inversion
+} else {
+    DBI_pin = 0;             // No inversion
+}</code></pre>
+
+        <p>Benefits include reduced power consumption (fewer simultaneous transitions), lower electromagnetic interference (EMI), and improved signal integrity. DBI is optional in DDR4 but mandatory in DDR5.</p>
+
+        <h3>6.4.3 Write Leveling and Read Training</h3>
+
+        <p>At high data rates, clock skew between signals requires calibration. Modern memory systems perform extensive training sequences during initialization:</p>
+
+        <h4>Write Leveling</h4>
+        <p>Aligns DQS (data strobe) signals with clock at the DRAM device. The controller adjusts DQS delay until the DRAM samples it correctly aligned with the clock edge. This compensates for trace length differences and package delays.</p>
+
+        <h4>Read Training</h4>
+        <p>Optimizes the sampling point for incoming data at the controller. The controller sweeps receive delay across the data eye, finds the passing region, and sets the delay to the center of the valid window. This maximizes timing margins.</p>
+
+        <h4>Command/Address Training</h4>
+        <p>Ensures commands and addresses are sampled correctly by the DRAM. Critical at DDR5 speeds where setup/hold margins are tight.</p>
+
+        <p>Training must be performed at boot and may be repeated periodically during operation as voltage and temperature change. Modern controllers can perform online training without disrupting operation.</p>
+
+        <h2>6.5 NAND Flash Interface (ONFI)</h2>
+
+        <h3>6.5.1 ONFI Standard Overview</h3>
+
+        <p>The Open NAND Flash Interface (ONFI) standardizes communication between NAND Flash and controllers, enabling interoperability. ONFI specifications define command sets, timing modes, and feature sets:</p>
+
+        <table>
+            <thead>
+                <tr><th>ONFI Version</th><th>Max Data Rate</th><th>Key Features</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>ONFI 1.0</strong></td><td>50 MT/s</td><td>Basic asynchronous interface</td></tr>
+                <tr><td><strong>ONFI 2.0</strong></td><td>200 MT/s</td><td>NV-DDR synchronous mode</td></tr>
+                <tr><td><strong>ONFI 3.0</strong></td><td>400 MT/s</td><td>NV-DDR2, EZ-NAND features</td></tr>
+                <tr><td><strong>ONFI 4.0</strong></td><td>800 MT/s</td><td>NV-DDR3, multi-plane operations</td></tr>
+                <tr><td><strong>ONFI 5.0</strong></td><td>1600 MT/s</td><td>NV-DDR4, enhanced performance</td></tr>
+            </tbody>
+        </table>
+
+        <h3>6.5.2 NAND Flash Commands</h3>
+
+        <p>NAND Flash uses a simple command interface with opcode-based commands:</p>
+
+        <ul>
+            <li><strong>READ PAGE (00h, 30h):</strong> Reads page from array to internal buffer, then transfers to controller</li>
+            <li><strong>PROGRAM PAGE (80h, 10h):</strong> Programs data from buffer to memory array</li>
+            <li><strong>ERASE BLOCK (60h, D0h):</strong> Erases entire block (64-256 pages)</li>
+            <li><strong>READ STATUS (70h):</strong> Returns device status (ready/busy, pass/fail)</li>
+            <li><strong>RESET (FFh):</strong> Resets device to idle state</li>
+            <li><strong>CACHE PROGRAM (15h):</strong> Pipelines program operations for higher throughput</li>
+            <li><strong>MULTI-PLANE (11h):</strong> Operates on multiple planes in parallel</li>
+        </ul>
+
+        <h2>6.6 HBM Protocol</h2>
+
+        <h3>6.6.1 HBM Architecture</h3>
+
+        <p>High Bandwidth Memory (HBM) uses a wide interface and 3D stacking to achieve extreme bandwidth. HBM2 provides 8 independent channels of 128 bits each (1024 bits total), while HBM3 reorganizes this into 16 channels of 64 bits for better flexibility:</p>
+
+        <ul>
+            <li><strong>HBM2:</strong> 8 channels × 128 bits = 1024 bits, 256-461 GB/s per stack</li>
+            <li><strong>HBM3:</strong> 16 channels × 64 bits = 1024 bits, 665-819 GB/s per stack</li>
+        </ul>
+
+        <p>Each channel operates independently with its own command/address bus, enabling high parallelism. The protocol is simplified compared to DDR, with fixed burst length and no multi-rank complications.</p>
+
+        <h2>6.7 CXL Memory Protocol</h2>
+
+        <h3>6.7.1 Compute Express Link Overview</h3>
+
+        <p>CXL provides cache-coherent memory connectivity over PCIe physical layer, enabling memory pooling and expansion in data centers. CXL defines three sub-protocols:</p>
+
+        <ul>
+            <li><strong>CXL.io:</strong> Standard PCIe I/O transactions for device discovery and configuration</li>
+            <li><strong>CXL.cache:</strong> Device can cache host memory with coherency maintained</li>
+            <li><strong>CXL.mem:</strong> Host can access device-attached memory as expanded main memory</li>
+        </ul>
+
+        <h3>6.7.2 CXL Memory Expansion</h3>
+
+        <p>CXL enables memory pooling and expansion architectures:</p>
+
+        <ul>
+            <li><strong>Type 1:</strong> Accelerators with coherent cache (no device memory)</li>
+            <li><strong>Type 2:</strong> Accelerators with coherent cache and local memory</li>
+            <li><strong>Type 3:</strong> Memory expanders (memory-only devices for capacity expansion)</li>
+        </ul>
+
+        <p>CXL Type 3 devices enable disaggregated memory architectures where memory resources are pooled and dynamically allocated to compute nodes, improving data center efficiency and flexibility.</p>
+
+        <div class="summary">
+            <h2>Key Takeaways</h2>
+            <ul>
+                <li>JEDEC standards define memory interfaces, ensuring interoperability across manufacturers and enabling a competitive marketplace</li>
+                <li>DDR commands (ACTIVATE, READ, WRITE, PRECHARGE, REFRESH) are encoded using control signals and must follow strict timing constraints</li>
+                <li>Timing parameters like tCL, tRCD, tRP, and tRAS ensure proper operation and data integrity. Violations can cause corruption or system failure</li>
+                <li>Signal integrity techniques (ODT, DBI, write leveling, read training) are critical at high data rates to maintain reliable communication</li>
+                <li>NAND Flash uses ONFI protocol with opcode-based commands for page read/program and block erase operations</li>
+                <li>HBM provides 1024-bit wide interface through 3D stacking, achieving 256-819 GB/s per stack depending on generation</li>
+                <li>CXL enables cache-coherent memory expansion over PCIe, supporting disaggregated architectures in data centers</li>
+                <li>Modern memory controllers must perform extensive training (write leveling, read training, command/address training) to operate reliably at high speeds</li>
+            </ul>
+        </div>
+
+        <div class="questions">
+            <h2>Review Questions</h2>
+            <ol>
+                <li>What is the purpose of ACTIVATE and PRECHARGE commands in DDR operation? How do they relate to the row buffer?</li>
+                <li>Calculate total latency for a read operation with tRCD=14, tCL=16 cycles at 3200 MHz. Express in both cycles and nanoseconds.</li>
+                <li>Explain why write leveling is necessary at high DDR speeds. What problem does it solve?</li>
+                <li>What are the three CXL sub-protocols (CXL.io, CXL.cache, CXL.mem) and what is the purpose of each?</li>
+                <li>How does on-die termination (ODT) improve signal integrity? What are the trade-offs of different RTT values?</li>
+                <li>Compare the command structure of DDR SDRAM vs NAND Flash. Why are they different?</li>
+                <li>What is Data Bus Inversion (DBI) and why is it mandatory in DDR5? Calculate the DBI state for byte value 0xF3.</li>
+                <li>Explain the difference between HBM2 and HBM3 channel organization. What are the benefits of HBM3's approach?</li>
+            </ol>
+        </div>
+
+        <div class="chapter-nav">
+            <a href="chapter-05.html">← Previous</a>
+            <span style="color: var(--text-dim);">Chapter 6 of 8</span>
+            <a href="chapter-07.html">Next →</a>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / WIA | 弘益人間 · Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

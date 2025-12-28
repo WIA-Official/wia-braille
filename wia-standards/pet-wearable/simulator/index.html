@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA Pet Wearable Simulator ⌚</title>
+    <style>
+        :root {
+            --primary: #F59E0B;
+            --primary-dark: #D97706;
+            --secondary: #FBBF24;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --gold: #ffd700;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-logo {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .header-logo:hover { color: var(--primary); }
+        .header-title { color: var(--primary); font-size: 1rem; }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        .lang-switch { display: flex; gap: 5px; }
+        .lang-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .lang-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .tab:hover { border-color: var(--primary); color: var(--primary); }
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Panels */
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        /* Slider */
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: var(--border);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .btn-center {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Output */
+        .output {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .output-success { border-color: var(--success); }
+        .output-error { border-color: var(--danger); }
+
+        /* Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Metrics */
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .metric-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* Status Badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        /* Chart placeholder */
+        .chart {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .tabs { justify-content: flex-start; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <a href="../index.html" class="header-logo">⌚ WIA-PET-007</a>
+                <span class="header-title">Pet Wearable Simulator</span>
+            </div>
+            <div class="header-right">
+                <div class="lang-switch">
+                    <button class="lang-btn active" onclick="switchLang('en')">EN</button>
+                    <button class="lang-btn" onclick="switchLang('ko')">KO</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('data-format')">📊 Data Format</div>
+            <div class="tab" onclick="switchTab('algorithms')">🧠 Algorithms</div>
+            <div class="tab" onclick="switchTab('protocol')">🔗 Protocol</div>
+            <div class="tab" onclick="switchTab('integration')">🔌 Integration</div>
+            <div class="tab" onclick="switchTab('test')">🧪 Test</div>
+        </div>
+
+        <!-- Data Format Panel -->
+        <div id="panel-data-format" class="panel active">
+            <div class="card">
+                <h3>Pet Profile Data Format</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Pet ID</label>
+                        <input type="text" id="petId" value="PET-20250001" placeholder="PET-XXXXXXXX">
+                    </div>
+                    <div class="form-group">
+                        <label>Pet Name</label>
+                        <input type="text" id="petName" value="Max" placeholder="Pet name">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Species</label>
+                        <select id="species">
+                            <option value="dog">Dog</option>
+                            <option value="cat">Cat</option>
+                            <option value="rabbit">Rabbit</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Breed</label>
+                        <input type="text" id="breed" value="Golden Retriever" placeholder="Breed">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Weight (kg)</label>
+                        <input type="number" id="weight" value="30" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Age (years)</label>
+                        <input type="number" id="age" value="3" step="0.1">
+                    </div>
+                </div>
+                <div class="btn-center">
+                    <button class="btn btn-primary" onclick="generatePetProfile()">Generate Pet Profile JSON</button>
+                    <button class="btn btn-secondary" onclick="generateActivityData()">Generate Activity Data</button>
+                </div>
+                <div class="output" id="dataOutput"></div>
+            </div>
+        </div>
+
+        <!-- Algorithms Panel -->
+        <div id="panel-algorithms" class="panel">
+            <div class="card">
+                <h3>Activity Recognition Algorithm</h3>
+                <div class="form-group">
+                    <label>Activity Type</label>
+                    <select id="activityType">
+                        <option value="walking">Walking</option>
+                        <option value="running">Running</option>
+                        <option value="playing">Playing</option>
+                        <option value="resting">Resting</option>
+                        <option value="sleeping">Sleeping</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Duration (minutes): <span id="durationValue">30</span></label>
+                    <input type="range" id="duration" min="1" max="180" value="30" oninput="updateDurationValue()">
+                </div>
+                <div class="form-group">
+                    <label>Intensity (1-10): <span id="intensityValue">5</span></label>
+                    <input type="range" id="intensity" min="1" max="10" value="5" oninput="updateIntensityValue()">
+                </div>
+                <div class="btn-center">
+                    <button class="btn btn-primary" onclick="calculateActivity()">Calculate Activity Metrics</button>
+                    <button class="btn btn-secondary" onclick="detectAnomalies()">Detect Anomalies</button>
+                </div>
+                <div class="metrics" id="activityMetrics"></div>
+                <div class="output" id="algorithmOutput"></div>
+            </div>
+
+            <div class="card">
+                <h3>Health Metrics Analysis</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Heart Rate (bpm)</label>
+                        <input type="number" id="heartRate" value="90" min="40" max="200">
+                    </div>
+                    <div class="form-group">
+                        <label>Temperature (°C)</label>
+                        <input type="number" id="temperature" value="38.5" step="0.1" min="36" max="41">
+                    </div>
+                </div>
+                <div class="btn-center">
+                    <button class="btn btn-primary" onclick="analyzeHealth()">Analyze Health Status</button>
+                </div>
+                <div class="output" id="healthOutput"></div>
+            </div>
+        </div>
+
+        <!-- Protocol Panel -->
+        <div id="panel-protocol" class="panel">
+            <div class="card">
+                <h3>BLE Connection Protocol</h3>
+                <div class="form-group">
+                    <label>Device ID</label>
+                    <input type="text" id="deviceId" value="BLE-PET-COLLAR-0001" placeholder="Device identifier">
+                </div>
+                <div class="form-group">
+                    <label>Connection Mode</label>
+                    <select id="connectionMode">
+                        <option value="continuous">Continuous Monitoring</option>
+                        <option value="periodic">Periodic Sync (Every 5 min)</option>
+                        <option value="low-power">Low Power Mode (Every 30 min)</option>
+                    </select>
+                </div>
+                <div class="btn-center">
+                    <button class="btn btn-primary" onclick="simulateConnection()">Simulate Connection</button>
+                    <button class="btn btn-secondary" onclick="streamData()">Stream Real-time Data</button>
+                </div>
+                <div class="output" id="protocolOutput"></div>
+            </div>
+
+            <div class="card">
+                <h3>GPS Location Protocol</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Latitude</label>
+                        <input type="number" id="latitude" value="37.5665" step="0.0001" placeholder="Latitude">
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude</label>
+                        <input type="number" id="longitude" value="126.9780" step="0.0001" placeholder="Longitude">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Safe Zone Radius (meters)</label>
+                    <input type="number" id="safeZone" value="100" step="10">
+                </div>
+                <div class="btn-center">
+                    <button class="btn btn-primary" onclick="checkLocation()">Check Geofence</button>
+                    <button class="btn btn-secondary" onclick="sendAlert()">Send Escape Alert</button>
+                </div>
+                <div class="output" id="locationOutput"></div>
+            </div>
+        </div>
+
+        <!-- Integration Panel -->
+        <div id="panel-integration" class="panel">
+            <div class="card">
+                <h3>Veterinary Clinic Integration</h3>
+                <div class="form-group">
+                    <label>Clinic API Endpoint</label>
+                    <input type="text" id="clinicApi" value="https://api.vetclinic.com/v1" placeholder="API endpoint">
+                </div>
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="password" id="apiKey" value="wia_test_key_12345" placeholder="API key">
+                </div>
+                <div class="btn-center">
+                    <button class="btn btn-primary" onclick="testVetIntegration()">Test Connection</button>
+                    <button class="btn btn-secondary" onclick="syncHealthData()">Sync Health Data</button>
+                </div>
+                <div class="output" id="integrationOutput"></div>
+            </div>
+
+            <div class="card">
+                <h3>Pet Insurance Integration</h3>
+                <div class="form-group">
+                    <label>Insurance Provider</label>
+                    <select id="insuranceProvider">
+                        <option value="petplan">PetPlan</option>
+                        <option value="nationwide">Nationwide</option>
+                        <option value="trupanion">Trupanion</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Policy Number</label>
+                    <input type="text" id="policyNumber" value="INS-20250001" placeholder="Policy number">
+                </div>
+                <div class="btn-center">
+                    <button class="btn btn-primary" onclick="submitClaim()">Submit Activity-Based Claim</button>
+                </div>
+                <div class="output" id="insuranceOutput"></div>
+            </div>
+        </div>
+
+        <!-- Test Panel -->
+        <div id="panel-test" class="panel">
+            <div class="card">
+                <h3>Comprehensive System Test</h3>
+                <div class="btn-center">
+                    <button class="btn btn-primary" onclick="runFullTest()">Run Full System Test</button>
+                    <button class="btn btn-secondary" onclick="runBatteryTest()">Battery Life Test</button>
+                    <button class="btn btn-secondary" onclick="runAccuracyTest()">Accuracy Test</button>
+                </div>
+                <div class="metrics" id="testMetrics"></div>
+                <div class="output" id="testOutput"></div>
+            </div>
+
+            <div class="card">
+                <h3>WIA Certification Test</h3>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">
+                    Test compliance with WIA-PET-007 standard requirements
+                </p>
+                <div class="btn-center">
+                    <button class="btn btn-primary" onclick="runCertificationTest()">Run Certification Test</button>
+                </div>
+                <div class="output" id="certOutput"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+
+        function switchLang(lang) {
+            currentLang = lang;
+            const buttons = document.querySelectorAll('.lang-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function switchTab(tabName) {
+            // Hide all panels
+            document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+
+            // Show selected panel
+            document.getElementById('panel-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function updateDurationValue() {
+            document.getElementById('durationValue').textContent = document.getElementById('duration').value;
+        }
+
+        function updateIntensityValue() {
+            document.getElementById('intensityValue').textContent = document.getElementById('intensity').value;
+        }
+
+        // Data Format Functions
+        function generatePetProfile() {
+            const profile = {
+                petId: document.getElementById('petId').value,
+                name: document.getElementById('petName').value,
+                species: document.getElementById('species').value,
+                breed: document.getElementById('breed').value,
+                weight: parseFloat(document.getElementById('weight').value),
+                age: parseFloat(document.getElementById('age').value),
+                registeredAt: new Date().toISOString(),
+                version: "1.0.0",
+                standard: "WIA-PET-007"
+            };
+
+            document.getElementById('dataOutput').textContent = JSON.stringify(profile, null, 2);
+            document.getElementById('dataOutput').className = 'output output-success';
+        }
+
+        function generateActivityData() {
+            const activityData = {
+                deviceId: "WIA-PET-COLLAR-001",
+                petId: document.getElementById('petId').value,
+                timestamp: new Date().toISOString(),
+                activities: [
+                    {
+                        type: "walking",
+                        duration: 45,
+                        distance: 2.3,
+                        caloriesBurned: 120,
+                        averageSpeed: 3.1,
+                        heartRateAvg: 95
+                    },
+                    {
+                        type: "playing",
+                        duration: 20,
+                        distance: 0.8,
+                        caloriesBurned: 85,
+                        averageSpeed: 2.4,
+                        heartRateAvg: 110
+                    },
+                    {
+                        type: "resting",
+                        duration: 180,
+                        heartRateAvg: 70
+                    }
+                ],
+                dailySummary: {
+                    totalSteps: 8420,
+                    totalDistance: 5.6,
+                    totalCalories: 385,
+                    activeMinutes: 125,
+                    restMinutes: 315
+                }
+            };
+
+            document.getElementById('dataOutput').textContent = JSON.stringify(activityData, null, 2);
+            document.getElementById('dataOutput').className = 'output output-success';
+        }
+
+        // Algorithm Functions
+        function calculateActivity() {
+            const activityType = document.getElementById('activityType').value;
+            const duration = parseInt(document.getElementById('duration').value);
+            const intensity = parseInt(document.getElementById('intensity').value);
+            const weight = parseFloat(document.getElementById('weight').value) || 30;
+
+            const caloriesPerMinute = {
+                walking: 0.05 * weight * intensity / 5,
+                running: 0.15 * weight * intensity / 5,
+                playing: 0.10 * weight * intensity / 5,
+                resting: 0.01 * weight,
+                sleeping: 0.008 * weight
+            };
+
+            const calories = Math.round(caloriesPerMinute[activityType] * duration);
+            const distance = activityType === 'walking' ? duration * 0.05 :
+                           activityType === 'running' ? duration * 0.12 :
+                           activityType === 'playing' ? duration * 0.03 : 0;
+
+            const metrics = `
+                <div class="metric-box">
+                    <div class="metric-value">${calories}</div>
+                    <div class="metric-label">Calories Burned</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value">${distance.toFixed(2)}</div>
+                    <div class="metric-label">Distance (km)</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value">${Math.round(distance * 1200)}</div>
+                    <div class="metric-label">Steps</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value">${duration}</div>
+                    <div class="metric-label">Duration (min)</div>
+                </div>
+            `;
+
+            document.getElementById('activityMetrics').innerHTML = metrics;
+
+            const result = {
+                activity: activityType,
+                duration: duration,
+                intensity: intensity,
+                metrics: {
+                    caloriesBurned: calories,
+                    distanceKm: parseFloat(distance.toFixed(2)),
+                    steps: Math.round(distance * 1200),
+                    averageHeartRate: 70 + (intensity * 5)
+                },
+                recommendation: calories < 200 ? "Pet needs more exercise" : "Good activity level!",
+                timestamp: new Date().toISOString()
+            };
+
+            document.getElementById('algorithmOutput').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('algorithmOutput').className = 'output output-success';
+        }
+
+        function detectAnomalies() {
+            const anomalies = [
+                { type: "unusual_activity", severity: "low", message: "Activity level 15% below normal" },
+                { type: "heart_rate_spike", severity: "medium", message: "Heart rate elevated for 20 minutes" }
+            ];
+
+            document.getElementById('algorithmOutput').textContent = JSON.stringify({
+                status: "analyzed",
+                anomaliesDetected: 2,
+                anomalies: anomalies,
+                recommendation: "Monitor pet closely for next 24 hours"
+            }, null, 2);
+        }
+
+        function analyzeHealth() {
+            const heartRate = parseInt(document.getElementById('heartRate').value);
+            const temperature = parseFloat(document.getElementById('temperature').value);
+
+            const normalHeartRate = heartRate >= 60 && heartRate <= 120;
+            const normalTemp = temperature >= 38.0 && temperature <= 39.2;
+
+            const status = normalHeartRate && normalTemp ? "healthy" : "requires_attention";
+            const badge = status === "healthy" ? "success" : "warning";
+
+            const result = {
+                status: status,
+                metrics: {
+                    heartRate: {
+                        value: heartRate,
+                        unit: "bpm",
+                        normal: normalHeartRate,
+                        range: "60-120 bpm"
+                    },
+                    temperature: {
+                        value: temperature,
+                        unit: "°C",
+                        normal: normalTemp,
+                        range: "38.0-39.2 °C"
+                    }
+                },
+                alerts: !normalHeartRate || !normalTemp ? [
+                    !normalHeartRate ? "Heart rate outside normal range" : null,
+                    !normalTemp ? "Temperature outside normal range" : null
+                ].filter(Boolean) : [],
+                recommendation: status === "healthy" ? "All vitals normal" : "Consult veterinarian",
+                timestamp: new Date().toISOString()
+            };
+
+            document.getElementById('healthOutput').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('healthOutput').className = 'output output-' + badge;
+        }
+
+        // Protocol Functions
+        function simulateConnection() {
+            const deviceId = document.getElementById('deviceId').value;
+            const mode = document.getElementById('connectionMode').value;
+
+            const connection = {
+                status: "connected",
+                deviceId: deviceId,
+                connectionMode: mode,
+                protocol: "BLE 5.2",
+                signalStrength: -45,
+                batteryLevel: 87,
+                firmwareVersion: "1.2.3",
+                connectedAt: new Date().toISOString()
+            };
+
+            document.getElementById('protocolOutput').textContent = JSON.stringify(connection, null, 2);
+            document.getElementById('protocolOutput').className = 'output output-success';
+        }
+
+        function streamData() {
+            let counter = 0;
+            const interval = setInterval(() => {
+                counter++;
+                const data = {
+                    sequence: counter,
+                    timestamp: new Date().toISOString(),
+                    heartRate: 80 + Math.floor(Math.random() * 20),
+                    steps: Math.floor(Math.random() * 10),
+                    location: {
+                        lat: 37.5665 + (Math.random() - 0.5) * 0.001,
+                        lng: 126.9780 + (Math.random() - 0.5) * 0.001
+                    }
+                };
+
+                document.getElementById('protocolOutput').textContent =
+                    `Streaming data packet ${counter}...\n\n` + JSON.stringify(data, null, 2);
+
+                if (counter >= 5) clearInterval(interval);
+            }, 1000);
+        }
+
+        function checkLocation() {
+            const lat = parseFloat(document.getElementById('latitude').value);
+            const lng = parseFloat(document.getElementById('longitude').value);
+            const safeZone = parseFloat(document.getElementById('safeZone').value);
+
+            const homeLocation = { lat: 37.5665, lng: 126.9780 };
+            const distance = Math.sqrt(
+                Math.pow((lat - homeLocation.lat) * 111000, 2) +
+                Math.pow((lng - homeLocation.lng) * 88000, 2)
+            );
+
+            const result = {
+                currentLocation: { lat, lng },
+                homeLocation: homeLocation,
+                distance: Math.round(distance),
+                safeZoneRadius: safeZone,
+                inSafeZone: distance <= safeZone,
+                alert: distance > safeZone ? "Pet outside safe zone!" : "Pet is safe",
+                timestamp: new Date().toISOString()
+            };
+
+            document.getElementById('locationOutput').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('locationOutput').className = distance <= safeZone ?
+                'output output-success' : 'output output-error';
+        }
+
+        function sendAlert() {
+            const alert = {
+                type: "ESCAPE_ALERT",
+                severity: "HIGH",
+                petId: document.getElementById('petId').value,
+                location: {
+                    lat: document.getElementById('latitude').value,
+                    lng: document.getElementById('longitude').value
+                },
+                message: "Pet has left the safe zone!",
+                notificationsSent: ["SMS", "Email", "Push"],
+                timestamp: new Date().toISOString()
+            };
+
+            document.getElementById('locationOutput').textContent = JSON.stringify(alert, null, 2);
+            document.getElementById('locationOutput').className = 'output output-error';
+        }
+
+        // Integration Functions
+        function testVetIntegration() {
+            const result = {
+                status: "success",
+                endpoint: document.getElementById('clinicApi').value,
+                responseTime: "145ms",
+                clinicInfo: {
+                    name: "Happy Paws Veterinary Clinic",
+                    id: "VET-001",
+                    location: "Seoul, South Korea"
+                },
+                capabilities: ["health_records", "appointments", "prescriptions"],
+                message: "Successfully connected to clinic API"
+            };
+
+            document.getElementById('integrationOutput').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('integrationOutput').className = 'output output-success';
+        }
+
+        function syncHealthData() {
+            const data = {
+                status: "synced",
+                recordsSynced: 156,
+                dataTypes: ["activity", "heart_rate", "temperature", "sleep"],
+                lastSync: new Date().toISOString(),
+                nextSync: new Date(Date.now() + 3600000).toISOString()
+            };
+
+            document.getElementById('integrationOutput').textContent = JSON.stringify(data, null, 2);
+            document.getElementById('integrationOutput').className = 'output output-success';
+        }
+
+        function submitClaim() {
+            const claim = {
+                claimId: "CLM-" + Date.now(),
+                policyNumber: document.getElementById('policyNumber').value,
+                provider: document.getElementById('insuranceProvider').value,
+                type: "wellness_discount",
+                activityBonus: true,
+                dailyActivityMinutes: 125,
+                qualificationThreshold: 60,
+                discount: "15%",
+                status: "approved",
+                message: "Qualified for activity-based discount!",
+                submittedAt: new Date().toISOString()
+            };
+
+            document.getElementById('insuranceOutput').textContent = JSON.stringify(claim, null, 2);
+            document.getElementById('insuranceOutput').className = 'output output-success';
+        }
+
+        // Test Functions
+        function runFullTest() {
+            const metrics = `
+                <div class="metric-box">
+                    <div class="metric-value"><span class="badge badge-success">PASS</span></div>
+                    <div class="metric-label">Data Format</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value"><span class="badge badge-success">PASS</span></div>
+                    <div class="metric-label">Algorithms</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value"><span class="badge badge-success">PASS</span></div>
+                    <div class="metric-label">Protocol</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value"><span class="badge badge-success">PASS</span></div>
+                    <div class="metric-label">Integration</div>
+                </div>
+            `;
+
+            document.getElementById('testMetrics').innerHTML = metrics;
+
+            const result = {
+                status: "all_tests_passed",
+                totalTests: 47,
+                passed: 47,
+                failed: 0,
+                duration: "3.2s",
+                tests: [
+                    { name: "Pet Profile Validation", status: "passed", duration: "45ms" },
+                    { name: "Activity Data Format", status: "passed", duration: "32ms" },
+                    { name: "GPS Accuracy", status: "passed", duration: "156ms" },
+                    { name: "BLE Connection", status: "passed", duration: "89ms" },
+                    { name: "Health Metrics Analysis", status: "passed", duration: "67ms" },
+                    { name: "Calorie Calculation", status: "passed", duration: "23ms" },
+                    { name: "Sleep Tracking", status: "passed", duration: "54ms" },
+                    { name: "API Integration", status: "passed", duration: "234ms" }
+                ]
+            };
+
+            document.getElementById('testOutput').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('testOutput').className = 'output output-success';
+        }
+
+        function runBatteryTest() {
+            const result = {
+                testType: "battery_life",
+                status: "passed",
+                estimatedBatteryLife: "7.5 days",
+                powerConsumption: {
+                    gpsTracking: "15mAh/hour",
+                    heartRateMonitoring: "8mAh/hour",
+                    bleConnection: "5mAh/hour",
+                    standby: "2mAh/hour"
+                },
+                totalCapacity: "1200mAh",
+                recommendation: "Charge every 7 days for optimal performance"
+            };
+
+            document.getElementById('testOutput').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('testOutput').className = 'output output-success';
+        }
+
+        function runAccuracyTest() {
+            const result = {
+                testType: "accuracy_measurement",
+                status: "passed",
+                accuracy: {
+                    gpsLocation: "98.5%",
+                    stepCounting: "96.2%",
+                    heartRate: "94.8%",
+                    sleepDetection: "92.3%",
+                    calorieEstimation: "89.7%"
+                },
+                minAccuracyThreshold: "85%",
+                recommendation: "All metrics exceed minimum threshold"
+            };
+
+            document.getElementById('testOutput').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('testOutput').className = 'output output-success';
+        }
+
+        function runCertificationTest() {
+            const result = {
+                standard: "WIA-PET-007",
+                version: "1.0.0",
+                certificationStatus: "COMPLIANT",
+                requirements: [
+                    { requirement: "Data Format Compliance", status: "passed", score: "100%" },
+                    { requirement: "Algorithm Accuracy", status: "passed", score: "96%" },
+                    { requirement: "Protocol Implementation", status: "passed", score: "98%" },
+                    { requirement: "API Compatibility", status: "passed", score: "100%" },
+                    { requirement: "Security Standards", status: "passed", score: "95%" },
+                    { requirement: "Battery Efficiency", status: "passed", score: "92%" },
+                    { requirement: "Waterproof Rating", status: "passed", score: "100%" },
+                    { requirement: "Documentation", status: "passed", score: "98%" }
+                ],
+                overallScore: "97.4%",
+                certificationLevel: "WIA CERTIFIED - GOLD",
+                issuedDate: new Date().toISOString(),
+                validUntil: new Date(Date.now() + 365*24*3600000).toISOString(),
+                message: "Device meets all WIA-PET-007 certification requirements"
+            };
+
+            document.getElementById('certOutput').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('certOutput').className = 'output output-success';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-UNI-012 Simulator | Language Bridge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 2px solid #3B82F6;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            color: #3B82F6;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1.1em;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3B82F6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 200px;
+            padding: 20px;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .tab:hover {
+            border-color: #3B82F6;
+        }
+
+        .tab.active {
+            background: #3B82F6;
+            border-color: #3B82F6;
+            color: white;
+        }
+
+        .tab-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .tab-title {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        /* Content Panels */
+        .panel {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Translator Panel */
+        .translator-container {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .translation-box {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #334155;
+        }
+
+        .translation-box h3 {
+            color: #3B82F6;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .dialect-selector {
+            margin-bottom: 20px;
+        }
+
+        .dialect-selector select {
+            width: 100%;
+            padding: 12px;
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            font-size: 1.1em;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .swap-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            background: #3B82F6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #2563eb;
+            transform: scale(1.05);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #3B82F6;
+            color: #3B82F6;
+        }
+
+        .btn-secondary:hover {
+            background: #3B82F6;
+            color: white;
+        }
+
+        .translation-result {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #3B82F6;
+        }
+
+        .confidence-score {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px;
+            background: #1e293b;
+            border-radius: 6px;
+        }
+
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3B82F6, #60A5FA);
+            transition: width 0.3s;
+        }
+
+        /* Dictionary Panel */
+        .dictionary-search {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #334155;
+            margin-bottom: 30px;
+        }
+
+        .search-input {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            font-size: 1.1em;
+        }
+
+        .dictionary-entry {
+            background: #0f172a;
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #3B82F6;
+        }
+
+        .term {
+            font-size: 2em;
+            color: #3B82F6;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .variants {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .variant-card {
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #334155;
+        }
+
+        .variant-card.north {
+            border-color: #ef4444;
+        }
+
+        .variant-card.south {
+            border-color: #3B82F6;
+        }
+
+        .variant-label {
+            font-size: 0.9em;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        .variant-term {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .example-list {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+        }
+
+        .example-item {
+            padding: 12px;
+            background: #1e293b;
+            margin-bottom: 10px;
+            border-radius: 6px;
+        }
+
+        /* Dialect Map Panel */
+        .dialect-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .category-card {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #334155;
+            transition: all 0.3s;
+        }
+
+        .category-card:hover {
+            border-color: #3B82F6;
+            transform: translateY(-3px);
+        }
+
+        .category-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .category-title {
+            font-size: 1.3em;
+            color: #3B82F6;
+            margin-bottom: 15px;
+        }
+
+        .word-pair {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 10px;
+            padding: 12px;
+            background: #0f172a;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            align-items: center;
+        }
+
+        .word-north {
+            text-align: right;
+            color: #fca5a5;
+        }
+
+        .word-south {
+            text-align: left;
+            color: #93c5fd;
+        }
+
+        .word-arrow {
+            color: #3B82F6;
+        }
+
+        /* Learning Panel */
+        .lesson-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .lesson-card {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #334155;
+            transition: all 0.3s;
+        }
+
+        .lesson-card:hover {
+            border-color: #3B82F6;
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        }
+
+        .lesson-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .lesson-icon {
+            font-size: 2.5em;
+        }
+
+        .lesson-info h3 {
+            color: #3B82F6;
+            font-size: 1.3em;
+        }
+
+        .lesson-difficulty {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #0f172a;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .progress-bar {
+            margin: 20px 0;
+        }
+
+        .progress-label {
+            font-size: 0.9em;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        .progress {
+            height: 8px;
+            background: #0f172a;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3B82F6, #60A5FA);
+        }
+
+        @media (max-width: 768px) {
+            .translator-container {
+                grid-template-columns: 1fr;
+            }
+            .swap-button {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../" class="back-link">← Back to Language Bridge</a>
+
+        <header>
+            <h1>🗣️ Language Bridge Simulator</h1>
+            <p>Interactive demonstration of inter-Korean language integration</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <div class="tab active" onclick="showPanel('translator')">
+                <div class="tab-icon">🔄</div>
+                <div class="tab-title">Translator</div>
+            </div>
+            <div class="tab" onclick="showPanel('dictionary')">
+                <div class="tab-icon">📖</div>
+                <div class="tab-title">Dictionary</div>
+            </div>
+            <div class="tab" onclick="showPanel('dialect-map')">
+                <div class="tab-icon">🗺️</div>
+                <div class="tab-title">Dialect Map</div>
+            </div>
+            <div class="tab" onclick="showPanel('learning')">
+                <div class="tab-icon">🎓</div>
+                <div class="tab-title">Learning</div>
+            </div>
+        </div>
+
+        <!-- Translator Panel -->
+        <div id="translator" class="panel active">
+            <div class="translator-container">
+                <!-- Source -->
+                <div class="translation-box">
+                    <h3>Source Text</h3>
+                    <div class="dialect-selector">
+                        <select id="sourceDialect">
+                            <option value="south">South Korean (표준어)</option>
+                            <option value="north">North Korean (문화어)</option>
+                            <option value="seoul">Seoul Dialect</option>
+                            <option value="pyongyang">Pyongyang Dialect</option>
+                        </select>
+                    </div>
+                    <textarea id="sourceText" placeholder="Enter text to translate...">핸드폰으로 문자 보냈어요</textarea>
+                    <button class="btn" onclick="translate()" style="margin-top: 15px; width: 100%;">Translate</button>
+                </div>
+
+                <!-- Swap Button -->
+                <div class="swap-button">
+                    <button class="btn btn-secondary" onclick="swapDialects()">⇄</button>
+                </div>
+
+                <!-- Target -->
+                <div class="translation-box">
+                    <h3>Translation</h3>
+                    <div class="dialect-selector">
+                        <select id="targetDialect">
+                            <option value="north">North Korean (문화어)</option>
+                            <option value="south">South Korean (표준어)</option>
+                            <option value="pyongyang">Pyongyang Dialect</option>
+                            <option value="seoul">Seoul Dialect</option>
+                        </select>
+                    </div>
+                    <textarea id="targetText" readonly placeholder="Translation will appear here..."></textarea>
+
+                    <div class="translation-result" id="translationDetails" style="display: none;">
+                        <h4 style="color: #60A5FA; margin-bottom: 10px;">Translation Details</h4>
+                        <p id="alternatives" style="color: #cbd5e1;"></p>
+                        <p id="culturalNotes" style="color: #94a3b8; margin-top: 10px; font-size: 0.95em;"></p>
+                        <div class="confidence-score">
+                            <span style="color: #94a3b8; font-size: 0.9em;">Confidence:</span>
+                            <div class="score-bar">
+                                <div class="score-fill" id="confidenceBar"></div>
+                            </div>
+                            <span id="confidenceValue" style="color: #3B82F6; font-weight: 600;">95%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dictionary Panel -->
+        <div id="dictionary" class="panel">
+            <div class="dictionary-search">
+                <h3 style="color: #3B82F6; margin-bottom: 20px;">Unified Korean Dictionary</h3>
+                <div class="search-input">
+                    <input type="text" id="searchTerm" placeholder="Search for a word..." value="컴퓨터">
+                    <button class="btn" onclick="searchDictionary()">Search</button>
+                </div>
+            </div>
+
+            <div id="dictionaryResult">
+                <!-- Sample entry -->
+                <div class="dictionary-entry">
+                    <div class="term">컴퓨터</div>
+
+                    <div class="variants">
+                        <div class="variant-card north">
+                            <div class="variant-label">North Korea 🇰🇵</div>
+                            <div class="variant-term">콤퓨터</div>
+                            <div class="variant-term">전자계산기</div>
+                        </div>
+                        <div class="variant-card south">
+                            <div class="variant-label">South Korea 🇰🇷</div>
+                            <div class="variant-term">컴퓨터</div>
+                        </div>
+                    </div>
+
+                    <div style="margin: 20px 0;">
+                        <p style="color: #94a3b8;"><strong>Etymology:</strong> From English "computer"</p>
+                        <p style="color: #94a3b8; margin-top: 5px;"><strong>First Usage:</strong> North (1968) | South (1960)</p>
+                    </div>
+
+                    <div class="example-list">
+                        <h4 style="color: #60A5FA; margin-bottom: 15px;">Usage Examples</h4>
+                        <div class="example-item">
+                            <strong style="color: #3B82F6;">South:</strong> 컴퓨터로 작업하고 있어요
+                        </div>
+                        <div class="example-item">
+                            <strong style="color: #ef4444;">North:</strong> 콤퓨터로 일하고 있습니다
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dialect Map Panel -->
+        <div id="dialect-map" class="panel">
+            <h2 style="color: #3B82F6; margin-bottom: 30px; text-align: center;">Common Dialect Differences</h2>
+
+            <div class="dialect-categories">
+                <div class="category-card">
+                    <div class="category-icon">💻</div>
+                    <div class="category-title">Technology</div>
+                    <div class="word-pair">
+                        <span class="word-north">손전화기</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">핸드폰/휴대폰</span>
+                    </div>
+                    <div class="word-pair">
+                        <span class="word-north">콤퓨터</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">컴퓨터</span>
+                    </div>
+                    <div class="word-pair">
+                        <span class="word-north">프로그람</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">프로그램</span>
+                    </div>
+                </div>
+
+                <div class="category-card">
+                    <div class="category-icon">🍜</div>
+                    <div class="category-title">Food & Dining</div>
+                    <div class="word-pair">
+                        <span class="word-north">공기밥</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">밥</span>
+                    </div>
+                    <div class="word-pair">
+                        <span class="word-north">단고기</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">닭고기</span>
+                    </div>
+                    <div class="word-pair">
+                        <span class="word-north">랭면</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">냉면</span>
+                    </div>
+                </div>
+
+                <div class="category-card">
+                    <div class="category-icon">🏠</div>
+                    <div class="category-title">Daily Life</div>
+                    <div class="word-pair">
+                        <span class="word-north">살림집</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">아파트</span>
+                    </div>
+                    <div class="word-pair">
+                        <span class="word-north">편지</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">문자/메시지</span>
+                    </div>
+                    <div class="word-pair">
+                        <span class="word-north">동무</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">친구</span>
+                    </div>
+                </div>
+
+                <div class="category-card">
+                    <div class="category-icon">⚽</div>
+                    <div class="category-title">Sports & Leisure</div>
+                    <div class="word-pair">
+                        <span class="word-north">축구</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">축구</span>
+                    </div>
+                    <div class="word-pair">
+                        <span class="word-north">탁구</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">탁구/핑퐁</span>
+                    </div>
+                    <div class="word-pair">
+                        <span class="word-north">유희</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">게임</span>
+                    </div>
+                </div>
+
+                <div class="category-card">
+                    <div class="category-icon">🎓</div>
+                    <div class="category-title">Education</div>
+                    <div class="word-pair">
+                        <span class="word-north">학생</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">학생</span>
+                    </div>
+                    <div class="word-pair">
+                        <span class="word-north">교원</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">선생님/교사</span>
+                    </div>
+                    <div class="word-pair">
+                        <span class="word-north">대학</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">대학교</span>
+                    </div>
+                </div>
+
+                <div class="category-card">
+                    <div class="category-icon">👔</div>
+                    <div class="category-title">Clothing</div>
+                    <div class="word-pair">
+                        <span class="word-north">양복</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">정장/슈트</span>
+                    </div>
+                    <div class="word-pair">
+                        <span class="word-north">운동화</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">운동화/스니커즈</span>
+                    </div>
+                    <div class="word-pair">
+                        <span class="word-north">내의</span>
+                        <span class="word-arrow">⟷</span>
+                        <span class="word-south">속옷</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Learning Panel -->
+        <div id="learning" class="panel">
+            <h2 style="color: #3B82F6; margin-bottom: 30px; text-align: center;">Language Learning Paths</h2>
+
+            <div class="lesson-grid">
+                <div class="lesson-card">
+                    <div class="lesson-header">
+                        <div class="lesson-icon">📱</div>
+                        <div class="lesson-info">
+                            <h3>Modern Technology Terms</h3>
+                            <span class="lesson-difficulty" style="background: #3B82F6; color: white;">Beginner</span>
+                        </div>
+                    </div>
+                    <p style="color: #cbd5e1; margin-bottom: 20px;">
+                        Learn how North and South Korea adapted technology vocabulary differently over the past 70 years.
+                    </p>
+                    <div class="progress-bar">
+                        <div class="progress-label">Progress: 65%</div>
+                        <div class="progress">
+                            <div class="progress-fill" style="width: 65%;"></div>
+                        </div>
+                    </div>
+                    <button class="btn" style="width: 100%; margin-top: 15px;">Continue Learning</button>
+                </div>
+
+                <div class="lesson-card">
+                    <div class="lesson-header">
+                        <div class="lesson-icon">🏛️</div>
+                        <div class="lesson-info">
+                            <h3>Political & Social Terms</h3>
+                            <span class="lesson-difficulty" style="background: #f59e0b; color: white;">Intermediate</span>
+                        </div>
+                    </div>
+                    <p style="color: #cbd5e1; margin-bottom: 20px;">
+                        Understanding politically sensitive vocabulary and how to navigate ideological differences in language.
+                    </p>
+                    <div class="progress-bar">
+                        <div class="progress-label">Progress: 30%</div>
+                        <div class="progress">
+                            <div class="progress-fill" style="width: 30%;"></div>
+                        </div>
+                    </div>
+                    <button class="btn" style="width: 100%; margin-top: 15px;">Continue Learning</button>
+                </div>
+
+                <div class="lesson-card">
+                    <div class="lesson-header">
+                        <div class="lesson-icon">🎭</div>
+                        <div class="lesson-info">
+                            <h3>Cultural Context & Idioms</h3>
+                            <span class="lesson-difficulty" style="background: #ef4444; color: white;">Advanced</span>
+                        </div>
+                    </div>
+                    <p style="color: #cbd5e1; margin-bottom: 20px;">
+                        Deep dive into cultural expressions, proverbs, and idiomatic language that differ between North and South.
+                    </p>
+                    <div class="progress-bar">
+                        <div class="progress-label">Progress: 15%</div>
+                        <div class="progress">
+                            <div class="progress-fill" style="width: 15%;"></div>
+                        </div>
+                    </div>
+                    <button class="btn" style="width: 100%; margin-top: 15px;">Continue Learning</button>
+                </div>
+
+                <div class="lesson-card">
+                    <div class="lesson-header">
+                        <div class="lesson-icon">📜</div>
+                        <div class="lesson-info">
+                            <h3>Historical Linguistics</h3>
+                            <span class="lesson-difficulty" style="background: #ef4444; color: white;">Advanced</span>
+                        </div>
+                    </div>
+                    <p style="color: #cbd5e1; margin-bottom: 20px;">
+                        Explore how Korean language evolved differently in North and South since 1945 division.
+                    </p>
+                    <div class="progress-bar">
+                        <div class="progress-label">Progress: 0%</div>
+                        <div class="progress">
+                            <div class="progress-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    <button class="btn" style="width: 100%; margin-top: 15px;">Start Learning</button>
+                </div>
+
+                <div class="lesson-card">
+                    <div class="lesson-header">
+                        <div class="lesson-icon">🗣️</div>
+                        <div class="lesson-info">
+                            <h3>Pronunciation & Accent</h3>
+                            <span class="lesson-difficulty" style="background: #f59e0b; color: white;">Intermediate</span>
+                        </div>
+                    </div>
+                    <p style="color: #cbd5e1; margin-bottom: 20px;">
+                        Master the subtle differences in pronunciation, intonation, and accent between dialects.
+                    </p>
+                    <div class="progress-bar">
+                        <div class="progress-label">Progress: 45%</div>
+                        <div class="progress">
+                            <div class="progress-fill" style="width: 45%;"></div>
+                        </div>
+                    </div>
+                    <button class="btn" style="width: 100%; margin-top: 15px;">Continue Learning</button>
+                </div>
+
+                <div class="lesson-card">
+                    <div class="lesson-header">
+                        <div class="lesson-icon">💼</div>
+                        <div class="lesson-info">
+                            <h3>Business Communication</h3>
+                            <span class="lesson-difficulty" style="background: #3B82F6; color: white;">Beginner</span>
+                        </div>
+                    </div>
+                    <p style="color: #cbd5e1; margin-bottom: 20px;">
+                        Learn professional vocabulary and business etiquette for inter-Korean commerce and cooperation.
+                    </p>
+                    <div class="progress-bar">
+                        <div class="progress-label">Progress: 80%</div>
+                        <div class="progress">
+                            <div class="progress-fill" style="width: 80%;"></div>
+                        </div>
+                    </div>
+                    <button class="btn" style="width: 100%; margin-top: 15px;">Continue Learning</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function showPanel(panelId) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+            document.getElementById(panelId).classList.add('active');
+            event.target.closest('.tab').classList.add('active');
+        }
+
+        // Translation examples
+        const translations = {
+            '핸드폰으로 문자 보냈어요': {
+                north: '손전화기로 글월 보냈습니다',
+                alternatives: ['휴대전화로 편지 보냈습니다'],
+                notes: '핸드폰 (handphone) → 손전화기 (hand-phone-device), 문자 (text) → 글월 (written message)',
+                confidence: 95
+            },
+            '컴퓨터로 작업하고 있어요': {
+                north: '콤퓨터로 일하고 있습니다',
+                alternatives: ['전자계산기로 작업하고 있습니다'],
+                notes: '컴퓨터 → 콤퓨터/전자계산기, Formality differs (해요체 → 합니다체)',
+                confidence: 92
+            },
+            '친구랑 게임했어': {
+                north: '동무와 유희했습니다',
+                alternatives: ['동무와 놀이했습니다'],
+                notes: '친구 (friend) → 동무 (comrade/friend), 게임 → 유희 (play/game)',
+                confidence: 88
+            }
+        };
+
+        function translate() {
+            const sourceText = document.getElementById('sourceText').value;
+            const sourceDialect = document.getElementById('sourceDialect').value;
+            const targetDialect = document.getElementById('targetDialect').value;
+
+            // Simple demo logic
+            const result = translations[sourceText] || {
+                north: 'Translation not available in demo',
+                alternatives: [],
+                notes: 'This is a demonstration. Full translation requires AI model.',
+                confidence: 0
+            };
+
+            const targetText = targetDialect === 'north' ? result.north : sourceText;
+            document.getElementById('targetText').value = targetText;
+
+            // Show details
+            document.getElementById('translationDetails').style.display = 'block';
+            document.getElementById('alternatives').textContent =
+                'Alternatives: ' + (result.alternatives.join(', ') || 'None');
+            document.getElementById('culturalNotes').textContent =
+                '💡 ' + result.notes;
+            document.getElementById('confidenceBar').style.width = result.confidence + '%';
+            document.getElementById('confidenceValue').textContent = result.confidence + '%';
+        }
+
+        function swapDialects() {
+            const source = document.getElementById('sourceDialect');
+            const target = document.getElementById('targetDialect');
+            const sourceText = document.getElementById('sourceText');
+            const targetText = document.getElementById('targetText');
+
+            [source.value, target.value] = [target.value, source.value];
+            [sourceText.value, targetText.value] = [targetText.value, sourceText.value];
+        }
+
+        function searchDictionary() {
+            const term = document.getElementById('searchTerm').value;
+            // Demo: just show the sample entry
+            // In real implementation, this would query an API
+            alert('Searching for: ' + term + '\n\nThis is a demo. The dictionary entry shown is a sample.');
+        }
+
+        // Initial translation on load
+        window.onload = function() {
+            translate();
+        };
+    </script>
+</body>
+</html>

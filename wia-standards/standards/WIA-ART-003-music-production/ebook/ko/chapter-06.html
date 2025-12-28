@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>제6장 | WIA-ART-003 음악 제작 표준</title>
+<style>:root{--bg:#0f172a;--surface:#1e293b;--surface-2:#283548;--primary:#F59E0B;--text:#f1f5f9;--text-dim:#94a3b8;--border:#334155;--gold:#ffd700;--success:#10b981}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Malgun Gothic',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.9}.container{max-width:900px;margin:0 auto;padding:2rem}header{text-align:center;padding:3rem 0;border-bottom:2px solid var(--primary);margin-bottom:2rem}.badge{display:inline-block;background:var(--primary);color:var(--bg);padding:0.5rem 1.5rem;border-radius:2rem;font-weight:600;margin-bottom:1rem}h1{font-size:2.2rem;color:var(--primary)}h2{color:var(--primary);font-size:1.6rem;margin:2rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)}h3{color:var(--gold);font-size:1.3rem;margin:1.5rem 0 1rem}p{margin-bottom:1rem;word-break:keep-all}.callout{background:var(--surface);border-left:4px solid var(--primary);padding:1.5rem;margin:1.5rem 0;border-radius:0 0.5rem 0.5rem 0}.callout-title{font-weight:600;margin-bottom:0.5rem}pre{background:var(--surface-2);border:1px solid var(--border);border-radius:0.5rem;padding:1rem;overflow-x:auto;margin:1rem 0;font-size:0.85rem}ul,ol{margin:1rem 0 1rem 1.5rem}li{margin-bottom:0.5rem}table{width:100%;border-collapse:collapse;margin:1.5rem 0;background:var(--surface)}th,td{padding:0.75rem;text-align:left;border-bottom:1px solid var(--border)}th{background:var(--surface-2);color:var(--primary)}.nav{display:flex;justify-content:space-between;padding:2rem 0;border-top:1px solid var(--border);margin-top:2rem}.nav a{color:var(--primary);text-decoration:none;padding:0.75rem 1.5rem;background:var(--surface);border-radius:0.5rem}.philosophy{text-align:center;padding:2rem;background:var(--surface);border-radius:1rem;margin:2rem 0}.philosophy-text{font-size:1.5rem;color:var(--gold)}footer{text-align:center;padding:2rem;color:var(--text-dim)}</style>
+</head>
+<body>
+<div class="container">
+<header><div class="badge">제6장 / 8장</div><h1>Phase 3: 세션 교환 프로토콜</h1><p style="color:var(--text-dim)">WIA-ART-003 음악 제작 표준</p></header>
+
+<section>
+<h2>6.1 세션 파일 형식</h2>
+<p>WIA 세션 형식(.wias)은 음악 제작 프로젝트의 완전하고 이식 가능한 표현을 제공합니다. 이 형식은 WIA 호환 DAW에서 세션을 완전히 재구성하는 데 필요한 모든 요소를 캡처합니다.</p>
+
+<h3>세션 패키지 구조</h3>
+<pre>
+MyProject.wias (ZIP 아카이브)
+├── session.json          # 세션 문서
+├── tracks/               # 트랙 정의
+│   ├── track-001.json
+│   ├── track-002.json
+│   └── ...
+├── audio/                # 오디오 파일
+│   ├── audio-001.wac
+│   └── ...
+├── midi/                 # MIDI 파일
+│   ├── midi-001.wiam
+│   └── ...
+├── plugins/              # 플러그인 상태
+│   ├── plugin-001.wiap
+│   └── ...
+├── automation/           # 오토메이션 데이터
+│   └── automation.json
+├── markers/              # 마커 및 리전
+│   └── markers.json
+└── assets/               # 추가 에셋
+    ├── artwork.png
+    └── notes.txt
+</pre>
+
+<div class="callout">
+<div class="callout-title">📦 패키지 장점</div>
+<ul>
+<li>자체 포함: 모든 에셋이 단일 파일에 포함</li>
+<li>이식성: 쉬운 전송을 위한 표준 ZIP 압축</li>
+<li>스트리밍 가능: 전체 다운로드 없이 점진적 로드</li>
+<li>버전 관리: 리비전 히스토리로 모든 변경 추적</li>
+</ul>
+</div>
+</section>
+
+<section>
+<h2>6.2 세션 문서 스키마</h2>
+<p>session.json 파일에는 트랙 구성, 라우팅, 템포 및 글로벌 설정을 포함한 전체 프로젝트 구조를 설명하는 마스터 문서가 포함됩니다.</p>
+
+<h3>세션 메타데이터 필드</h3>
+<table>
+<tr><th>필드</th><th>타입</th><th>설명</th></tr>
+<tr><td>version</td><td>문자열</td><td>WIA 세션 형식 버전</td></tr>
+<tr><td>uuid</td><td>UUID</td><td>고유 세션 식별자</td></tr>
+<tr><td>name</td><td>문자열</td><td>프로젝트 표시 이름</td></tr>
+<tr><td>created</td><td>ISO 8601</td><td>생성 타임스탬프</td></tr>
+<tr><td>modified</td><td>ISO 8601</td><td>마지막 수정 타임스탬프</td></tr>
+<tr><td>collaborators</td><td>배열</td><td>협력자 UUID 목록</td></tr>
+<tr><td>revision</td><td>정수</td><td>세션 리비전 번호</td></tr>
+</table>
+</section>
+
+<section>
+<h2>6.3 트랙 표현</h2>
+<p>세션의 각 트랙은 타입, 클립, 이펙트 체인, 라우팅 및 오토메이션을 포함하여 완전히 설명됩니다. 트랙 정의는 모든 일반적인 DAW 트랙 타입을 지원합니다.</p>
+
+<h3>트랙 유형</h3>
+<table>
+<tr><th>유형</th><th>설명</th><th>포함 내용</th></tr>
+<tr><td>audio</td><td>오디오 녹음/재생</td><td>오디오 클립, 이펙트</td></tr>
+<tr><td>instrument</td><td>가상 악기</td><td>MIDI 클립, 악기, 이펙트</td></tr>
+<tr><td>midi</td><td>MIDI 출력 전용</td><td>MIDI 클립, 출력 라우팅</td></tr>
+<tr><td>aux</td><td>보조/리턴</td><td>이펙트 체인만</td></tr>
+<tr><td>group</td><td>트랙 그룹화</td><td>합산 오디오, 이펙트</td></tr>
+<tr><td>folder</td><td>조직용</td><td>자식 트랙 참조</td></tr>
+</table>
+</section>
+
+<section>
+<h2>6.4 라우팅 그래프</h2>
+<p>WIA-ART-003은 센드, 사이드체인 및 하드웨어 I/O를 포함한 복잡한 신호 라우팅을 캡처합니다. 라우팅 그래프는 모든 라우팅 구성을 표현할 수 있는 DAG(Directed Acyclic Graph)로 저장됩니다.</p>
+
+<h3>라우팅 노드 유형</h3>
+<ul>
+<li><strong>Source</strong>: 오디오 입력, MIDI 입력 또는 클립 재생</li>
+<li><strong>Processor</strong>: 플러그인 이펙트, 악기 출력</li>
+<li><strong>Mixer</strong>: 볼륨, 팬, 합산</li>
+<li><strong>Output</strong>: 마스터 버스, 하드웨어 출력</li>
+</ul>
+</section>
+
+<section>
+<h2>6.5 오토메이션 형식</h2>
+<p>오토메이션 데이터는 높은 정밀도로 저장되며 여러 커브 타입을 지원합니다. 형식은 효율적인 저장 및 실시간 재생을 가능하게 하면서 창작 의도를 보존합니다.</p>
+
+<h3>커브 유형</h3>
+<table>
+<tr><th>타입</th><th>설명</th><th>파라미터</th></tr>
+<tr><td>step</td><td>즉시 점프</td><td>없음</td></tr>
+<tr><td>linear</td><td>직선</td><td>없음</td></tr>
+<tr><td>exponential</td><td>곡선 지수</td><td>지수</td></tr>
+<tr><td>logarithmic</td><td>곡선 로그</td><td>베이스</td></tr>
+<tr><td>bezier</td><td>사용자 정의 커브</td><td>제어점</td></tr>
+<tr><td>scurve</td><td>S자 커브</td><td>텐션</td></tr>
+</table>
+</section>
+
+<section>
+<h2>6.6 장 요약</h2>
+<div class="callout" style="border-color:var(--success)">
+<div class="callout-title">✅ 핵심 정리</div>
+<ul>
+<li>WIA 세션 형식이 이식 가능한 아카이브에 모든 프로젝트 요소 패키징</li>
+<li>세션 문서가 완전한 프로젝트 구조 및 설정 캡처</li>
+<li>트랙 표현이 모든 일반적인 DAW 트랙 유형 지원</li>
+<li>라우팅 그래프가 복잡한 신호 흐름 구성 보존</li>
+<li>오토메이션 형식이 여러 유형의 정밀한 커브 유지</li>
+</ul>
+</div>
+
+<div class="philosophy"><div class="philosophy-text">弘益人間</div><p>모든 창작 결정이 보존되고 공유될 자격이 있습니다.</p></div>
+</section>
+
+<nav class="nav">
+<a href="chapter-05.html">← 제5장</a>
+<a href="chapter-07.html">제7장 →</a>
+</nav>
+<footer><p>WIA-ART-003 v1.0 | © 2025 WIA | 弘益人間</p></footer>
+</div>
+</body>
+</html>

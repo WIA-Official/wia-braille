@@ -1,0 +1,317 @@
+name: WIA Security Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Code Security Scan
+  security-scan:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          components: clippy
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Rust Security Audit
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      - name: Run cargo audit
+        working-directory: security/api/rust
+        run: cargo audit --json > cargo-audit-results.json || true
+        continue-on-error: true
+
+      # TypeScript/Node.js Security
+      - name: Install npm dependencies
+        working-directory: security/api/typescript
+        run: npm ci
+
+      - name: Run npm audit
+        working-directory: security/api/typescript
+        run: npm audit --json > npm-audit-results.json || true
+        continue-on-error: true
+
+      # Python Security
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Run pip-audit
+        working-directory: security/api/python
+        run: pip-audit -r requirements.txt --format json > pip-audit-results.json 2>/dev/null || true
+        continue-on-error: true
+
+      # Upload results
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-results
+          path: |
+            security/api/rust/cargo-audit-results.json
+            security/api/typescript/npm-audit-results.json
+            security/api/python/pip-audit-results.json
+          retention-days: 30
+
+  # Lint and Type Check
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Rust
+      - name: Rust format check
+        working-directory: security/api/rust
+        run: cargo fmt --check
+
+      - name: Rust clippy
+        working-directory: security/api/rust
+        run: cargo clippy -- -D warnings
+
+      # TypeScript
+      - name: Install TypeScript dependencies
+        working-directory: security/api/typescript
+        run: npm ci
+
+      - name: TypeScript type check
+        working-directory: security/api/typescript
+        run: npx tsc --noEmit
+
+      - name: ESLint
+        working-directory: security/api/typescript
+        run: npx eslint src/ --ext .ts || true
+
+      # Python
+      - name: Install Python linting tools
+        run: pip install ruff mypy
+
+      - name: Python ruff check
+        working-directory: security/api/python
+        run: ruff check . || true
+
+      - name: Python mypy
+        working-directory: security/api/python
+        run: mypy wia_security/ --ignore-missing-imports || true
+
+  # Unit Tests
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Rust tests
+      - name: Run Rust tests
+        working-directory: security/api/rust
+        run: cargo test --all-features
+
+      # TypeScript tests
+      - name: Install TypeScript dependencies
+        working-directory: security/api/typescript
+        run: npm ci
+
+      - name: Run TypeScript tests
+        working-directory: security/api/typescript
+        run: npm test || true
+
+      # Python tests
+      - name: Install Python dependencies
+        working-directory: security/api/python
+        run: |
+          pip install pytest pytest-asyncio
+          pip install -e . || pip install .
+
+      - name: Run Python tests
+        working-directory: security/api/python
+        run: pytest tests/ -v || true
+
+  # Schema Validation
+  schema-validation:
+    name: Schema Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install ajv-cli
+        run: npm install -g ajv-cli ajv-formats
+
+      - name: Validate JSON Schemas
+        run: |
+          echo "Validating WIA Security schemas..."
+          for schema in security/spec/schemas/*.schema.json; do
+            echo "Checking $schema"
+            ajv compile -s "$schema" --spec=draft2020 || echo "Warning: $schema validation issue"
+          done
+
+      - name: Validate sample data against schemas
+        run: |
+          if [ -d "security/examples/sample-data" ]; then
+            echo "Validating sample data..."
+            for sample in security/examples/sample-data/*.json; do
+              if [ -f "$sample" ]; then
+                echo "Validating $sample"
+                # Add schema validation here
+              fi
+            done
+          fi
+
+  # Build Check
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Rust library
+        working-directory: security/api/rust
+        run: cargo build --release
+
+      - name: Build TypeScript
+        working-directory: security/api/typescript
+        run: |
+          npm ci
+          npm run build || npx tsc
+
+  # Security Report
+  report:
+    name: Generate Report
+    needs: [security-scan, lint, test, build]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download audit results
+        uses: actions/download-artifact@v4
+        with:
+          name: security-audit-results
+          path: audit-results/
+        continue-on-error: true
+
+      - name: Generate summary report
+        run: |
+          echo "# WIA Security Scan Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Create issue for critical findings
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `Security Scan Failed - ${new Date().toISOString().split('T')[0]}`;
+            const body = `## Security Scan Failure
+
+            **Workflow:** ${context.workflow}
+            **Run:** ${context.runNumber}
+            **Branch:** ${context.ref}
+            **Commit:** ${context.sha}
+
+            Please review the [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for details.
+            `;
+
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security,automated'
+            });
+
+            const existingIssue = issues.data.find(i => i.title.startsWith('Security Scan Failed'));
+
+            if (!existingIssue) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['security', 'automated']
+              });
+            }

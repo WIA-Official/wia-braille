@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: DTLS for IoT - WIA TLS-Lite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #e0e0e0; line-height: 1.8; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: rgba(236, 72, 153, 0.1); border-bottom: 3px solid #EC4899; padding: 30px 0; margin-bottom: 40px; }
+        h1 { color: #EC4899; font-size: 2.5em; margin-bottom: 10px; text-shadow: 0 0 20px rgba(236, 72, 153, 0.5); }
+        h2 { color: #EC4899; font-size: 2em; margin: 40px 0 20px 0; border-left: 5px solid #EC4899; padding-left: 15px; }
+        h3 { color: #EC4899; font-size: 1.5em; margin: 30px 0 15px 0; }
+        .breadcrumb { color: #808080; margin-bottom: 20px; }
+        .breadcrumb a { color: #EC4899; text-decoration: none; }
+        .content-section { background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 30px; margin-bottom: 30px; border: 1px solid rgba(236, 72, 153, 0.2); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(0, 0, 0, 0.3); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(236, 72, 153, 0.2); }
+        th { background: rgba(236, 72, 153, 0.3); color: #EC4899; font-weight: bold; }
+        tr:hover { background: rgba(236, 72, 153, 0.1); }
+        code { background: rgba(0, 0, 0, 0.5); padding: 2px 6px; border-radius: 4px; color: #EC4899; font-family: 'Courier New', monospace; }
+        pre { background: rgba(0, 0, 0, 0.5); border-left: 4px solid #EC4899; padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; }
+        pre code { background: none; padding: 0; color: #e0e0e0; }
+        .api-endpoint { background: rgba(236, 72, 153, 0.1); border-left: 4px solid #EC4899; padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .api-endpoint .method { display: inline-block; background: #EC4899; color: #fff; padding: 5px 15px; border-radius: 5px; font-weight: bold; margin-right: 10px; }
+        .certification-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin: 20px 0; }
+        .cert-item { background: rgba(236, 72, 153, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(236, 72, 153, 0.3); }
+        .cert-item h4 { color: #EC4899; margin-bottom: 8px; }
+        .navigation { display: flex; justify-content: space-between; margin: 40px 0; gap: 20px; }
+        .nav-button { background: rgba(236, 72, 153, 0.2); color: #EC4899; padding: 15px 30px; border-radius: 8px; text-decoration: none; border: 2px solid #EC4899; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-button:hover { background: #EC4899; color: #fff; transform: translateY(-2px); }
+        footer { text-align: center; padding: 30px 0; margin-top: 60px; border-top: 2px solid rgba(236, 72, 153, 0.3); color: #808080; }
+        footer .korean-text { color: #EC4899; font-size: 1.3em; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="breadcrumb"><a href="index.html">Home</a> / Chapter 5</div>
+            <h1>Chapter 5: DTLS for IoT</h1>
+        </header>
+
+        <div class="content-section">
+            <h2>Datagram TLS for Constrained Networks</h2>
+            <p>Many IoT devices operate over UDP-based protocols like CoAP, requiring Datagram TLS (DTLS) for secure communication. DTLS adapts TLS security mechanisms for unreliable datagram transport, handling packet loss, reordering, and duplication while maintaining robust security properties. TLS-Lite's DTLS implementation is specifically optimized for constrained devices and lossy IoT networks.</p>
+            <p>This chapter explores DTLS handshake mechanisms, connection ID extension for mobility, anti-replay protection, and optimizations for power-constrained devices that need to minimize radio transmission.</p>
+        </div>
+
+        <div class="content-section">
+            <h2>DTLS Performance Characteristics</h2>
+            <h3>Table 1: DTLS vs TLS Comparison</h3>
+            <table>
+                <thead>
+                    <tr><th>Feature</th><th>TLS over TCP</th><th>DTLS over UDP</th><th>DTLS-Lite</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Transport</td><td>TCP (reliable)</td><td>UDP (unreliable)</td><td>UDP (unreliable)</td></tr>
+                    <tr><td>Handshake RTT</td><td>2-RTT</td><td>2-RTT + retransmit</td><td>1-RTT optimized</td></tr>
+                    <tr><td>Record Overhead</td><td>21 bytes</td><td>29 bytes</td><td>16 bytes</td></tr>
+                    <tr><td>Cookie Mechanism</td><td>Not needed</td><td>Required</td><td>Optimized</td></tr>
+                    <tr><td>Replay Protection</td><td>Implicit</td><td>Explicit window</td><td>Compact window</td></tr>
+                    <tr><td>Connection Mobility</td><td>No</td><td>Limited</td><td>Yes (Connection ID)</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Table 2: Packet Loss Resilience Strategies</h3>
+            <table>
+                <thead>
+                    <tr><th>Strategy</th><th>Packet Loss Tolerance</th><th>Latency Impact</th><th>Power Consumption</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Simple Retransmission</td><td>Up to 20%</td><td>High</td><td>High</td></tr>
+                    <tr><td>Adaptive Timeout</td><td>Up to 30%</td><td>Medium</td><td>Medium</td></tr>
+                    <tr><td>Forward Error Correction</td><td>Up to 40%</td><td>Low</td><td>Low</td></tr>
+                    <tr><td>Connection ID Migration</td><td>100% (NAT rebinding)</td><td>Very Low</td><td>Very Low</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="content-section">
+            <h2>DTLS Implementation</h2>
+
+            <h3>Code Example 1: DTLS Cookie Mechanism</h3>
+            <pre><code>/**
+ * DTLS Cookie mechanism for DoS protection
+ * Prevents resource exhaustion from spoofed ClientHello messages
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+
+#define COOKIE_SECRET_SIZE 32
+#define COOKIE_SIZE 20
+#define COOKIE_LIFETIME 60  // seconds
+
+typedef struct {
+    uint8_t secret[COOKIE_SECRET_SIZE];
+    uint32_t secret_generation_time;
+} cookie_state_t;
+
+static cookie_state_t g_cookie_state = {0};
+
+/**
+ * Initialize cookie mechanism
+ */
+void dtls_cookie_init(void) {
+    csprng_generate(g_cookie_state.secret, COOKIE_SECRET_SIZE);
+    g_cookie_state.secret_generation_time = get_current_time();
+}
+
+/**
+ * Generate DTLS cookie
+ */
+int dtls_cookie_generate(const uint8_t *client_ip, uint16_t client_port,
+                         const uint8_t *client_random,
+                         uint8_t *cookie) {
+    uint8_t hmac_input[64];
+    size_t input_len = 0;
+
+    // Include client address
+    memcpy(hmac_input + input_len, client_ip, 16);  // IPv6
+    input_len += 16;
+
+    // Include client port
+    hmac_input[input_len++] = (client_port >> 8) & 0xFF;
+    hmac_input[input_len++] = client_port & 0xFF;
+
+    // Include client random
+    memcpy(hmac_input + input_len, client_random, 32);
+    input_len += 32;
+
+    // Compute HMAC with secret
+    uint8_t hmac_output[32];
+    hmac_sha256(hmac_output, g_cookie_state.secret, COOKIE_SECRET_SIZE,
+                hmac_input, input_len);
+
+    // Use first 20 bytes as cookie
+    memcpy(cookie, hmac_output, COOKIE_SIZE);
+
+    return COOKIE_SIZE;
+}
+
+/**
+ * Verify DTLS cookie
+ */
+int dtls_cookie_verify(const uint8_t *client_ip, uint16_t client_port,
+                      const uint8_t *client_random,
+                      const uint8_t *cookie, size_t cookie_len) {
+    if (cookie_len != COOKIE_SIZE) {
+        return -1;
+    }
+
+    // Check if secret is too old
+    uint32_t current_time = get_current_time();
+    if (current_time - g_cookie_state.secret_generation_time > COOKIE_LIFETIME) {
+        return -2;  // Cookie expired
+    }
+
+    // Regenerate expected cookie
+    uint8_t expected_cookie[COOKIE_SIZE];
+    dtls_cookie_generate(client_ip, client_port, client_random,
+                        expected_cookie);
+
+    // Constant-time comparison
+    uint8_t diff = 0;
+    for (size_t i = 0; i < COOKIE_SIZE; i++) {
+        diff |= cookie[i] ^ expected_cookie[i];
+    }
+
+    return (diff == 0) ? 0 : -3;
+}
+</code></pre>
+
+            <h3>Code Example 2: Connection ID Extension</h3>
+            <pre><code>/**
+ * DTLS Connection ID (CID) extension for NAT rebinding
+ * Allows connection to survive IP/port changes
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+
+#define CID_MAX_LENGTH 16
+
+typedef struct {
+    uint8_t cid[CID_MAX_LENGTH];
+    uint8_t cid_length;
+    bool cid_enabled;
+} connection_id_t;
+
+typedef struct {
+    connection_id_t local_cid;
+    connection_id_t peer_cid;
+    uint8_t peer_addr[16];
+    uint16_t peer_port;
+} dtls_connection_t;
+
+/**
+ * Generate local Connection ID
+ */
+int dtls_cid_generate(connection_id_t *cid, uint8_t length) {
+    if (length > CID_MAX_LENGTH) {
+        return -1;
+    }
+
+    csprng_generate(cid->cid, length);
+    cid->cid_length = length;
+    cid->cid_enabled = true;
+
+    return 0;
+}
+
+/**
+ * Create Connection ID extension for ClientHello
+ */
+int dtls_cid_create_extension(const connection_id_t *cid,
+                              uint8_t *extension_data,
+                              size_t *extension_len) {
+    size_t pos = 0;
+
+    // Extension type: connection_id (54)
+    extension_data[pos++] = 0x00;
+    extension_data[pos++] = 0x36;
+
+    // Extension length
+    uint16_t ext_len = 1 + cid->cid_length;
+    extension_data[pos++] = (ext_len >> 8) & 0xFF;
+    extension_data[pos++] = ext_len & 0xFF;
+
+    // CID length
+    extension_data[pos++] = cid->cid_length;
+
+    // CID value
+    memcpy(extension_data + pos, cid->cid, cid->cid_length);
+    pos += cid->cid_length;
+
+    *extension_len = pos;
+    return 0;
+}
+
+/**
+ * Update peer address on NAT rebinding
+ */
+int dtls_cid_update_peer(dtls_connection_t *conn,
+                        const uint8_t *new_addr,
+                        uint16_t new_port,
+                        const uint8_t *received_cid,
+                        uint8_t cid_len) {
+    // Verify CID matches local CID
+    if (!conn->local_cid.cid_enabled) {
+        return -1;  // CID not enabled
+    }
+
+    if (cid_len != conn->local_cid.cid_length) {
+        return -2;  // CID length mismatch
+    }
+
+    if (memcmp(received_cid, conn->local_cid.cid,
+               cid_len) != 0) {
+        return -3;  // CID mismatch
+    }
+
+    // Update peer address and port
+    memcpy(conn->peer_addr, new_addr, 16);
+    conn->peer_port = new_port;
+
+    return 0;  // Migration successful
+}
+</code></pre>
+
+            <h3>Code Example 3: Anti-Replay Window</h3>
+            <pre><code>/**
+ * Compact anti-replay window for DTLS
+ * Detects and rejects replayed packets
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+#define REPLAY_WINDOW_SIZE 64
+
+typedef struct {
+    uint64_t highest_seq;
+    uint64_t window_bitmap;
+} replay_window_t;
+
+/**
+ * Initialize replay window
+ */
+void replay_window_init(replay_window_t *window) {
+    window->highest_seq = 0;
+    window->window_bitmap = 0;
+}
+
+/**
+ * Check and update replay window
+ */
+int replay_window_check(replay_window_t *window, uint64_t seq) {
+    // Sequence number in the future
+    if (seq > window->highest_seq) {
+        uint64_t diff = seq - window->highest_seq;
+
+        if (diff >= REPLAY_WINDOW_SIZE) {
+            // Far in the future - reset window
+            window->window_bitmap = 1;
+        } else {
+            // Shift window
+            window->window_bitmap <<= diff;
+            window->window_bitmap |= 1;
+        }
+
+        window->highest_seq = seq;
+        return 0;  // Accept
+    }
+
+    // Sequence number in the past
+    uint64_t diff = window->highest_seq - seq;
+
+    if (diff >= REPLAY_WINDOW_SIZE) {
+        return -1;  // Too old - reject
+    }
+
+    // Check if already received
+    uint64_t mask = 1ULL << diff;
+    if (window->window_bitmap & mask) {
+        return -2;  // Duplicate - reject
+    }
+
+    // Mark as received
+    window->window_bitmap |= mask;
+    return 0;  // Accept
+}
+
+/**
+ * DTLS record with replay detection
+ */
+int dtls_receive_record(replay_window_t *window,
+                       const uint8_t *record, size_t record_len,
+                       uint8_t *plaintext, size_t *plaintext_len) {
+    // Extract sequence number from record
+    uint64_t seq = 0;
+    for (int i = 0; i < 8; i++) {
+        seq = (seq << 8) | record[3 + i];
+    }
+
+    // Check replay window
+    if (replay_window_check(window, seq) != 0) {
+        return -1;  // Replayed or too old
+    }
+
+    // Decrypt record
+    int result = dtls_decrypt_record(record, record_len,
+                                     plaintext, plaintext_len);
+
+    if (result != 0) {
+        // Decryption failed - don't update window
+        // (it was already updated, so rollback)
+        // In practice, might want to implement rollback
+        return -2;
+    }
+
+    return 0;  // Success
+}
+</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>DTLS Management APIs</h2>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/dtls/init</code>
+                <p>Initialize DTLS context for UDP-based communication</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/dtls/cookie/generate</code>
+                <p>Generate DTLS cookie for HelloVerifyRequest</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/dtls/cookie/verify</code>
+                <p>Verify received DTLS cookie</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/dtls/cid/generate</code>
+                <p>Generate Connection ID for mobility support</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">PUT</span>
+                <code>/api/v1/dtls/cid/update</code>
+                <p>Update peer address after NAT rebinding</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <code>/api/v1/dtls/replay/status</code>
+                <p>Check anti-replay window status</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/dtls/send</code>
+                <p>Send DTLS-protected datagram</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/dtls/receive</code>
+                <p>Receive and process DTLS datagram</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">PUT</span>
+                <code>/api/v1/dtls/timeout</code>
+                <p>Configure retransmission timeouts</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <code>/api/v1/dtls/stats</code>
+                <p>Get DTLS statistics (retransmits, losses)</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/dtls/pmtu</code>
+                <p>Configure path MTU discovery</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/dtls/heartbeat</code>
+                <p>Send DTLS heartbeat for keep-alive</p>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2>DTLS Configuration Schema</h2>
+            <pre><code>{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DTLS Configuration",
+  "type": "object",
+  "properties": {
+    "dtls_version": {
+      "type": "string",
+      "enum": ["DTLS1.2", "DTLS1.3"],
+      "default": "DTLS1.3"
+    },
+    "cookie_mechanism": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "lifetime_seconds": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 300,
+          "default": 60
+        }
+      }
+    },
+    "connection_id": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 4,
+          "maximum": 16,
+          "default": 8
+        }
+      }
+    },
+    "replay_protection": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "window_size": {
+          "type": "integer",
+          "enum": [32, 64, 128],
+          "default": 64
+        }
+      }
+    },
+    "retransmission": {
+      "type": "object",
+      "properties": {
+        "initial_timeout_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000,
+          "default": 1000
+        },
+        "max_retransmits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 5
+        },
+        "backoff_factor": {
+          "type": "number",
+          "minimum": 1.0,
+          "maximum": 3.0,
+          "default": 2.0
+        }
+      }
+    },
+    "pmtu_discovery": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "min_mtu": {
+          "type": "integer",
+          "default": 576
+        },
+        "max_mtu": {
+          "type": "integer",
+          "default": 1500
+        }
+      }
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>DTLS Certification Requirements</h2>
+            <div class="certification-list">
+                <div class="cert-item"><h4>DTLS-001: Cookie Mechanism</h4><p>Stateless cookie for DoS protection</p></div>
+                <div class="cert-item"><h4>DTLS-002: Connection ID</h4><p>Support for Connection ID extension</p></div>
+                <div class="cert-item"><h4>DTLS-003: Replay Protection</h4><p>Anti-replay window implementation</p></div>
+                <div class="cert-item"><h4>DTLS-004: Retransmission</h4><p>Adaptive retransmission with backoff</p></div>
+                <div class="cert-item"><h4>DTLS-005: Packet Reordering</h4><p>Correct handling of out-of-order packets</p></div>
+                <div class="cert-item"><h4>DTLS-006: Fragmentation</h4><p>DTLS handshake message fragmentation</p></div>
+                <div class="cert-item"><h4>DTLS-007: NAT Traversal</h4><p>Support for NAT rebinding with CID</p></div>
+                <div class="cert-item"><h4>DTLS-008: PMTU Discovery</h4><p>Optional path MTU discovery</p></div>
+                <div class="cert-item"><h4>DTLS-009: Heartbeat</h4><p>DTLS heartbeat extension support</p></div>
+                <div class="cert-item"><h4>DTLS-010: Record Format</h4><p>Correct DTLS record format handling</p></div>
+                <div class="cert-item"><h4>DTLS-011: Epoch Management</h4><p>Proper epoch handling for key changes</p></div>
+                <div class="cert-item"><h4>DTLS-012: Timer Management</h4><p>Efficient timer implementation</p></div>
+                <div class="cert-item"><h4>DTLS-013: Packet Loss</h4><p>Tolerance to high packet loss rates</p></div>
+                <div class="cert-item"><h4>DTLS-014: State Management</h4><p>Minimal state for scalability</p></div>
+                <div class="cert-item"><h4>DTLS-015: Error Handling</h4><p>Proper error recovery mechanisms</p></div>
+                <div class="cert-item"><h4>DTLS-016: Version Negotiation</h4><p>DTLS version negotiation support</p></div>
+                <div class="cert-item"><h4>DTLS-017: Record Limits</h4><p>Enforcement of DTLS record size limits</p></div>
+                <div class="cert-item"><h4>DTLS-018: CoAP Integration</h4><p>Integration with CoAP protocol</p></div>
+                <div class="cert-item"><h4>DTLS-019: Performance</h4><p>Meet latency requirements under packet loss</p></div>
+                <div class="cert-item"><h4>DTLS-020: Interoperability</h4><p>Compatibility with standard DTLS implementations</p></div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter4.html" class="nav-button">← Certificate Management</a>
+            <a href="chapter6.html" class="nav-button">Next: TLS Handshake Optimization →</a>
+        </div>
+
+        <footer>
+            <div class="korean-text">弘益人間</div>
+            <p>Benefit All Mankind</p>
+            <p>&copy; 2025 WIA (Wireless IoT Alliance). All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

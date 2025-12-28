@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-EDU-021: Immersive Media Simulator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+
+        .header {
+            text-align: center;
+            padding: 3rem 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .tab-content.active { display: block; }
+
+        .demo-section {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .demo-section h3 {
+            color: #10B981;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .demo-section p {
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+
+        .vr-viewer {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            margin: 1rem 0;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scene-3d {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 8px;
+            min-height: 450px;
+            margin: 1rem 0;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .control-group {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .control-group label {
+            display: block;
+            color: #10B981;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .control-group input,
+        .control-group select {
+            width: 100%;
+            padding: 0.5rem;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+        }
+
+        .control-group input[type="range"] {
+            height: 8px;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .output {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            color: #10B981;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .device-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .device-card:hover {
+            transform: translateY(-5px);
+            border-color: #10B981;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .device-card.selected {
+            border-color: #10B981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .device-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .device-name {
+            color: #10B981;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .device-specs {
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .spatial-demo {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .audio-source {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: #10B981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: move;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+
+        .audio-source:hover {
+            transform: scale(1.2);
+        }
+
+        .listener {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: #059669;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #10B981;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.7);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 6px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            color: #10B981;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Immersive Media Simulator</h1>
+            <p>Interactive demonstrations of VR/AR/XR educational content</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="360video">360° Video</div>
+            <div class="tab" data-tab="3dmodel">3D Visualization</div>
+            <div class="tab" data-tab="spatial">Spatial Audio</div>
+            <div class="tab" data-tab="devices">VR/AR Devices</div>
+            <div class="tab" data-tab="haptic">Haptic Feedback</div>
+        </div>
+
+        <!-- 360° Video Tab -->
+        <div class="tab-content active" data-content="360video">
+            <div class="demo-section">
+                <h3>🎥 360° Video Experience</h3>
+                <p>Immersive 360-degree video allows students to look around and explore environments as if they were actually there.</p>
+
+                <div class="vr-viewer">
+                    <div style="text-align: center;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">🌍</div>
+                        <div style="font-size: 1.2rem; color: #94a3b8;">
+                            360° View: Ancient Egyptian Pyramids<br>
+                            <small style="font-size: 0.9rem;">Click and drag to look around</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Resolution</label>
+                        <select id="resolution">
+                            <option value="4k">4K (3840 × 2160)</option>
+                            <option value="5k">5.7K (5760 × 2880)</option>
+                            <option value="8k" selected>8K (7680 × 4320)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Field of View</label>
+                        <input type="range" min="60" max="120" value="110" id="fov">
+                        <span id="fov-value" style="color: #94a3b8;">110°</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Projection Mode</label>
+                        <select id="projection">
+                            <option value="equirect" selected>Equirectangular</option>
+                            <option value="cubemap">Cubemap</option>
+                            <option value="fisheye">Fisheye</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="generate360Code()">Generate Code</button>
+                <div class="output" id="code-360" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- 3D Visualization Tab -->
+        <div class="tab-content" data-content="3dmodel">
+            <div class="demo-section">
+                <h3>📐 3D Model Visualization</h3>
+                <p>Interactive 3D models allow students to explore complex structures from all angles.</p>
+
+                <div class="scene-3d">
+                    <div style="text-align: center; padding-top: 150px;">
+                        <div style="font-size: 5rem; margin-bottom: 1rem;">🧬</div>
+                        <div style="font-size: 1.3rem; color: #94a3b8;">
+                            DNA Double Helix - Interactive 3D Model<br>
+                            <small>Rotate, zoom, and inspect molecular structure</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">2.5M</div>
+                        <div class="stat-label">Polygons</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">90 FPS</div>
+                        <div class="stat-label">Render Rate</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">4K</div>
+                        <div class="stat-label">Textures</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">PBR</div>
+                        <div class="stat-label">Rendering</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Model Type</label>
+                        <select id="modelType">
+                            <option value="dna">DNA Molecule</option>
+                            <option value="heart">Human Heart</option>
+                            <option value="atom">Atomic Structure</option>
+                            <option value="galaxy">Galaxy Formation</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Lighting</label>
+                        <input type="range" min="0" max="100" value="75" id="lighting">
+                        <span id="lighting-value" style="color: #94a3b8;">75%</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Animation Speed</label>
+                        <input type="range" min="0" max="2" step="0.1" value="1" id="animSpeed">
+                        <span id="speed-value" style="color: #94a3b8;">1.0x</span>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="generate3DCode()">Generate Code</button>
+                <div class="output" id="code-3d" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Spatial Audio Tab -->
+        <div class="tab-content" data-content="spatial">
+            <div class="demo-section">
+                <h3>🔊 Spatial Audio Simulation</h3>
+                <p>3D positional audio creates realistic soundscapes where sound comes from specific locations.</p>
+
+                <div class="spatial-demo" id="spatialDemo">
+                    <div class="listener" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                        👤
+                    </div>
+                    <div class="audio-source" style="top: 20%; left: 20%;" data-sound="bird">🐦</div>
+                    <div class="audio-source" style="top: 20%; right: 20%;" data-sound="water">💧</div>
+                    <div class="audio-source" style="bottom: 20%; left: 30%;" data-sound="music">🎵</div>
+                    <div class="audio-source" style="bottom: 20%; right: 30%;" data-sound="wind">🌬️</div>
+                </div>
+
+                <p style="text-align: center; color: #94a3b8; margin: 1rem 0;">
+                    <small>Drag sound sources to hear how distance and position affect audio perception</small>
+                </p>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Reverb</label>
+                        <input type="range" min="0" max="100" value="30" id="reverb">
+                        <span id="reverb-value" style="color: #94a3b8;">30%</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Attenuation</label>
+                        <select id="attenuation">
+                            <option value="linear">Linear</option>
+                            <option value="inverse" selected>Inverse</option>
+                            <option value="exponential">Exponential</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Environment</label>
+                        <select id="environment">
+                            <option value="outdoor">Outdoor</option>
+                            <option value="classroom" selected>Classroom</option>
+                            <option value="auditorium">Auditorium</option>
+                            <option value="cave">Cave</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="generateAudioCode()">Generate Code</button>
+                <div class="output" id="code-audio" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- VR/AR Devices Tab -->
+        <div class="tab-content" data-content="devices">
+            <div class="demo-section">
+                <h3>🥽 VR/AR Device Support</h3>
+                <p>Cross-platform support for major VR and AR devices.</p>
+
+                <div class="device-grid">
+                    <div class="device-card" onclick="selectDevice(this, 'meta-quest-3')">
+                        <div class="device-icon">🥽</div>
+                        <div class="device-name">Meta Quest 3</div>
+                        <div class="device-specs">2064×2208 per eye<br>120Hz refresh</div>
+                    </div>
+
+                    <div class="device-card" onclick="selectDevice(this, 'apple-vision-pro')">
+                        <div class="device-icon">👓</div>
+                        <div class="device-name">Apple Vision Pro</div>
+                        <div class="device-specs">3680×3140 per eye<br>90Hz refresh</div>
+                    </div>
+
+                    <div class="device-card" onclick="selectDevice(this, 'psvr2')">
+                        <div class="device-icon">🎮</div>
+                        <div class="device-name">PlayStation VR2</div>
+                        <div class="device-specs">2000×2040 per eye<br>120Hz refresh</div>
+                    </div>
+
+                    <div class="device-card" onclick="selectDevice(this, 'hololens')">
+                        <div class="device-icon">🔬</div>
+                        <div class="device-name">HoloLens 2</div>
+                        <div class="device-specs">2K holographic<br>AR passthrough</div>
+                    </div>
+
+                    <div class="device-card" onclick="selectDevice(this, 'magic-leap')">
+                        <div class="device-icon">✨</div>
+                        <div class="device-name">Magic Leap 2</div>
+                        <div class="device-specs">1440×1760 per eye<br>70Hz refresh</div>
+                    </div>
+
+                    <div class="device-card" onclick="selectDevice(this, 'mobile-ar')">
+                        <div class="device-icon">📱</div>
+                        <div class="device-name">Mobile AR</div>
+                        <div class="device-specs">iOS ARKit<br>Android ARCore</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Render Quality</label>
+                        <select id="quality">
+                            <option value="low">Low (Mobile)</option>
+                            <option value="medium">Medium</option>
+                            <option value="high" selected>High</option>
+                            <option value="ultra">Ultra (PC VR)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Tracking Mode</label>
+                        <select id="tracking">
+                            <option value="3dof">3DOF (Rotation only)</option>
+                            <option value="6dof" selected>6DOF (Full tracking)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="generateDeviceCode()">Generate Code</button>
+                <div class="output" id="code-device" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Haptic Feedback Tab -->
+        <div class="tab-content" data-content="haptic">
+            <div class="demo-section">
+                <h3>🎮 Haptic Feedback System</h3>
+                <p>Touch and force feedback create tactile sensations that enhance immersion.</p>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Feedback Type</label>
+                        <select id="hapticType">
+                            <option value="vibration">Vibration</option>
+                            <option value="impact">Impact</option>
+                            <option value="texture">Texture</option>
+                            <option value="resistance">Resistance</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Intensity</label>
+                        <input type="range" min="0" max="100" value="50" id="intensity">
+                        <span id="intensity-value" style="color: #94a3b8;">50%</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Duration (ms)</label>
+                        <input type="range" min="10" max="1000" value="200" id="duration">
+                        <span id="duration-value" style="color: #94a3b8;">200ms</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Pattern</label>
+                        <select id="pattern">
+                            <option value="constant">Constant</option>
+                            <option value="pulse">Pulse</option>
+                            <option value="ramp">Ramp</option>
+                            <option value="wave">Wave</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin: 2rem 0;">
+                    <button class="btn" onclick="testHaptic()">Test Haptic (if supported)</button>
+                </div>
+
+                <button class="btn" onclick="generateHapticCode()">Generate Code</button>
+                <div class="output" id="code-haptic" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelector(`[data-content="${tab.dataset.tab}"]`).classList.add('active');
+            });
+        });
+
+        // Range input updates
+        ['fov', 'lighting', 'animSpeed', 'reverb', 'intensity', 'duration'].forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('input', e => {
+                    const valueSpan = document.getElementById(`${id}-value`);
+                    if (valueSpan) {
+                        valueSpan.textContent = id === 'fov' ? `${e.target.value}°` :
+                                               id === 'animSpeed' ? `${e.target.value}x` :
+                                               id === 'duration' ? `${e.target.value}ms` :
+                                               `${e.target.value}%`;
+                    }
+                });
+            }
+        });
+
+        function selectDevice(card, deviceId) {
+            document.querySelectorAll('.device-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+        }
+
+        function generate360Code() {
+            const code = `import { ImmersiveMedia } from '@wia/immersive-media';
+
+const player = new ImmersiveMedia.Video360({
+  source: 'pyramids-tour-8k.mp4',
+  resolution: '${document.getElementById('resolution').value}',
+  projection: '${document.getElementById('projection').value}',
+  fov: ${document.getElementById('fov').value},
+  controls: true,
+  autoplay: false
+});
+
+// Initialize player
+await player.initialize();
+
+// Add hotspots
+player.addHotspot({
+  position: { yaw: 45, pitch: 10 },
+  content: 'Great Pyramid of Khufu',
+  onClick: () => showInfo('pyramid-info')
+});
+
+console.log('360° video ready!');`;
+            document.getElementById('code-360').style.display = 'block';
+            document.getElementById('code-360').textContent = code;
+        }
+
+        function generate3DCode() {
+            const code = `import { ImmersiveMedia } from '@wia/immersive-media';
+
+const viewer = new ImmersiveMedia.Model3D({
+  model: '${document.getElementById('modelType').value}.glb',
+  lighting: ${document.getElementById('lighting').value / 100},
+  animationSpeed: ${document.getElementById('animSpeed').value},
+  controls: {
+    rotate: true,
+    zoom: true,
+    pan: true
+  },
+  quality: 'high'
+});
+
+// Load and render
+await viewer.load();
+viewer.render();
+
+// Add annotations
+viewer.addAnnotation({
+  position: [0, 1.5, 0],
+  label: 'Hydrogen Bond',
+  description: 'Connects base pairs'
+});`;
+            document.getElementById('code-3d').style.display = 'block';
+            document.getElementById('code-3d').textContent = code;
+        }
+
+        function generateAudioCode() {
+            const code = `import { ImmersiveMedia } from '@wia/immersive-media';
+
+const spatial = new ImmersiveMedia.SpatialAudio({
+  environment: '${document.getElementById('environment').value}',
+  reverb: ${document.getElementById('reverb').value / 100},
+  attenuation: '${document.getElementById('attenuation').value}'
+});
+
+// Add audio sources
+spatial.addSource({
+  id: 'narrator',
+  position: [0, 1.7, 2],
+  audio: 'narration.mp3',
+  volume: 0.8
+});
+
+spatial.addSource({
+  id: 'ambient',
+  position: [5, 0, 0],
+  audio: 'ambient-sounds.mp3',
+  loop: true,
+  volume: 0.4
+});
+
+// Update listener position (user's head)
+spatial.setListenerPosition([0, 1.7, 0]);`;
+            document.getElementById('code-audio').style.display = 'block';
+            document.getElementById('code-audio').textContent = code;
+        }
+
+        function generateDeviceCode() {
+            const code = `import { ImmersiveMedia } from '@wia/immersive-media';
+
+const xr = new ImmersiveMedia.XRDevice({
+  quality: '${document.getElementById('quality').value}',
+  tracking: '${document.getElementById('tracking').value}',
+  features: ['hand-tracking', 'eye-tracking', 'passthrough']
+});
+
+// Check device capabilities
+const capabilities = await xr.getCapabilities();
+console.log('VR Support:', capabilities.vr);
+console.log('AR Support:', capabilities.ar);
+
+// Start XR session
+const session = await xr.startSession('immersive-vr');
+
+session.on('controller', (controller) => {
+  console.log('Controller connected:', controller.handedness);
+});`;
+            document.getElementById('code-device').style.display = 'block';
+            document.getElementById('code-device').textContent = code;
+        }
+
+        function generateHapticCode() {
+            const code = `import { ImmersiveMedia } from '@wia/immersive-media';
+
+const haptic = new ImmersiveMedia.Haptic({
+  type: '${document.getElementById('hapticType').value}',
+  intensity: ${document.getElementById('intensity').value / 100},
+  duration: ${document.getElementById('duration').value},
+  pattern: '${document.getElementById('pattern').value}'
+});
+
+// Trigger haptic feedback
+haptic.trigger({
+  hand: 'right',
+  effect: 'impact'
+});
+
+// Custom haptic pattern
+haptic.playPattern([
+  { intensity: 0.5, duration: 100 },
+  { intensity: 0, duration: 50 },
+  { intensity: 0.8, duration: 150 }
+]);`;
+            document.getElementById('code-haptic').style.display = 'block';
+            document.getElementById('code-haptic').textContent = code;
+        }
+
+        function testHaptic() {
+            if ('vibrate' in navigator) {
+                navigator.vibrate([100, 50, 100, 50, 200]);
+                alert('Haptic feedback triggered! (if your device supports it)');
+            } else {
+                alert('Haptic feedback not supported on this device.');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 06: WIA-AGRI-020</title>
+<style>:root{--primary:#84CC16;--bg:#0f172a;--bg-card:#1e293b;--text:#f8fafc;--text-muted:#94a3b8;--border:#334155}*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.8;padding:40px 20px}.container{max-width:800px;margin:0 auto}nav{margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid var(--border)}nav a{color:var(--text-muted);text-decoration:none;margin-right:15px}nav a:hover{color:var(--primary)}h1{font-size:2.5rem;margin-bottom:20px}.chapter-number{color:var(--primary);font-size:0.9rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px}.chapter-intro{font-size:1.1rem;color:var(--text-muted);margin:20px 0 30px;padding:20px;background:var(--bg-card);border-left:4px solid var(--primary);border-radius:8px}h2{font-size:1.8rem;margin:40px 0 20px;color:var(--primary)}h3{font-size:1.3rem;margin:30px 0 15px}p{margin-bottom:20px;color:var(--text-muted)}.code-block{background:var(--bg-card);padding:20px;border-radius:8px;border:1px solid var(--border);margin:25px 0;overflow-x:auto}pre{color:var(--text);font-size:0.9rem}ul,ol{margin:0 0 20px 25px;color:var(--text-muted)}li{margin-bottom:10px}table{width:100%;border-collapse:collapse;margin:25px 0;background:var(--bg-card)}th,td{padding:12px;text-align:left;border-bottom:1px solid var(--border)}th{background:rgba(132,204,22,0.1);color:var(--primary)}.highlight-box{background:rgba(132,204,22,0.1);border-left:4px solid var(--primary);padding:20px;margin:25px 0;border-radius:8px}.nav-buttons{display:flex;justify-content:space-between;margin-top:50px;padding-top:30px;border-top:1px solid var(--border)}.btn{padding:12px 24px;background:var(--primary);color:white;text-decoration:none;border-radius:8px}.btn-secondary{background:var(--bg-card);border:1px solid var(--border)}footer{margin-top:60px;padding-top:30px;border-top:1px solid var(--border);text-align:center;color:var(--text-muted);font-size:0.9rem}.philosophy{color:#ffd700;margin-bottom:10px}</style>
+</head>
+<body>
+<div class="container">
+<nav><a href="index.html">← Contents</a><a href="chapter-05.html">← Previous</a><a href="chapter-07.html">Next →</a></nav>
+<header>
+<div class="chapter-number">Chapter 6</div>
+<h1>Security and Privacy</h1>
+<div class="chapter-intro">Agricultural data is valuable and sensitive. This chapter covers encryption, authentication, access control, GDPR compliance, and best practices for protecting agricultural data throughout its lifecycle.</div>
+</header>
+<main>
+<h2>The Importance of Agricultural Data Security</h2>
+<p>Agricultural data has real economic value. Yield data reveals farm productivity. Sensor data shows soil quality. Financial records contain sensitive business information. This data must be protected from unauthorized access, theft, and misuse while remaining accessible to legitimate users.</p>
+
+<h3>Threat Landscape</h3>
+<ul>
+<li><strong>Data Theft:</strong> Competitors may seek yield data, planting strategies, or supplier relationships.</li>
+<li><strong>Ransomware:</strong> Attackers encrypt farm data and demand payment for decryption keys.</li>
+<li><strong>Supply Chain Attacks:</strong> Compromised sensors or software can inject false data.</li>
+<li><strong>Privacy Violations:</strong> Unauthorized sharing of farm data with third parties.</li>
+<li><strong>Regulatory Penalties:</strong> GDPR and similar regulations impose fines for data breaches.</li>
+</ul>
+
+<h2>Encryption</h2>
+
+<h3>Data in Transit</h3>
+<p>All WIA-AGRI-020 communications must use encryption to protect data while it travels across networks.</p>
+
+<p><strong>TLS 1.3 for HTTPS:</strong></p>
+<div class="code-block"><pre>tls:
+  version: 1.3
+  ciphers:
+    - TLS_AES_256_GCM_SHA384
+    - TLS_CHACHA20_POLY1305_SHA256
+  verifyPeer: true
+  verifyHostname: true
+  minimumVersion: 1.2</pre></div>
+
+<p><strong>MQTT with TLS:</strong></p>
+<div class="code-block"><pre>client.tls_set(
+    ca_certs="/path/to/ca-cert.pem",
+    certfile="/path/to/client-cert.pem",
+    keyfile="/path/to/client-key.pem",
+    tls_version=ssl.PROTOCOL_TLSv1_2
+)
+client.connect("mqtt.wia-agri.org", 8883, 60)</pre></div>
+
+<h3>Data at Rest</h3>
+<p>Encrypt stored data to protect against server breaches and stolen hardware.</p>
+
+<p><strong>Database Encryption:</strong></p>
+<ul>
+<li>Transparent Data Encryption (TDE) for SQL databases</li>
+<li>Encrypted storage volumes for NoSQL databases</li>
+<li>Application-level encryption for sensitive fields</li>
+<li>Encrypted backups stored in separate locations</li>
+</ul>
+
+<p><strong>Field-Level Encryption:</strong></p>
+<div class="code-block"><pre>const crypto = require('crypto');
+
+class FieldEncryption {
+  constructor(key) {
+    this.algorithm = 'aes-256-gcm';
+    this.key = Buffer.from(key, 'hex');
+  }
+
+  encrypt(plaintext) {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(
+      this.algorithm,
+      this.key,
+      iv
+    );
+
+    let encrypted = cipher.update(plaintext, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+
+    const authTag = cipher.getAuthTag();
+
+    return {
+      encrypted,
+      iv: iv.toString('hex'),
+      authTag: authTag.toString('hex')
+    };
+  }
+
+  decrypt(encrypted, iv, authTag) {
+    const decipher = crypto.createDecipheriv(
+      this.algorithm,
+      this.key,
+      Buffer.from(iv, 'hex')
+    );
+
+    decipher.setAuthTag(Buffer.from(authTag, 'hex'));
+
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+
+    return decrypted;
+  }
+}</pre></div>
+
+<h2>Authentication</h2>
+
+<h3>API Key Management</h3>
+<p>API keys must be treated like passwords - never committed to version control, rotated regularly, and revoked when compromised.</p>
+
+<p><strong>Best Practices:</strong></p>
+<ul>
+<li>Store keys in environment variables or secret management systems</li>
+<li>Use different keys for development, staging, and production</li>
+<li>Rotate keys every 90 days</li>
+<li>Monitor key usage for anomalies</li>
+<li>Immediately revoke compromised keys</li>
+</ul>
+
+<h3>OAuth 2.0</h3>
+<p>For applications accessing data on behalf of farmers, OAuth 2.0 provides secure delegated access without sharing passwords.</p>
+
+<div class="code-block"><pre># OAuth Flow
+1. Application redirects farmer to authorization server
+2. Farmer logs in and grants permissions
+3. Authorization server redirects back with authorization code
+4. Application exchanges code for access token
+5. Application uses token to access WIA-AGRI-020 API</pre></div>
+
+<h3>Certificate-Based Authentication</h3>
+<p>IoT devices use client certificates for mutual TLS authentication:</p>
+
+<div class="code-block"><pre>client.tls_set(
+    ca_certs="ca-cert.pem",
+    certfile="device-cert.pem",
+    keyfile="device-key.pem",
+    cert_reqs=ssl.CERT_REQUIRED
+)</pre></div>
+
+<h2>Authorization and Access Control</h2>
+
+<h3>Role-Based Access Control (RBAC)</h3>
+<table>
+<tr><th>Role</th><th>Permissions</th><th>Typical Users</th></tr>
+<tr><td>Owner</td><td>Full access, user management</td><td>Farm owner</td></tr>
+<tr><td>Manager</td><td>Read/write data, no admin</td><td>Farm manager</td></tr>
+<tr><td>Operator</td><td>Submit data, limited read</td><td>Equipment operators</td></tr>
+<tr><td>Analyst</td><td>Read-only access</td><td>Agronomists, consultants</td></tr>
+<tr><td>Auditor</td><td>Read audit logs</td><td>Compliance officers</td></tr>
+</table>
+
+<h3>Attribute-Based Access Control (ABAC)</h3>
+<p>More granular control based on attributes like data type, field location, or time range:</p>
+
+<div class="code-block"><pre>policy:
+  - subject: role=analyst
+    resource: dataType=SOIL_SENSOR
+    action: read
+    conditions:
+      - fieldId in ['FIELD-NORTH-01', 'FIELD-SOUTH-02']
+      - timestamp > '2025-01-01'
+    effect: allow</pre></div>
+
+<h2>GDPR and Privacy Compliance</h2>
+
+<h3>Data Subject Rights</h3>
+<p>Under GDPR, farmers have specific rights regarding their data:</p>
+
+<ul>
+<li><strong>Right to Access:</strong> Farmers can request copies of all their data</li>
+<li><strong>Right to Rectification:</strong> Farmers can correct inaccurate data</li>
+<li><strong>Right to Erasure:</strong> Farmers can request data deletion ("right to be forgotten")</li>
+<li><strong>Right to Portability:</strong> Farmers can receive data in machine-readable format</li>
+<li><strong>Right to Restrict Processing:</strong> Farmers can limit how data is used</li>
+</ul>
+
+<h3>Data Anonymization</h3>
+<p>For research and benchmarking, personally identifiable information must be removed:</p>
+
+<div class="code-block"><pre>function anonymize(data) {
+  return {
+    ...data,
+    farmId: hashFarmId(data.farmId),
+    location: {
+      // Reduce precision to 1km grid
+      latitude: Math.round(data.location.latitude * 100) / 100,
+      longitude: Math.round(data.location.longitude * 100) / 100
+    },
+    // Remove all personal identifiers
+    owner: undefined,
+    contact: undefined
+  };
+}</pre></div>
+
+<h3>Consent Management</h3>
+<div class="code-block"><pre>{
+  "farmId": "FARM-2025-001",
+  "consent": {
+    "dataCollection": true,
+    "dataSharing": {
+      "research": true,
+      "thirdParty": false,
+      "marketing": false
+    },
+    "dataRetention": "7years",
+    "grantedAt": "2025-01-01T00:00:00.000Z",
+    "withdrawable": true
+  }
+}</pre></div>
+
+<h2>Audit Logging</h2>
+
+<h3>What to Log</h3>
+<ul>
+<li>All data access (read, write, delete)</li>
+<li>Authentication attempts (success and failure)</li>
+<li>Permission changes</li>
+<li>API key creation and revocation</li>
+<li>Configuration changes</li>
+<li>Export and sharing operations</li>
+</ul>
+
+<h3>Audit Log Format</h3>
+<div class="code-block"><pre>{
+  "eventId": "audit-20251226-001",
+  "timestamp": "2025-12-26T10:30:00.000Z",
+  "eventType": "DATA_ACCESS",
+  "actor": {
+    "userId": "user-123",
+    "role": "analyst",
+    "ipAddress": "192.168.1.100"
+  },
+  "resource": {
+    "type": "sensor_data",
+    "farmId": "FARM-2025-001",
+    "dataIds": ["DATA-001", "DATA-002"]
+  },
+  "action": "READ",
+  "result": "SUCCESS",
+  "metadata": {
+    "userAgent": "Mozilla/5.0...",
+    "requestId": "req-abc123"
+  }
+}</pre></div>
+
+<h2>Secure Development Practices</h2>
+
+<h3>Input Validation</h3>
+<p>Never trust user input. Validate all data before processing:</p>
+
+<div class="code-block"><pre>const Joi = require('joi');
+
+const schema = Joi.object({
+  farmId: Joi.string().pattern(/^FARM-\d{4}-\d{3}$/),
+  dataType: Joi.string().valid('SOIL_SENSOR', 'WEATHER', 'CROP_HEALTH'),
+  readings: Joi.object({
+    soilMoisture: Joi.object({
+      value: Joi.number().min(0).max(100)
+    })
+  })
+});
+
+const {error, value} = schema.validate(inputData);
+if (error) {
+  throw new ValidationError(error.details);
+}</pre></div>
+
+<h3>Dependency Management</h3>
+<ul>
+<li>Regularly update dependencies to patch security vulnerabilities</li>
+<li>Use automated tools like Dependabot or Snyk</li>
+<li>Monitor security advisories for libraries you use</li>
+<li>Pin dependency versions for reproducible builds</li>
+</ul>
+
+<h3>Secrets Management</h3>
+<div class="code-block"><pre># Never commit secrets to git!
+# Use environment variables
+DATABASE_URL=postgresql://...
+API_KEY=wia_live_...
+
+# Or secret management services
+# AWS Secrets Manager
+# Azure Key Vault
+# HashiCorp Vault
+# Google Secret Manager</pre></div>
+
+<div class="highlight-box">
+<h3>🔒 Security Checklist</h3>
+<ul>
+<li>✅ TLS 1.3 for all network communication</li>
+<li>✅ Encrypt data at rest in databases</li>
+<li>✅ Strong authentication (OAuth 2.0 or certificates)</li>
+<li>✅ Role-based access control implemented</li>
+<li>✅ All inputs validated and sanitized</li>
+<li>✅ Comprehensive audit logging</li>
+<li>✅ Regular security updates and patches</li>
+<li>✅ GDPR compliance for EU data</li>
+<li>✅ Incident response plan documented</li>
+<li>✅ Regular security audits conducted</li>
+</ul>
+</div>
+
+<h2>Chapter Summary</h2>
+<p>Securing agricultural data requires a multi-layered approach: encryption in transit and at rest, strong authentication, granular access control, comprehensive audit logging, and compliance with privacy regulations like GDPR. By following security best practices and implementing defense-in-depth strategies, you can protect valuable agricultural data while enabling authorized access for legitimate use cases.</p>
+</main>
+<div class="nav-buttons">
+<a href="chapter-05.html" class="btn btn-secondary">← Previous</a>
+<a href="chapter-07.html" class="btn">Next: Case Studies →</a>
+</div>
+<footer>
+<p class="philosophy">弘益人間 · Benefit All Humanity</p>
+<p>WIA-AGRI-020 Agricultural Data Exchange Standard · © 2025 WIA Standards · MIT License</p>
+</footer>
+</div>
+</body>
+</html>

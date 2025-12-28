@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>제2장: 스트리밍 아키텍처 패턴 - WIA-DATA-013</title>
+    <style>
+        body{font-family:'Malgun Gothic',sans-serif;line-height:1.8;max-width:1000px;margin:0 auto;padding:40px 20px;background:#0f172a;color:#e2e8f0}
+        h1,h2,h3{color:#10B981;margin-top:40px}
+        h1{font-size:2.5em;border-bottom:3px solid #10B981;padding-bottom:15px}
+        h2{font-size:2em;border-bottom:2px solid #334155;padding-bottom:10px}
+        code{background:#1e293b;padding:2px 6px;border-radius:4px;color:#10B981;font-family:'Courier New',monospace}
+        pre{background:#1e293b;border-left:4px solid #10B981;padding:20px;border-radius:8px;overflow-x:auto}
+        table{width:100%;border-collapse:collapse;margin:20px 0;background:#1e293b}
+        th,td{padding:12px;text-align:left;border:1px solid #334155}
+        th{background:#10B981;color:#0f172a;font-weight:bold}
+        .highlight{background:rgba(16,185,129,0.1);border-left:4px solid #10B981;padding:15px;margin:20px 0;border-radius:8px}
+        ul,ol{margin:15px 0;padding-left:30px}
+        li{margin:10px 0}
+    </style>
+</head>
+<body>
+<h1>제2장: 스트리밍 아키텍처 패턴</h1>
+
+<h2>개요</h2>
+<p>스트리밍 데이터 처리 시스템을 설계할 때는 비즈니스 요구사항, 데이터 특성, 확장성 요구사항을 고려한 적절한 아키텍처 패턴 선택이 중요합니다. 이 장에서는 Lambda, Kappa, 하이브리드 아키텍처를 포함한 검증된 스트리밍 아키텍처 패턴들을 심층적으로 분석하고, 각 패턴의 장단점, 적용 시나리오, 구현 전략을 다룹니다.</p>
+
+<h2>Lambda 아키텍처</h2>
+<p>Lambda 아키텍처는 Nathan Marz가 제안한 빅데이터 처리 아키텍처로, 배치 처리와 스트림 처리를 결합하여 정확성과 저지연을 동시에 달성합니다.</p>
+
+<h3>Lambda 아키텍처 구조</h3>
+<pre><code>// Lambda 아키텍처 전체 구조
+데이터 소스 (API, IoT, 로그)
+    ↓
+메시지 큐 / 이벤트 버스 (Kafka)
+    ↓
+    ├────────────────────┬────────────────────┐
+    ↓                    ↓                    ↓
+배치 레이어          스피드 레이어         서빙 레이어
+(Hadoop/Spark)      (Flink/Storm)        (HBase/Cassandra)
+    ↓                    ↓                    ↓
+마스터 데이터셋      실시간 뷰            통합 뷰 제공
+(HDFS/S3)           (최근 데이터)         (쿼리 API)
+    ↓                    ↓                    ↓
+배치 뷰 ─────────────→ 서빙 레이어 ←───────  실시간 뷰
+(사전 계산된 뷰)                         (최신 데이터)
+                         ↓
+                    애플리케이션
+                (대시보드, API, 분석)
+
+// 특징:
+// - 배치 레이어: 완전하고 정확한 데이터 처리
+// - 스피드 레이어: 최근 데이터의 빠른 처리
+// - 서빙 레이어: 두 결과를 통합하여 제공
+</code></pre>
+
+<h3>Lambda 아키텍처의 세 가지 레이어</h3>
+<table>
+<tr><th>레이어</th><th>역할</th><th>기술 스택</th><th>처리 시간</th><th>정확도</th></tr>
+<tr><td>배치 레이어</td><td>마스터 데이터셋 저장 및 배치 뷰 생성</td><td>Hadoop, Spark, Hive</td><td>시간~일</td><td>매우 높음</td></tr>
+<tr><td>스피드 레이어</td><td>실시간 증분 처리</td><td>Flink, Storm, Kafka Streams</td><td>초~분</td><td>높음</td></tr>
+<tr><td>서빙 레이어</td><td>쿼리 응답 및 뷰 통합</td><td>HBase, Cassandra, Druid</td><td>밀리초</td><td>높음</td></tr>
+</table>
+
+<h3>Lambda 아키텍처 구현 예제</h3>
+<pre><code>// 배치 레이어: Spark 배치 처리
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+
+public class BatchLayer {
+    public static void main(String[] args) {
+        SparkSession spark = SparkSession.builder()
+            .appName("Lambda Batch Layer")
+            .master("yarn")
+            .getOrCreate();
+
+        // 마스터 데이터셋 읽기 (HDFS)
+        Dataset<Row> masterData = spark.read()
+            .parquet("hdfs://namenode:9000/master_dataset/*");
+
+        // 배치 뷰 계산 (일일 집계)
+        Dataset<Row> batchView = masterData
+            .groupBy("user_id", "date")
+            .agg(
+                count("*").as("transaction_count"),
+                sum("amount").as("total_amount"),
+                avg("amount").as("avg_amount")
+            );
+
+        // 서빙 레이어에 저장 (HBase)
+        batchView.write()
+            .format("org.apache.hadoop.hbase.spark")
+            .option("hbase.table", "batch_views")
+            .save();
+
+        spark.stop();
+    }
+}
+
+// 스피드 레이어: Flink 스트림 처리
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.windowing.time.Time;
+
+public class SpeedLayer {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env =
+            StreamExecutionEnvironment.getExecutionEnvironment();
+
+        // Kafka에서 실시간 데이터 읽기
+        DataStream<Transaction> stream = env
+            .addSource(new FlinkKafkaConsumer<>("transactions",
+                new TransactionSchema(), properties));
+
+        // 실시간 뷰 계산 (최근 1시간)
+        DataStream<UserStats> realtimeView = stream
+            .keyBy(Transaction::getUserId)
+            .timeWindow(Time.hours(1))
+            .aggregate(new RealtimeAggregator());
+
+        // 서빙 레이어에 저장 (Redis)
+        realtimeView.addSink(new RedisSink<>());
+
+        env.execute("Lambda Speed Layer");
+    }
+}
+
+// 서빙 레이어: 통합 쿼리 API
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/stats")
+public class ServingLayer {
+
+    @Autowired
+    private HBaseTemplate batchViewStore;
+
+    @Autowired
+    private RedisTemplate<String, UserStats> realtimeViewStore;
+
+    @GetMapping("/user/{userId}")
+    public UserStats getUserStats(@PathVariable String userId) {
+        // 배치 뷰에서 과거 데이터 조회
+        UserStats batchStats = batchViewStore.get(
+            "batch_views", userId, UserStats.class);
+
+        // 실시간 뷰에서 최근 데이터 조회
+        UserStats realtimeStats = realtimeViewStore.opsForValue()
+            .get("realtime:" + userId);
+
+        // 두 뷰를 병합하여 반환
+        return mergeViews(batchStats, realtimeStats);
+    }
+
+    private UserStats mergeViews(UserStats batch, UserStats realtime) {
+        return UserStats.builder()
+            .userId(batch.getUserId())
+            .transactionCount(
+                batch.getTransactionCount() + realtime.getTransactionCount())
+            .totalAmount(
+                batch.getTotalAmount() + realtime.getTotalAmount())
+            .build();
+    }
+}
+</code></pre>
+
+<h2>Kappa 아키텍처</h2>
+<p>Kappa 아키텍처는 Jay Kreps가 제안한 스트림 중심 아키텍처로, Lambda 아키텍처의 복잡성을 줄이기 위해 배치 레이어를 제거하고 모든 처리를 스트림으로 수행합니다.</p>
+
+<h3>Kappa 아키텍처 구조</h3>
+<pre><code>// Kappa 아키텍처 구조 (단순화된 스트림 중심)
+데이터 소스 (API, IoT, 로그)
+    ↓
+이벤트 스트림 (Kafka - 긴 보존 기간)
+    ↓
+    ├────────────────────┬────────────────────┐
+    ↓                    ↓                    ↓
+스트림 처리 1        스트림 처리 2        스트림 처리 N
+(실시간 분석)        (이력 재계산)        (ML 파이프라인)
+    ↓                    ↓                    ↓
+상태 저장소          상태 저장소          상태 저장소
+(RocksDB)           (RocksDB)           (RocksDB)
+    ↓                    ↓                    ↓
+    └────────────────────┴────────────────────┘
+                         ↓
+                    서빙 레이어
+                (Cassandra/Elasticsearch)
+                         ↓
+                    쿼리 API
+                         ↓
+                    애플리케이션
+
+// 핵심 원칙:
+// 1. 모든 데이터는 불변 이벤트 스트림으로 표현
+// 2. 과거 데이터 재처리는 스트림 재생으로 수행
+// 3. 단일 코드베이스로 모든 처리 수행
+</code></pre>
+
+<h3>Lambda vs Kappa 비교</h3>
+<table>
+<tr><th>측면</th><th>Lambda 아키텍처</th><th>Kappa 아키텍처</th></tr>
+<tr><td>복잡도</td><td>높음 (두 개의 처리 경로)</td><td>낮음 (단일 처리 경로)</td></tr>
+<tr><td>코드베이스</td><td>배치/스트림 각각 구현</td><td>단일 스트림 처리 코드</td></tr>
+<tr><td>운영 부담</td><td>높음 (두 시스템 관리)</td><td>낮음 (하나의 시스템)</td></tr>
+<tr><td>데이터 정확성</td><td>매우 높음 (배치 레이어)</td><td>높음 (재처리 필요)</td></tr>
+<tr><td>지연 시간</td><td>배치: 높음, 스트림: 낮음</td><td>일관되게 낮음</td></tr>
+<tr><td>재계산</td><td>배치 재실행</td><td>스트림 재생</td></tr>
+<tr><td>저장소 요구사항</td><td>HDFS + 스트림 버퍼</td><td>긴 보존 기간의 Kafka</td></tr>
+<tr><td>적합한 사용 사례</td><td>금융, 규제 준수</td><td>실시간 분석, 이벤트 소싱</td></tr>
+</table>
+
+<h3>Kappa 아키텍처 구현 예제</h3>
+<pre><code>// Kafka Streams를 사용한 Kappa 아키텍처
+import org.apache.kafka.streams.*;
+import org.apache.kafka.streams.kstream.*;
+
+public class KappaArchitecture {
+    public static void main(String[] args) {
+        Properties props = new Properties();
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "kappa-app");
+        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+
+        StreamsBuilder builder = new StreamsBuilder();
+
+        // 이벤트 스트림 읽기 (모든 이력 데이터 포함)
+        KStream<String, Transaction> transactions = builder
+            .stream("transactions", Consumed.with(Serdes.String(),
+                new JsonSerde<>(Transaction.class)));
+
+        // 실시간 집계 (상태 저장)
+        KTable<String, UserStats> stats = transactions
+            .groupByKey()
+            .aggregate(
+                UserStats::new,
+                (key, transaction, stats) -> stats.addTransaction(transaction),
+                Materialized.<String, UserStats, KeyValueStore<Bytes, byte[]>>as("user-stats-store")
+                    .withKeySerde(Serdes.String())
+                    .withValueSerde(new JsonSerde<>(UserStats.class))
+            );
+
+        // 결과를 Kafka 토픽에 출력 (다른 서비스에서 소비)
+        stats.toStream().to("user-stats", Produced.with(Serdes.String(),
+            new JsonSerde<>(UserStats.class)));
+
+        // 애플리케이션 시작
+        KafkaStreams streams = new KafkaStreams(builder.build(), props);
+        streams.start();
+
+        // 우아한 종료
+        Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
+    }
+}
+
+// Interactive Queries로 상태 저장소 직접 조회
+@RestController
+public class KappaQueryService {
+
+    @Autowired
+    private KafkaStreams streams;
+
+    @GetMapping("/stats/{userId}")
+    public UserStats getStats(@PathVariable String userId) {
+        // 로컬 상태 저장소에서 직접 조회
+        ReadOnlyKeyValueStore<String, UserStats> store =
+            streams.store(StoreQueryParameters.fromNameAndType(
+                "user-stats-store", QueryableStoreTypes.keyValueStore()));
+
+        UserStats stats = store.get(userId);
+
+        if (stats == null) {
+            throw new NotFoundException("User not found: " + userId);
+        }
+
+        return stats;
+    }
+}
+
+// 과거 데이터 재처리 (스트림 재생)
+public class KappaReprocessing {
+    public static void reprocessFromBeginning() {
+        Properties props = new Properties();
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "kappa-reprocess-v2");
+        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+
+        // 처음부터 읽기 (자동으로 earliest offset 사용)
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        StreamsBuilder builder = new StreamsBuilder();
+
+        // 새로운 로직으로 재처리
+        KStream<String, Transaction> transactions = builder
+            .stream("transactions");
+
+        // 업데이트된 집계 로직
+        transactions
+            .groupByKey()
+            .aggregate(/* 새로운 집계 로직 */)
+            .toStream()
+            .to("user-stats-v2");
+
+        KafkaStreams streams = new KafkaStreams(builder.build(), props);
+        streams.start();
+    }
+}
+</code></pre>
+
+<h2>하이브리드 아키텍처 패턴</h2>
+<p>실무에서는 Lambda와 Kappa의 장점을 결합한 하이브리드 아키텍처를 사용하는 경우가 많습니다.</p>
+
+<table>
+<tr><th>패턴</th><th>설명</th><th>장점</th><th>사용 사례</th></tr>
+<tr><td>선택적 배치</td><td>중요 데이터만 배치 처리</td><td>복잡도 감소, 정확성 유지</td><td>금융 결산 + 실시간 모니터링</td></tr>
+<tr><td>멀티 스피드</td><td>여러 스피드 레이어 운영</td><td>다양한 지연 요구사항 충족</td><td>초단위/분단위/시간단위 집계</td></tr>
+<tr><td>점진적 마이그레이션</td><td>Lambda에서 Kappa로 단계적 전환</td><td>리스크 최소화</td><td>레거시 시스템 현대화</td></tr>
+<tr><td>이벤트 소싱 + CQRS</td><td>이벤트 저장소 + 읽기/쓰기 분리</td><td>완전한 감사 추적</td><td>은행, 전자상거래</td></tr>
+</table>
+
+<h2>아키텍처 선택 가이드</h2>
+
+<h3>Lambda 아키텍처를 선택해야 하는 경우</h3>
+<ul>
+<li><strong>정확성이 최우선:</strong> 금융, 의료, 규제 산업</li>
+<li><strong>복잡한 배치 처리:</strong> 여러 데이터 소스 조인, 복잡한 변환</li>
+<li><strong>기존 배치 인프라:</strong> Hadoop 에코시스템이 이미 구축됨</li>
+<li><strong>장기 데이터 보관:</strong> 수년치 데이터의 효율적 저장 필요</li>
+<li><strong>감사 및 규정 준수:</strong> 완전한 데이터 이력 추적 필요</li>
+</ul>
+
+<h3>Kappa 아키텍처를 선택해야 하는 경우</h3>
+<ul>
+<li><strong>실시간 우선:</strong> 소셜 미디어, IoT, 실시간 추천</li>
+<li><strong>단순성 중시:</strong> 작은 팀, 빠른 개발 주기</li>
+<li><strong>이벤트 소싱:</strong> 모든 변경사항을 이벤트로 기록</li>
+<li><strong>빈번한 재계산:</strong> ML 모델 재훈련, A/B 테스트</li>
+<li><strong>클라우드 네이티브:</strong> Kafka, Kubernetes 기반 인프라</li>
+</ul>
+
+<h2>마이크로서비스와 스트리밍 아키텍처</h2>
+<pre><code>// 이벤트 기반 마이크로서비스 아키텍처
+/*
+주문 서비스 → [주문 생성 이벤트] → Kafka
+                    ↓
+    ├───────────────┼───────────────┼───────────────┐
+    ↓               ↓               ↓               ↓
+재고 서비스      결제 서비스      배송 서비스      알림 서비스
+(재고 차감)     (결제 처리)     (배송 준비)     (이메일/SMS)
+    ↓               ↓               ↓               ↓
+[재고 업데이트]  [결제 완료]     [배송 시작]     [알림 발송]
+    ↓               ↓               ↓               ↓
+                Kafka 이벤트 스트림
+                    ↓
+        ┌───────────┴───────────┐
+        ↓                       ↓
+    주문 상태 집계          분석/모니터링
+    (CQRS 읽기 모델)       (대시보드)
+*/
+
+// 주문 서비스: 이벤트 발행
+@Service
+public class OrderService {
+
+    @Autowired
+    private KafkaTemplate<String, OrderEvent> kafkaTemplate;
+
+    @Transactional
+    public Order createOrder(CreateOrderRequest request) {
+        // 주문 생성
+        Order order = orderRepository.save(new Order(request));
+
+        // 이벤트 발행 (비동기, 보장된 전달)
+        OrderCreatedEvent event = new OrderCreatedEvent(
+            order.getId(),
+            order.getCustomerId(),
+            order.getItems(),
+            order.getTotalAmount(),
+            Instant.now()
+        );
+
+        kafkaTemplate.send("order-events", order.getId(), event);
+
+        return order;
+    }
+}
+
+// 재고 서비스: 이벤트 소비 및 처리
+@Service
+public class InventoryService {
+
+    @KafkaListener(topics = "order-events", groupId = "inventory-service")
+    public void handleOrderCreated(OrderCreatedEvent event) {
+        try {
+            // 재고 확인 및 차감
+            for (OrderItem item : event.getItems()) {
+                inventoryRepository.decreaseStock(
+                    item.getProductId(),
+                    item.getQuantity()
+                );
+            }
+
+            // 성공 이벤트 발행
+            kafkaTemplate.send("inventory-events",
+                new InventoryReservedEvent(event.getOrderId()));
+
+        } catch (InsufficientStockException e) {
+            // 실패 이벤트 발행 (보상 트랜잭션)
+            kafkaTemplate.send("inventory-events",
+                new InventoryReservationFailedEvent(event.getOrderId(), e.getMessage()));
+        }
+    }
+}
+</code></pre>
+
+<h2>상태 관리 전략</h2>
+<table>
+<tr><th>전략</th><th>설명</th><th>장점</th><th>단점</th><th>도구</th></tr>
+<tr><td>로컬 상태</td><td>애플리케이션 내부 저장</td><td>빠른 접근, 낮은 지연</td><td>장애 시 복구 필요</td><td>RocksDB, HashMap</td></tr>
+<tr><td>외부 상태</td><td>별도 데이터베이스 사용</td><td>공유 가능, 영구 저장</td><td>네트워크 오버헤드</td><td>Redis, Cassandra</td></tr>
+<tr><td>체크포인트</td><td>주기적 스냅샷</td><td>빠른 복구</td><td>저장 비용</td><td>Flink Checkpoints</td></tr>
+<tr><td>이벤트 소싱</td><td>이벤트 재생으로 복구</td><td>완전한 이력</td><td>재생 시간</td><td>Kafka, EventStore</td></tr>
+</table>
+
+<h2>모니터링 및 관찰성</h2>
+<pre><code>// Prometheus 메트릭 및 분산 추적
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+
+@Service
+public class StreamingMetrics {
+
+    private final MeterRegistry registry;
+    private final Timer processingTimer;
+    private final Counter eventsProcessed;
+    private final Gauge currentLag;
+
+    public StreamingMetrics(MeterRegistry registry) {
+        this.registry = registry;
+
+        // 처리 시간 측정
+        this.processingTimer = Timer.builder("streaming.processing.time")
+            .description("Time to process a single event")
+            .tag("layer", "speed")
+            .register(registry);
+
+        // 처리된 이벤트 수
+        this.eventsProcessed = Counter.builder("streaming.events.processed")
+            .description("Total number of events processed")
+            .tag("status", "success")
+            .register(registry);
+
+        // 컨슈머 래그 (게이지)
+        this.currentLag = Gauge.builder("streaming.consumer.lag",
+                this::calculateCurrentLag)
+            .description("Current consumer lag")
+            .register(registry);
+    }
+
+    public void recordProcessing(Runnable processing) {
+        processingTimer.record(() -> {
+            processing.run();
+            eventsProcessed.increment();
+        });
+    }
+
+    private double calculateCurrentLag() {
+        // Kafka Consumer API를 통해 래그 계산
+        return consumerLagMonitor.getCurrentLag();
+    }
+}
+
+// 분산 추적 (OpenTelemetry)
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
+
+@Service
+public class TracedStreamProcessor {
+
+    @Autowired
+    private Tracer tracer;
+
+    public void processEvent(Event event) {
+        // 스팬 시작
+        Span span = tracer.spanBuilder("processEvent")
+            .setAttribute("event.id", event.getId())
+            .setAttribute("event.type", event.getType())
+            .startSpan();
+
+        try (Scope scope = span.makeCurrent()) {
+            // 이벤트 처리
+            validateEvent(event);
+            transformEvent(event);
+            persistEvent(event);
+
+            span.addEvent("Event processed successfully");
+        } catch (Exception e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR);
+            throw e;
+        } finally {
+            span.end();
+        }
+    }
+}
+</code></pre>
+
+<h2>요약</h2>
+<p>스트리밍 아키텍처 패턴 선택은 비즈니스 요구사항, 데이터 특성, 팀 역량, 기술 스택에 따라 달라집니다. Lambda 아키텍처는 정확성이 최우선인 경우, Kappa 아키텍처는 단순성과 실시간성이 중요한 경우에 적합합니다. 많은 조직에서는 두 패턴의 장점을 결합한 하이브리드 접근 방식을 채택하고 있습니다.</p>
+
+<h2>복습 문제</h2>
+<ol>
+<li>Lambda 아키텍처의 세 가지 레이어를 설명하고, 각각의 역할을 기술하세요.</li>
+<li>Kappa 아키텍처가 Lambda 아키텍처의 어떤 복잡성을 해결하는지 설명하세요.</li>
+<li>Lambda와 Kappa 아키텍처의 장단점을 비교하고, 각각 어떤 사용 사례에 적합한지 논의하세요.</li>
+<li>하이브리드 아키텍처 패턴의 예시를 들고, 왜 이러한 접근이 필요한지 설명하세요.</li>
+<li>이벤트 기반 마이크로서비스 아키텍처에서 상태 관리의 중요성과 전략을 논의하세요.</li>
+</ol>
+
+<p style="text-align:center;margin-top:50px;color:#64748b">
+© 2025 SmileStory Inc. / WIA · 弘益人間 (홍익인간) · Benefit All Humanity
+</p>
+</body>
+</html>

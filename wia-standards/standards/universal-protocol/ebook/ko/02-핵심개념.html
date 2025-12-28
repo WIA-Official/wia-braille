@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제2장: 핵심 개념 | WIA-CORE-007</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9; line-height: 1.8; padding: 2rem;
+        }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 3rem; border-radius: 15px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #10b981; border-bottom: 3px solid #6B7280; padding-bottom: 1rem; }
+        h2 { font-size: 2rem; margin: 2rem 0 1rem; color: #6B7280; }
+        h3 { font-size: 1.5rem; margin: 1.5rem 0 1rem; color: #10b981; }
+        p { margin: 1rem 0; font-size: 1.1rem; }
+        code { background: #0f172a; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: Monaco, monospace; color: #10b981; }
+        pre { background: #0f172a; padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; border-left: 4px solid #6B7280; }
+        pre code { background: none; padding: 0; }
+        .nav { margin: 2rem 0; display: flex; justify-content: space-between; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #10b981; text-decoration: none; font-weight: 600; padding: 0.5rem 1rem; border: 2px solid #6B7280; border-radius: 5px; transition: all 0.3s; }
+        .nav a:hover { background: #6B7280; color: white; }
+        .highlight { background: #334155; padding: 1.5rem; border-left: 4px solid #10b981; border-radius: 5px; margin: 1.5rem 0; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; font-size: 1.1rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 1rem; text-align: left; border: 1px solid #334155; }
+        th { background: #0f172a; color: #10b981; }
+        td { background: #1e293b; }
+        .emoji { font-size: 1.5em; margin-right: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">🧠</span>제2장: 핵심 개념</h1>
+
+        <h2>2.1 메시지 유형</h2>
+        <p>범용 프로토콜은 모든 통신 패턴을 포괄하는 네 가지 기본 메시지 유형을 정의합니다. 프로토콜을 효과적으로 사용하려면 이러한 유형을 이해하는 것이 필수적입니다.</p>
+
+        <h3>2.1.1 요청 메시지</h3>
+        <p>요청 메시지는 통신 교환을 시작합니다. 응답을 기대하며 RPC(원격 프로시저 호출) 패턴에 사용됩니다.</p>
+
+        <pre><code>{
+  "id": "req_1234567890",
+  "type": "request",
+  "method": "users.getProfile",
+  "payload": {
+    "userId": "user_abc123",
+    "fields": ["name", "email", "avatar", "preferences"]
+  },
+  "metadata": {
+    "timestamp": "2025-12-27T10:30:00.000Z",
+    "version": "1.0",
+    "timeout": 5000,
+    "retryPolicy": {
+      "maxRetries": 3,
+      "backoff": "exponential"
+    }
+  }
+}</code></pre>
+
+        <p>요청 메시지의 주요 특성:</p>
+        <ul>
+            <li>응답과 상관시키기 위한 고유한 <code>id</code>가 있어야 합니다</li>
+            <li>수행할 작업을 식별하는 <code>method</code>가 필요합니다</li>
+            <li>무기한 대기를 방지하기 위한 <code>timeout</code>을 포함할 수 있습니다</li>
+            <li>실패 처리를 위한 재시도 정책을 지정할 수 있습니다</li>
+            <li>항상 정확히 하나의 응답 메시지를 기대합니다</li>
+        </ul>
+
+        <h3>2.1.2 응답 메시지</h3>
+        <p>응답 메시지는 요청 메시지에 대한 답변으로 전송됩니다. 작업 결과 또는 오류 정보를 포함합니다.</p>
+
+        <pre><code>// 성공 응답
+{
+  "id": "req_1234567890",
+  "type": "response",
+  "payload": {
+    "userId": "user_abc123",
+    "name": "홍길동",
+    "email": "hong@example.com",
+    "avatar": "https://cdn.example.com/avatars/hong.jpg",
+    "preferences": {
+      "theme": "dark",
+      "language": "ko",
+      "notifications": true
+    }
+  },
+  "metadata": {
+    "timestamp": "2025-12-27T10:30:00.150Z",
+    "processingTime": 45,
+    "cacheHit": false
+  }
+}
+
+// 오류 응답
+{
+  "id": "req_1234567890",
+  "type": "response",
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "ID가 'user_abc123'인 사용자가 존재하지 않습니다",
+    "details": {
+      "requestedId": "user_abc123",
+      "suggestions": ["사용자 ID 형식 확인", "사용자가 존재하는지 확인"]
+    }
+  },
+  "metadata": {
+    "timestamp": "2025-12-27T10:30:00.050Z",
+    "processingTime": 15
+  }
+}</code></pre>
+
+        <h3>2.1.3 스트림 메시지</h3>
+        <p>스트림 메시지는 연속적인 데이터 흐름을 나타냅니다. 한 방향(클라이언트-서버 또는 서버-클라이언트) 또는 양방향으로 흐를 수 있습니다.</p>
+
+        <pre><code>{
+  "id": "stream_sensor_data",
+  "type": "stream",
+  "sequence": 42,
+  "payload": {
+    "sensorId": "temp_sensor_01",
+    "temperature": 23.5,
+    "humidity": 65.2,
+    "pressure": 1013.25,
+    "timestamp": "2025-12-27T10:30:00.500Z"
+  },
+  "metadata": {
+    "streamId": "stream_sensor_data",
+    "isComplete": false,
+    "totalMessages": null
+  }
+}</code></pre>
+
+        <p>스트림 특성:</p>
+        <ul>
+            <li>순서 지정을 위한 <code>sequence</code> 번호 포함</li>
+            <li>무한하거나 정의된 끝이 있을 수 있음</li>
+            <li>백프레셔 메커니즘 지원</li>
+            <li>일시 중지, 재개 또는 취소 가능</li>
+            <li>순서 보장 유지(구성 가능)</li>
+        </ul>
+
+        <h3>2.1.4 이벤트 메시지</h3>
+        <p>이벤트 메시지는 Fire-and-forget 알림입니다. 응답을 기대하지 않으며 게시-구독 패턴에 사용됩니다.</p>
+
+        <pre><code>{
+  "id": "evt_order_placed_7890",
+  "type": "event",
+  "topic": "orders.placed",
+  "payload": {
+    "orderId": "order_xyz789",
+    "customerId": "user_abc123",
+    "totalAmount": 149.99,
+    "items": [
+      {
+        "productId": "prod_001",
+        "quantity": 2,
+        "price": 49.99
+      },
+      {
+        "productId": "prod_045",
+        "quantity": 1,
+        "price": 49.99
+      }
+    ]
+  },
+  "metadata": {
+    "timestamp": "2025-12-27T10:30:00.000Z",
+    "source": "order-service",
+    "priority": "normal"
+  }
+}</code></pre>
+
+        <h2>2.2 통신 패턴</h2>
+
+        <h3>2.2.1 요청-응답 (RPC)</h3>
+        <p>클라이언트가 요청을 보내고 응답을 기다리는 가장 일반적인 패턴입니다. 이것은 프로그래밍의 함수 호출과 유사합니다.</p>
+
+        <pre><code>// 클라이언트 코드
+const result = await protocol.call('calculateTax', {
+  amount: 100.00,
+  country: 'KR',
+  province: '서울'
+});
+
+console.log('세금:', result.tax); // 세금: 10.00
+
+// 서버 핸들러
+protocol.handle('calculateTax', async (params) => {
+  const taxRate = await getTaxRate(params.country, params.province);
+  return {
+    amount: params.amount,
+    taxRate: taxRate,
+    tax: params.amount * taxRate
+  };
+});</code></pre>
+
+        <h3>2.2.2 서버 스트리밍</h3>
+        <p>서버가 단일 클라이언트 요청에 대한 응답으로 여러 메시지를 보냅니다. 대규모 결과 집합 또는 실시간 업데이트에 유용합니다.</p>
+
+        <pre><code>// 클라이언트 코드
+for await (const transaction of protocol.stream('getTransactionHistory', { userId: 'user123' })) {
+  console.log('거래:', transaction);
+  updateUI(transaction);
+}
+
+// 서버 핸들러
+protocol.streamHandler('getTransactionHistory', async function* (params) {
+  const transactions = await database.streamTransactions(params.userId);
+
+  for await (const tx of transactions) {
+    yield {
+      id: tx.id,
+      amount: tx.amount,
+      date: tx.date,
+      description: tx.description
+    };
+  }
+});</code></pre>
+
+        <h3>2.2.3 클라이언트 스트리밍</h3>
+        <p>클라이언트가 여러 메시지를 보내고 단일 응답을 받습니다. 대규모 데이터셋 업로드 또는 일괄 작업에 이상적입니다.</p>
+
+        <pre><code>// 클라이언트 코드
+const uploadStream = protocol.createClientStream('uploadSensorData');
+
+// 여러 판독값 전송
+for (let i = 0; i < 1000; i++) {
+  await uploadStream.send({
+    timestamp: new Date(),
+    temperature: 20 + Math.random() * 10,
+    humidity: 50 + Math.random() * 20
+  });
+}
+
+// 완료 및 요약 가져오기
+const summary = await uploadStream.complete();
+console.log('업로드됨:', summary.count, '개의 판독값');</code></pre>
+
+        <h3>2.2.4 양방향 스트리밍</h3>
+        <p>클라이언트와 서버 모두 여러 메시지를 보낼 수 있습니다. 실시간 협업 애플리케이션 또는 게임에 완벽합니다.</p>
+
+        <pre><code>// 클라이언트 코드
+const chatStream = protocol.createBidirectionalStream('chat.room123');
+
+// 메시지 전송
+chatStream.send({ message: '안녕하세요 여러분!' });
+
+// 메시지 수신
+chatStream.on('message', (data) => {
+  console.log(data.user + ':', data.message);
+  displayMessage(data);
+});
+
+// 서버 핸들러
+protocol.bidirectionalHandler('chat.room123', async (stream) => {
+  const room = await joinChatRoom('room123');
+
+  // 클라이언트 메시지를 방으로 전달
+  stream.on('message', (data) => {
+    room.broadcast(data);
+  });
+
+  // 방 메시지를 클라이언트로 전송
+  room.on('message', (data) => {
+    stream.send(data);
+  });
+});</code></pre>
+
+        <h3>2.2.5 게시-구독</h3>
+        <p>게시자가 구독자에 대해 알지 못하는 분리된 이벤트 기반 통신입니다.</p>
+
+        <pre><code>// 게시자
+protocol.publish('user.login', {
+  userId: 'user123',
+  timestamp: new Date(),
+  ipAddress: '192.168.1.100'
+});
+
+// 구독자 1: 분석 서비스
+protocol.subscribe('user.login', (event) => {
+  analytics.track('user_login', event);
+});
+
+// 구독자 2: 이메일 서비스
+protocol.subscribe('user.login', (event) => {
+  sendWelcomeEmail(event.userId);
+});
+
+// 구독자 3: 보안 서비스
+protocol.subscribe('user.login', (event) => {
+  checkForSuspiciousActivity(event);
+});</code></pre>
+
+        <h2>2.3 프로토콜 수명 주기</h2>
+
+        <h3>2.3.1 연결 수명 주기</h3>
+        <pre><code>const protocol = new UniversalProtocol(config);
+
+// 수명 주기 후크
+protocol.on('connecting', () => {
+  console.log('연결 설정 중...');
+});
+
+protocol.on('connected', () => {
+  console.log('성공적으로 연결됨');
+  initializeApp();
+});
+
+protocol.on('disconnected', (reason) => {
+  console.log('연결 끊김:', reason);
+  showOfflineUI();
+});
+
+protocol.on('reconnecting', (attempt) => {
+  console.log('재연결 시도:', attempt);
+});
+
+protocol.on('error', (error) => {
+  console.error('프로토콜 오류:', error);
+  handleError(error);
+});
+
+// 연결
+await protocol.connect();</code></pre>
+
+        <h3>2.3.2 메시지 수명 주기</h3>
+        <p>모든 메시지는 생성부터 완료까지 여러 단계를 거칩니다:</p>
+
+        <ol>
+            <li><strong>생성:</strong> 고유 ID 및 메타데이터로 메시지가 생성됩니다</li>
+            <li><strong>직렬화:</strong> 선택한 형식(JSON, Protobuf 등)을 사용하여 페이로드가 인코딩됩니다</li>
+            <li><strong>전송:</strong> 인코딩된 메시지가 전송 계층을 통해 전송됩니다</li>
+            <li><strong>수신:</strong> 메시지가 다른 쪽 끝에서 수신됩니다</li>
+            <li><strong>역직렬화:</strong> 메시지가 원래 형식으로 다시 디코딩됩니다</li>
+            <li><strong>처리:</strong> 애플리케이션 핸들러가 메시지를 처리합니다</li>
+            <li><strong>응답/확인:</strong> 응답이 다시 전송됩니다(해당하는 경우)</li>
+        </ol>
+
+        <h2>2.4 오류 처리</h2>
+
+        <h3>2.4.1 오류 범주</h3>
+        <table>
+            <tr>
+                <th>범주</th>
+                <th>설명</th>
+                <th>예제 코드</th>
+            </tr>
+            <tr>
+                <td><strong>전송 오류</strong></td>
+                <td>기본 연결 문제</td>
+                <td>CONNECTION_FAILED, TIMEOUT, NETWORK_ERROR</td>
+            </tr>
+            <tr>
+                <td><strong>프로토콜 오류</strong></td>
+                <td>잘못된 메시지 또는 위반</td>
+                <td>INVALID_MESSAGE, UNSUPPORTED_VERSION, ENCODING_ERROR</td>
+            </tr>
+            <tr>
+                <td><strong>애플리케이션 오류</strong></td>
+                <td>비즈니스 로직 실패</td>
+                <td>VALIDATION_FAILED, NOT_FOUND, PERMISSION_DENIED</td>
+            </tr>
+            <tr>
+                <td><strong>시스템 오류</strong></td>
+                <td>인프라 또는 리소스 문제</td>
+                <td>OUT_OF_MEMORY, RATE_LIMIT_EXCEEDED, SERVICE_UNAVAILABLE</td>
+            </tr>
+        </table>
+
+        <h3>2.4.2 오류 처리 전략</h3>
+        <pre><code>// 지수 백오프를 사용한 자동 재시도
+const result = await protocol.call('unreliableService', params, {
+  retry: {
+    maxAttempts: 5,
+    backoff: 'exponential',
+    maxBackoff: 30000,
+    retryableErrors: ['TIMEOUT', 'SERVICE_UNAVAILABLE']
+  }
+});
+
+// 서킷 브레이커 패턴
+const circuitBreaker = new CircuitBreaker({
+  failureThreshold: 5,
+  resetTimeout: 60000
+});
+
+try {
+  const result = await circuitBreaker.execute(() =>
+    protocol.call('externalAPI', params)
+  );
+} catch (error) {
+  if (error.code === 'CIRCUIT_OPEN') {
+    return cachedResult;
+  }
+  throw error;
+}
+
+// 폴백 처리
+try {
+  return await protocol.call('primaryService', params);
+} catch (error) {
+  console.warn('기본 서비스 실패, 폴백 사용');
+  return await protocol.call('fallbackService', params);
+}</code></pre>
+
+        <h2>2.5 메타데이터 및 컨텍스트</h2>
+        <p>메타데이터를 사용하면 핵심 페이로드를 변경하지 않고도 추가 정보를 전달할 수 있습니다. 이는 인증, 추적 및 로깅과 같은 교차 관심사에 중요합니다.</p>
+
+        <pre><code>// 요청에 메타데이터 추가
+const result = await protocol.call('securedEndpoint', payload, {
+  metadata: {
+    authorization: 'Bearer eyJ0eXAiOiJKV1QiLCJhbGc...',
+    'x-request-id': 'req_xyz789',
+    'x-user-id': 'user_abc123',
+    'x-trace-id': 'trace_001',
+    'x-client-version': '2.1.0'
+  }
+});
+
+// 핸들러에서 메타데이터 액세스
+protocol.handle('securedEndpoint', async (payload, context) => {
+  const token = context.metadata.authorization;
+  const userId = await validateToken(token);
+
+  if (!userId) {
+    throw new UnauthorizedError('잘못된 토큰');
+  }
+
+  // 로깅에 추적 ID 사용
+  logger.info('요청 처리', {
+    traceId: context.metadata['x-trace-id'],
+    userId: userId
+  });
+
+  return processRequest(payload, userId);
+});</code></pre>
+
+        <h2>2.6 버전 관리</h2>
+        <p>범용 프로토콜은 API의 원활한 진화를 가능하게 하기 위해 여러 버전 관리 전략을 지원합니다.</p>
+
+        <h3>2.6.1 프로토콜 버전</h3>
+        <p>프로토콜 자체에는 버전이 있습니다(현재 1.0). 서로 다른 버전에는 서로 다른 메시지 형식 또는 기능이 있을 수 있습니다.</p>
+
+        <h3>2.6.2 API 버전</h3>
+        <p>애플리케이션은 여러 API 버전을 동시에 지원할 수 있습니다:</p>
+
+        <pre><code>// 메서드 이름의 버전
+await protocol.call('users.v2.getProfile', params);
+
+// 메타데이터의 버전
+await protocol.call('users.getProfile', params, {
+  metadata: { 'api-version': '2.0' }
+});
+
+// 버전 협상
+protocol.handle('users.getProfile', async (params, context) => {
+  const version = context.metadata['api-version'] || '1.0';
+
+  switch (version) {
+    case '1.0':
+      return handleV1(params);
+    case '2.0':
+      return handleV2(params);
+    default:
+      throw new UnsupportedVersionError(version);
+  }
+});</code></pre>
+
+        <h2>2.7 타입 안전성</h2>
+        <p>범용 프로토콜은 TypeScript 및 기타 정적으로 타입이 지정된 언어에 대한 강력한 타이핑 지원을 제공합니다:</p>
+
+        <pre><code>// 메시지 타입 정의
+interface GetProfileRequest {
+  userId: string;
+  fields: ('name' | 'email' | 'avatar' | 'preferences')[];
+}
+
+interface GetProfileResponse {
+  userId: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  preferences?: UserPreferences;
+}
+
+// 타입 안전 RPC 호출
+const result = await protocol.call&lt;GetProfileRequest, GetProfileResponse&gt;(
+  'users.getProfile',
+  {
+    userId: 'user123',
+    fields: ['name', 'email']
+  }
+);
+
+// result는 GetProfileResponse로 강력하게 타입이 지정됨
+console.log(result.name); // ✓ 정상
+console.log(result.invalidField); // ✗ 컴파일 오류
+
+// 타입 안전 핸들러
+protocol.handle&lt;GetProfileRequest, GetProfileResponse&gt;(
+  'users.getProfile',
+  async (params) => {
+    // params는 GetProfileRequest로 강력하게 타입이 지정됨
+    return {
+      userId: params.userId,
+      name: '홍길동',
+      email: 'hong@example.com'
+    };
+  }
+);</code></pre>
+
+        <div class="highlight">
+            <h3>핵심 요점</h3>
+            <ul>
+                <li>네 가지 메시지 유형: 요청, 응답, 스트림, 이벤트</li>
+                <li>다섯 가지 주요 패턴: RPC, 서버 스트리밍, 클라이언트 스트리밍, 양방향 스트리밍, Pub/Sub</li>
+                <li>재시도, 서킷 브레이커 및 폴백을 사용한 강력한 오류 처리</li>
+                <li>교차 관심사에 대한 풍부한 메타데이터 지원</li>
+                <li>API 진화를 위한 유연한 버전 관리 전략</li>
+                <li>지원되는 언어의 강력한 타입 안전성</li>
+            </ul>
+        </div>
+
+        <div class="nav">
+            <a href="01-소개.html">← 이전: 소개</a>
+            <a href="03-전송계층.html">다음: 전송 계층 →</a>
+        </div>
+
+        <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; opacity: 0.7; text-align: center;">
+            <p>&copy; 2025 SmileStory Inc. / WIA</p>
+            <p>弘益人間 (홍익인간) · 널리 인간을 이롭게 하라</p>
+        </footer>
+    </div>
+</body>
+</html>

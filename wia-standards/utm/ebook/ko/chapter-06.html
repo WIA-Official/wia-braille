@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: 분리 및 충돌 회피 | WIA-SPACE-021</title>
+    <style>
+        * {margin: 0; padding: 0; box-sizing: border-box;}
+        body {font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; background: #1a1a2e; color: #eee; line-height: 1.8; padding: 20px;}
+        .container {max-width: 900px; margin: 0 auto; padding: 40px 20px;}
+        header {margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px solid #e94560;}
+        .chapter-number {color: #e94560; font-size: 1.2em; font-weight: bold; margin-bottom: 10px;}
+        h1 {font-size: 2.5em; color: #fff; margin-bottom: 20px;}
+        h2 {font-size: 1.8em; color: #e94560; margin-top: 40px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid rgba(233, 69, 96, 0.3);}
+        h3 {font-size: 1.4em; color: #e94560; margin-top: 30px; margin-bottom: 15px;}
+        p {margin-bottom: 15px; color: #ddd; text-align: justify;}
+        ul, ol {margin: 20px 0 20px 30px;}
+        li {margin: 10px 0; color: #ddd;}
+        .info-box {background: rgba(233, 69, 96, 0.1); border-left: 4px solid #e94560; padding: 20px; margin: 25px 0; border-radius: 5px;}
+        .info-box h4 {color: #e94560; margin-bottom: 10px;}
+        .warning-box {background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 5px;}
+        .warning-box h4 {color: #ffc107; margin-bottom: 10px;}
+        .code-box {background: rgba(0, 0, 0, 0.3); border: 1px solid #444; border-radius: 5px; padding: 15px; margin: 20px 0; font-family: 'Courier New', monospace; overflow-x: auto; white-space: pre;}
+        table {width: 100%; border-collapse: collapse; margin: 25px 0;}
+        th, td {border: 1px solid #444; padding: 12px; text-align: left;}
+        th {background: rgba(233, 69, 96, 0.2); color: #e94560; font-weight: bold;}
+        tr:nth-child(even) {background: rgba(255, 255, 255, 0.02);}
+        .nav-buttons {display: flex; justify-content: space-between; margin-top: 50px; padding-top: 30px; border-top: 2px solid #e94560;}
+        .nav-button {background: rgba(233, 69, 96, 0.1); color: #e94560; padding: 12px 24px; border: 2px solid #e94560; border-radius: 5px; text-decoration: none; transition: all 0.3s ease;}
+        .nav-button:hover {background: rgba(233, 69, 96, 0.2); transform: translateY(-2px);}
+        footer {text-align: center; margin-top: 50px; padding-top: 20px; border-top: 2px solid #444; color: #888;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-number">Chapter 6</div>
+            <h1>🛡️ 분리 및 충돌 회피: DAA for UAS</h1>
+        </header>
+
+        <h2>6.1 Detect and Avoid (DAA)의 개념</h2>
+        <p>Detect and Avoid (DAA)는 드론이 다른 항공기, 드론, 또는 장애물을 감지하고 자동으로 충돌을 회피하는 시스템입니다. 이는 유인 항공기의 조종사가 육안으로 "See and Avoid" 하는 것과 동일한 기능을 자동화한 것입니다.</p>
+
+        <p>UTM 환경에서 DAA는 다층 방어 체계의 일부로 작동합니다:</p>
+        <ul>
+            <li><strong>전략적 분리:</strong> 비행 계획 단계에서 충돌 가능성을 제거</li>
+            <li><strong>전술적 분리:</strong> 비행 중 실시간 조정으로 안전 거리 유지</li>
+            <li><strong>충돌 회피:</strong> DAA 시스템이 긴급 회피 기동 수행</li>
+        </ul>
+
+        <h2>6.2 DAA 시스템의 구성 요소</h2>
+        <h3>6.2.1 센서 시스템</h3>
+        <p>DAA는 다양한 센서를 사용하여 주변 환경을 인식합니다:</p>
+
+        <table>
+            <thead>
+                <tr><th>센서 유형</th><th>장점</th><th>단점</th><th>적용 사례</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>레이더</td><td>전천후, 장거리</td><td>무겁고 비쌈</td><td>대형 상업용 드론</td></tr>
+                <tr><td>라이다 (LiDAR)</td><td>정확한 3D 맵핑</td><td>날씨 영향, 고가</td><td>자율 비행 드론</td></tr>
+                <tr><td>광학 카메라</td><td>저렴, 컬러 정보</td><td>야간/악천후 제한</td><td>소형 드론</td></tr>
+                <tr><td>적외선 카메라</td><td>야간 작동 가능</td><td>비용, 해상도</td><td>야간 운영 드론</td></tr>
+                <tr><td>ADS-B 수신기</td><td>유인 항공기 탐지</td><td>협조 대상만 감지</td><td>모든 드론</td></tr>
+                <tr><td>음향 센서</td><td>비가시선 감지</td><td>소음 환경 어려움</td><td>보조 센서</td></tr>
+            </tbody>
+        </table>
+
+        <h3>6.2.2 센서 융합</h3>
+        <p>단일 센서의 한계를 극복하기 위해 여러 센서 데이터를 통합하는 센서 융합 기술이 사용됩니다:</p>
+        <ul>
+            <li><strong>칼만 필터:</strong> 다중 센서 데이터의 불확실성을 줄이고 최적 추정치 계산</li>
+            <li><strong>베이지안 필터:</strong> 확률적 접근으로 물체 위치 예측</li>
+            <li><strong>딥러닝:</strong> CNN, YOLO 등 AI 모델로 물체 인식 및 추적</li>
+        </ul>
+
+        <h2>6.3 충돌 위험 평가</h2>
+        <h3>6.3.1 충돌 위험 지표</h3>
+        <p>DAA 시스템은 다음 지표를 계산하여 충돌 위험을 평가합니다:</p>
+
+        <div class="code-box">충돌 위험 평가 공식:
+
+Time to Closest Point of Approach (TCPA):
+- 두 물체가 가장 가까워지는 시점까지의 시간
+
+Distance at Closest Point of Approach (DCPA):
+- 가장 가까워졌을 때의 최소 거리
+
+충돌 위험 = f(TCPA, DCPA, 속도, 크기, 불확실성)
+
+위험 레벨:
+- 낮음 (Green): DCPA > 100m 또는 TCPA > 60초
+- 중간 (Yellow): 50m < DCPA < 100m, 30초 < TCPA < 60초
+- 높음 (Red): DCPA < 50m, TCPA < 30초
+- 긴급 (Critical): DCPA < 20m, TCPA < 10초
+</div>
+
+        <h3>6.3.2 Well Clear 개념</h3>
+        <p>"Well Clear"는 두 항공기 간에 유지해야 하는 최소 안전 거리를 의미합니다. UTM에서는 다음과 같이 정의됩니다:</p>
+        <ul>
+            <li><strong>수평 분리:</strong> 최소 100m (소형 드론 간), 500m (드론-유인 항공기)</li>
+            <li><strong>수직 분리:</strong> 최소 50m (드론 간), 150m (드론-유인 항공기)</li>
+            <li><strong>시간적 분리:</strong> 동일 지점 통과 시 최소 30초 간격</li>
+        </ul>
+
+        <h2>6.4 충돌 회피 전략</h2>
+        <h3>6.4.1 전략적 회피 (Strategic Deconfliction)</h3>
+        <p>비행 계획 단계에서 충돌을 방지하는 방법입니다:</p>
+        <ol>
+            <li><strong>공역 예약:</strong> USS가 공역을 시간대별로 예약하여 중복 방지</li>
+            <li><strong>경로 최적화:</strong> AI 알고리즘으로 충돌 없는 최적 경로 생성</li>
+            <li><strong>우선순위 조정:</strong> 긴급 드론에게 우선권 부여</li>
+            <li><strong>4D 경로 계획:</strong> 위치(3D) + 시간(1D)을 고려한 계획</li>
+        </ol>
+
+        <h3>6.4.2 전술적 회피 (Tactical Deconfliction)</h3>
+        <p>비행 중 실시간으로 경로를 조정하여 충돌을 방지합니다:</p>
+        <ul>
+            <li><strong>속도 조절:</strong> 속도를 높이거나 낮춰 시간적 분리 확보</li>
+            <li><strong>고도 변경:</strong> 수직 분리를 위해 고도 조정</li>
+            <li><strong>경로 변경:</strong> 우회 경로로 수평 분리 확보</li>
+            <li><strong>대기 (Loiter):</strong> 원형 비행하며 대기 후 계속 진행</li>
+        </ul>
+
+        <h3>6.4.3 긴급 회피 (Emergency Avoidance)</h3>
+        <p>충돌이 임박한 경우 DAA 시스템이 자동으로 긴급 기동을 수행합니다:</p>
+
+        <div class="info-box">
+            <h4>🚨 긴급 회피 기동 우선순위</h4>
+            <ol>
+                <li><strong>수직 회피:</strong> 급상승 또는 급하강 (가장 효과적)</li>
+                <li><strong>수평 회피:</strong> 좌/우 급선회</li>
+                <li><strong>급정지:</strong> 즉시 호버링 (멀티콥터만 가능)</li>
+                <li><strong>최후 수단:</strong> 안전한 지점에 즉시 착륙</li>
+            </ol>
+        </div>
+
+        <h2>6.5 Right-of-Way 규칙</h2>
+        <p>여러 드론이 동시에 회피 기동을 하면 혼란이 발생할 수 있으므로, 명확한 우선권 규칙이 필요합니다:</p>
+
+        <table>
+            <thead>
+                <tr><th>상황</th><th>우선권</th><th>대응</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>정면 충돌</td><td>둘 다</td><td>모두 우측으로 회피</td></tr>
+                <tr><td>교차 경로</td><td>우측에서 오는 드론</td><td>좌측 드론이 양보</td></tr>
+                <tr><td>추월</td><td>앞서가는 드론</td><td>추월 드론이 우측으로 우회</td></tr>
+                <tr><td>착륙</td><td>착륙 중인 드론</td><td>다른 드론은 대기</td></tr>
+                <tr><td>긴급 상황</td><td>긴급 드론</td><td>모든 드론 즉시 회피</td></tr>
+                <tr><td>유인 항공기</td><td>유인 항공기</td><td>드론이 즉시 회피</td></tr>
+            </tbody>
+        </table>
+
+        <h2>6.6 협조적 vs 비협조적 회피</h2>
+        <h3>6.6.1 협조적 회피</h3>
+        <p>두 드론이 모두 UTM 시스템에 연결되어 있고 서로 통신할 수 있는 경우:</p>
+        <ul>
+            <li>USS 간 조정으로 최적 회피 방안 결정</li>
+            <li>양측 모두 협력하여 효율적인 회피</li>
+            <li>회피 후 원래 경로로 신속히 복귀</li>
+        </ul>
+
+        <h3>6.6.2 비협조적 회피</h3>
+        <p>상대방이 UTM에 연결되지 않았거나 통신 불가능한 경우:</p>
+        <ul>
+            <li>DAA 센서로만 상대 감지</li>
+            <li>상대 의도를 알 수 없으므로 보수적 회피</li>
+            <li>안전 여유를 크게 확보</li>
+        </ul>
+
+        <div class="warning-box">
+            <h4>⚠️ 비협조적 물체의 위협</h4>
+            <p>새, 연, 비닐봉지 등 예측 불가능한 물체는 DAA 시스템에 큰 도전입니다. 현재 AI 기반 물체 인식 기술이 발전하고 있지만, 100% 완벽한 감지는 어렵습니다. 따라서 다층 방어와 안전 여유가 중요합니다.</p>
+        </div>
+
+        <h2>6.7 DAA 성능 요구사항</h2>
+        <p>효과적인 DAA 시스템은 다음 성능 기준을 충족해야 합니다:</p>
+
+        <table>
+            <thead>
+                <tr><th>항목</th><th>요구사항</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>탐지 거리</td><td>최소 500m (드론 간), 2km (유인 항공기)</td></tr>
+                <tr><td>탐지 정확도</td><td>위치 오차 < 5m, 속도 오차 < 1 m/s</td></tr>
+                <tr><td>업데이트 주기</td><td>최소 10 Hz (초당 10회)</td></tr>
+                <tr><td>반응 시간</td><td>탐지부터 회피 기동까지 < 1초</td></tr>
+                <tr><td>오탐률 (False Positive)</td><td>< 1% (불필요한 회피 최소화)</td></tr>
+                <tr><td>미탐률 (False Negative)</td><td>< 0.001% (실제 위협 놓치면 안 됨)</td></tr>
+                <tr><td>가용성</td><td>> 99.9% (항상 작동해야 함)</td></tr>
+            </tbody>
+        </table>
+
+        <h2>6.8 DAA 테스트 및 인증</h2>
+        <h3>6.8.1 시뮬레이션 테스트</h3>
+        <p>DAA 시스템은 먼저 시뮬레이션 환경에서 철저히 테스트됩니다:</p>
+        <ul>
+            <li>수천 가지 충돌 시나리오 생성</li>
+            <li>다양한 기상 조건 시뮬레이션</li>
+            <li>센서 고장 상황 테스트</li>
+            <li>극단적 상황(edge cases) 검증</li>
+        </ul>
+
+        <h3>6.8.2 실제 비행 테스트</h3>
+        <p>시뮬레이션 통과 후 실제 환경에서 테스트:</p>
+        <ol>
+            <li>무인 환경(사막, 바다 등)에서 기본 기능 테스트</li>
+            <li>통제된 공역에서 실제 물체와의 회피 테스트</li>
+            <li>다양한 기상 조건에서 테스트</li>
+            <li>장기간 신뢰성 테스트</li>
+        </ol>
+
+        <h3>6.8.3 인증 절차</h3>
+        <p>FAA, EASA 등 규제 기관의 인증을 받아야 합니다:</p>
+        <ul>
+            <li>RTCA SC-228 표준 준수</li>
+            <li>DO-365: DAA 최소 운영 성능 표준</li>
+            <li>안전성 평가 보고서 제출</li>
+            <li>독립적인 제3자 검증</li>
+        </ul>
+
+        <h2>6.9 DAA의 미래 발전</h2>
+        <h3>6.9.1 AI 기반 예측 회피</h3>
+        <p>머신러닝으로 상대방의 다음 동작을 예측하여 선제적으로 회피합니다:</p>
+        <ul>
+            <li>강화학습으로 최적 회피 전략 학습</li>
+            <li>패턴 인식으로 새떼, 기류 등 예측</li>
+            <li>다중 드론 협력 회피 (Swarm DAA)</li>
+        </ul>
+
+        <h3>6.9.2 V2V (Vehicle-to-Vehicle) 통신</h3>
+        <p>드론 간 직접 통신으로 협조적 회피를 강화합니다:</p>
+        <ul>
+            <li>5G C-V2X 또는 DSRC 기술 활용</li>
+            <li>USS 없이도 드론끼리 조정 가능</li>
+            <li>지연 시간 < 10ms로 실시간 반응</li>
+        </ul>
+
+        <h3>6.9.3 양자 센서</h3>
+        <p>양자 기술 기반 센서로 극한의 정확도와 민감도를 달성할 수 있습니다.</p>
+
+        <h2>6.10 요약</h2>
+        <p>Detect and Avoid (DAA)는 드론의 안전한 자율 비행을 가능하게 하는 핵심 기술입니다. 레이더, 라이다, 카메라 등 다양한 센서를 융합하여 주변 물체를 감지하고, 충돌 위험을 평가하며, 전략적/전술적/긴급 회피 기동을 수행합니다.</p>
+
+        <p>DAA는 협조적 드론과 비협조적 물체 모두를 대상으로 하며, 엄격한 성능 요구사항과 인증 절차를 거쳐야 합니다. 미래에는 AI, V2V 통신, 양자 센서 등의 발전으로 더욱 정교하고 효율적인 DAA가 가능해질 것입니다.</p>
+
+        <p>다음 장에서는 UTM 보안 및 사이버 보안에 대해 알아보겠습니다.</p>
+
+        <div class="nav-buttons">
+            <a href="chapter-05.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">📚 목차로</a>
+            <a href="chapter-07.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / WIA</p>
+            <p><strong>弘益人間</strong> (홍익인간) &middot; Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

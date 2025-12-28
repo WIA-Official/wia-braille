@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA Spec Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --secondary: #10b981;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0d1117;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.7; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .nav-home { color: var(--text); text-decoration: none; font-weight: bold; font-size: 1.1rem; white-space: nowrap; }
+        .nav-home:hover { color: var(--primary); }
+        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-muted); }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--primary); }
+        .breadcrumb .sep { color: var(--border); }
+        .breadcrumb .current { color: var(--primary); font-weight: 500; }
+        .nav-right { display: flex; align-items: center; gap: 20px; }
+        .nav-links { display: flex; gap: 15px; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; white-space: nowrap; }
+        .nav-links a:hover { color: var(--primary); }
+        .lang-switch { display: flex; gap: 5px; }
+        .lang-btn { padding: 6px 12px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+        .lang-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .lang-btn:hover { border-color: var(--primary); }
+
+        .doc-header { text-align: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 30px; }
+        .doc-header h1 { font-size: 1.8rem; margin-bottom: 10px; color: var(--primary); }
+        .doc-header .meta { color: var(--text-muted); font-size: 0.9rem; }
+        .doc-header .lang-notice { margin-top: 15px; padding: 10px 20px; background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary); border-radius: 8px; font-size: 0.85rem; display: none; }
+        .doc-header .lang-notice.show { display: inline-block; }
+
+        .markdown-body { background: var(--bg-card); border-radius: 12px; padding: 40px; border: 1px solid var(--border); }
+        .markdown-body h1 { font-size: 2rem; color: var(--primary); margin: 30px 0 20px; padding-bottom: 10px; border-bottom: 2px solid var(--border); }
+        .markdown-body h2 { font-size: 1.6rem; color: var(--text); margin: 30px 0 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .markdown-body h3 { font-size: 1.3rem; color: var(--text); margin: 25px 0 12px; }
+        .markdown-body h4 { font-size: 1.1rem; color: var(--text-muted); margin: 20px 0 10px; }
+        .markdown-body p { margin: 15px 0; color: var(--text); }
+        .markdown-body ul, .markdown-body ol { margin: 15px 0; padding-left: 25px; }
+        .markdown-body li { margin: 8px 0; color: var(--text); }
+        .markdown-body a { color: var(--primary); text-decoration: none; }
+        .markdown-body a:hover { text-decoration: underline; }
+        .markdown-body strong { color: var(--text); font-weight: 600; }
+        .markdown-body em { color: var(--text-muted); }
+        .markdown-body blockquote { border-left: 4px solid var(--primary); padding: 15px 20px; margin: 20px 0; background: rgba(59, 130, 246, 0.1); border-radius: 0 8px 8px 0; }
+        .markdown-body blockquote p { margin: 5px 0; color: var(--text-muted); }
+        .markdown-body hr { border: none; border-top: 1px solid var(--border); margin: 30px 0; }
+        .markdown-body table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .markdown-body th, .markdown-body td { border: 1px solid var(--border); padding: 12px 15px; text-align: left; }
+        .markdown-body th { background: var(--bg); color: var(--primary); font-weight: 600; }
+        .markdown-body td { background: var(--bg-card); }
+        .markdown-body code { font-family: 'Monaco', 'Menlo', 'Consolas', monospace; background: var(--bg-code); padding: 3px 8px; border-radius: 4px; font-size: 0.9em; color: #e06c75; }
+        .markdown-body pre { background: var(--bg-code); border-radius: 8px; padding: 20px; overflow-x: auto; margin: 20px 0; border: 1px solid var(--border); }
+        .markdown-body pre code { background: none; padding: 0; color: #abb2bf; font-size: 0.85rem; line-height: 1.6; }
+        .markdown-body img { max-width: 100%; border-radius: 8px; margin: 20px 0; }
+
+        .loading { text-align: center; padding: 60px; color: var(--text-muted); }
+        .error { text-align: center; padding: 60px; color: #ef4444; }
+
+        .file-list { background: var(--bg-card); border-radius: 12px; padding: 30px; border: 1px solid var(--border); }
+        .file-list h2 { color: var(--primary); margin-bottom: 20px; }
+        .file-list a { display: block; padding: 12px 15px; margin: 8px 0; background: var(--bg); border-radius: 8px; color: var(--text); text-decoration: none; border: 1px solid var(--border); transition: all 0.2s; }
+        .file-list a:hover { border-color: var(--primary); background: rgba(59, 130, 246, 0.1); }
+
+        footer { margin-top: 60px; padding: 30px 0; border-top: 1px solid var(--border); text-align: center; }
+        footer .philosophy { color: #ffd700; font-size: 1.1rem; margin-bottom: 10px; }
+        footer p { color: var(--text-muted); margin: 5px 0; }
+        footer .footer-links { margin-top: 15px; }
+        footer .footer-links a { color: var(--text-muted); text-decoration: none; margin: 0 10px; }
+        footer .footer-links a:hover { color: var(--primary); }
+
+        @media (max-width: 768px) {
+            .top-nav { flex-direction: column; gap: 15px; }
+            .nav-left { width: 100%; justify-content: center; }
+            .nav-right { width: 100%; justify-content: center; flex-wrap: wrap; }
+            .breadcrumb { display: none; }
+            .markdown-body { padding: 20px; }
+            .markdown-body h1 { font-size: 1.5rem; }
+            .markdown-body h2 { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-nav">
+            <div class="nav-left">
+                <a href="https://wiastandards.com" class="nav-home">🤟 WIA Standards</a>
+                <div class="breadcrumb" id="breadcrumb">
+                    <a href="https://wiastandards.com">Home</a>
+                    <span class="sep">›</span>
+                    <span class="current">Spec Viewer</span>
+                </div>
+            </div>
+            <div class="nav-right">
+                <nav class="nav-links">
+                    <a href="https://cert.wiastandards.com" target="_blank" data-en="🏆 Certification" data-ko="🏆 인증">🏆 Certification</a>
+                    <a href="https://wiabooks.store" target="_blank" data-en="📚 Ebook" data-ko="📚 전자책">📚 Ebook</a>
+                    <a href="https://github.com/WIA-Official/wia-standards" target="_blank">GitHub</a>
+                </nav>
+                <div class="lang-switch">
+                    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                    <button class="lang-btn" onclick="setLang('ko')">KO</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="content">
+            <div class="loading" data-en="📄 Loading document..." data-ko="📄 문서 로딩 중...">📄 Loading document...</div>
+        </div>
+
+        <footer>
+            <p class="philosophy" data-en="弘益人間 · Benefit All Humanity" data-ko="弘益人間 · 널리 인간을 이롭게 하라">弘益人間 · Benefit All Humanity</p>
+            <p>WIA - World Certification Industry Association</p>
+            <div class="footer-links">
+                <a href="https://wiastandards.com" data-en="🏠 Home" data-ko="🏠 홈">🏠 Home</a>
+                <a href="https://wiastandards.com/#standards" data-en="📋 All Standards" data-ko="📋 전체 표준">📋 All Standards</a>
+                <a href="https://wiabooks.store" data-en="📚 Ebook" data-ko="📚 전자책">📚 Ebook</a>
+                <a href="https://github.com/WIA-Official/wia-standards" target="_blank">GitHub</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let currentLang = localStorage.getItem('wiaLang') || 'en';
+        let baseFile = '';
+        let currentFile = '';
+
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('wiaLang', lang);
+            
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute('data-' + lang) || el.getAttribute('data-en');
+            });
+
+            if (baseFile) {
+                loadMarkdownForLang(lang);
+            }
+        }
+
+        async function loadMarkdownForLang(lang) {
+            const params = new URLSearchParams(window.location.search);
+            let file = params.get('file');
+            if (!file) return;
+
+            const parts = file.split('/');
+            const fileName = parts.pop();
+            const basePath = parts.join('/');
+            
+            // Try: standard/spec/ko/file.md
+            const langFile = basePath + '/' + lang + '/' + fileName;
+            try {
+                const response = await fetch('/' + langFile);
+                if (response.ok) {
+                    currentFile = langFile;
+                    renderMarkdown(await response.text(), langFile);
+                    updateLangNotice(false);
+                    return;
+                }
+            } catch (e) {}
+
+            // Fallback to original
+            if (currentFile !== file) {
+                try {
+                    const response = await fetch('/' + file);
+                    if (response.ok) {
+                        currentFile = file;
+                        renderMarkdown(await response.text(), file);
+                        updateLangNotice(true, lang);
+                    }
+                } catch (e) {}
+            } else {
+                updateLangNotice(true, lang);
+            }
+        }
+
+        function updateLangNotice(show, lang) {
+            const notice = document.querySelector('.lang-notice');
+            if (notice) {
+                notice.classList.toggle('show', show);
+                if (show) {
+                    notice.textContent = lang === 'ko' 
+                        ? '📝 한국어 번역이 준비 중입니다. 현재 원본을 표시합니다.'
+                        : '📝 Showing original document.';
+                }
+            }
+        }
+
+        function renderMarkdown(text, file) {
+            const html = marked.parse(text);
+            const parts = file.split('/');
+            const fileName = parts.pop();
+            const standard = parts[0] || 'spec';
+
+            document.getElementById('content').innerHTML = `
+                <div class="doc-header">
+                    <h1>📄 ${fileName}</h1>
+                    <div class="meta">/${file}</div>
+                    <div class="lang-notice"></div>
+                </div>
+                <div class="markdown-body">${html}</div>
+            `;
+
+            document.getElementById('breadcrumb').innerHTML = `
+                <a href="https://wiastandards.com">Home</a>
+                <span class="sep">›</span>
+                <a href="https://${standard}.wiastandards.com">${standard.toUpperCase()}</a>
+                <span class="sep">›</span>
+                <span class="current">${fileName}</span>
+            `;
+            document.title = `${fileName} - WIA Spec Viewer`;
+        }
+
+        async function loadMarkdown() {
+            const params = new URLSearchParams(window.location.search);
+            const file = params.get('file');
+            const content = document.getElementById('content');
+
+            if (!file) {
+                content.innerHTML = `
+                    <div class="file-list">
+                        <h2 data-en="📄 Select a Specification" data-ko="📄 스펙 문서 선택">📄 Select a Specification</h2>
+                        <p style="color: var(--text-muted); margin-bottom: 20px;" data-en="Use ?file=path/to/file.md to view" data-ko="?file=경로/파일.md 형식으로 확인">Use ?file=path/to/file.md</p>
+                    </div>
+                `;
+                setLang(currentLang);
+                return;
+            }
+
+            baseFile = file;
+            
+            try {
+                const response = await fetch('/' + file);
+                if (!response.ok) throw new Error('File not found');
+                
+                currentFile = file;
+                renderMarkdown(await response.text(), file);
+                setLang(currentLang);
+                
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="error">
+                        <h2>❌ Error Loading Document</h2>
+                        <p>Could not load: ${file}</p>
+                        <p style="margin-top: 20px;"><a href="https://wiastandards.com">← Back to Home</a></p>
+                    </div>
+                `;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadMarkdown);
+    </script>
+</body>
+</html>

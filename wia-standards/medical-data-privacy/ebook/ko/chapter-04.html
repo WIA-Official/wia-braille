@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4장: 동의 관리 시스템 - WIA 의료 데이터 프라이버시 표준</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        header { padding: 2rem 0; border-bottom: 2px solid #14B8A6; margin-bottom: 2rem; }
+        .chapter-number { font-size: 1rem; color: #14B8A6; font-weight: 600; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #f8fafc; margin-bottom: 1rem; }
+        h2 { color: #14B8A6; font-size: 1.8rem; margin: 2.5rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(20, 184, 166, 0.3); }
+        h3 { color: #14B8A6; font-size: 1.3rem; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.2rem; color: #cbd5e1; }
+        .chapter-nav { background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .nav-button { padding: 0.75rem 1.5rem; background: #334155; color: #14B8A6; text-decoration: none; border-radius: 6px; transition: all 0.3s ease; border: 1px solid #14B8A6; }
+        .nav-button:hover { background: #14B8A6; color: #0f172a; transform: translateY(-2px); }
+        .highlight-box { background: rgba(20, 184, 166, 0.1); border-left: 4px solid #14B8A6; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: #1e293b; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #14B8A6; color: #0f172a; font-weight: 600; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #334155; }
+        .code-block { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto; }
+        .code-header { color: #14B8A6; font-size: 0.9rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #334155; }
+        pre { margin: 0; color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; }
+        ul, ol { margin: 1rem 0 1rem 2rem; color: #cbd5e1; }
+        li { margin-bottom: 0.5rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0; }
+        .stat-card { background: #1e293b; padding: 1.5rem; border-radius: 8px; border: 1px solid #334155; text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #14B8A6; margin-bottom: 0.5rem; }
+        .stat-label { color: #94a3b8; font-size: 0.9rem; }
+        footer { margin-top: 4rem; padding: 2rem 0; text-align: center; border-top: 2px solid #334155; color: #64748b; }
+        .footer-tagline { font-size: 1.1rem; color: #14B8A6; margin-bottom: 0.5rem; }
+        .warning-box { background: rgba(251, 191, 36, 0.1); border-left: 4px solid #fbbf24; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        .info-box { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        @media (max-width: 768px) { h1 { font-size: 2rem; } .container { padding: 1rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-number">4장</div>
+            <h1>동의 관리 시스템</h1>
+        </header>
+
+        <div class="chapter-nav">
+            <a href="chapter-03.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">목차</a>
+            <a href="chapter-05.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <div class="highlight-box">
+            <strong>장 개요:</strong> 이 장에서는 환자 동의 수집, 저장, 관리 및 철회 프로세스를 다룹니다. GDPR의 유효한 동의 요건, 동적 동의 관리, 세분화된 동의 제어, 그리고 동의 관리 시스템 구축 방법을 학습합니다.
+        </div>
+
+        <h2>동의의 법적 기반</h2>
+
+        <p>의료 분야에서 동의(consent)는 환자의 자율성을 존중하고 개인정보 보호를 보장하는 핵심 메커니즘입니다. GDPR과 HIPAA는 각각 다른 동의 요구사항을 제시합니다:</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">83%</div>
+                <div class="stat-label">환자가 동의 내용을 이해하지 못함</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">7개</div>
+                <div class="stat-label">GDPR 유효 동의 조건</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">24시간</div>
+                <div class="stat-label">권장 동의 철회 처리 시간</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">동의 이력 추적 필요</div>
+            </div>
+        </div>
+
+        <h2>GDPR의 유효한 동의 요건</h2>
+
+        <p>GDPR 제4조 및 제7조는 유효한 동의가 되기 위한 7가지 핵심 요건을 명시합니다:</p>
+
+        <ol>
+            <li><strong>자유로운 (Freely Given):</strong>
+                <ul>
+                    <li>강압, 압력, 불이익 없이 주어져야 함</li>
+                    <li>서비스 제공 조건으로 불필요한 동의를 요구하면 안 됨</li>
+                    <li>동의 거부 시에도 대체 옵션 제공</li>
+                </ul>
+            </li>
+
+            <li><strong>구체적 (Specific):</strong>
+                <ul>
+                    <li>각 처리 목적에 대해 별도의 동의 획득</li>
+                    <li>"모든 목적을 위해 동의합니다" 식의 포괄적 동의는 무효</li>
+                    <li>명확하고 구체적인 목적 명시</li>
+                </ul>
+            </li>
+
+            <li><strong>사전 고지 (Informed):</strong>
+                <ul>
+                    <li>데이터 컨트롤러의 신원</li>
+                    <li>처리 목적</li>
+                    <li>수집되는 데이터 유형</li>
+                    <li>동의 철회 권리</li>
+                    <li>자동화된 의사결정 여부</li>
+                    <li>제3국 데이터 전송 여부 및 위험</li>
+                </ul>
+            </li>
+
+            <li><strong>명시적 표시 (Unambiguous Indication):</strong>
+                <ul>
+                    <li>명확한 긍정적 행위 (예: 체크박스 선택, 서명)</li>
+                    <li>사전 체크된 박스는 무효</li>
+                    <li>침묵, 비활동, 미리 작성된 선언은 동의로 인정 안 됨</li>
+                </ul>
+            </li>
+
+            <li><strong>철회 가능 (Revocable):</strong>
+                <ul>
+                    <li>동의만큼 쉽게 철회 가능해야 함</li>
+                    <li>철회 메커니즘을 명확히 고지</li>
+                    <li>철회 시 이미 처리된 데이터의 합법성은 유지</li>
+                </ul>
+            </li>
+
+            <li><strong>증명 가능 (Demonstrable):</strong>
+                <ul>
+                    <li>누가, 언제, 무엇에 동의했는지 기록</li>
+                    <li>동의 획득 방법 및 내용 보관</li>
+                    <li>감독기구 요청 시 증명 가능</li>
+                </ul>
+            </li>
+
+            <li><strong>명시적 동의 (Explicit Consent, 특수 범주 데이터):</strong>
+                <ul>
+                    <li>건강 정보 등 민감 데이터는 명시적 동의 필요</li>
+                    <li>서면 진술, 전자 서명 등 명확한 확인</li>
+                    <li>2단계 확인 프로세스 권장</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h2>HIPAA의 동의 vs 승인</h2>
+
+        <p>HIPAA는 동의(consent)와 승인(authorization)을 구분합니다:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>구분</th>
+                    <th>동의 (Consent)</th>
+                    <th>승인 (Authorization)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>필수 여부</strong></td>
+                    <td>선택적</td>
+                    <td>특정 공개 시 필수</td>
+                </tr>
+                <tr>
+                    <td><strong>적용 범위</strong></td>
+                    <td>일반적인 치료/지불/운영</td>
+                    <td>TPO 외의 PHI 사용/공개</td>
+                </tr>
+                <tr>
+                    <td><strong>형식</strong></td>
+                    <td>간단한 동의서</td>
+                    <td>법정 요소 포함 상세 문서</td>
+                </tr>
+                <tr>
+                    <td><strong>철회</strong></td>
+                    <td>언제든 가능</td>
+                    <td>서면으로 가능 (이미 공개된 것은 제외)</td>
+                </tr>
+                <tr>
+                    <td><strong>예시</strong></td>
+                    <td>진료 기록 사용</td>
+                    <td>마케팅, 연구, 제3자 공개</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>HIPAA 승인서 필수 요소</h3>
+
+        <ol>
+            <li>공개될 PHI의 구체적 설명</li>
+            <li>PHI를 사용/공개할 권한이 있는 자</li>
+            <li>PHI를 받을 자</li>
+            <li>사용/공개 목적</li>
+            <li>만료 날짜 또는 만료 이벤트</li>
+            <li>철회 권리 및 방법</li>
+            <li>재공개 가능성 및 보호 제한</li>
+            <li>서명 및 날짜</li>
+        </ol>
+
+        <h2>세분화된 동의 관리</h2>
+
+        <p>현대적인 동의 관리 시스템은 세분화된(granular) 동의 제어를 제공하여 환자가 자신의 데이터 사용을 정밀하게 제어할 수 있게 합니다:</p>
+
+        <div class="code-block">
+            <div class="code-header">동의 데이터 모델 (JSON)</div>
+            <pre>
+{
+  "consentId": "CNS-2024-001234",
+  "patientId": "P-2024-567890",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "version": "2.0",
+  "status": "active",
+  "purposes": [
+    {
+      "purpose": "direct-care",
+      "granted": true,
+      "scope": {
+        "dataTypes": ["all"],
+        "recipients": ["treating-providers"],
+        "duration": "indefinite"
+      }
+    },
+    {
+      "purpose": "research",
+      "granted": true,
+      "scope": {
+        "dataTypes": ["de-identified"],
+        "recipients": ["university-research"],
+        "duration": "2029-01-15",
+        "restrictions": ["no-genetic-data"]
+      }
+    },
+    {
+      "purpose": "marketing",
+      "granted": false,
+      "scope": null
+    },
+    {
+      "purpose": "data-sharing",
+      "granted": true,
+      "scope": {
+        "dataTypes": ["summary-only"],
+        "recipients": ["insurance-providers"],
+        "duration": "indefinite"
+      }
+    }
+  ],
+  "specialConditions": {
+    "mentalHealth": {
+      "granted": false,
+      "explicitDenial": true
+    },
+    "substanceAbuse": {
+      "granted": false,
+      "explicitDenial": true
+    },
+    "hivStatus": {
+      "granted": true,
+      "restrictions": ["anonymized-research-only"]
+    }
+  },
+  "withdrawalHistory": [],
+  "signature": {
+    "method": "electronic",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "ipAddress": "192.168.1.100",
+    "userAgent": "Mozilla/5.0..."
+  }
+}
+</pre>
+        </div>
+
+        <h2>동적 동의 (Dynamic Consent)</h2>
+
+        <p>동적 동의는 환자가 언제든지 자신의 동의를 검토하고 수정할 수 있는 인터랙티브한 동의 관리 방식입니다. 특히 장기 연구 프로젝트에서 유용합니다:</p>
+
+        <h3>동적 동의의 특징</h3>
+
+        <ul>
+            <li><strong>실시간 업데이트:</strong> 환자 포털을 통해 즉시 동의 변경</li>
+            <li><strong>투명성:</strong> 데이터 사용 현황 실시간 확인</li>
+            <li><strong>양방향 커뮤니케이션:</strong> 연구팀과 직접 소통</li>
+            <li><strong>교육적:</strong> 데이터 사용 목적과 혜택에 대한 지속적 정보 제공</li>
+            <li><strong>유연성:</strong> 연구 진행 중에도 동의 범위 조정 가능</li>
+        </ul>
+
+        <h2>동의 관리 시스템 아키텍처</h2>
+
+        <div class="code-block">
+            <div class="code-header">동의 관리 시스템 컴포넌트</div>
+            <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                    Consent Management System                 │
+├─────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐ │
+│  │  Patient       │  │  Provider      │  │  Research      │ │
+│  │  Portal        │  │  Interface     │  │  Portal        │ │
+│  └────────────────┘  └────────────────┘  └────────────────┘ │
+│           │                  │                    │          │
+│  ┌────────┴──────────────────┴────────────────────┴────────┐ │
+│  │              Consent API Gateway                        │ │
+│  └────────────────────────────────────────────────────────┬┘ │
+│                                                            │  │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │         Consent Business Logic Layer                   │ │
+│  │  • Validation  • Versioning  • Conflict Resolution    │ │
+│  │  • Audit Trail • Notifications • Policy Enforcement   │ │
+│  └─────────────────────────────────────────────────────────┘ │
+│                           │                                  │
+│  ┌────────────────┬───────┴────────┬───────────────────────┐ │
+│  │  Consent DB    │  Audit Log DB  │  Integration Service │ │
+│  │  (PostgreSQL)  │  (MongoDB)     │  (EMR, PACS, etc.)  │ │
+│  └────────────────┴────────────────┴───────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+
+        <h2>동의 수집 프로세스</h2>
+
+        <h3>1. 사전 동의 단계</h3>
+
+        <ul>
+            <li>환자에게 명확하고 이해하기 쉬운 언어로 정보 제공</li>
+            <li>처리 목적, 데이터 유형, 보유 기간, 수령인 설명</li>
+            <li>환자 권리 (접근, 수정, 삭제, 이동, 반대) 고지</li>
+            <li>질문 및 상담 기회 제공</li>
+        </ul>
+
+        <h3>2. 동의 획득 단계</h3>
+
+        <ul>
+            <li>각 목적별로 별도의 동의 옵션 제공</li>
+            <li>사전 체크 없는 빈 체크박스</li>
+            <li>명확한 긍정적 행위 요구 (클릭, 서명)</li>
+            <li>동의 내용 요약 표시</li>
+            <li>최종 확인 단계</li>
+        </ul>
+
+        <h3>3. 동의 기록 단계</h3>
+
+        <ul>
+            <li>타임스탬프, IP 주소, 사용자 에이전트 기록</li>
+            <li>동의서 버전 및 내용 저장</li>
+            <li>서명 또는 확인 방법 기록</li>
+            <li>불변(immutable) 감사 로그 생성</li>
+        </ul>
+
+        <h2>동의 철회 메커니즘</h2>
+
+        <p>GDPR은 동의를 제공한 것만큼 쉽게 철회할 수 있어야 한다고 명시합니다:</p>
+
+        <div class="code-block">
+            <div class="code-header">동의 철회 처리 로직 (TypeScript)</div>
+            <pre>
+interface ConsentWithdrawal {
+  withdrawalId: string;
+  consentId: string;
+  patientId: string;
+  timestamp: Date;
+  purposes: string[];  // 철회할 목적들
+  reason?: string;     // 선택적: 철회 사유
+  effectiveDate: Date; // 철회 발효일
+}
+
+async function processConsentWithdrawal(
+  withdrawal: ConsentWithdrawal
+): Promise<void> {
+  // 1. 동의 상태 업데이트
+  await updateConsentStatus(
+    withdrawal.consentId,
+    withdrawal.purposes,
+    'withdrawn'
+  );
+
+  // 2. 영향받는 시스템에 통지
+  await notifyAffectedSystems(withdrawal);
+
+  // 3. 데이터 처리 중단
+  await stopDataProcessing(
+    withdrawal.patientId,
+    withdrawal.purposes
+  );
+
+  // 4. 데이터 삭제 스케줄링 (필요시)
+  if (shouldDeleteData(withdrawal.purposes)) {
+    await scheduleDataDeletion(
+      withdrawal.patientId,
+      withdrawal.effectiveDate
+    );
+  }
+
+  // 5. 감사 로그 기록
+  await logConsentWithdrawal(withdrawal);
+
+  // 6. 환자에게 확인 통지
+  await sendWithdrawalConfirmation(withdrawal.patientId);
+}
+
+// 철회 영향 분석
+async function analyzeWithdrawalImpact(
+  withdrawal: ConsentWithdrawal
+): Promise<WithdrawalImpact> {
+  return {
+    affectedRecords: await countAffectedRecords(withdrawal),
+    affectedSystems: await identifyAffectedSystems(withdrawal),
+    ongoingProcesses: await findOngoingProcesses(withdrawal),
+    legalObligations: await checkLegalRetentionRequirements(withdrawal)
+  };
+}
+</pre>
+        </div>
+
+        <h3>철회 시 고려사항</h3>
+
+        <ol>
+            <li><strong>즉시 처리:</strong> 철회 요청 후 24시간 이내 처리 목표</li>
+            <li><strong>소급 불가:</strong> 철회 전 합법적으로 처리된 데이터는 영향 없음</li>
+            <li><strong>법적 의무:</strong> 법적 보존 의무가 있는 데이터는 삭제 불가</li>
+            <li><strong>연구 데이터:</strong> 이미 익명화된 연구 데이터는 철회 불가</li>
+            <li><strong>확인 통지:</strong> 철회 완료 시 환자에게 확인 통지</li>
+        </ol>
+
+        <h2>동의 버전 관리</h2>
+
+        <p>동의 양식이나 정책이 변경될 때마다 버전 관리가 필요합니다:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>버전</th>
+                    <th>발효일</th>
+                    <th>주요 변경사항</th>
+                    <th>기존 동의 처리</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1.0</td>
+                    <td>2020-01-01</td>
+                    <td>초기 버전</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>1.1</td>
+                    <td>2021-06-15</td>
+                    <td>AI 분석 목적 추가</td>
+                    <td>재동의 요청 (선택적)</td>
+                </tr>
+                <tr>
+                    <td>2.0</td>
+                    <td>2023-01-01</td>
+                    <td>GDPR 개정 반영</td>
+                    <td>재동의 필수</td>
+                </tr>
+                <tr>
+                    <td>2.1</td>
+                    <td>2024-03-01</td>
+                    <td>세분화된 동의 옵션</td>
+                    <td>자동 전환 (동등 이상 보호)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>미성년자 및 취약 계층 동의</h2>
+
+        <p>미성년자와 취약 계층은 특별한 보호가 필요합니다:</p>
+
+        <h3>GDPR의 미성년자 규정</h3>
+
+        <ul>
+            <li><strong>16세 미만:</strong> 부모 또는 보호자 동의 필요 (회원국별로 13-16세로 조정 가능)</li>
+            <li><strong>검증 의무:</strong> 연령 및 보호자 권한 확인</li>
+            <li><strong>명확한 언어:</strong> 아동이 이해할 수 있는 설명</li>
+        </ul>
+
+        <h3>취약 계층 보호</h3>
+
+        <ul>
+            <li>인지 장애가 있는 환자: 법정 대리인 동의</li>
+            <li>응급 상황: 생명 보호를 위한 묵시적 동의 가능</li>
+            <li>언어 장벽: 통역 서비스 제공</li>
+            <li>문맹 환자: 구두 설명 및 증인 서명</li>
+        </ul>
+
+        <h2>국제 데이터 전송에 대한 동의</h2>
+
+        <p>EU 외부로 건강 데이터를 전송하는 경우 추가적인 동의와 보호 조치가 필요합니다:</p>
+
+        <ol>
+            <li><strong>명시적 고지:</strong>
+                <ul>
+                    <li>데이터가 전송될 국가</li>
+                    <li>해당 국가의 보호 수준</li>
+                    <li>적절성 결정 여부</li>
+                    <li>전송 근거 (표준 계약 조항, BCR 등)</li>
+                </ul>
+            </li>
+
+            <li><strong>추가 안전장치:</strong>
+                <ul>
+                    <li>암호화 전송</li>
+                    <li>데이터 최소화</li>
+                    <li>전송 로그 기록</li>
+                    <li>수령인의 보안 의무</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h2>동의 관리 모범 사례</h2>
+
+        <ol>
+            <li><strong>사용자 중심 설계:</strong> 환자가 쉽게 이해하고 관리할 수 있는 인터페이스</li>
+            <li><strong>계층화된 정보:</strong> 요약 → 상세 정보 → 법적 문서 순으로 제공</li>
+            <li><strong>Just-in-Time 동의:</strong> 데이터 사용 직전에 관련 동의 요청</li>
+            <li><strong>정기적 검토:</strong> 연 1회 환자에게 동의 상태 확인 기회 제공</li>
+            <li><strong>다중 채널:</strong> 웹, 모바일, 키오스크, 종이 등 다양한 방법 지원</li>
+            <li><strong>접근성:</strong> 장애인을 위한 대체 형식 제공</li>
+            <li><strong>감사 가능성:</strong> 모든 동의 관련 활동 로그 기록</li>
+            <li><strong>자동화:</strong> 동의 상태에 따른 데이터 접근 제어 자동화</li>
+        </ol>
+
+        <h2>결론</h2>
+
+        <p>효과적인 동의 관리는 환자 자율성을 존중하고, 법적 요구사항을 충족하며, 의료 기관의 위험을 최소화하는 핵심 요소입니다. 동적이고 세분화된 동의 관리 시스템은 환자 신뢰를 강화하고 데이터 활용도를 높일 수 있습니다.</p>
+
+        <p>다음 장에서는 의료 데이터 암호화 기술과 키 관리 전략을 살펴보겠습니다.</p>
+
+        <div class="chapter-nav" style="margin-top: 3rem;">
+            <a href="chapter-03.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">목차</a>
+            <a href="chapter-05.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <footer>
+            <p class="footer-tagline">弘益人間 · 널리 인간을 이롭게 하라</p>
+            <p>WIA (World Certification Industry Association)</p>
+            <p>© 2025 MIT License</p>
+        </footer>
+    </div>
+</body>
+</html>

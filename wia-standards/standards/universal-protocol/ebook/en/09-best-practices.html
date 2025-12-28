@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 9: Best Practices | WIA-CORE-007</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f1f5f9; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 3rem; border-radius: 15px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #10b981; border-bottom: 3px solid #6B7280; padding-bottom: 1rem; }
+        h2 { font-size: 2rem; margin: 2rem 0 1rem; color: #6B7280; }
+        h3 { font-size: 1.5rem; margin: 1.5rem 0 1rem; color: #10b981; }
+        p { margin: 1rem 0; font-size: 1.1rem; }
+        code { background: #0f172a; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: Monaco, monospace; color: #10b981; }
+        pre { background: #0f172a; padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; border-left: 4px solid #6B7280; }
+        pre code { background: none; padding: 0; }
+        .nav { margin: 2rem 0; display: flex; justify-content: space-between; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #10b981; text-decoration: none; font-weight: 600; padding: 0.5rem 1rem; border: 2px solid #6B7280; border-radius: 5px; transition: all 0.3s; }
+        .nav a:hover { background: #6B7280; color: white; }
+        .highlight { background: #334155; padding: 1.5rem; border-left: 4px solid #10b981; border-radius: 5px; margin: 1.5rem 0; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; font-size: 1.1rem; }
+        .emoji { font-size: 1.5em; margin-right: 0.5rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 1rem; text-align: left; border: 1px solid #334155; }
+        th { background: #0f172a; color: #10b981; }
+        td { background: #1e293b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">⭐</span>Chapter 9: Best Practices</h1>
+
+        <h2>9.1 Production Deployment</h2>
+
+        <h3>9.1.1 Configuration Management</h3>
+        <pre><code>// Use environment-based configuration
+const config = {
+  development: {
+    transport: new HTTPTransport({
+      baseURL: 'http://localhost:3000',
+      timeout: 30000
+    }),
+    encoding: 'json',
+    logging: {
+      level: 'debug',
+      pretty: true
+    }
+  },
+
+  production: {
+    transport: new WebSocketTransport({
+      url: 'wss://api.example.com',
+      reconnect: {
+        enabled: true,
+        maxAttempts: 10,
+        backoff: 'exponential'
+      },
+      compression: true
+    }),
+    encoding: 'protobuf',
+    logging: {
+      level: 'info',
+      pretty: false,
+      destination: 'file'
+    }
+  }
+};
+
+const protocol = new UniversalProtocol(
+  config[process.env.NODE_ENV || 'development']
+);</code></pre>
+
+        <h3>9.1.2 Health Checks</h3>
+        <pre><code>// Implement health check endpoint
+protocol.handle('health.check', async () => {
+  const checks = await Promise.all([
+    checkDatabaseConnection(),
+    checkRedisConnection(),
+    checkExternalAPIs()
+  ]);
+
+  const allHealthy = checks.every(c => c.status === 'healthy');
+
+  return {
+    status: allHealthy ? 'healthy' : 'degraded',
+    timestamp: new Date().toISOString(),
+    checks: checks
+  };
+});
+
+// Periodic health checks
+setInterval(async () => {
+  try {
+    const health = await protocol.call('health.check');
+    if (health.status !== 'healthy') {
+      logger.warn('Health check failed', health);
+      metrics.gauge('health.status', 0);
+    } else {
+      metrics.gauge('health.status', 1);
+    }
+  } catch (error) {
+    logger.error('Health check error', error);
+    metrics.gauge('health.status', -1);
+  }
+}, 30000);</code></pre>
+
+        <h2>9.2 Performance Optimization</h2>
+
+        <h3>9.2.1 Connection Pooling</h3>
+        <pre><code>// Reuse connections
+class ConnectionPool {
+  constructor(options) {
+    this.size = options.size || 10;
+    this.connections = [];
+    this.available = [];
+  }
+
+  async acquire() {
+    if (this.available.length > 0) {
+      return this.available.pop();
+    }
+
+    if (this.connections.length < this.size) {
+      const conn = await this.createConnection();
+      this.connections.push(conn);
+      return conn;
+    }
+
+    // Wait for available connection
+    return new Promise((resolve) => {
+      this.waitQueue.push(resolve);
+    });
+  }
+
+  release(connection) {
+    if (this.waitQueue.length > 0) {
+      const resolve = this.waitQueue.shift();
+      resolve(connection);
+    } else {
+      this.available.push(connection);
+    }
+  }
+}
+
+const pool = new ConnectionPool({ size: 20 });
+const transport = new CustomTransport({ pool });</code></pre>
+
+        <h3>9.2.2 Caching Strategy</h3>
+        <pre><code>// Multi-level caching
+class CacheStrategy {
+  constructor() {
+    this.l1 = new Map(); // In-memory cache
+    this.l2 = redis; // Redis cache
+  }
+
+  async get(key) {
+    // Try L1 cache
+    if (this.l1.has(key)) {
+      metrics.increment('cache.l1.hit');
+      return this.l1.get(key);
+    }
+
+    // Try L2 cache
+    const value = await this.l2.get(key);
+    if (value) {
+      metrics.increment('cache.l2.hit');
+      this.l1.set(key, value); // Populate L1
+      return value;
+    }
+
+    metrics.increment('cache.miss');
+    return null;
+  }
+
+  async set(key, value, ttl) {
+    this.l1.set(key, value);
+    await this.l2.set(key, value, 'EX', ttl);
+  }
+}
+
+const cache = new CacheStrategy();
+
+protocol.use(async (context, next) => {
+  const cacheKey = `${context.method}:${JSON.stringify(context.params)}`;
+  const cached = await cache.get(cacheKey);
+
+  if (cached) {
+    context.response = cached;
+    context.metadata.cached = true;
+    return;
+  }
+
+  await next();
+
+  if (context.response && !context.error) {
+    await cache.set(cacheKey, context.response, 300);
+  }
+});</code></pre>
+
+        <h3>9.2.3 Batching and Prefetching</h3>
+        <pre><code>// Batch multiple requests
+const batch = new BatchProcessor({
+  maxBatchSize: 100,
+  maxWaitTime: 50 // ms
+});
+
+async function getUser(userId) {
+  return batch.add('users.getMany', userId);
+}
+
+// These are automatically batched
+const [user1, user2, user3] = await Promise.all([
+  getUser('1'),
+  getUser('2'),
+  getUser('3')
+]);
+
+// Prefetch related data
+async function getUserWithProfile(userId) {
+  const [user, profile, settings] = await Promise.all([
+    protocol.call('users.get', { id: userId }),
+    protocol.call('profiles.get', { userId }),
+    protocol.call('settings.get', { userId })
+  ]);
+
+  return { user, profile, settings };
+}</code></pre>
+
+        <h2>9.3 Security Best Practices</h2>
+
+        <h3>9.3.1 Authentication & Authorization</h3>
+        <pre><code>// JWT-based authentication
+import jwt from 'jsonwebtoken';
+
+protocol.use(async (context, next) => {
+  const token = context.metadata.authorization?.replace('Bearer ', '');
+
+  if (!token) {
+    throw new UnauthorizedError('Missing token');
+  }
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    context.user = payload;
+    context.permissions = await loadUserPermissions(payload.userId);
+  } catch (error) {
+    throw new UnauthorizedError('Invalid token');
+  }
+
+  await next();
+});
+
+// Permission checking
+function requirePermission(permission) {
+  return async (context, next) => {
+    if (!context.permissions.includes(permission)) {
+      throw new ForbiddenError(`Missing permission: ${permission}`);
+    }
+    await next();
+  };
+}
+
+protocol.handle('admin.deleteUser',
+  requirePermission('users:delete'),
+  async (params) => {
+    await database.users.delete(params.userId);
+    return { success: true };
+  }
+);</code></pre>
+
+        <h3>9.3.2 Input Validation</h3>
+        <pre><code>// Comprehensive input validation
+import { z } from 'zod';
+
+const schemas = {
+  'users.create': z.object({
+    email: z.string().email().max(255),
+    password: z.string().min(8).max(72),
+    name: z.string().min(2).max(100),
+    age: z.number().int().min(18).max(120).optional(),
+    roles: z.array(z.enum(['user', 'admin', 'moderator'])).optional()
+  })
+};
+
+protocol.use(async (context, next) => {
+  const schema = schemas[context.method];
+
+  if (schema) {
+    try {
+      context.params = schema.parse(context.params);
+    } catch (error) {
+      throw new ValidationError('Invalid input', error.errors);
+    }
+  }
+
+  await next();
+});</code></pre>
+
+        <h3>9.3.3 Rate Limiting</h3>
+        <pre><code>// Sophisticated rate limiting
+class RateLimiter {
+  async checkLimit(key, limits) {
+    const now = Date.now();
+
+    // Per-second limit
+    const perSecond = await redis.incr(`limit:${key}:second:${Math.floor(now / 1000)}`);
+    if (perSecond > limits.perSecond) {
+      throw new RateLimitError('Too many requests per second');
+    }
+
+    // Per-minute limit
+    const perMinute = await redis.incr(`limit:${key}:minute:${Math.floor(now / 60000)}`);
+    if (perMinute > limits.perMinute) {
+      throw new RateLimitError('Too many requests per minute');
+    }
+
+    // Per-hour limit
+    const perHour = await redis.incr(`limit:${key}:hour:${Math.floor(now / 3600000)}`);
+    if (perHour > limits.perHour) {
+      throw new RateLimitError('Too many requests per hour');
+    }
+
+    return true;
+  }
+}
+
+const limiter = new RateLimiter();
+
+protocol.use(async (context, next) => {
+  const key = context.user?.id || context.metadata['x-client-ip'];
+
+  await limiter.checkLimit(key, {
+    perSecond: 10,
+    perMinute: 100,
+    perHour: 1000
+  });
+
+  await next();
+});</code></pre>
+
+        <h2>9.4 Monitoring and Observability</h2>
+
+        <h3>9.4.1 Structured Logging</h3>
+        <pre><code>// Structured logging with context
+const logger = {
+  log(level, message, context) {
+    console.log(JSON.stringify({
+      level,
+      message,
+      timestamp: new Date().toISOString(),
+      ...context
+    }));
+  }
+};
+
+protocol.use(async (context, next) => {
+  const startTime = Date.now();
+  const traceId = context.metadata['x-trace-id'] || generateId();
+
+  logger.log('info', 'Request started', {
+    traceId,
+    method: context.method,
+    userId: context.user?.id
+  });
+
+  try {
+    await next();
+
+    logger.log('info', 'Request completed', {
+      traceId,
+      method: context.method,
+      duration: Date.now() - startTime,
+      status: 'success'
+    });
+  } catch (error) {
+    logger.log('error', 'Request failed', {
+      traceId,
+      method: context.method,
+      duration: Date.now() - startTime,
+      error: {
+        code: error.code,
+        message: error.message,
+        stack: error.stack
+      }
+    });
+
+    throw error;
+  }
+});</code></pre>
+
+        <h3>9.4.2 Metrics Collection</h3>
+        <pre><code>// Comprehensive metrics
+const metrics = {
+  requestDuration: new Histogram('protocol_request_duration_ms'),
+  requestCount: new Counter('protocol_requests_total'),
+  activeConnections: new Gauge('protocol_active_connections'),
+  errorCount: new Counter('protocol_errors_total')
+};
+
+protocol.on('request', () => {
+  metrics.requestCount.inc({ method: context.method });
+});
+
+protocol.on('response', (context) => {
+  metrics.requestDuration.observe(
+    { method: context.method },
+    context.duration
+  );
+});
+
+protocol.on('error', (context, error) => {
+  metrics.errorCount.inc({
+    method: context.method,
+    errorCode: error.code
+  });
+});
+
+protocol.on('connected', () => {
+  metrics.activeConnections.inc();
+});
+
+protocol.on('disconnected', () => {
+  metrics.activeConnections.dec();
+});</code></pre>
+
+        <h3>9.4.3 Distributed Tracing</h3>
+        <pre><code>// OpenTelemetry integration
+import { trace } from '@opentelemetry/api';
+
+const tracer = trace.getTracer('universal-protocol');
+
+protocol.use(async (context, next) => {
+  const span = tracer.startSpan(context.method, {
+    attributes: {
+      'protocol.method': context.method,
+      'protocol.userId': context.user?.id,
+      'protocol.transport': 'websocket'
+    }
+  });
+
+  try {
+    await next();
+    span.setStatus({ code: SpanStatusCode.OK });
+  } catch (error) {
+    span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: error.message
+    });
+    span.recordException(error);
+    throw error;
+  } finally {
+    span.end();
+  }
+});</code></pre>
+
+        <h2>9.5 Error Handling</h2>
+
+        <h3>9.5.1 Error Classification</h3>
+        <pre><code>// Structured error hierarchy
+class ProtocolError extends Error {
+  constructor(code, message, details) {
+    super(message);
+    this.code = code;
+    this.details = details;
+    this.timestamp = new Date();
+  }
+}
+
+class ValidationError extends ProtocolError {
+  constructor(message, details) {
+    super('VALIDATION_ERROR', message, details);
+    this.statusCode = 400;
+  }
+}
+
+class UnauthorizedError extends ProtocolError {
+  constructor(message) {
+    super('UNAUTHORIZED', message);
+    this.statusCode = 401;
+  }
+}
+
+class RateLimitError extends ProtocolError {
+  constructor(message) {
+    super('RATE_LIMIT_EXCEEDED', message);
+    this.statusCode = 429;
+    this.retryAfter = 60;
+  }
+}</code></pre>
+
+        <h3>9.5.2 Graceful Degradation</h3>
+        <pre><code>// Fallback strategies
+async function getUserProfile(userId) {
+  try {
+    // Try primary service
+    return await protocol.call('users.getProfile', { userId });
+  } catch (error) {
+    if (error.code === 'SERVICE_UNAVAILABLE') {
+      // Try cache
+      const cached = await cache.get(`profile:${userId}`);
+      if (cached) {
+        logger.warn('Using cached profile', { userId });
+        return cached;
+      }
+
+      // Return minimal profile
+      logger.warn('Returning minimal profile', { userId });
+      return {
+        userId,
+        name: 'Unknown User',
+        _degraded: true
+      };
+    }
+
+    throw error;
+  }
+}</code></pre>
+
+        <h2>9.6 Testing Strategies</h2>
+
+        <h3>9.6.1 Unit Testing</h3>
+        <pre><code>// Mock transport for testing
+import { MockTransport } from '@wia/universal-protocol/testing';
+
+describe('User Service', () => {
+  it('should get user profile', async () => {
+    const mockTransport = new MockTransport();
+
+    mockTransport.mockResponse('users.getProfile', {
+      userId: '123',
+      name: 'Test User',
+      email: 'test@example.com'
+    });
+
+    const protocol = new UniversalProtocol({
+      transport: mockTransport
+    });
+
+    const profile = await protocol.call('users.getProfile', {
+      id: '123'
+    });
+
+    expect(profile.name).toBe('Test User');
+    expect(mockTransport.calls).toHaveLength(1);
+  });
+});</code></pre>
+
+        <h3>9.6.2 Integration Testing</h3>
+        <pre><code>// Test with real protocol
+describe('Integration Tests', () => {
+  let protocol;
+
+  beforeAll(async () => {
+    protocol = new UniversalProtocol({
+      transport: new WebSocketTransport({
+        url: 'ws://localhost:3000'
+      })
+    });
+    await protocol.connect();
+  });
+
+  afterAll(async () => {
+    await protocol.disconnect();
+  });
+
+  it('should handle real requests', async () => {
+    const result = await protocol.call('health.check');
+    expect(result.status).toBe('healthy');
+  });
+});</code></pre>
+
+        <div class="highlight">
+            <h3>Production Checklist</h3>
+            <ul>
+                <li>✅ Environment-based configuration</li>
+                <li>✅ Health check endpoints implemented</li>
+                <li>✅ Connection pooling configured</li>
+                <li>✅ Multi-level caching enabled</li>
+                <li>✅ Authentication and authorization in place</li>
+                <li>✅ Input validation for all endpoints</li>
+                <li>✅ Rate limiting configured</li>
+                <li>✅ Structured logging with trace IDs</li>
+                <li>✅ Metrics collection and monitoring</li>
+                <li>✅ Distributed tracing enabled</li>
+                <li>✅ Error handling and fallbacks</li>
+                <li>✅ Comprehensive test coverage</li>
+                <li>✅ Documentation up to date</li>
+            </ul>
+        </div>
+
+        <h2>9.7 Conclusion</h2>
+        <p>The Universal Protocol provides a powerful, flexible foundation for cross-platform communication. By following these best practices, you can build robust, scalable, and maintainable systems that work across any transport or encoding.</p>
+
+        <p>Key takeaways:</p>
+        <ul>
+            <li>Start simple, optimize as needed</li>
+            <li>Monitor everything, optimize what matters</li>
+            <li>Design for failure, handle errors gracefully</li>
+            <li>Security is not optional</li>
+            <li>Test thoroughly, deploy confidently</li>
+        </ul>
+
+        <div class="highlight">
+            <h3>Next Steps</h3>
+            <ul>
+                <li>Explore the interactive simulator</li>
+                <li>Check out the TypeScript SDK</li>
+                <li>Review the specification documents</li>
+                <li>Join the WIA community</li>
+                <li>Contribute to the standard</li>
+            </ul>
+        </div>
+
+        <div class="nav">
+            <a href="08-advanced-features.html">← Previous: Advanced Features</a>
+            <a href="../index.html">Back to Home</a>
+        </div>
+
+        <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; opacity: 0.7; text-align: center;">
+            <p>&copy; 2025 SmileStory Inc. / WIA</p>
+            <p>弘益人間 (홍익인간) · Benefit All Humanity</p>
+            <p style="margin-top: 1rem;">Thank you for reading! We hope the Universal Protocol helps you build better systems.</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 05: Digital Signatures and PKI Infrastructure - WIA-SOC-013</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; background: #0f172a; color: #f8fafc; line-height: 1.8; }
+h1, h2, h3 { color: #10B981; }
+h2 { margin-top: 40px; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+pre { background: #1e293b; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #334155; }
+code { color: #34D399; }
+.nav { margin-bottom: 30px; }
+.nav a { color: #10B981; text-decoration: none; margin-right: 20px; }
+.highlight { background: rgba(16, 185, 129, 0.1); padding: 20px; border-left: 4px solid #10B981; margin: 20px 0; }
+table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+th, td { padding: 12px; text-align: left; border-bottom: 1px solid #334155; }
+th { background: #1e293b; color: #10B981; }
+ul, ol { margin: 15px 0; padding-left: 30px; }
+li { margin: 8px 0; }
+</style>
+</head>
+<body>
+<div class="nav"><a href="index.html">← TOC</a><a href="chapter-04.html">← Prev</a><a href="chapter-06.html">Next →</a></div>
+<h1>Chapter 05: Digital Signatures and PKI Infrastructure</h1>
+<blockquote class="highlight"><strong>弘益人間</strong> - "Cryptographic signatures transform documents into tamper-proof evidence of authenticity."</blockquote>
+
+<h2>05.1 Public Key Infrastructure Overview</h2>
+<p>Public Key Infrastructure (PKI) provides the cryptographic foundation for digital signatures, enabling governments to issue documents that are mathematically provable as authentic and unaltered. WIA-SOC-013 mandates PKI for all public documents requiring legal validity.</p>
+
+<p>Core PKI components include:</p>
+<ul>
+<li><strong>Certificate Authority (CA)</strong>: Trusted entity that issues digital certificates</li>
+<li><strong>Registration Authority (RA)</strong>: Verifies certificate requests before CA issuance</li>
+<li><strong>Certificate Revocation List (CRL)</strong>: Published list of revoked certificates</li>
+<li><strong>Online Certificate Status Protocol (OCSP)</strong>: Real-time certificate validation</li>
+<li><strong>Hardware Security Modules (HSM)</strong>: Tamper-resistant key storage devices</li>
+</ul>
+
+<h2>05.2 Digital Signature Algorithms</h2>
+<p>WIA-SOC-013 supports multiple signature algorithms for flexibility and future-proofing:</p>
+
+<table>
+<tr><th>Algorithm</th><th>Key Size</th><th>Security Level</th><th>Performance</th><th>WIA Support</th></tr>
+<tr><td>RSA</td><td>2048-4096 bits</td><td>High</td><td>Slow</td><td>✓ Legacy compatibility</td></tr>
+<tr><td>ECDSA (secp256r1)</td><td>256 bits</td><td>High</td><td>Fast</td><td>✓ Recommended</td></tr>
+<tr><td>EdDSA (Ed25519)</td><td>256 bits</td><td>Very High</td><td>Very Fast</td><td>✓ Preferred</td></tr>
+<tr><td>CRYSTALS-Dilithium</td><td>N/A</td><td>Quantum-resistant</td><td>Medium</td><td>✓ Future-ready</td></tr>
+</table>
+
+<h3>Signature Creation Example</h3>
+<pre><code>import { DigitalSigner } from 'wia-soc-013';
+
+const signer = new DigitalSigner({
+  algorithm: 'EdDSA-Ed25519',
+  privateKey: governmentPrivateKey,
+  certificateChain: [issuingCert, intermediateCert, rootCert]
+});
+
+const signature = await signer.sign({
+  documentId: 'doc:wia:soc013:abc123',
+  documentHash: sha256Hash,
+  timestamp: true,
+  includeChain: true
+});
+
+// Embed signature in PDF
+await pdfDocument.embedSignature(signature);
+</code></pre>
+
+<h2>05.3 Certificate Hierarchies and Trust Chains</h2>
+<p>Government PKI typically follows a hierarchical structure:</p>
+<ul>
+<li><strong>Root CA</strong>: National government authority (e.g., U.S. Federal PKI Root)</li>
+<li><strong>Intermediate CA</strong>: Departmental authorities (e.g., State Department, Social Security Administration)</li>
+<li><strong>Issuing CA</strong>: Local agencies (e.g., County Registrar, DMV Office)</li>
+<li><strong>End-Entity Certificates</strong>: Individual signing keys for document issuance</li>
+</ul>
+
+<h3>Certificate Validation</h3>
+<pre><code>import { CertificateValidator } from 'wia-soc-013';
+
+const validator = new CertificateValidator({
+  trustedRoots: [usRootCA, euRootCA, globalTrustRoot],
+  checkRevocation: true,
+  ocspEnabled: true
+});
+
+const validation = await validator.validate({
+  certificate: documentSignatureCert,
+  timestamp: signatureTimestamp
+});
+
+if (validation.valid) {
+  console.log('Certificate chain valid');
+  console.log('Issuer:', validation.issuer);
+  console.log('Valid from:', validation.notBefore);
+  console.log('Valid until:', validation.notAfter);
+} else {
+  console.error('Validation failed:', validation.errors);
+}
+</code></pre>
+
+<h2>05.4 Timestamp Services</h2>
+<p>Trusted timestamps prove a document existed at a specific point in time, critical for legal validity and non-repudiation.</p>
+
+<h3>RFC 3161 Timestamp Authority</h3>
+<pre><code>import { TimestampService } from 'wia-soc-013';
+
+const tsa = new TimestampService({
+  url: 'https://tsa.government.gov/rfc3161',
+  algorithm: 'SHA-256'
+});
+
+const timestamp = await tsa.create({
+  documentHash: sha256Hash
+});
+
+// Timestamp includes:
+// - Hash of document
+// - Timestamp authority signature
+// - Certificate chain
+// - Nonce for uniqueness
+// - Policy OID
+
+console.log('Timestamp:', timestamp.time); // 2025-01-15T10:30:00Z
+console.log('TSA:', timestamp.authority); // Government Timestamp Authority
+</code></pre>
+
+<h2>05.5 Hardware Security Modules (HSM)</h2>
+<p>Government signing keys must be protected in FIPS 140-2 Level 3+ certified HSMs:</p>
+
+<table>
+<tr><th>HSM Model</th><th>FIPS Level</th><th>Performance</th><th>Use Case</th></tr>
+<tr><td>Thales Luna SA</td><td>Level 3</td><td>10,000 sig/sec</td><td>High-volume document signing</td></tr>
+<tr><td>nCipher nShield</td><td>Level 3</td><td>8,000 sig/sec</td><td>General purpose PKI</td></tr>
+<tr><td>Utimaco CryptoServer</td><td>Level 4</td><td>5,000 sig/sec</td><td>Maximum security (root CAs)</td></tr>
+</table>
+
+<h3>HSM Integration</h3>
+<pre><code>import { HSMConnector } from 'wia-soc-013';
+
+const hsm = new HSMConnector({
+  type: 'thales-luna',
+  slot: 0,
+  pin: process.env.HSM_PIN,
+  keyLabel: 'gov-signing-key-2025'
+});
+
+await hsm.connect();
+
+// Sign using HSM-protected key
+const signature = await hsm.sign({
+  data: documentHash,
+  algorithm: 'ECDSA-SHA256'
+});
+
+console.log('Signature created using hardware-protected key');
+</code></pre>
+
+<h2>05.6 Long-Term Signature Validation (LTV)</h2>
+<p>Signatures must remain verifiable for decades, even after certificates expire. WIA-SOC-013 implements PAdES-LTV (PDF Advanced Electronic Signatures - Long Term Validation):</p>
+
+<h3>LTV Components</h3>
+<ul>
+<li><strong>Embedded Certificate Chain</strong>: Complete chain from signing cert to root</li>
+<li><strong>OCSP Responses</strong>: Snapshot of certificate validity at signing time</li>
+<li><strong>CRL</strong>: Revocation lists current at signature creation</li>
+<li><strong>Timestamp</strong>: Trusted timestamp proving signature time</li>
+<li><strong>Document Timestamp (DTS)</strong>: Additional timestamp after embedding validation info</li>
+</ul>
+
+<pre><code>import { LTVEnabler } from 'wia-soc-013';
+
+const ltv = new LTVEnabler();
+
+await ltv.enable({
+  pdfDocument: signedPDF,
+  embedCertificateChain: true,
+  embedOCSPResponses: true,
+  embedCRL: true,
+  addDocumentTimestamp: true
+});
+
+// Now signature remains verifiable for decades
+// even if certificate expires or CRL/OCSP servers go offline
+</code></pre>
+
+<h2>05.7 Blockchain Anchoring</h2>
+<p>Complement traditional PKI with blockchain for immutable audit trails:</p>
+
+<pre><code>import { BlockchainAnchor } from 'wia-soc-013';
+
+const anchor = new BlockchainAnchor({
+  network: 'ethereum-mainnet',
+  contractAddress: '0x...',
+  signerKey: governmentEthereumKey
+});
+
+const txHash = await anchor.anchor({
+  documentId: 'doc:wia:soc013:abc123',
+  documentHash: sha256Hash,
+  timestamp: new Date(),
+  metadata: {
+    type: 'birthCertificate',
+    issuer: 'California Registry Office'
+  }
+});
+
+console.log('Anchored to blockchain:', txHash);
+// Transaction hash: 0x7f8a9b2c3d4e5f6a7b8c9d0e1f2a3b4c...
+</code></pre>
+
+<h2>05.8 Multi-Party Signatures</h2>
+<p>Some documents require multiple signatories (e.g., marriage certificates require both spouses):</p>
+
+<pre><code>import { MultiSigner } from 'wia-soc-013';
+
+const multiSigner = new MultiSigner({
+  requiredSignatures: 2,
+  signingOrder: 'parallel' // or 'sequential'
+});
+
+// First signature
+await multiSigner.addSignature({
+  documentId: 'doc:wia:soc013:abc123',
+  signerId: 'registrar-jane-smith',
+  signature: signature1
+});
+
+// Second signature
+await multiSigner.addSignature({
+  documentId: 'doc:wia:soc013:abc123',
+  signerId: 'county-clerk-john-doe',
+  signature: signature2
+});
+
+const isComplete = await multiSigner.isComplete('doc:wia:soc013:abc123');
+// true - all required signatures collected
+</code></pre>
+
+<h2>05.9 Signature Verification Workflow</h2>
+<p>Comprehensive verification checks multiple aspects:</p>
+
+<pre><code>import { SignatureVerifier } from 'wia-soc-013';
+
+const verifier = new SignatureVerifier({
+  trustedRoots: governmentCAList,
+  checkRevocation: true,
+  validateTimestamp: true,
+  verifyBlockchainAnchor: true
+});
+
+const result = await verifier.verify({
+  documentId: 'doc:wia:soc013:abc123',
+  document: pdfDocument
+});
+
+console.log('Verification Results:');
+console.log('- Signature valid:', result.signatureValid); // true
+console.log('- Certificate chain:', result.chainValid); // true
+console.log('- Not revoked:', !result.revoked); // true
+console.log('- Timestamp valid:', result.timestampValid); // true
+console.log('- Blockchain anchor:', result.blockchainValid); // true
+console.log('- Document integrity:', result.integrityValid); // true
+
+if (result.allValid) {
+  console.log('Document is authentic and unmodified');
+}
+</code></pre>
+
+<h2>05.10 Key Management and Rotation</h2>
+<p>Signing keys must be rotated periodically for security:</p>
+
+<table>
+<tr><th>Key Type</th><th>Rotation Period</th><th>Rationale</th></tr>
+<tr><td>Root CA</td><td>10-20 years</td><td>Maximum stability for trust</td></tr>
+<tr><td>Intermediate CA</td><td>5-10 years</td><td>Balance stability and security</td></tr>
+<tr><td>Issuing CA</td><td>2-5 years</td><td>Regular security refresh</td></tr>
+<tr><td>Document Signing</td><td>1-2 years</td><td>Minimize exposure window</td></tr>
+</table>
+
+<h3>Key Rotation Process</h3>
+<pre><code>import { KeyRotation } from 'wia-soc-013';
+
+const rotation = new KeyRotation({
+  currentKey: 'gov-key-2024',
+  newKey: 'gov-key-2025',
+  overlapPeriod: '30 days' // Both keys valid during transition
+});
+
+await rotation.initiate({
+  notifyUsers: true,
+  updateDNS: true,
+  publishNewCertificate: true
+});
+
+// During overlap period, verify both keys
+// After overlap, revoke old key
+await rotation.complete({
+  revokeOldKey: true,
+  reason: 'keyRotation'
+});
+</code></pre>
+
+<h2>Conclusion</h2>
+<p>Digital signatures and PKI infrastructure provide the cryptographic foundation for trustworthy public documents. By implementing EdDSA signatures, maintaining robust certificate hierarchies, embedding long-term validation information, and anchoring to blockchain, governments can issue documents with mathematical proof of authenticity that remains verifiable for decades.</p>
+
+<div class="nav" style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #334155;"><a href="chapter-04.html">← Prev</a><a href="index.html">TOC</a><a href="chapter-06.html">Next →</a></div>
+</body>
+</html>

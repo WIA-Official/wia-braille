@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: NAND Flash Memory Architecture - WIA-SEMI-002</title>
+    <style>
+        :root { --bg: #0f172a; --primary: #06B6D4; --secondary: #1e293b; --text: #e2e8f0; --text-dim: #94a3b8; --accent: #22d3ee; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 3px solid var(--primary); }
+        h2 { color: var(--primary); font-size: 2rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary); }
+        h3 { color: var(--accent); font-size: 1.5rem; margin: 2rem 0 0.75rem; }
+        h4 { color: var(--text); font-size: 1.2rem; margin: 1.5rem 0 0.5rem; }
+        p { margin: 1rem 0; line-height: 1.8; }
+        .chapter-nav { background: var(--secondary); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .chapter-nav a { color: var(--primary); text-decoration: none; padding: 0.5rem 1rem; border: 2px solid var(--primary); border-radius: 5px; transition: all 0.3s; }
+        .chapter-nav a:hover { background: var(--primary); color: var(--bg); }
+        .info-box { background: var(--secondary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 1.5rem 0; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: var(--secondary); }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg); color: var(--primary); font-weight: 600; }
+        tr:hover { background: var(--border); }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.75rem 0; }
+        code { background: var(--bg); color: var(--accent); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Courier New', monospace; }
+        .summary { background: var(--secondary); border: 2px solid var(--primary); border-radius: 10px; padding: 2rem; margin: 3rem 0; }
+        .summary h2 { border: none; margin-top: 0; }
+        .questions { background: var(--secondary); border: 2px solid var(--accent); border-radius: 10px; padding: 2rem; margin: 3rem 0; }
+        .questions h2 { border: none; margin-top: 0; color: var(--accent); }
+        footer { text-align: center; margin-top: 4rem; padding: 2rem; border-top: 2px solid var(--primary); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-nav">
+            <a href="chapter-02.html">← Previous Chapter</a>
+            <span style="color: var(--text-dim);">Chapter 3 of 8</span>
+            <a href="chapter-04.html">Next Chapter →</a>
+        </div>
+
+        <h1>Chapter 3: NAND Flash Memory Architecture</h1>
+
+        <p>NAND Flash has revolutionized data storage, enabling everything from USB drives and SSDs to smartphones and data centers. Its unique properties—non-volatility, high density, and continuous scaling through 3D architecture—make it the dominant storage technology. This chapter explores NAND Flash fundamentals, 3D V-NAND technology, and the algorithms that manage its operation.</p>
+
+        <h2>3.1 NAND Flash Cell Structure</h2>
+
+        <p>NAND Flash stores data by trapping electrons in a floating gate transistor, a structure fundamentally different from DRAM's capacitive storage.</p>
+
+        <h3>3.1.1 Floating Gate Transistor</h3>
+
+        <p>The NAND Flash cell consists of:</p>
+        <ul>
+            <li><strong>Control Gate:</strong> Connected to the wordline, controls read/program operations</li>
+            <li><strong>Floating Gate:</strong> Electrically isolated conductor that stores charge</li>
+            <li><strong>Tunnel Oxide:</strong> Thin oxide layer allowing charge injection/removal</li>
+            <li><strong>Channel:</strong> Silicon region where current flows during read operations</li>
+        </ul>
+
+        <p>When electrons are trapped in the floating gate, they increase the threshold voltage (Vth) of the transistor. By sensing whether the cell conducts at a specific gate voltage, the stored data can be determined.</p>
+
+        <h3>3.1.2 SLC, MLC, TLC, and QLC</h3>
+
+        <p>NAND Flash density has increased through multi-level cell (MLC) technology, storing multiple bits per transistor:</p>
+
+        <table>
+            <thead>
+                <tr><th>Type</th><th>Bits/Cell</th><th>Voltage Levels</th><th>Endurance</th><th>Performance</th><th>Cost/GB</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>SLC</strong></td><td>1</td><td>2 states</td><td>100,000 cycles</td><td>Fastest</td><td>Highest</td></tr>
+                <tr><td><strong>MLC</strong></td><td>2</td><td>4 states</td><td>10,000 cycles</td><td>Fast</td><td>Medium-High</td></tr>
+                <tr><td><strong>TLC</strong></td><td>3</td><td>8 states</td><td>3,000 cycles</td><td>Medium</td><td>Low</td></tr>
+                <tr><td><strong>QLC</strong></td><td>4</td><td>16 states</td><td>1,000 cycles</td><td>Slower</td><td>Lowest</td></tr>
+                <tr><td><strong>PLC (Future)</strong></td><td>5</td><td>32 states</td><td>&lt;500 cycles</td><td>Slowest</td><td>Very Low</td></tr>
+            </tbody>
+        </table>
+
+        <p>Each additional bit per cell doubles capacity but requires tighter voltage control, reducing endurance and performance. Consumer SSDs typically use TLC for balanced cost/performance, while data centers may use MLC or even SLC for critical applications.</p>
+
+        <h3>3.1.3 Program, Read, and Erase Operations</h3>
+
+        <h4>Program Operation (Write)</h4>
+
+        <p>Programming injects electrons into the floating gate through Fowler-Nordheim tunneling:</p>
+        <ol>
+            <li><strong>High Voltage Application:</strong> ~20V applied to control gate</li>
+            <li><strong>Tunneling:</strong> Electrons tunnel through oxide into floating gate</li>
+            <li><strong>Verify:</strong> Read cell to confirm correct threshold voltage</li>
+            <li><strong>Incremental Program:</strong> Repeat if needed with slightly higher voltage</li>
+        </ol>
+
+        <p>Program operations are relatively slow (200-1500 μs) and can only change '1' to '0' (increase Vth). The incremental step pulse programming (ISPP) method applies progressively higher voltages until the target threshold is reached, enabling precise voltage control for MLC/TLC/QLC.</p>
+
+        <h4>Read Operation</h4>
+
+        <p>Reading applies intermediate voltages to determine the cell's threshold:</p>
+        <ol>
+            <li><strong>Reference Voltage:</strong> Apply voltage between different Vth levels</li>
+            <li><strong>Sense Current:</strong> Measure if cell conducts (Vth below reference) or not (above)</li>
+            <li><strong>Multiple Reads:</strong> TLC requires 7 reference voltages, QLC requires 15</li>
+            <li><strong>Decode:</strong> Determine stored bits from read results</li>
+        </ol>
+
+        <p>Read operations are fast (~25-50 μs) and non-destructive, allowing unlimited reads without wearing the cell.</p>
+
+        <h4>Erase Operation</h4>
+
+        <p>Erasing removes electrons from floating gate, resetting cells to '1' state:</p>
+        <ol>
+            <li><strong>Block Selection:</strong> NAND erases entire blocks (64KB-4MB typically)</li>
+            <li><strong>High Voltage:</strong> ~20V applied to substrate, 0V to control gate</li>
+            <li><strong>Tunneling:</strong> Electrons tunnel from floating gate to substrate</li>
+            <li><strong>Verify:</strong> Confirm all cells in block are erased</li>
+        </ol>
+
+        <p>Erase is the slowest operation (1.5-5 ms) and can only be performed on entire blocks. This block-erase limitation creates the "write amplification" problem that affects SSD performance and endurance.</p>
+
+        <h2>3.2 3D NAND Architecture (V-NAND)</h2>
+
+        <p>As 2D NAND scaling reached physical limits around the 15nm node, the industry transitioned to 3D vertical NAND (V-NAND), stacking memory cells vertically to increase density.</p>
+
+        <h3>3.2.1 From 2D Planar to 3D Vertical</h3>
+
+        <p>Traditional 2D NAND arranged cells horizontally on a silicon wafer. As feature sizes shrunk below 20nm, challenges emerged:</p>
+        <ul>
+            <li><strong>Cell-to-Cell Interference:</strong> Adjacent cells affecting each other's charge</li>
+            <li><strong>Reduced Endurance:</strong> Thinner oxides and smaller geometries</li>
+            <li><strong>Higher Error Rates:</strong> Requiring stronger ECC</li>
+            <li><strong>Slower Performance:</strong> More conservative programming needed</li>
+        </ul>
+
+        <p>3D NAND solves these issues by stacking cells vertically, allowing larger cell dimensions (improving reliability) while increasing density through vertical scaling.</p>
+
+        <h3>3.2.2 3D NAND Structure</h3>
+
+        <p>Modern 3D NAND uses a vertical channel architecture:</p>
+        <ul>
+            <li><strong>Vertical Channel:</strong> Silicon pillar etched through layers of wordlines</li>
+            <li><strong>Charge Trap Layer:</strong> Replaces floating gate with insulating charge trap</li>
+            <li><strong>Stacked Wordlines:</strong> 96-232+ layers of control gates</li>
+            <li><strong>String Structure:</strong> Multiple cells connected vertically in series</li>
+        </ul>
+
+        <p>The charge trap flash (CTF) design uses a silicon nitride layer to trap charge, avoiding the manufacturing complexity of creating isolated floating gates in 3D.</p>
+
+        <h3>3.2.3 Layer Scaling Evolution</h3>
+
+        <table>
+            <thead>
+                <tr><th>Generation</th><th>Year</th><th>Layers</th><th>Manufacturer Examples</th><th>Capacity</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1st Gen</td><td>2013-2014</td><td>24-32</td><td>Samsung V-NAND, Micron</td><td>128 Gb</td></tr>
+                <tr><td>2nd Gen</td><td>2015-2016</td><td>48</td><td>Samsung 48L, Toshiba BiCS3</td><td>256 Gb</td></tr>
+                <tr><td>3rd Gen</td><td>2017-2018</td><td>64-72</td><td>Samsung 64L V4, Intel/Micron 64L</td><td>512 Gb (TLC)</td></tr>
+                <tr><td>4th Gen</td><td>2018-2019</td><td>96</td><td>Samsung 9xL V5, Micron 96L</td><td>512 Gb-1 Tb</td></tr>
+                <tr><td>5th Gen</td><td>2020-2021</td><td>128-176</td><td>Samsung 128L V6, Micron 176L</td><td>1 Tb</td></tr>
+                <tr><td>6th Gen</td><td>2022-2023</td><td>200-232</td><td>Samsung 236L V8, Micron 232L</td><td>1-2 Tb</td></tr>
+                <tr><td>7th Gen</td><td>2024+</td><td>300+</td><td>Roadmap items</td><td>2 Tb+</td></tr>
+            </tbody>
+        </table>
+
+        <p>Current production uses 176-232 layers, with roadmaps targeting 300+ layers. Beyond ~300 layers, double-stack or triple-stack approaches may be needed, where multiple NAND arrays are stacked and connected through TSVs (Through-Silicon Vias).</p>
+
+        <h2>3.3 NAND Flash Organization</h2>
+
+        <h3>3.3.1 Page, Block, and Plane Structure</h3>
+
+        <p>NAND Flash is organized hierarchically:</p>
+        <ul>
+            <li><strong>Page:</strong> Smallest read/write unit (4KB-16KB typical)</li>
+            <li><strong>Block:</strong> Smallest erase unit (256KB-4MB typical, containing 64-256 pages)</li>
+            <li><strong>Plane:</strong> Collection of blocks sharing peripheral circuitry</li>
+            <li><strong>Die:</strong> One or more planes on a single silicon chip</li>
+            <li><strong>Package:</strong> Multiple dies in a single package</li>
+        </ul>
+
+        <p>A typical modern NAND die might have:</p>
+        <ul>
+            <li>2-4 planes per die</li>
+            <li>2,000-4,000 blocks per plane</li>
+            <li>256-512 pages per block</li>
+            <li>16KB page size</li>
+        </ul>
+
+        <p>This yields: 4 planes × 2,000 blocks × 256 pages × 16KB = 32 GB per die</p>
+
+        <h3>3.3.2 ONFI and Toggle Mode Interfaces</h3>
+
+        <p>NAND Flash communicates via standardized interfaces:</p>
+
+        <h4>ONFI (Open NAND Flash Interface)</h4>
+        <ul>
+            <li><strong>ONFI 1.0:</strong> 50 MT/s (2006)</li>
+            <li><strong>ONFI 2.0-2.3:</strong> 200 MT/s, synchronous interface</li>
+            <li><strong>ONFI 3.0-3.2:</strong> 400 MT/s</li>
+            <li><strong>ONFI 4.0-4.2:</strong> 800-1200 MT/s, NV-DDR3 interface</li>
+            <li><strong>ONFI 5.0:</strong> 1600 MT/s, NV-DDR4 interface (2022)</li>
+        </ul>
+
+        <h4>Toggle Mode (Toshiba/Samsung)</h4>
+        <p>Alternative to ONFI, offering similar speeds through a different physical interface. Many controllers support both standards.</p>
+
+        <h2>3.4 Flash Translation Layer (FTL)</h2>
+
+        <p>The FTL bridges the gap between the block device interface expected by the OS and the reality of NAND Flash's erase-before-write limitation.</p>
+
+        <h3>3.4.1 Logical to Physical Mapping</h3>
+
+        <p>The FTL maintains a mapping table translating logical block addresses (LBAs) to physical pages:</p>
+        <ul>
+            <li><strong>Page-Level Mapping:</strong> Maximum flexibility, high RAM requirement (1GB RAM per 1TB NAND typical)</li>
+            <li><strong>Block-Level Mapping:</strong> Lower overhead, less flexibility</li>
+            <li><strong>Hybrid Mapping:</strong> Block mapping with page-level cache for frequently updated data</li>
+        </ul>
+
+        <h3>3.4.2 Garbage Collection</h3>
+
+        <p>When pages are updated, the FTL writes new data to empty pages and marks old pages as invalid. Over time, blocks accumulate invalid pages:</p>
+        <ol>
+            <li><strong>Select Block:</strong> Choose block with many invalid pages (victim selection)</li>
+            <li><strong>Copy Valid Data:</strong> Read remaining valid pages, copy to new block</li>
+            <li><strong>Erase Block:</strong> Erase the now-empty block</li>
+            <li><strong>Return to Pool:</strong> Block available for new writes</li>
+        </ol>
+
+        <p>Garbage collection causes write amplification: writing 1GB of user data might require erasing and rewriting 1.5GB or more of flash data. Write amplification factor (WAF) is a key SSD performance metric.</p>
+
+        <h3>3.4.3 Wear Leveling</h3>
+
+        <p>Since NAND has limited endurance (1,000-100,000 P/E cycles), the FTL must distribute writes evenly:</p>
+
+        <h4>Dynamic Wear Leveling</h4>
+        <p>Distributes new writes across blocks with lowest erase counts. Simple but doesn't move static data.</p>
+
+        <h4>Static Wear Leveling</h4>
+        <p>Periodically moves static (rarely updated) data from low-erase-count blocks, making those blocks available for frequently updated data. This ensures all blocks wear evenly.</p>
+
+        <h3>3.4.4 Error Correction Codes (ECC)</h3>
+
+        <p>NAND Flash requires ECC to correct bit errors from charge leakage, program disturb, and read disturb:</p>
+
+        <table>
+            <thead>
+                <tr><th>ECC Type</th><th>Correction Capability</th><th>Overhead</th><th>Typical Use</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Hamming Code</strong></td><td>1-2 bit/512B</td><td>~6-13 bits</td><td>Legacy NOR, simple NAND</td></tr>
+                <tr><td><strong>BCH Code</strong></td><td>40-120 bit/1KB</td><td>~14-20%</td><td>Consumer TLC/QLC SSDs</td></tr>
+                <tr><td><strong>LDPC Code</strong></td><td>80-200+ bit/1KB</td><td>~18-25%</td><td>Enterprise SSDs, advanced QLC</td></tr>
+            </tbody>
+        </table>
+
+        <p>Modern SSDs use Low-Density Parity-Check (LDPC) codes, which provide strong correction capability with reasonable overhead. As NAND wears, error rates increase, eventually exceeding ECC capability and marking the block as bad.</p>
+
+        <h2>3.5 SSD Architecture and Performance</h2>
+
+        <h3>3.5.1 SSD Controller</h3>
+
+        <p>The SSD controller is a sophisticated processor managing:</p>
+        <ul>
+            <li><strong>Host Interface:</strong> SATA, SAS, NVMe over PCIe</li>
+            <li><strong>FTL:</strong> Address mapping, garbage collection, wear leveling</li>
+            <li><strong>ECC Engine:</strong> Hardware acceleration for encode/decode</li>
+            <li><strong>NAND Interface:</strong> Controls 8-16+ NAND channels in parallel</li>
+            <li><strong>Cache Management:</strong> DRAM buffering and SLC caching</li>
+        </ul>
+
+        <h3>3.5.2 NVMe Protocol</h3>
+
+        <p>NVMe (Non-Volatile Memory Express) is optimized for flash storage over PCIe:</p>
+        <ul>
+            <li><strong>Low Latency:</strong> Direct PCIe connection, no SATA/SAS translation</li>
+            <li><strong>High Queue Depth:</strong> 64K queues with 64K commands each</li>
+            <li><strong>Parallel I/O:</strong> Multiple queues for different CPU cores</li>
+            <li><strong>Reduced Overhead:</strong> Streamlined command set vs SCSI</li>
+        </ul>
+
+        <p>NVMe over PCIe 4.0 x4 provides ~7 GB/s bandwidth, with PCIe 5.0 doubling that to ~14 GB/s.</p>
+
+        <h3>3.5.3 Performance Characteristics</h3>
+
+        <table>
+            <thead>
+                <tr><th>Metric</th><th>SATA SSD</th><th>NVMe Gen3 SSD</th><th>NVMe Gen4 SSD</th><th>Enterprise NVMe</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Sequential Read</strong></td><td>550 MB/s</td><td>3,500 MB/s</td><td>7,000 MB/s</td><td>7,000+ MB/s</td></tr>
+                <tr><td><strong>Sequential Write</strong></td><td>520 MB/s</td><td>3,000 MB/s</td><td>5,000 MB/s</td><td>6,000+ MB/s</td></tr>
+                <tr><td><strong>Random Read IOPS</strong></td><td>90K</td><td>600K</td><td>1,000K</td><td>1,500K+</td></tr>
+                <tr><td><strong>Random Write IOPS</strong></td><td>80K</td><td>500K</td><td>800K</td><td>500K+ (sustained)</td></tr>
+                <tr><td><strong>Latency (4K read)</strong></td><td>~100 μs</td><td>~50 μs</td><td>~20 μs</td><td>~10 μs</td></tr>
+            </tbody>
+        </table>
+
+        <p>Performance varies significantly based on workload, SLC cache status, and thermal conditions. Many consumer SSDs use SLC caching: allocating part of TLC/QLC NAND to operate in faster SLC mode for burst writes.</p>
+
+        <div class="summary">
+            <h2>Chapter Summary</h2>
+            <ul>
+                <li>NAND Flash stores data by trapping electrons in floating gates, with threshold voltage representing stored bits</li>
+                <li>Multi-level cell technology (MLC/TLC/QLC) stores multiple bits per cell, increasing density but reducing endurance</li>
+                <li>Program, read, and erase have asymmetric performance: reads are fast (~50μs), programs slower (~500μs), erases slowest (~3ms)</li>
+                <li>3D V-NAND stacks cells vertically, enabling continued density scaling without the limitations of 2D planar NAND</li>
+                <li>Modern 3D NAND uses 176-232 layers with charge trap flash (CTF) architecture</li>
+                <li>NAND is organized into pages (read/write unit), blocks (erase unit), planes, and dies</li>
+                <li>The Flash Translation Layer (FTL) provides block-device interface through address mapping, garbage collection, and wear leveling</li>
+                <li>Garbage collection and write amplification are critical performance factors in SSDs</li>
+                <li>Strong ECC (typically LDPC) is required for reliable operation, especially with TLC/QLC</li>
+                <li>NVMe over PCIe provides much higher performance than SATA, with Gen4 SSDs reaching 7 GB/s sequential reads</li>
+            </ul>
+        </div>
+
+        <div class="questions">
+            <h2>Review Questions</h2>
+            <ol>
+                <li>Explain why NAND Flash requires block-level erase and how this impacts SSD design.</li>
+                <li>Calculate the total capacity of a NAND die with: 4 planes, 2,048 blocks/plane, 512 pages/block, 16KB page size. Express in GB.</li>
+                <li>Why does QLC have much lower endurance than SLC? What compensating technologies enable consumer QLC SSDs?</li>
+                <li>Describe the 3D NAND structure. How does vertical stacking solve 2D planar NAND's scaling challenges?</li>
+                <li>What is write amplification? If an SSD has WAF of 3.0, how many TB will be written to NAND for 100TB of host writes?</li>
+                <li>Compare BCH and LDPC error correction codes. Why is LDPC preferred for modern QLC NAND?</li>
+                <li>Explain how SLC caching improves consumer SSD performance. What happens when the cache fills?</li>
+                <li>Why does NVMe provide better performance than SATA, even when the underlying NAND is similar?</li>
+            </ol>
+        </div>
+
+        <div class="chapter-nav">
+            <a href="chapter-02.html">← Previous Chapter</a>
+            <span style="color: var(--text-dim);">Chapter 3 of 8</span>
+            <a href="chapter-04.html">Next Chapter →</a>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / World Certification Industry Association (WIA)</p>
+            <p>弘益人間 (홍익인간) · Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

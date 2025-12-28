@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: Security and Authentication - WIA-QUA-016</title>
+    <style>
+        :root { --primary: #8B5CF6; --primary-dark: #7C3AED; --primary-light: #A78BFA; --background: #0F172A; --surface: #1E293B; --surface-light: #334155; --text: #F1F5F9; --text-secondary: #CBD5E1; --border: #475569; --success: #10B981; --warning: #F59E0B; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: var(--text); background: var(--background); padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 3px solid var(--primary); }
+        h2 { color: var(--primary-light); font-size: 2rem; margin-top: 3rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--surface-light); }
+        h3 { color: var(--text); font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem; }
+        p { margin-bottom: 1rem; color: var(--text-secondary); }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: var(--surface); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: var(--surface-light); }
+        .code-block { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; font-family: 'Courier New', monospace; color: var(--primary-light); }
+        .summary { background: linear-gradient(135deg, var(--surface) 0%, var(--surface-light) 100%); padding: 2rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--success); }
+        .summary h3 { color: var(--success); margin-top: 0; }
+        .review { background: var(--surface); padding: 2rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--warning); }
+        .review h3 { color: var(--warning); margin-top: 0; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: 6px; transition: background 0.3s; }
+        .btn:hover { background: var(--primary-dark); }
+        ul, ol { margin-left: 1.5rem; color: var(--text-secondary); }
+        li { margin: 0.5rem 0; }
+        .note { background: var(--surface); border-left: 4px solid var(--primary); padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Chapter 6: Security and Authentication</h1>
+
+    <h2>6.1 FTL-Specific Security Challenges</h2>
+    
+    <p>FTL communication introduces unique security challenges beyond conventional cryptography. The ability to send information faster than light enables novel attack vectors, including temporal attacks, causality exploitation, and timeline manipulation.</p>
+
+    <h3>6.1.1 Threat Model</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Threat</th>
+                <th>Description</th>
+                <th>Impact</th>
+                <th>Mitigation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Temporal Eavesdropping</td>
+                <td>Attacker receives message before intended recipient</td>
+                <td>Information disclosure</td>
+                <td>Causality-based access control</td>
+            </tr>
+            <tr>
+                <td>CTC Exploitation</td>
+                <td>Create closed timelike curves for information from future</td>
+                <td>Break all encryption</td>
+                <td>Strict CTC prevention</td>
+            </tr>
+            <tr>
+                <td>Timeline Injection</td>
+                <td>Insert messages into alternative timelines</td>
+                <td>Data integrity compromise</td>
+                <td>Timeline authentication</td>
+            </tr>
+            <tr>
+                <td>Replay Attack (Temporal)</td>
+                <td>Retransmit message at different spacetime point</td>
+                <td>Authorization bypass</td>
+                <td>Spacetime nonces</td>
+            </tr>
+            <tr>
+                <td>Metric Manipulation</td>
+                <td>Modify Alcubierre bubble to intercept signals</td>
+                <td>Man-in-the-middle</td>
+                <td>Metric signature verification</td>
+            </tr>
+            <tr>
+                <td>Quantum Decoherence Attack</td>
+                <td>Induce decoherence in quantum FTL channels</td>
+                <td>Denial of service</td>
+                <td>Quantum error correction</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>6.1.2 Security Requirements</h3>
+
+    <div class="code-block">
+FTL Security Properties:
+
+1. CONFIDENTIALITY
+   - Messages unreadable to unauthorized parties
+   - Even with FTL interception capability
+   - Quantum-resistant encryption required
+
+2. INTEGRITY
+   - Messages unmodifiable in transit
+   - Detectable tampering even at quantum level
+   - Cryptographic checksums + quantum authentication
+
+3. AUTHENTICITY
+   - Sender identity verifiable
+   - Non-repudiation across timelines
+   - Digital signatures with temporal binding
+
+4. CAUSALITY PROTECTION
+   - No information leakage to past
+   - CTC detection and prevention
+   - Timeline consistency enforcement
+
+5. AVAILABILITY
+   - Resistant to FTL DoS attacks
+   - No causality-based denial of service
+   - Redundant paths and failover
+
+6. TEMPORAL INTEGRITY
+   - Message timestamps verifiable
+   - Ordering preserved across timelines
+   - Preferred frame synchronization
+    </div>
+
+    <h2>6.2 Cryptographic Protocols for FTL</h2>
+
+    <h3>6.2.1 Post-Quantum Cryptography</h3>
+
+    <div class="code-block">
+// Lattice-based encryption for FTL (quantum-resistant)
+import { CRYSTALS_Kyber } from 'post-quantum-crypto';
+
+class FTLEncryption {
+    private publicKey: Uint8Array;
+    private privateKey: Uint8Array;
+    
+    async generateKeyPair(): Promise<void> {
+        // CRYSTALS-Kyber (NIST standard)
+        const keypair = await CRYSTALS_Kyber.generateKeyPair(
+            CRYSTALS_Kyber.KYBER1024 // Highest security level
+        );
+        this.publicKey = keypair.publicKey;
+        this.privateKey = keypair.privateKey;
+    }
+    
+    async encryptMessage(message: Buffer, recipientPubKey: Uint8Array): Promise<EncryptedMessage> {
+        // Encapsulate shared secret
+        const { ciphertext, sharedSecret } = await CRYSTALS_Kyber.encapsulate(recipientPubKey);
+        
+        // Use shared secret for AES-256-GCM
+        const aes = new AES_GCM(sharedSecret);
+        const encrypted = await aes.encrypt(message);
+        
+        return {
+            kyberCiphertext: ciphertext,
+            aesCiphertext: encrypted.ciphertext,
+            nonce: encrypted.nonce,
+            authTag: encrypted.authTag
+        };
+    }
+    
+    async decryptMessage(encrypted: EncryptedMessage): Promise<Buffer> {
+        // Decapsulate shared secret
+        const sharedSecret = await CRYSTALS_Kyber.decapsulate(
+            encrypted.kyberCiphertext,
+            this.privateKey
+        );
+        
+        // Decrypt with AES-256-GCM
+        const aes = new AES_GCM(sharedSecret);
+        return await aes.decrypt({
+            ciphertext: encrypted.aesCiphertext,
+            nonce: encrypted.nonce,
+            authTag: encrypted.authTag
+        });
+    }
+}
+    </div>
+
+    <h3>6.2.2 Quantum Key Distribution (QKD) for FTL</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Protocol</th>
+                <th>Mechanism</th>
+                <th>Security Basis</th>
+                <th>FTL Compatibility</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>BB84</td>
+                <td>Polarized photon transmission</td>
+                <td>Heisenberg uncertainty</td>
+                <td>Requires classical channel (not FTL)</td>
+            </tr>
+            <tr>
+                <td>E91</td>
+                <td>Entangled pairs + Bell test</td>
+                <td>Bell inequality violation</td>
+                <td>No-comm theorem limits to ≤c</td>
+            </tr>
+            <tr>
+                <td>FTL-QKD (Theoretical)</td>
+                <td>Pre-shared entanglement + FTL classical</td>
+                <td>Quantum + causality protection</td>
+                <td>Requires both quantum AND FTL</td>
+            </tr>
+            <tr>
+                <td>Timeline-Isolated QKD</td>
+                <td>Separate keys per timeline branch</td>
+                <td>Timeline authentication</td>
+                <td>FTL-compatible with isolation</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>6.3 Authentication and Authorization</h2>
+
+    <h3>6.3.1 Spacetime Identity Certificates</h3>
+
+    <div class="code-block">
+// Identity certificate with spacetime binding
+interface SpacetimeCertificate {
+    subject: {
+        id: UUID;
+        name: string;
+        coordinates: CosmicCoordinates;
+    };
+    
+    issuer: {
+        id: UUID;
+        name: string;
+        publicKey: Uint8Array;
+    };
+    
+    validity: {
+        notBefore: Timestamp; // In preferred frame
+        notAfter: Timestamp;
+        spaceRegion: {
+            center: CosmicCoordinates;
+            radius: number; // light-years
+        };
+    };
+    
+    publicKey: Uint8Array;
+    
+    temporalBinding: {
+        timeline: UUID;
+        causalityChain: UUID[];
+        referenceFrame: ReferenceFrame;
+    };
+    
+    signature: Uint8Array; // CRYSTALS-Dilithium (post-quantum)
+}
+
+// Certificate verification with causality check
+class CertificateVerifier {
+    verify(cert: SpacetimeCertificate, currentTime: Timestamp, location: CosmicCoordinates): boolean {
+        // Standard checks
+        if (currentTime < cert.validity.notBefore || currentTime > cert.validity.notAfter) {
+            return false; // Expired or not yet valid
+        }
+        
+        // Spatial validity check
+        const distance = this.calculateDistance(location, cert.validity.spaceRegion.center);
+        if (distance > cert.validity.spaceRegion.radius) {
+            return false; // Outside spatial validity region
+        }
+        
+        // Causality check - ensure cert issuance is in our causal past
+        if (!this.isInCausalPast(cert.temporalBinding, currentTime)) {
+            return false; // Certificate from causally disconnected timeline!
+        }
+        
+        // Verify signature (post-quantum)
+        return this.verifyDilithiumSignature(cert);
+    }
+    
+    private isInCausalPast(binding: TemporalBinding, now: Timestamp): boolean {
+        // Check if certificate issuance event is in our light cone
+        const issueTime = binding.referenceFrame.timestamp;
+        const lightTravelTime = this.getLightTravelTime(
+            binding.referenceFrame.origin,
+            this.currentLocation
+        );
+        
+        return now >= issueTime + lightTravelTime;
+    }
+}
+    </div>
+
+    <h2>6.4 Causality-Based Access Control</h2>
+
+    <h3>6.4.1 Temporal Access Control Lists</h3>
+
+    <div class="code-block">
+// Access control with temporal constraints
+class TemporalACL {
+    private rules: AccessRule[];
+    
+    checkAccess(
+        subject: SpacetimeCertificate,
+        resource: Resource,
+        operation: Operation,
+        context: AccessContext
+    ): AccessDecision {
+        for (const rule of this.rules) {
+            if (this.ruleMatches(rule, subject, resource, operation)) {
+                // Additional temporal checks
+                if (!this.checkTemporalConstraints(rule, context)) {
+                    return {
+                        allowed: false,
+                        reason: "Temporal constraint violation"
+                    };
+                }
+                
+                // Causality check
+                if (!this.checkCausality(rule, context)) {
+                    return {
+                        allowed: false,
+                        reason: "Access would create causality violation"
+                    };
+                }
+                
+                return {
+                    allowed: rule.effect === 'ALLOW',
+                    reason: rule.reason
+                };
+            }
+        }
+        
+        return { allowed: false, reason: "No matching rule (default deny)" };
+    }
+    
+    private checkTemporalConstraints(rule: AccessRule, context: AccessContext): boolean {
+        // Check time-based constraints
+        if (rule.temporal.afterEvent) {
+            if (context.currentTime < rule.temporal.afterEvent.timestamp) {
+                return false; // Too early
+            }
+        }
+        
+        if (rule.temporal.beforeEvent) {
+            if (context.currentTime > rule.temporal.beforeEvent.timestamp) {
+                return false; // Too late
+            }
+        }
+        
+        // Check causal dependencies
+        for (const dependency of rule.temporal.causalDependencies) {
+            if (!this.hasOccurred(dependency, context.timeline)) {
+                return false; // Prerequisite event hasn't happened yet
+            }
+        }
+        
+        return true;
+    }
+    
+    private checkCausality(rule: AccessRule, context: AccessContext): boolean {
+        // Simulate granting access and check for CTC
+        const simulation = this.simulateAccess(rule, context);
+        return !simulation.createsCTC;
+    }
+}
+
+interface AccessRule {
+    effect: 'ALLOW' | 'DENY';
+    subject: SubjectPattern;
+    resource: ResourcePattern;
+    operation: Operation;
+    temporal: {
+        afterEvent?: Event;
+        beforeEvent?: Event;
+        causalDependencies: Event[];
+        timeline: UUID;
+    };
+    reason: string;
+}
+    </div>
+
+    <h2>6.5 FTL Intrusion Detection</h2>
+
+    <h3>6.5.1 Anomaly Detection System</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Anomaly Type</th>
+                <th>Detection Method</th>
+                <th>Indicator</th>
+                <th>Response</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Unauthorized FTL Transmission</td>
+                <td>Metric signature analysis</td>
+                <td>Unknown warp bubble detected</td>
+                <td>Alert + trace origin</td>
+            </tr>
+            <tr>
+                <td>Timeline Manipulation</td>
+                <td>Consistency checking</td>
+                <td>Timeline ID mismatch</td>
+                <td>Quarantine + investigate</td>
+            </tr>
+            <tr>
+                <td>Temporal Replay Attack</td>
+                <td>Nonce database lookup</td>
+                <td>Duplicate spacetime nonce</td>
+                <td>Reject + log</td>
+            </tr>
+            <tr>
+                <td>CTC Exploit Attempt</td>
+                <td>Causal graph analysis</td>
+                <td>Cycle detection in event DAG</td>
+                <td>Block + shutdown if confirmed</td>
+            </tr>
+            <tr>
+                <td>Metric DoS Attack</td>
+                <td>Energy consumption monitoring</td>
+                <td>Excessive exotic matter usage</td>
+                <td>Rate limit + throttle</td>
+            </tr>
+            <tr>
+                <td>Quantum Decoherence Attack</td>
+                <td>Error rate monitoring</td>
+                <td>Sudden increase in BER</td>
+                <td>Switch to classical FTL</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>6.5.2 Security Event Logging</h3>
+
+    <div class="code-block">
+// Immutable audit log with temporal ordering
+class FTLSecurityLog {
+    private blockchain: TemporalBlockchain;
+    
+    async logEvent(event: SecurityEvent): Promise<void> {
+        // Create immutable log entry
+        const entry: LogEntry = {
+            timestamp: this.preferredFrameTime(),
+            eventType: event.type,
+            severity: event.severity,
+            source: event.source,
+            destination: event.destination,
+            timeline: event.timeline,
+            details: event.details,
+            hash: null // Will be calculated
+        };
+        
+        // Calculate hash including previous block
+        const previousHash = await this.blockchain.getLatestHash();
+        entry.hash = await this.calculateHash(entry, previousHash);
+        
+        // Add to blockchain (distributed across timelines)
+        await this.blockchain.addBlock(entry);
+        
+        // Causality attestation - prove this event is in causal past
+        await this.createCausalityAttestation(entry);
+    }
+    
+    async queryEvents(filter: LogFilter): Promise<SecurityEvent[]> {
+        // Query with temporal ordering
+        const events = await this.blockchain.query(filter);
+        
+        // Sort by causal order (not just timestamp)
+        return this.sortCausalOrder(events);
+    }
+    
+    private sortCausalOrder(events: SecurityEvent[]): SecurityEvent[] {
+        // Topological sort based on causal dependencies
+        const graph = this.buildCausalGraph(events);
+        return this.topologicalSort(graph);
+    }
+}
+
+interface SecurityEvent {
+    type: 'AUTH_FAILURE' | 'CTC_DETECTED' | 'UNAUTHORIZED_ACCESS' | 'ANOMALY' | 'INTRUSION';
+    severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    source: CosmicCoordinates;
+    destination: CosmicCoordinates;
+    timeline: UUID;
+    details: any;
+}
+    </div>
+
+    <div class="summary">
+        <h3>Key Takeaways</h3>
+        <ul>
+            <li><strong>FTL creates novel security threats:</strong> Temporal eavesdropping, CTC exploitation for breaking encryption, timeline injection attacks, and metric manipulation for man-in-the-middle require new security paradigms beyond conventional cryptography.</li>
+            <li><strong>Post-quantum crypto is mandatory:</strong> CRYSTALS-Kyber for encryption and CRYSTALS-Dilithium for signatures provide quantum-resistant security essential for FTL networks where attackers might leverage quantum advantages.</li>
+            <li><strong>Spacetime certificates bind identity to location and time:</strong> Certificates include not just temporal validity periods but spatial regions and timeline bindings, with verification checking causal past relationships to prevent paradoxes.</li>
+            <li><strong>Access control must consider causality:</strong> Temporal ACLs check not just who/what/when but also verify that granting access won't create closed timelike curves, using causal graph simulation to predict paradoxes.</li>
+            <li><strong>Intrusion detection monitors for temporal anomalies:</strong> Systems watch for unauthorized warp bubbles, timeline ID mismatches, duplicate spacetime nonces, causal graph cycles, and sudden spikes in quantum error rates.</li>
+            <li><strong>Immutable audit logs use causal ordering:</strong> Security events are stored in temporal blockchains with causality attestations, sorted by topological order rather than timestamps to maintain consistency across timelines.</li>
+        </ul>
+    </div>
+
+    <div class="review">
+        <h3>Review Questions</h3>
+        <ol>
+            <li><strong>Explain how CTC exploitation could break any encryption.</strong> If an attacker can create a closed timelike curve, why does this compromise all cryptographic systems, even post-quantum ones?</li>
+            <li><strong>Design a spacetime nonce scheme</strong> that prevents temporal replay attacks. Your nonce must be unique across both space and time. How do you generate and verify it?</li>
+            <li><strong>Why is CRYSTALS-Kyber preferred over RSA</strong> for FTL communication? Explain the quantum attack (Shor's algorithm) that breaks RSA and why lattice-based crypto resists it.</li>
+            <li><strong>Implement the isInCausalPast function</strong> that checks if a certificate issuance event is causally connected to the current spacetime point. What calculation determines this?</li>
+            <li><strong>How would you detect a timeline injection attack?</strong> Describe the monitoring system that identifies when messages appear in timelines they weren't sent to.</li>
+            <li><strong>Design an access control policy</strong> that allows a user to modify resource R only after event E has occurred in the causal past. How do you enforce this with a temporal ACL?</li>
+            <li><strong>Why can't standard QKD protocols</strong> (like BB84) provide true FTL key distribution? Where does the speed-of-light bottleneck occur?</li>
+        </ol>
+    </div>
+
+    <div class="nav-buttons">
+        <a href="chapter-05.html" class="btn">← Previous: Protocols</a>
+        <a href="chapter-07.html" class="btn">Next: Integration →</a>
+    </div>
+
+</body>
+</html>

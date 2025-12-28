@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-AGRI-016 Food Traceability Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfccb 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(132, 204, 22, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            color: #84CC16;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: #65a30d;
+            font-size: 1.1rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .tab:hover {
+            border-color: #84CC16;
+            color: #84CC16;
+        }
+
+        .tab.active {
+            background: #84CC16;
+            color: white;
+            border-color: #84CC16;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(132, 204, 22, 0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-content h2 {
+            color: #84CC16;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #3f6212;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #84CC16;
+        }
+
+        button {
+            background: #84CC16;
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #65a30d;
+            transform: translateY(-2px);
+        }
+
+        .output {
+            background: #f0fdf4;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+            border-left: 4px solid #84CC16;
+        }
+
+        .output h3 {
+            color: #3f6212;
+            margin-bottom: 1rem;
+        }
+
+        .output pre {
+            background: #1f2937;
+            color: #10b981;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .card {
+            background: #f0fdf4;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid #84CC16;
+        }
+
+        .card h3 {
+            color: #3f6212;
+            margin-bottom: 0.75rem;
+        }
+
+        .card p {
+            color: #65a30d;
+            line-height: 1.6;
+        }
+
+        .qr-display {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .qr-display canvas {
+            border: 4px solid #84CC16;
+            border-radius: 10px;
+            padding: 1rem;
+            background: white;
+        }
+
+        .event-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .event-item {
+            background: #f0fdf4;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            border-left: 3px solid #84CC16;
+        }
+
+        .event-item strong {
+            color: #3f6212;
+        }
+
+        .trace-path {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .trace-node {
+            background: #84CC16;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .trace-arrow {
+            color: #84CC16;
+            font-size: 1.5rem;
+        }
+
+        .info-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+        }
+
+        .info-box p {
+            color: #92400e;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 Food Traceability Simulator</h1>
+            <p>WIA-AGRI-016: Interactive Food History Documentation System</p>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('data-format')">📊 Data Format</div>
+            <div class="tab" onclick="showTab('algorithms')">🔢 Algorithms</div>
+            <div class="tab" onclick="showTab('protocol')">📡 Protocol</div>
+            <div class="tab" onclick="showTab('integration')">🔗 Integration</div>
+            <div class="tab" onclick="showTab('qr-vc')">📱 QR & VC</div>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div id="data-format" class="tab-content active">
+            <h2>📊 Traceability Data Format</h2>
+            <p style="color: #65a30d; margin-bottom: 2rem;">Generate standardized traceability data with batch information, origin tracking, and processing history.</p>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="productName" placeholder="Organic Apples" value="Organic Apples">
+                </div>
+                <div class="form-group">
+                    <label>Batch Number (GTIN + Lot)</label>
+                    <input type="text" id="batchNumber" placeholder="01234567890128.LOT2025001" value="01234567890128.LOT2025001">
+                </div>
+                <div class="form-group">
+                    <label>Origin Location</label>
+                    <input type="text" id="originLocation" placeholder="Farm ABC, Washington, USA" value="Farm ABC, Washington, USA">
+                </div>
+                <div class="form-group">
+                    <label>Harvest Date</label>
+                    <input type="date" id="harvestDate" value="2025-12-01">
+                </div>
+                <div class="form-group">
+                    <label>Processing Facility</label>
+                    <input type="text" id="processingFacility" placeholder="FacilityXYZ Corp" value="FacilityXYZ Corp">
+                </div>
+                <div class="form-group">
+                    <label>Certifications</label>
+                    <input type="text" id="certifications" placeholder="USDA Organic, GlobalGAP" value="USDA Organic, GlobalGAP">
+                </div>
+            </div>
+
+            <button onclick="generateTraceabilityData()">Generate Traceability Data</button>
+
+            <div id="dataOutput" class="output" style="display: none;">
+                <h3>Generated Traceability Record</h3>
+                <pre id="dataJson"></pre>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div id="algorithms" class="tab-content">
+            <h2>🔢 Trace-Back Algorithms</h2>
+            <p style="color: #65a30d; margin-bottom: 2rem;">Analyze product trace-back paths and batch correlations across the supply chain.</p>
+
+            <div class="info-box">
+                <p><strong>Trace-Back Analysis:</strong> Follow a product from consumer back to origin, identifying all intermediary steps and potential contamination points.</p>
+            </div>
+
+            <div class="form-group">
+                <label>Consumer Product ID (SGTIN)</label>
+                <input type="text" id="consumerProductId" placeholder="urn:epc:id:sgtin:0123456.789012.987654" value="urn:epc:id:sgtin:0123456.789012.987654">
+            </div>
+
+            <button onclick="performTraceBack()">Perform Trace-Back Analysis</button>
+
+            <div id="traceBackOutput" class="output" style="display: none;">
+                <h3>Trace-Back Path</h3>
+                <div id="tracePath"></div>
+
+                <h3 style="margin-top: 2rem;">Event Timeline</h3>
+                <ul id="eventTimeline" class="event-list"></ul>
+
+                <h3 style="margin-top: 2rem;">Batch Correlation Analysis</h3>
+                <pre id="correlationData"></pre>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div id="protocol" class="tab-content">
+            <h2>📡 GS1 EPCIS Protocol</h2>
+            <p style="color: #65a30d; margin-bottom: 2rem;">Implement GS1 Electronic Product Code Information Services (EPCIS) for standardized event capture.</p>
+
+            <div class="grid">
+                <div class="card">
+                    <h3>ObjectEvent</h3>
+                    <p>Records what happened to objects at a specific time and place (e.g., harvesting, packing)</p>
+                </div>
+                <div class="card">
+                    <h3>AggregationEvent</h3>
+                    <p>Records parent-child relationships (e.g., boxes packed into pallet)</p>
+                </div>
+                <div class="card">
+                    <h3>TransformationEvent</h3>
+                    <p>Records when inputs are transformed into outputs (e.g., apples to juice)</p>
+                </div>
+                <div class="card">
+                    <h3>TransactionEvent</h3>
+                    <p>Records business transactions like purchase orders and shipments</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Event Type</label>
+                <select id="eventType">
+                    <option value="ObjectEvent">ObjectEvent</option>
+                    <option value="AggregationEvent">AggregationEvent</option>
+                    <option value="TransformationEvent">TransformationEvent</option>
+                    <option value="TransactionEvent">TransactionEvent</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Action</label>
+                <select id="eventAction">
+                    <option value="ADD">ADD</option>
+                    <option value="OBSERVE">OBSERVE</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Business Step</label>
+                <select id="businessStep">
+                    <option value="commissioning">Commissioning</option>
+                    <option value="receiving">Receiving</option>
+                    <option value="shipping">Shipping</option>
+                    <option value="retail_selling">Retail Selling</option>
+                </select>
+            </div>
+
+            <button onclick="generateEPCISEvent()">Generate EPCIS Event</button>
+
+            <div id="epcisOutput" class="output" style="display: none;">
+                <h3>EPCIS Event XML</h3>
+                <pre id="epcisXml"></pre>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div id="integration" class="tab-content">
+            <h2>🔗 Supply Chain Integration</h2>
+            <p style="color: #65a30d; margin-bottom: 2rem;">Connect suppliers, manufacturers, retailers, and consumers in a unified traceability network.</p>
+
+            <div class="grid">
+                <div class="card">
+                    <h3>🌾 Suppliers</h3>
+                    <p>Farmers and raw material providers submit origin data, certifications, and harvest information</p>
+                </div>
+                <div class="card">
+                    <h3>🏭 Manufacturers</h3>
+                    <p>Processing facilities record transformation events, quality checks, and batch associations</p>
+                </div>
+                <div class="card">
+                    <h3>🚚 Distributors</h3>
+                    <p>Logistics providers track shipping events, temperature monitoring, and custody transfers</p>
+                </div>
+                <div class="card">
+                    <h3>🏪 Retailers</h3>
+                    <p>Stores record receiving, storage conditions, and point-of-sale events</p>
+                </div>
+                <div class="card">
+                    <h3>👥 Consumers</h3>
+                    <p>End users access complete product history via QR codes and mobile apps</p>
+                </div>
+                <div class="card">
+                    <h3>🔍 Regulators</h3>
+                    <p>Government agencies audit compliance, investigate incidents, and verify claims</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Stakeholder Type</label>
+                <select id="stakeholderType">
+                    <option value="supplier">Supplier</option>
+                    <option value="manufacturer">Manufacturer</option>
+                    <option value="distributor">Distributor</option>
+                    <option value="retailer">Retailer</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Integration API Endpoint</label>
+                <input type="text" id="apiEndpoint" placeholder="https://api.wia-traceability.org/v1/events" value="https://api.wia-traceability.org/v1/events">
+            </div>
+
+            <button onclick="testIntegration()">Test Integration</button>
+
+            <div id="integrationOutput" class="output" style="display: none;">
+                <h3>Integration Test Results</h3>
+                <pre id="integrationResults"></pre>
+            </div>
+        </div>
+
+        <!-- Tab 5: QR & VC -->
+        <div id="qr-vc" class="tab-content">
+            <h2>📱 QR Code & Verifiable Credentials</h2>
+            <p style="color: #65a30d; margin-bottom: 2rem;">Generate consumer-facing QR codes with blockchain-verified product history.</p>
+
+            <div class="form-group">
+                <label>Product History URL</label>
+                <input type="text" id="productUrl" placeholder="https://trace.wia.org/p/01234567890128.LOT2025001" value="https://trace.wia.org/p/01234567890128.LOT2025001">
+            </div>
+
+            <div class="form-group">
+                <label>Blockchain Verification</label>
+                <select id="blockchainNetwork">
+                    <option value="ethereum">Ethereum Mainnet</option>
+                    <option value="polygon">Polygon</option>
+                    <option value="hyperledger">Hyperledger Fabric</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Verifiable Credential Issuer</label>
+                <input type="text" id="vcIssuer" placeholder="did:web:wia.org" value="did:web:wia.org">
+            </div>
+
+            <button onclick="generateQRWithVC()">Generate QR Code with VC</button>
+
+            <div id="qrOutput" class="output" style="display: none;">
+                <div class="qr-display">
+                    <canvas id="qrCanvas"></canvas>
+                    <p style="margin-top: 1rem; color: #65a30d;">Scan to view product history</p>
+                </div>
+
+                <h3>Verifiable Credential (W3C VC)</h3>
+                <pre id="vcJson"></pre>
+
+                <h3>Blockchain Transaction</h3>
+                <pre id="blockchainTx"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Tab 1: Generate Traceability Data
+        function generateTraceabilityData() {
+            const data = {
+                "@context": "https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld",
+                "type": "TraceabilityRecord",
+                "id": `urn:uuid:${generateUUID()}`,
+                "product": {
+                    "name": document.getElementById('productName').value,
+                    "gtin": document.getElementById('batchNumber').value.split('.')[0],
+                    "lot": document.getElementById('batchNumber').value.split('.')[1],
+                    "batchNumber": document.getElementById('batchNumber').value
+                },
+                "origin": {
+                    "location": document.getElementById('originLocation').value,
+                    "harvestDate": document.getElementById('harvestDate').value,
+                    "gln": "urn:epc:id:sgln:0123456.00001.0",
+                    "geo": {
+                        "lat": 47.7511,
+                        "lon": -120.7401
+                    }
+                },
+                "processing": {
+                    "facility": document.getElementById('processingFacility').value,
+                    "gln": "urn:epc:id:sgln:0123456.00002.0",
+                    "processDate": new Date().toISOString().split('T')[0]
+                },
+                "certifications": document.getElementById('certifications').value.split(',').map(c => c.trim()),
+                "blockchain": {
+                    "network": "ethereum",
+                    "txHash": "0x" + generateRandomHex(64),
+                    "contractAddress": "0x" + generateRandomHex(40)
+                },
+                "timestamp": new Date().toISOString()
+            };
+
+            document.getElementById('dataJson').textContent = JSON.stringify(data, null, 2);
+            document.getElementById('dataOutput').style.display = 'block';
+        }
+
+        // Tab 2: Trace-Back Analysis
+        function performTraceBack() {
+            const productId = document.getElementById('consumerProductId').value;
+
+            const path = [
+                { node: "Consumer Purchase", location: "Retail Store #456", date: "2025-12-26" },
+                { node: "Retail Receiving", location: "Distribution Center #123", date: "2025-12-24" },
+                { node: "Distribution", location: "Regional Warehouse", date: "2025-12-22" },
+                { node: "Processing", location: "FacilityXYZ Corp", date: "2025-12-20" },
+                { node: "Harvesting", location: "Farm ABC, Washington", date: "2025-12-01" }
+            ];
+
+            let pathHtml = '<div class="trace-path">';
+            path.forEach((step, index) => {
+                pathHtml += `<div class="trace-node">${step.node}</div>`;
+                if (index < path.length - 1) {
+                    pathHtml += '<div class="trace-arrow">→</div>';
+                }
+            });
+            pathHtml += '</div>';
+            document.getElementById('tracePath').innerHTML = pathHtml;
+
+            let timelineHtml = '';
+            path.reverse().forEach(step => {
+                timelineHtml += `<li class="event-item"><strong>${step.date}</strong>: ${step.node} at ${step.location}</li>`;
+            });
+            document.getElementById('eventTimeline').innerHTML = timelineHtml;
+
+            const correlation = {
+                "batchId": "LOT2025001",
+                "totalUnits": 1000,
+                "distributed": 847,
+                "inStock": 153,
+                "relatedBatches": ["LOT2025002", "LOT2025003"],
+                "potentialExposure": "None detected",
+                "qualityScore": 98.5
+            };
+
+            document.getElementById('correlationData').textContent = JSON.stringify(correlation, null, 2);
+            document.getElementById('traceBackOutput').style.display = 'block';
+        }
+
+        // Tab 3: Generate EPCIS Event
+        function generateEPCISEvent() {
+            const eventType = document.getElementById('eventType').value;
+            const action = document.getElementById('eventAction').value;
+            const bizStep = document.getElementById('businessStep').value;
+
+            const epcisXml = `<?xml version="1.0" encoding="UTF-8"?>
+<epcis:EPCISDocument xmlns:epcis="urn:epcglobal:epcis:xsd:1">
+  <EPCISBody>
+    <EventList>
+      <${eventType}>
+        <eventTime>${new Date().toISOString()}</eventTime>
+        <eventTimeZoneOffset>+00:00</eventTimeZoneOffset>
+        <epcList>
+          <epc>urn:epc:id:sgtin:0123456.789012.987654</epc>
+        </epcList>
+        <action>${action}</action>
+        <bizStep>urn:epcglobal:cbv:bizstep:${bizStep}</bizStep>
+        <disposition>urn:epcglobal:cbv:disp:in_progress</disposition>
+        <readPoint>
+          <id>urn:epc:id:sgln:0123456.00001.0</id>
+        </readPoint>
+        <bizLocation>
+          <id>urn:epc:id:sgln:0123456.00001.0</id>
+        </bizLocation>
+      </${eventType}>
+    </EventList>
+  </EPCISBody>
+</epcis:EPCISDocument>`;
+
+            document.getElementById('epcisXml').textContent = epcisXml;
+            document.getElementById('epcisOutput').style.display = 'block';
+        }
+
+        // Tab 4: Test Integration
+        function testIntegration() {
+            const stakeholder = document.getElementById('stakeholderType').value;
+            const endpoint = document.getElementById('apiEndpoint').value;
+
+            const results = {
+                "status": "success",
+                "stakeholder": stakeholder,
+                "endpoint": endpoint,
+                "authentication": "Bearer token validated",
+                "apiVersion": "v1.0.0",
+                "capabilities": [
+                    "POST /events - Submit traceability events",
+                    "GET /events/{id} - Retrieve event details",
+                    "GET /trace/{productId} - Trace product history",
+                    "POST /verify - Verify blockchain credentials"
+                ],
+                "responseTime": "145ms",
+                "dataSchema": "GS1 EPCIS 2.0",
+                "blockchainIntegration": "Active (Ethereum)",
+                "testEvent": {
+                    "eventId": `evt_${generateRandomHex(16)}`,
+                    "submitted": new Date().toISOString(),
+                    "blockchainTx": "0x" + generateRandomHex(64)
+                }
+            };
+
+            document.getElementById('integrationResults').textContent = JSON.stringify(results, null, 2);
+            document.getElementById('integrationOutput').style.display = 'block';
+        }
+
+        // Tab 5: Generate QR with VC
+        function generateQRWithVC() {
+            const url = document.getElementById('productUrl').value;
+            const network = document.getElementById('blockchainNetwork').value;
+            const issuer = document.getElementById('vcIssuer').value;
+
+            // Generate QR code
+            const canvas = document.getElementById('qrCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 300;
+            canvas.height = 300;
+
+            // Simple QR code visualization (placeholder)
+            ctx.fillStyle = '#84CC16';
+            ctx.fillRect(0, 0, 300, 300);
+            ctx.fillStyle = 'white';
+            ctx.font = '16px monospace';
+            ctx.fillText('QR CODE', 110, 150);
+            ctx.font = '12px monospace';
+            ctx.fillText('Scan with camera', 80, 170);
+
+            // Generate W3C Verifiable Credential
+            const vc = {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://w3id.org/traceability/v1"
+                ],
+                "type": ["VerifiableCredential", "FoodTraceabilityCredential"],
+                "id": `urn:uuid:${generateUUID()}`,
+                "issuer": issuer,
+                "issuanceDate": new Date().toISOString(),
+                "credentialSubject": {
+                    "id": "urn:epc:id:sgtin:0123456.789012.987654",
+                    "product": "Organic Apples",
+                    "batch": "LOT2025001",
+                    "origin": "Farm ABC, Washington, USA",
+                    "harvestDate": "2025-12-01",
+                    "certifications": ["USDA Organic", "GlobalGAP"],
+                    "traceabilityUrl": url
+                },
+                "proof": {
+                    "type": "EcdsaSecp256k1Signature2019",
+                    "created": new Date().toISOString(),
+                    "verificationMethod": `${issuer}#key-1`,
+                    "proofPurpose": "assertionMethod",
+                    "jws": "eyJhbGc..." + generateRandomHex(100)
+                }
+            };
+
+            document.getElementById('vcJson').textContent = JSON.stringify(vc, null, 2);
+
+            // Blockchain transaction
+            const blockchain = {
+                "network": network,
+                "transactionHash": "0x" + generateRandomHex(64),
+                "blockNumber": Math.floor(Math.random() * 1000000) + 15000000,
+                "timestamp": new Date().toISOString(),
+                "gasUsed": "84523",
+                "status": "confirmed",
+                "confirmations": 12,
+                "smartContract": {
+                    "address": "0x" + generateRandomHex(40),
+                    "function": "registerTraceabilityRecord(bytes32,string)"
+                }
+            };
+
+            document.getElementById('blockchainTx').textContent = JSON.stringify(blockchain, null, 2);
+            document.getElementById('qrOutput').style.display = 'block';
+        }
+
+        // Utility functions
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        function generateRandomHex(length) {
+            let result = '';
+            const chars = '0123456789abcdef';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+    </script>
+</body>
+</html>

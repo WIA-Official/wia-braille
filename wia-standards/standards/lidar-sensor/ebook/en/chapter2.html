@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: LiDAR Architectures - WIA SEMI-014</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #8B5CF6;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+            margin-bottom: 40px;
+            border-radius: 10px;
+        }
+        h1 { font-size: 2.5em; margin-bottom: 10px; color: #ffffff; }
+        .chapter-info { color: #E9D5FF; font-size: 1.1em; }
+        nav {
+            background: var(--surface);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        nav a {
+            color: var(--primary);
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        nav a:hover { color: #A78BFA; text-decoration: underline; }
+        .content-section {
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border-left: 5px solid var(--primary);
+        }
+        h2 { color: var(--primary); font-size: 2em; margin-bottom: 20px; margin-top: 30px; }
+        h3 { color: #A78BFA; font-size: 1.5em; margin-bottom: 15px; margin-top: 25px; }
+        h4 { color: #C4B5FD; font-size: 1.2em; margin-bottom: 10px; margin-top: 20px; }
+        p { margin-bottom: 15px; color: var(--text-dim); }
+        code {
+            background: var(--bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #A78BFA;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid var(--primary);
+        }
+        pre code { background: none; padding: 0; color: var(--text); font-size: 0.95em; line-height: 1.6; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: var(--bg);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dim);
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: rgba(139, 92, 246, 0.1); }
+        ul, ol { margin: 20px 0; padding-left: 30px; }
+        li { margin: 10px 0; color: var(--text-dim); }
+        .highlight-box {
+            background: rgba(139, 92, 246, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 5px;
+        }
+        .takeaways {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(124, 58, 237, 0.1) 100%);
+            padding: 30px;
+            border-radius: 10px;
+            margin: 30px 0;
+            border: 2px solid var(--primary);
+        }
+        .takeaways h3 { margin-top: 0; }
+        .questions {
+            background: var(--bg);
+            padding: 30px;
+            border-radius: 10px;
+            margin: 30px 0;
+            border: 2px solid #7C3AED;
+        }
+        .question { margin: 20px 0; padding: 15px; background: var(--surface); border-radius: 8px; }
+        .question h4 { color: var(--primary); margin-top: 0; }
+        footer {
+            text-align: center;
+            padding: 30px;
+            margin-top: 50px;
+            border-top: 2px solid var(--border);
+            color: var(--text-dim);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>LiDAR Architectures: Mechanical, Solid-State, and FMCW</h1>
+            <p class="chapter-info">WIA SEMI-014 LiDAR Sensor Standard | Chapter 2 of 8</p>
+        </header>
+
+        <nav>
+            <a href="index.html">📚 Index</a>
+            <a href="chapter1.html">← Chapter 1</a>
+            <a href="chapter2.html">Chapter 2</a>
+            <a href="chapter3.html">Chapter 3 →</a>
+        </nav>
+
+        <div class="content-section">
+            <h2>2.1 Architecture Classification Overview</h2>
+
+            <p>The evolution of LiDAR technology has produced several distinct architectural approaches, each representing different trade-offs between performance, cost, size, reliability, and manufacturability. Understanding these architectures is crucial for selecting the appropriate sensor for specific automotive applications.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Architecture</th>
+                        <th>Beam Steering Method</th>
+                        <th>Advantages</th>
+                        <th>Disadvantages</th>
+                        <th>Primary Applications</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Mechanical Scanning</strong></td>
+                        <td>Motor-driven rotating mirror/sensor head</td>
+                        <td>360° FOV, proven reliability, high point density</td>
+                        <td>Large size, moving parts, cost</td>
+                        <td>Robotaxis, R&D platforms, mapping</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MEMS Solid-State</strong></td>
+                        <td>Micro-electromechanical mirror</td>
+                        <td>Compact, automotive-qualified, low cost potential</td>
+                        <td>Limited FOV, complex manufacturing</td>
+                        <td>Production vehicles, ADAS</td>
+                    </tr>
+                    <tr>
+                        <td><strong>OPA (Optical Phased Array)</strong></td>
+                        <td>Electronic beam steering via phase control</td>
+                        <td>No moving parts, instant pointing, chip-scale</td>
+                        <td>Limited FOV, efficiency challenges</td>
+                        <td>Future high-volume production</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Flash LiDAR</strong></td>
+                        <td>Flood illumination + detector array</td>
+                        <td>True solid-state, simultaneous capture</td>
+                        <td>Short range, high power consumption</td>
+                        <td>Cabin monitoring, parking assist</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FMCW (Coherent)</strong></td>
+                        <td>Various (mechanical/MEMS/OPA)</td>
+                        <td>4D sensing (range + velocity), interference immunity</td>
+                        <td>Complex signal processing, cost</td>
+                        <td>Premium vehicles, highway autonomy</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>2.2 Mechanical Scanning LiDAR</h2>
+
+            <p>Mechanical scanning LiDAR represents the first generation of automotive-grade sensors and remains widely deployed in autonomous vehicle development programs. The fundamental design uses a motor to continuously rotate either the entire sensor assembly or an internal mirror, sweeping the laser beam across a 360-degree horizontal field of view.</p>
+
+            <h3>Design Principles</h3>
+
+            <p>The classic mechanical LiDAR architecture arranges multiple laser-detector pairs vertically within a rotating housing. As the assembly spins (typically at 300-1200 RPM), each laser channel fires pulses at high frequency (50-200 kHz), creating a spiral scan pattern that gradually fills out a complete 3D point cloud.</p>
+
+            <div class="highlight-box">
+                <h4>Velodyne VLS-128 Example</h4>
+                <ul>
+                    <li>128 laser-detector channels arranged vertically</li>
+                    <li>Rotation speed: 600 RPM (10 Hz) or 1200 RPM (20 Hz)</li>
+                    <li>Horizontal FOV: 360° (full rotation)</li>
+                    <li>Vertical FOV: 40° (-25° to +15°)</li>
+                    <li>Vertical angular resolution: ~0.33° (40° / 128 channels)</li>
+                    <li>Point rate: 4.8 million points/second at 20 Hz</li>
+                </ul>
+            </div>
+
+            <h3>Advantages of Mechanical Systems</h3>
+
+            <p><strong>360-Degree Coverage:</strong> The continuous rotation naturally provides complete surround awareness, eliminating blind spots that could hide approaching vehicles, pedestrians, or obstacles. This capability is particularly valuable for urban autonomous driving where threats can emerge from any direction.</p>
+
+            <p><strong>Proven Reliability:</strong> Despite containing moving parts, modern mechanical LiDAR has demonstrated remarkable durability. Leading manufacturers specify 15,000+ hours of operation (equivalent to 5-10 years of typical vehicle use) with proper maintenance. The engineering challenge of creating reliable rotating electrical and optical interfaces has been largely solved.</p>
+
+            <p><strong>High Point Density:</strong> With dozens to hundreds of laser channels operating simultaneously, mechanical systems generate dense point clouds that capture fine environmental details. This density is crucial for detecting small objects at distance and creating high-fidelity 3D maps.</p>
+
+            <h3>Challenges and Limitations</h3>
+
+            <p>The primary drawbacks of mechanical LiDAR stem from their physical size and manufacturing complexity. A 128-channel sensor typically measures 15-20 cm in diameter and weighs 2-5 kg, making integration into vehicle aesthetics challenging. The precision machining and alignment required for multi-channel systems drives costs, with high-end units priced at $75,000-$100,000 (though prices are falling rapidly).</p>
+
+            <pre><code>// Mechanical LiDAR scan pattern calculation
+class MechanicalLiDAR {
+    constructor(channels, rpm, pulseFrequency) {
+        this.channels = channels;           // Number of vertical laser channels
+        this.rpm = rpm;                     // Rotations per minute
+        this.pulseFrequency = pulseFrequency; // Hz per channel
+    }
+
+    getFrameRate() {
+        return this.rpm / 60;  // Hz
+    }
+
+    getHorizontalResolution() {
+        const pointsPerRotation = this.pulseFrequency / (this.rpm / 60);
+        return 360 / pointsPerRotation;  // degrees
+    }
+
+    getPointsPerSecond() {
+        return this.channels * this.pulseFrequency;
+    }
+
+    getScanPattern(azimuth, channel) {
+        // Calculate 3D direction for given rotation angle and channel
+        const verticalAngle = this.getVerticalAngle(channel);
+        return {
+            azimuth: azimuth,
+            elevation: verticalAngle,
+            x: Math.cos(azimuth) * Math.cos(verticalAngle),
+            y: Math.sin(azimuth) * Math.cos(verticalAngle),
+            z: Math.sin(verticalAngle)
+        };
+    }
+}
+
+// Example: Velodyne VLS-128
+const vls128 = new MechanicalLiDAR(128, 600, 150000);
+console.log(`Frame Rate: ${vls128.getFrameRate()} Hz`);
+console.log(`Horizontal Resolution: ${vls128.getHorizontalResolution().toFixed(3)}°`);
+console.log(`Points/Second: ${vls128.getPointsPerSecond().toLocaleString()}`);</code></pre>
+
+            <h2>2.3 MEMS Solid-State LiDAR</h2>
+
+            <p>Micro-Electromechanical Systems (MEMS) technology represents the current leading approach for automotive production LiDAR. MEMS sensors use tiny silicon mirrors (typically 1-5mm in size) that can be precisely tilted using electrostatic or electromagnetic actuation, steering the laser beam without rotating the entire sensor.</p>
+
+            <h3>MEMS Mirror Technology</h3>
+
+            <p>A MEMS mirror consists of a reflective surface suspended by flexible silicon springs. By applying voltage to electrodes beneath the mirror, electrostatic forces cause it to tilt. Two-axis MEMS mirrors can scan in both horizontal and vertical directions, creating raster or Lissajous scan patterns.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>1-Axis MEMS</th>
+                        <th>2-Axis MEMS</th>
+                        <th>Performance Impact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Mirror Size</strong></td>
+                        <td>2-5 mm</td>
+                        <td>1-3 mm</td>
+                        <td>Larger mirrors allow higher laser power and better collection efficiency</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Scan Frequency</strong></td>
+                        <td>1-5 kHz</td>
+                        <td>100-500 Hz (slow axis)<br>1-5 kHz (fast axis)</td>
+                        <td>Determines frame rate and point density trade-off</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Scan Angle</strong></td>
+                        <td>±10° to ±20°</td>
+                        <td>±5° to ±15° (both axes)</td>
+                        <td>Mechanical angle; optical FOV is 2× due to reflection</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Actuation Voltage</strong></td>
+                        <td>50-200 V</td>
+                        <td>50-200 V</td>
+                        <td>Higher voltage enables larger scan angles but requires more complex drive electronics</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Advantages of MEMS LiDAR</h3>
+
+            <p><strong>Automotive Form Factor:</strong> MEMS sensors can be packaged in compact housings (often < 10cm × 10cm × 5cm) suitable for integration behind vehicle headlights, grilles, or bumpers. This enables aesthetically-pleasing designs that meet OEM styling requirements.</p>
+
+            <p><strong>Reliability and Qualification:</strong> MEMS technology benefits from decades of development in the automotive industry (accelerometers, pressure sensors, microphones). The microscale moving parts operate in a sealed, hermetic package, protecting them from environmental contamination. Qualified MEMS devices have demonstrated >15-year lifetime under automotive temperature cycling and vibration.</p>
+
+            <p><strong>Manufacturing Scalability:</strong> MEMS mirrors are fabricated using semiconductor manufacturing processes similar to IC production. This enables high-volume production with consistent quality and costs that decline with scale, potentially reaching < $500 per sensor in million-unit volumes.</p>
+
+            <h3>Design Challenges</h3>
+
+            <p>The primary limitation of MEMS LiDAR is field-of-view restriction. While mechanical systems naturally provide 360° coverage, MEMS mirrors typically achieve 40-120° horizontal FOV. Achieving full surround awareness requires multiple MEMS sensors positioned around the vehicle.</p>
+
+            <p>Additionally, MEMS mirrors exhibit resonant behavior – they scan most efficiently at their mechanical resonance frequency but require more energy to operate at other frequencies. This can complicate flexible scan pattern generation.</p>
+
+            <pre><code>// MEMS LiDAR scan pattern generation
+class MEMSLiDAR {
+    constructor(config) {
+        this.horizontalFOV = config.horizontalFOV;  // degrees
+        this.verticalFOV = config.verticalFOV;      // degrees
+        this.scanFrequency = config.scanFrequency;  // Hz
+        this.linesPerFrame = config.linesPerFrame;
+    }
+
+    generateRasterPattern(frameTime) {
+        // Raster scan: horizontal fast axis, vertical slow axis
+        const points = [];
+        const horizontalSteps = 1000;  // Points per line
+        const verticalStep = this.verticalFOV / this.linesPerFrame;
+
+        for (let line = 0; line < this.linesPerFrame; line++) {
+            const elevation = -this.verticalFOV/2 + line * verticalStep;
+
+            for (let h = 0; h < horizontalSteps; h++) {
+                const azimuth = -this.horizontalFOV/2 +
+                                (h / horizontalSteps) * this.horizontalFOV;
+                const time = frameTime + (line / this.linesPerFrame) / this.getFrameRate() +
+                             (h / horizontalSteps) / this.getFrameRate() / this.linesPerFrame;
+
+                points.push({ azimuth, elevation, time });
+            }
+        }
+        return points;
+    }
+
+    getFrameRate() {
+        return this.scanFrequency / this.linesPerFrame;
+    }
+}
+
+// Example: Innoviz InnovizTwo
+const innovizTwo = new MEMSLiDAR({
+    horizontalFOV: 120,
+    verticalFOV: 25,
+    scanFrequency: 5000,  // 5 kHz fast axis
+    linesPerFrame: 625    // 8 Hz frame rate (5000/625)
+});
+
+console.log(`Frame Rate: ${innovizTwo.getFrameRate()} Hz`);</code></pre>
+
+            <h2>2.4 Optical Phased Array (OPA) LiDAR</h2>
+
+            <p>Optical Phased Arrays represent the future vision of solid-state LiDAR: a chip-scale device with no moving parts whatsoever that can electronically steer a laser beam using principles borrowed from RF phased array antennas.</p>
+
+            <h3>Operating Principle</h3>
+
+            <p>An OPA consists of an array of hundreds to thousands of optical waveguides etched into a silicon photonics chip. Each waveguide emits a tiny portion of the laser light. By precisely controlling the phase relationship between these emissions using on-chip phase shifters, the individual wavelets constructively interfere in a desired direction while destructively interfering elsewhere, effectively steering the beam.</p>
+
+            <p>The beam steering angle θ is determined by the phase gradient Δφ across the array and the element spacing d:</p>
+
+            <div class="highlight-box">
+                <strong>sin(θ) = (λ / 2πd) × Δφ</strong><br>
+                where λ is the laser wavelength
+            </div>
+
+            <h3>Advantages of OPA Technology</h3>
+
+            <ul>
+                <li><strong>No Moving Parts:</strong> Pure electronic beam steering with nanosecond-scale response time</li>
+                <li><strong>Chip-Scale Integration:</strong> Entire transmitter and receiver on silicon photonics chips (< 1 cm²)</li>
+                <li><strong>Random Access:</strong> Ability to instantly point at arbitrary directions rather than sequential scanning</li>
+                <li><strong>High-Volume Manufacturing:</strong> Leverages existing semiconductor fab infrastructure</li>
+                <li><strong>Adaptive Resolution:</strong> Can allocate more measurement density to regions of interest</li>
+            </ul>
+
+            <h3>Current Challenges</h3>
+
+            <p>Despite the compelling vision, OPA LiDAR faces significant technical hurdles. The achievable field-of-view is limited by the element spacing – aliasing occurs when spacing exceeds λ/2, producing grating lobes (spurious beams). At 1550nm wavelength, this requires sub-micron element spacing, which limits the number of elements and total aperture size.</p>
+
+            <p>Optical efficiency is another critical challenge. Current OPAs typically exhibit 10-30% efficiency from laser to emitted beam, with losses in the phase shifters, waveguide propagation, and emission coupling. This necessitates higher laser power to achieve equivalent range compared to traditional optics.</p>
+
+            <h2>2.5 Flash LiDAR</h2>
+
+            <p>Flash LiDAR abandons the concept of scanning entirely. Instead, it illuminates the entire field of view simultaneously with a single laser pulse and captures the reflected light on a 2D detector array – conceptually similar to how a camera captures an image.</p>
+
+            <h3>Architecture Components</h3>
+
+            <ul>
+                <li><strong>Flood Illuminator:</strong> Pulsed laser with diffuser optics to create wide-angle illumination</li>
+                <li><strong>Receiver Lens:</strong> Collects reflected light from the scene</li>
+                <li><strong>Detector Array:</strong> 2D array of photodetectors (typically APD or SPAD pixels), e.g., 256×192 pixels</li>
+                <li><strong>Per-Pixel TDCs:</strong> Time-to-digital converters measure time-of-flight for each pixel</li>
+            </ul>
+
+            <h3>Advantages</h3>
+
+            <p><strong>True Solid-State:</strong> No moving components of any kind, maximizing reliability. <strong>Simultaneous Capture:</strong> Entire scene captured in a single pulse, eliminating motion artifacts and achieving incredibly short frame acquisition time (< 1 microsecond).</p>
+
+            <p><strong>High Frame Rates:</strong> Since no mechanical scanning is required, flash LiDAR can operate at very high frame rates (100+ Hz) limited only by laser pulse rate and readout speed.</p>
+
+            <h3>Limitations</h3>
+
+            <p>The fundamental limitation is range. Because the laser power is distributed across the entire FOV rather than concentrated in a narrow beam, the power density at the target is much lower. This severely limits detection range – typical flash LiDAR achieves 30-50m maximum range, compared to 200-500m for scanning systems.</p>
+
+            <p>Flash LiDAR also faces higher susceptibility to background noise (sunlight) since the detector is constantly exposed to the entire FOV rather than selectively looking at a small solid angle.</p>
+
+            <h2>2.6 FMCW (Frequency Modulated Continuous Wave) LiDAR</h2>
+
+            <p>FMCW LiDAR represents a fundamentally different measurement approach. Rather than using pulsed lasers and measuring time-of-flight, FMCW systems emit continuous laser light whose frequency is rapidly swept (chirped). This coherent detection technique offers unique capabilities that may prove transformative for autonomous vehicles.</p>
+
+            <h3>Measurement Principle</h3>
+
+            <p>In FMCW LiDAR, the transmitted laser frequency is linearly ramped over time (e.g., sweeping 100 MHz in 10 microseconds). The reflected light, delayed by the round-trip time, has a slightly different instantaneous frequency than the current transmission. By mixing the transmitted and received signals in a photodetector, a beat frequency is produced:</p>
+
+            <div class="highlight-box">
+                <strong>f_beat = (Δf / T_chirp) × t_delay</strong><br>
+                where Δf is the frequency sweep range, T_chirp is the chirp duration, and t_delay is the round-trip time
+            </div>
+
+            <p>This beat frequency is directly proportional to distance. Moreover, any Doppler shift from target motion adds or subtracts from this beat frequency, enabling simultaneous measurement of both range and velocity – the defining feature of "4D LiDAR."</p>
+
+            <pre><code>// FMCW LiDAR signal processing
+class FMCWLiDAR {
+    constructor(config) {
+        this.chirpBandwidth = config.chirpBandwidth;  // Hz (e.g., 100 MHz)
+        this.chirpDuration = config.chirpDuration;    // seconds
+        this.wavelength = config.wavelength;          // meters
+        this.speedOfLight = 299792458;                // m/s
+    }
+
+    calculateDistance(beatFrequency) {
+        // Distance from beat frequency
+        const roundTripTime = (beatFrequency * this.chirpDuration) / this.chirpBandwidth;
+        return (this.speedOfLight * roundTripTime) / 2;
+    }
+
+    calculateVelocity(dopplerShift) {
+        // Radial velocity from Doppler shift
+        // Positive = approaching, negative = receding
+        return -(dopplerShift * this.wavelength) / 2;
+    }
+
+    separateRangeAndVelocity(upChirpBeat, downChirpBeat) {
+        // Use up-chirp and down-chirp measurements to separate range and velocity
+        const f_range = (upChirpBeat + downChirpBeat) / 2;
+        const f_doppler = (upChirpBeat - downChirpBeat) / 2;
+
+        return {
+            distance: this.calculateDistance(f_range),
+            velocity: this.calculateVelocity(f_doppler)
+        };
+    }
+}
+
+// Example: Aeva 4D LiDAR
+const aeva = new FMCWLiDAR({
+    chirpBandwidth: 100e6,      // 100 MHz
+    chirpDuration: 10e-6,       // 10 microseconds
+    wavelength: 1550e-9         // 1550 nm
+});
+
+// Scenario: Vehicle 100m away approaching at 20 m/s
+const scenario = aeva.separateRangeAndVelocity(5.25e6, 4.75e6);
+console.log(`Distance: ${scenario.distance.toFixed(1)} m`);
+console.log(`Velocity: ${scenario.velocity.toFixed(1)} m/s`);</code></pre>
+
+            <h3>Advantages of FMCW</h3>
+
+            <p><strong>Direct Velocity Measurement:</strong> FMCW provides instantaneous velocity without requiring multiple frames of tracking. This enables earlier detection of dangerous closing rates and more robust object tracking.</p>
+
+            <p><strong>Interference Immunity:</strong> Each FMCW sensor uses a unique chirp pattern. Other LiDAR sensors produce incoherent returns that are rejected by the coherent detection, eliminating cross-talk in multi-LiDAR environments.</p>
+
+            <p><strong>Superior Signal-to-Noise Ratio:</strong> Coherent detection provides a 20-30 dB improvement in SNR compared to direct detection, potentially extending range or reducing required laser power.</p>
+
+            <h3>Challenges</h3>
+
+            <p>The primary challenge is complexity. FMCW requires highly linear frequency chirps (linearity errors translate to range errors), narrow-linewidth lasers, and sophisticated signal processing. The coherent detection also demands precise polarization alignment between transmitted and received light.</p>
+
+            <p>Additionally, FMCW can be implemented with any beam steering method (mechanical, MEMS, OPA), so it doesn't inherently solve the solid-state challenge.</p>
+        </div>
+
+        <div class="takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li><strong>Architecture Diversity:</strong> LiDAR architectures range from mechanical rotating systems to fully solid-state designs, each optimized for different applications, costs, and performance requirements.</li>
+                <li><strong>Mechanical Scanning:</strong> Provides 360° coverage and high point density but with larger size and moving parts. Widely used in autonomous vehicle development and mapping applications.</li>
+                <li><strong>MEMS Technology:</strong> Offers automotive-qualified solid-state solution with compact form factor, enabling production vehicle integration at potentially < $500 per sensor in volume.</li>
+                <li><strong>OPA Future:</strong> Optical phased arrays promise chip-scale, no-moving-parts LiDAR with instant beam steering, but face efficiency and FOV challenges requiring further development.</li>
+                <li><strong>Flash LiDAR:</strong> True solid-state with simultaneous scene capture and high frame rates, but limited to short-range applications (30-50m) due to power distribution constraints.</li>
+                <li><strong>FMCW 4D Sensing:</strong> Coherent detection enables simultaneous range and velocity measurement with superior SNR and interference immunity, though at increased complexity and cost.</li>
+                <li><strong>Application Matching:</strong> Selecting the optimal architecture requires careful consideration of range, FOV, update rate, size, cost, and reliability requirements for the specific use case.</li>
+            </ul>
+        </div>
+
+        <div class="questions">
+            <h3>Review Questions</h3>
+
+            <div class="question">
+                <h4>Question 1: Mechanical vs MEMS Trade-offs</h4>
+                <p>Compare the advantages and disadvantages of mechanical scanning LiDAR versus MEMS solid-state LiDAR for a production passenger vehicle with Level 3 highway autonomy. Which would you recommend and why?</p>
+            </div>
+
+            <div class="question">
+                <h4>Question 2: Point Density Calculation</h4>
+                <p>A MEMS LiDAR scans 120° horizontal × 25° vertical at 10 Hz with 0.1° angular resolution. Calculate the total points per frame and points per second.</p>
+            </div>
+
+            <div class="question">
+                <h4>Question 3: OPA Element Spacing</h4>
+                <p>For a 1550nm OPA LiDAR, what is the maximum element spacing that avoids grating lobes? How many elements are needed for a 1 cm aperture at this spacing?</p>
+            </div>
+
+            <div class="question">
+                <h4>Question 4: Flash LiDAR Range Limitation</h4>
+                <p>Explain why flash LiDAR has significantly shorter range than scanning LiDAR systems. What is the fundamental physical constraint?</p>
+            </div>
+
+            <div class="question">
+                <h4>Question 5: FMCW Beat Frequency</h4>
+                <p>An FMCW LiDAR with 100 MHz chirp bandwidth and 20 μs chirp duration measures a beat frequency of 3.33 MHz. Calculate the target distance.</p>
+            </div>
+
+            <div class="question">
+                <h4>Question 6: 4D Sensing Applications</h4>
+                <p>Describe two specific autonomous driving scenarios where FMCW LiDAR's direct velocity measurement capability provides a safety or performance advantage over traditional ToF systems.</p>
+            </div>
+
+            <div class="question">
+                <h4>Question 7: Sensor Configuration</h4>
+                <p>Design a multi-sensor LiDAR configuration for a Level 4 urban autonomous vehicle. Specify the number, type, and placement of sensors to achieve 360° coverage with redundancy.</p>
+            </div>
+        </div>
+
+        <nav>
+            <a href="index.html">📚 Index</a>
+            <a href="chapter1.html">← Chapter 1</a>
+            <a href="chapter2.html">Chapter 2</a>
+            <a href="chapter3.html">Chapter 3 →</a>
+        </nav>
+
+        <footer>
+            <p><strong>WIA SEMI-014 LiDAR Sensor Standard</strong></p>
+            <p>© 2025 SmileStory Inc. / WIA</p>
+            <p>弘益人間 (홍익인간) - Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

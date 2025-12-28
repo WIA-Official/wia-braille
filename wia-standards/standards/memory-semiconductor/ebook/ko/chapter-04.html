@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>제04장: HBM과 고대역폭 메모리 - WIA-SEMI-002</title>
+    <style>
+        :root { --bg: #0f172a; --primary: #8B5CF6; --secondary: #1e293b; --text: #e2e8f0; --text-dim: #94a3b8; --accent: #a78bfa; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: var(--primary); }
+        h1 { font-size: 2.5rem; border-bottom: 3px solid var(--primary); padding-bottom: 1rem; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; margin: 2.5rem 0 1rem; }
+        h3 { font-size: 1.5rem; color: var(--accent); margin: 2rem 0 0.75rem; }
+        h4 { font-size: 1.25rem; color: var(--accent); margin: 1.5rem 0 0.5rem; }
+        p { margin: 1rem 0; }
+        .chapter-nav { background: var(--secondary); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; }
+        .chapter-nav a { color: var(--primary); text-decoration: none; padding: 0.5rem 1rem; border: 2px solid var(--primary); border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: var(--secondary); }
+        th, td { padding: 1rem; border-bottom: 1px solid var(--border); text-align: left; }
+        th { background: var(--bg); color: var(--primary); font-weight: bold; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.75rem 0; }
+        .code-block { background: var(--secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+        .code-block code { font-family: 'Courier New', monospace; color: var(--accent); }
+        .info-box { background: var(--secondary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 1.5rem 0; }
+        .summary { background: var(--secondary); border: 2px solid var(--primary); border-radius: 10px; padding: 2rem; margin: 3rem 0; }
+        footer { text-align: center; margin-top: 4rem; padding: 2rem; border-top: 2px solid var(--primary); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-nav">
+            <a href="chapter-03.html">← 이전 장</a>
+            <span style="color: var(--text-dim);">제04장 / 8</span>
+            <a href="chapter-05.html">다음 장 →</a>
+        </div>
+
+        <h1>제04장: HBM과 고대역폭 메모리</h1>
+
+        <p>HBM(High Bandwidth Memory)은 AI, 그래픽스, HPC 워크로드를 위한 고대역폭 메모리 솔루션입니다. 3D 적층 기술과 TSV(Through-Silicon Via)를 사용하여 극대화된 대역폭을 제공합니다. 이 장에서는 HBM의 아키텍처, GDDR과의 비교, 그리고 최신 HBM3/HBM4 기술을 다룹니다.</p>
+
+        <h2>HBM 기본 구조</h2>
+
+        <h3>1. 3D 스택 아키텍처</h3>
+        <p>HBM은 여러 DRAM 다이를 수직으로 적층하고 TSV로 연결합니다. 베이스 다이(로직 다이) 위에 4-16개의 DRAM 다이가 적층됩니다.</p>
+
+        <div class="info-box">
+            <h4>HBM 스택 구성</h4>
+            <ul>
+                <li><strong>베이스 다이(Logic Die):</strong> PHY, 버퍼, ECC 로직 포함</li>
+                <li><strong>DRAM 다이:</strong> 실제 메모리 셀 (8-16개 적층)</li>
+                <li><strong>TSV (Through-Silicon Via):</strong> 다이 간 수직 연결 (~10,000개/다이)</li>
+                <li><strong>마이크로범프:</strong> 다이 간 물리적 연결 (~55μm 피치)</li>
+                <li><strong>인터포저:</strong> HBM과 GPU/CPU를 연결하는 실리콘 기판</li>
+            </ul>
+        </div>
+
+        <h3>2. HBM 세대별 발전</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>세대</th>
+                    <th>대역폭/스택</th>
+                    <th>용량/스택</th>
+                    <th>전압</th>
+                    <th>출시 연도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>HBM1</strong></td>
+                    <td>128 GB/s</td>
+                    <td>4 GB</td>
+                    <td>1.2V</td>
+                    <td>2015</td>
+                </tr>
+                <tr>
+                    <td><strong>HBM2</strong></td>
+                    <td>256 GB/s</td>
+                    <td>8 GB</td>
+                    <td>1.2V</td>
+                    <td>2016</td>
+                </tr>
+                <tr>
+                    <td><strong>HBM2E</strong></td>
+                    <td>460 GB/s</td>
+                    <td>16 GB</td>
+                    <td>1.2V</td>
+                    <td>2018</td>
+                </tr>
+                <tr>
+                    <td><strong>HBM3</strong></td>
+                    <td>665 GB/s</td>
+                    <td>24 GB</td>
+                    <td>1.1V</td>
+                    <td>2022</td>
+                </tr>
+                <tr>
+                    <td><strong>HBM3E</strong></td>
+                    <td>1.15 TB/s</td>
+                    <td>36 GB</td>
+                    <td>1.1V</td>
+                    <td>2024</td>
+                </tr>
+                <tr>
+                    <td><strong>HBM4 (예정)</strong></td>
+                    <td>2+ TB/s</td>
+                    <td>64+ GB</td>
+                    <td>1.0V</td>
+                    <td>2026</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="code-block">
+            <code>
+// HBM 대역폭 계산<br>
+function calculateHBMBandwidth(channels, data_rate_gbps, bus_width) {<br>
+&nbsp;&nbsp;// 대역폭 = 채널 수 × 데이터 레이트 × 버스 폭 / 8<br>
+&nbsp;&nbsp;const bandwidth_gbps = channels * data_rate_gbps * bus_width / 8;<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;console.log(`채널: ${channels}`);<br>
+&nbsp;&nbsp;console.log(`데이터 레이트: ${data_rate_gbps} Gbps`);<br>
+&nbsp;&nbsp;console.log(`버스 폭: ${bus_width} 비트`);<br>
+&nbsp;&nbsp;console.log(`대역폭: ${bandwidth_gbps} GB/s`);<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;return bandwidth_gbps;<br>
+}<br>
+<br>
+// HBM3 예시: 16채널, 6.4 Gbps/pin, 128비트/채널<br>
+calculateHBMBandwidth(16, 6.4, 128);<br>
+// 출력: 1638.4 GB/s (단일 스택 기준)<br>
+<br>
+// 실제 GPU는 여러 스택 사용<br>
+const stacks = 6;<br>
+const total_bandwidth = calculateHBMBandwidth(16, 6.4, 128) * stacks;<br>
+console.log(`총 대역폭 (${stacks} 스택): ${total_bandwidth} GB/s`);
+            </code>
+        </div>
+
+        <h2>HBM vs GDDR 비교</h2>
+
+        <h3>1. 아키텍처 차이</h3>
+        <p>HBM과 GDDR은 서로 다른 설계 철학을 가집니다. HBM은 고대역폭, GDDR은 비용 효율성을 추구합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>특성</th>
+                    <th>HBM3</th>
+                    <th>GDDR6X</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>패키징</strong></td>
+                    <td>3D 적층 (TSV)</td>
+                    <td>전통적 PCB</td>
+                </tr>
+                <tr>
+                    <td><strong>버스 폭</strong></td>
+                    <td>1024-2048 비트</td>
+                    <td>32 비트/칩</td>
+                </tr>
+                <tr>
+                    <td><strong>I/O 속도</strong></td>
+                    <td>5-7 Gbps/pin</td>
+                    <td>19-21 Gbps/pin</td>
+                </tr>
+                <tr>
+                    <td><strong>대역폭/스택</strong></td>
+                    <td>~665 GB/s</td>
+                    <td>~84 GB/s</td>
+                </tr>
+                <tr>
+                    <td><strong>전력 효율</strong></td>
+                    <td>~1.0 pJ/bit</td>
+                    <td>~3.5 pJ/bit</td>
+                </tr>
+                <tr>
+                    <td><strong>비용</strong></td>
+                    <td>높음</td>
+                    <td>중간</td>
+                </tr>
+                <tr>
+                    <td><strong>주요 용도</strong></td>
+                    <td>AI 가속기, HPC</td>
+                    <td>게이밍 GPU</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. 응용 분야별 선택</h3>
+        <div class="info-box">
+            <h4>메모리 타입 선택 기준</h4>
+            <ul>
+                <li><strong>HBM 선택 시:</strong> 대역폭 > 1 TB/s 필요, AI/HPC 워크로드, 전력 효율 중요</li>
+                <li><strong>GDDR 선택 시:</strong> 게이밍, 비용 민감, 확장 가능한 용량 필요</li>
+                <li><strong>DDR 선택 시:</strong> 범용 컴퓨팅, 레이턴시 민감, 대용량 필요</li>
+            </ul>
+        </div>
+
+        <h2>TSV 기술</h2>
+
+        <h3>1. TSV 구조와 제조</h3>
+        <p>TSV는 실리콘 웨이퍼를 관통하는 수직 전기 연결로, 3D 적층의 핵심 기술입니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>TSV 파라미터</th>
+                    <th>HBM2</th>
+                    <th>HBM3</th>
+                    <th>목표 (차세대)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>직경</strong></td>
+                    <td>5-6 μm</td>
+                    <td>4-5 μm</td>
+                    <td>3-4 μm</td>
+                </tr>
+                <tr>
+                    <td><strong>피치</strong></td>
+                    <td>40-50 μm</td>
+                    <td>30-40 μm</td>
+                    <td>25-30 μm</td>
+                </tr>
+                <tr>
+                    <td><strong>깊이</strong></td>
+                    <td>50-100 μm</td>
+                    <td>40-60 μm</td>
+                    <td>30-50 μm</td>
+                </tr>
+                <tr>
+                    <td><strong>종횡비</strong></td>
+                    <td>~10:1</td>
+                    <td>~12:1</td>
+                    <td>~15:1</td>
+                </tr>
+                <tr>
+                    <td><strong>밀도</strong></td>
+                    <td>~400/mm²</td>
+                    <td>~700/mm²</td>
+                    <td>~1000/mm²</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. TSV 제조 공정</h3>
+        <ul>
+            <li><strong>Via 형성:</strong> DRIE(Deep Reactive Ion Etching)로 깊은 홀 생성</li>
+            <li><strong>절연층 증착:</strong> SiO₂ 또는 Si₃N₄로 절연</li>
+            <li><strong>배리어/시드층:</strong> Ta/TaN 배리어, Cu 시드층 증착</li>
+            <li><strong>Cu 충진:</strong> 전기도금으로 구리 채움</li>
+            <li><strong>CMP:</strong> 화학기계적 연마로 평탄화</li>
+            <li><strong>웨이퍼 얇화:</strong> 후면 연마로 TSV 노출</li>
+        </ul>
+
+        <h2>HBM 인터페이스 및 프로토콜</h2>
+
+        <h3>1. 채널 구조</h3>
+        <p>HBM은 여러 독립 채널로 구성되어 병렬 데이터 전송을 가능하게 합니다.</p>
+
+        <div class="code-block">
+            <code>
+// HBM3 채널 구성<br>
+class HBM3Stack {<br>
+&nbsp;&nbsp;constructor() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.channels = 16;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.channel_width = 64;  // bits<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.pseudo_channels = 2; // per channel<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.data_rate = 6.4;     // Gbps<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;getTotalWidth() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return this.channels * this.channel_width;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 16 × 64 = 1024 비트<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;getBandwidth() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// BW = 채널 × 채널폭 × 데이터레이트 / 8<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const bw = this.channels * this.channel_width * <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.data_rate / 8;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return bw; // 819.2 GB/s<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;getEffectiveChannels() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 의사 채널로 효과적인 채널 수 증가<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return this.channels * this.pseudo_channels; // 32<br>
+&nbsp;&nbsp;}<br>
+}
+            </code>
+        </div>
+
+        <h3>2. ECC 및 RAS 기능</h3>
+        <p>HBM은 엔터프라이즈급 신뢰성을 위해 강력한 ECC와 RAS 기능을 제공합니다.</p>
+
+        <div class="info-box">
+            <h4>HBM RAS 기능</h4>
+            <ul>
+                <li><strong>On-Die ECC:</strong> 각 DRAM 다이 내부에서 오류 정정 (8비트 패리티)</li>
+                <li><strong>Link ECC:</strong> TSV 및 인터포저 링크에서 추가 오류 정정</li>
+                <li><strong>체크포인트:</strong> 데이터 무결성 검증 포인트</li>
+                <li><strong>리던던시:</strong> 불량 셀/뱅크 대체 가능</li>
+                <li><strong>Post-Package Repair:</strong> 패키징 후 불량 수리</li>
+            </ul>
+        </div>
+
+        <h2>HBM 응용 분야</h2>
+
+        <h3>1. AI 가속기</h3>
+        <p>HBM은 AI 훈련 및 추론에 필수적인 고대역폭을 제공합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>AI 가속기</th>
+                    <th>HBM 타입</th>
+                    <th>HBM 용량</th>
+                    <th>총 대역폭</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>NVIDIA H100</td>
+                    <td>HBM3</td>
+                    <td>80 GB</td>
+                    <td>3 TB/s</td>
+                </tr>
+                <tr>
+                    <td>AMD MI300X</td>
+                    <td>HBM3</td>
+                    <td>192 GB</td>
+                    <td>5.3 TB/s</td>
+                </tr>
+                <tr>
+                    <td>Google TPU v5p</td>
+                    <td>HBM2E</td>
+                    <td>95 GB</td>
+                    <td>4.8 TB/s</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="code-block">
+            <code>
+// AI 모델 메모리 대역폭 요구사항 계산<br>
+function calculateAIBandwidthRequirement(model_params, batch_size, tokens, precision) {<br>
+&nbsp;&nbsp;// 파라미터: 모델 파라미터 수 (억 단위)<br>
+&nbsp;&nbsp;// precision: 비트/파라미터 (FP32=4, FP16=2, BF16=2, INT8=1)<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;const bytes_per_param = precision / 8;<br>
+&nbsp;&nbsp;const model_size_gb = (model_params * 1e9 * bytes_per_param) / 1e9;<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;// 순방향 + 역방향 패스<br>
+&nbsp;&nbsp;const memory_access = model_size_gb * 2;<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;// 초당 필요한 대역폭 (100 TFLOPS 가정)<br>
+&nbsp;&nbsp;const tflops = 100;<br>
+&nbsp;&nbsp;const compute_time_s = (model_params * batch_size * tokens) / (tflops * 1e12);<br>
+&nbsp;&nbsp;const required_bw = memory_access / compute_time_s;<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;console.log(`모델 크기: ${model_size_gb.toFixed(1)} GB`);<br>
+&nbsp;&nbsp;console.log(`필요 대역폭: ${required_bw.toFixed(0)} GB/s`);<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;return required_bw;<br>
+}<br>
+<br>
+// 예: GPT-3 (1750억 파라미터, BF16)<br>
+calculateAIBandwidthRequirement(175, 32, 2048, 16);
+            </code>
+        </div>
+
+        <h3>2. 고성능 컴퓨팅 (HPC)</h3>
+        <p>슈퍼컴퓨터와 과학 컴퓨팅은 HBM의 높은 대역폭과 전력 효율성을 활용합니다.</p>
+
+        <ul>
+            <li><strong>기상 모델링:</strong> 대규모 시뮬레이션에 TB/s급 메모리 대역폭 필요</li>
+            <li><strong>분자 동역학:</strong> 원자 간 상호작용 계산에 고대역폭 필수</li>
+            <li><strong>유체 역학:</strong> CFD 시뮬레이션의 메모리 집약적 연산</li>
+            <li><strong>양자 시뮬레이션:</strong> 큐비트 상태 계산에 막대한 메모리 대역폭</li>
+        </ul>
+
+        <h2>HBM 열관리</h2>
+
+        <h3>1. 열 문제와 해결책</h3>
+        <p>3D 적층은 열 밀도를 높여 열관리가 중요한 과제입니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>열관리 기법</th>
+                    <th>설명</th>
+                    <th>효과</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>TSV 열 전도</strong></td>
+                    <td>Cu TSV를 열 전도 경로로 활용</td>
+                    <td>중간</td>
+                </tr>
+                <tr>
+                    <td><strong>마이크로 범프 열 분산</strong></td>
+                    <td>마이크로 범프로 열 확산</td>
+                    <td>중간</td>
+                </tr>
+                <tr>
+                    <td><strong>인터포저 냉각</strong></td>
+                    <td>실리콘 인터포저의 높은 열전도율</td>
+                    <td>높음</td>
+                </tr>
+                <tr>
+                    <td><strong>히트 스프레더</strong></td>
+                    <td>스택 상단에 금속 히트 스프레더</td>
+                    <td>높음</td>
+                </tr>
+                <tr>
+                    <td><strong>액체 냉각</strong></td>
+                    <td>다이렉트 액체 냉각 솔루션</td>
+                    <td>매우 높음</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. 전력 관리</h3>
+        <p>HBM3는 다양한 전력 절감 기능을 통해 효율성을 극대화합니다.</p>
+
+        <div class="info-box">
+            <h4>HBM 전력 절감 기능</h4>
+            <ul>
+                <li><strong>의사 채널 모드:</strong> 채널을 더 작은 단위로 분할하여 미사용 부분 절전</li>
+                <li><strong>DBI (Data Bus Inversion):</strong> 전환 비트 수 최소화로 전력 절감</li>
+                <li><strong>터미네이션 조절:</strong> 동적 ODT(On-Die Termination) 조정</li>
+                <li><strong>딥 슬립 모드:</strong> 장시간 미사용 시 초저전력 상태</li>
+            </ul>
+        </div>
+
+        <h2>차세대 HBM 기술</h2>
+
+        <h3>1. HBM4 로드맵</h3>
+        <p>HBM4는 2026년 출시 예정으로, 대역폭과 용량을 대폭 향상시킬 것으로 전망됩니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>기술</th>
+                    <th>HBM3E</th>
+                    <th>HBM4 (예상)</th>
+                    <th>개선율</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>대역폭/스택</strong></td>
+                    <td>1.15 TB/s</td>
+                    <td>2.0+ TB/s</td>
+                    <td>+74%</td>
+                </tr>
+                <tr>
+                    <td><strong>용량/스택</strong></td>
+                    <td>36 GB</td>
+                    <td>64 GB</td>
+                    <td>+78%</td>
+                </tr>
+                <tr>
+                    <td><strong>적층 수</strong></td>
+                    <td>12</td>
+                    <td>16</td>
+                    <td>+33%</td>
+                </tr>
+                <tr>
+                    <td><strong>데이터 레이트</strong></td>
+                    <td>9.2 Gbps</td>
+                    <td>16 Gbps</td>
+                    <td>+74%</td>
+                </tr>
+                <tr>
+                    <td><strong>전력 효율</strong></td>
+                    <td>기준</td>
+                    <td>+30%</td>
+                    <td>-</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. 신기술 동향</h3>
+        <ul>
+            <li><strong>Hybrid Bonding:</strong> 마이크로 범프 대신 구리 간 직접 접합으로 밀도 향상</li>
+            <li><strong>HBM-PIM:</strong> Processing-In-Memory, 메모리 내부에서 연산 수행</li>
+            <li><strong>광 인터커넥트:</strong> TSV 대신 광 연결로 대역폭 극대화</li>
+            <li><strong>CXL-HBM:</strong> CXL 프로토콜 통합으로 메모리 풀링</li>
+        </ul>
+
+        <div class="summary">
+            <h2>요약</h2>
+            <p>HBM은 3D 적층과 TSV 기술을 활용한 고대역폭 메모리로, AI 가속기와 HPC의 핵심 구성 요소입니다. HBM3/HBM3E는 TB/s급 대역폭을 제공하며, HBM4는 더욱 발전된 성능을 약속합니다.</p>
+
+            <h3>핵심 요점</h3>
+            <ul>
+                <li>3D 적층과 TSV로 극대화된 대역폭 (최대 1.15 TB/s)</li>
+                <li>GDDR 대비 3배 이상 높은 전력 효율성</li>
+                <li>AI/HPC 워크로드에 최적화된 고대역폭 솔루션</li>
+                <li>On-Die ECC와 RAS 기능으로 엔터프라이즈급 신뢰성</li>
+                <li>HBM4로 2+ TB/s 대역폭 달성 전망</li>
+            </ul>
+        </div>
+
+        <div class="chapter-nav">
+            <a href="chapter-03.html">← 이전 장</a>
+            <span style="color: var(--text-dim);">제04장 / 8</span>
+            <a href="chapter-05.html">다음 장 →</a>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / 세계산업인증협회 (WIA)</p>
+            <p>弘益人間 (홍익인간) · 널리 인간을 이롭게 하라</p>
+        </footer>
+    </div>
+</body>
+</html>

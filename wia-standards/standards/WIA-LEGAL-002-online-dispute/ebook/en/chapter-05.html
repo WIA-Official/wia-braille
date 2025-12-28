@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: API Design | WIA-LEGAL-002</title>
+    <style>
+        :root { --bg: #0f172a; --bg-card: #1e293b; --text: #f8fafc; --text-secondary: #cbd5e1; --legal-color: #7C3AED; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 40px 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-card); padding: 60px; border-radius: 16px; }
+        h1 { font-size: 2.5rem; color: var(--legal-color); margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--legal-color); }
+        h2 { font-size: 1.8rem; color: var(--legal-color); margin: 40px 0 20px; }
+        h3 { font-size: 1.3rem; color: var(--legal-color); margin: 30px 0 15px; }
+        p { margin: 15px 0; text-align: justify; }
+        .highlight { background: var(--bg); padding: 20px; border-left: 4px solid var(--legal-color); margin: 20px 0; border-radius: 8px; }
+        .navigation { display: flex; justify-content: space-between; margin-top: 60px; padding-top: 30px; border-top: 2px solid var(--border); }
+        .nav-btn { padding: 12px 24px; background: var(--legal-color); color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg); color: var(--legal-color); font-weight: 600; }
+        ul, ol { margin: 15px 0 15px 30px; }
+        li { margin: 8px 0; }
+        .summary-box { background: var(--bg); padding: 30px; border-radius: 12px; margin: 40px 0; border: 2px solid var(--legal-color); }
+        .summary-box h3 { margin-top: 0; }
+        code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-family: 'Courier New', monospace; color: var(--legal-color); font-size: 0.9em; }
+        pre { background: var(--bg); padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border); margin: 20px 0; }
+        pre code { padding: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chapter 5: API Design</h1>
+
+        <h2>5.1 RESTful API Architecture</h2>
+        <p>Phase 2 of WIA-LEGAL-002 defines comprehensive REST APIs enabling platforms to integrate ODR functionality. The API follows RESTful principles with JSON request/response formats, OAuth 2.0 authentication, and rate limiting to ensure security and scalability.</p>
+
+        <h3>5.1.1 Base URL and Versioning</h3>
+        <pre><code>Base URL: https://api.odr-platform.example/v1
+API Version: 1.0
+Authentication: OAuth 2.0 Bearer Token
+Rate Limit: 1000 requests/hour per API key</code></pre>
+
+        <h2>5.2 Dispute Submission API</h2>
+        <h3>5.2.1 Create Dispute</h3>
+        <pre><code>POST /disputes
+Content-Type: application/json
+Authorization: Bearer {access_token}
+
+Request Body:
+{
+  "claimant": {
+    "name": "Jane Smith",
+    "email": "jane@example.com",
+    "phone": "+1-555-0123"
+  },
+  "respondent": {
+    "name": "Acme Corp",
+    "email": "disputes@acme.example",
+    "type": "BUSINESS"
+  },
+  "dispute": {
+    "category": "ECOMMERCE",
+    "subcategory": "PRODUCT_DEFECT",
+    "amount": {
+      "value": 1250.00,
+      "currency": "USD"
+    },
+    "description": "Product received was damaged...",
+    "desiredOutcome": "Full refund plus shipping"
+  },
+  "resolutionMethod": "NEGOTIATION"
+}
+
+Response (201 Created):
+{
+  "disputeId": "ODR-2025-00012345",
+  "status": "SUBMITTED",
+  "createdAt": "2025-01-15T10:30:00Z",
+  "nextSteps": {
+    "respondentNotification": "PENDING",
+    "responseDeadline": "2025-01-29T10:30:00Z"
+  },
+  "_links": {
+    "self": "/disputes/ODR-2025-00012345",
+    "status": "/disputes/ODR-2025-00012345/status",
+    "documents": "/disputes/ODR-2025-00012345/documents"
+  }
+}</code></pre>
+
+        <h3>5.2.2 Get Dispute Status</h3>
+        <pre><code>GET /disputes/{disputeId}
+Authorization: Bearer {access_token}
+
+Response (200 OK):
+{
+  "disputeId": "ODR-2025-00012345",
+  "status": "IN_MEDIATION",
+  "currentPhase": "MEDIATION",
+  "progress": {
+    "percentage": 60,
+    "currentStep": "Mediator assigned, initial session completed",
+    "nextStep": "Caucus sessions scheduled for Jan 20"
+  },
+  "timeline": {
+    "submitted": "2025-01-15T10:30:00Z",
+    "acknowledged": "2025-01-16T09:00:00Z",
+    "mediatorAssigned": "2025-01-17T14:00:00Z",
+    "estimatedResolution": "2025-02-15"
+  },
+  "parties": {
+    "claimant": {
+      "lastActivity": "2025-01-19T16:45:00Z"
+    },
+    "respondent": {
+      "lastActivity": "2025-01-19T17:00:00Z"
+    }
+  }
+}</code></pre>
+
+        <h2>5.3 Mediator/Arbitrator Matching API</h2>
+        <h3>5.3.1 Find Available Mediators</h3>
+        <pre><code>POST /mediators/search
+Authorization: Bearer {access_token}
+
+Request:
+{
+  "disputeCategory": "ECOMMERCE",
+  "disputeAmount": 1250.00,
+  "languages": ["en-US"],
+  "expertise": ["consumer-protection", "product-liability"],
+  "availability": {
+    "startDate": "2025-01-20",
+    "timezone": "America/Chicago"
+  }
+}
+
+Response (200 OK):
+{
+  "matches": [
+    {
+      "mediatorId": "MED-2025-123",
+      "name": "Robert Johnson",
+      "rating": 4.8,
+      "casesCompleted": 347,
+      "successRate": 0.82,
+      "languages": ["en-US", "es-MX"],
+      "expertise": ["consumer-protection", "ecommerce", "product-liability"],
+      "certifications": ["WIA-CERTIFIED-MEDIATOR-2024"],
+      "availability": [
+        {
+          "date": "2025-01-22",
+          "slots": ["10:00-12:00", "14:00-16:00"]
+        }
+      ],
+      "hourlyRate": {
+        "value": 200.00,
+        "currency": "USD"
+      },
+      "matchScore": 0.95
+    }
+  ],
+  "totalMatches": 12
+}</code></pre>
+
+        <h3>5.3.2 Assign Mediator</h3>
+        <pre><code>POST /disputes/{disputeId}/mediator
+Authorization: Bearer {access_token}
+
+Request:
+{
+  "mediatorId": "MED-2025-123",
+  "scheduledSession": {
+    "date": "2025-01-22",
+    "time": "10:00-12:00",
+    "timezone": "America/Chicago"
+  }
+}
+
+Response (200 OK):
+{
+  "assignmentId": "ASSIGN-2025-567",
+  "mediatorId": "MED-2025-123",
+  "status": "ASSIGNED",
+  "session": {
+    "sessionId": "SESSION-2025-789",
+    "scheduledAt": "2025-01-22T16:00:00Z",
+    "virtualRoom": "https://odr-platform.example/room/SESSION-2025-789",
+    "duration": 120
+  }
+}</code></pre>
+
+        <h2>5.4 Settlement Processing API</h2>
+        <h3>5.4.1 Submit Settlement Proposal</h3>
+        <pre><code>POST /disputes/{disputeId}/settlements
+Authorization: Bearer {access_token}
+
+Request:
+{
+  "proposedBy": "party-789abc",
+  "terms": {
+    "monetaryTerms": [
+      {
+        "type": "PAYMENT",
+        "payer": "party-456def",
+        "payee": "party-789abc",
+        "amount": {
+          "value": 1100.00,
+          "currency": "USD"
+        },
+        "dueDate": "2025-02-05"
+      }
+    ]
+  },
+  "expiresAt": "2025-01-25T23:59:59Z"
+}
+
+Response (201 Created):
+{
+  "proposalId": "PROP-2025-888",
+  "status": "PENDING_RESPONSE",
+  "submittedAt": "2025-01-20T16:30:00Z",
+  "expiresAt": "2025-01-25T23:59:59Z",
+  "respondent": {
+    "notified": true,
+    "responseDeadline": "2025-01-25T23:59:59Z"
+  }
+}</code></pre>
+
+        <h3>5.4.2 Accept/Reject Settlement</h3>
+        <pre><code>POST /disputes/{disputeId}/settlements/{proposalId}/respond
+Authorization: Bearer {access_token}
+
+Request:
+{
+  "action": "ACCEPT",
+  "comments": "Agreed to all terms as proposed"
+}
+
+Response (200 OK):
+{
+  "settlementId": "SETTLE-2025-789456",
+  "status": "ACCEPTED",
+  "acceptedAt": "2025-01-20T17:00:00Z",
+  "nextSteps": {
+    "esignature": {
+      "required": true,
+      "url": "/settlements/SETTLE-2025-789456/sign",
+      "deadline": "2025-01-27T23:59:59Z"
+    },
+    "payment": {
+      "required": true,
+      "amount": 1100.00,
+      "dueDate": "2025-02-05"
+    }
+  }
+}</code></pre>
+
+        <h2>5.5 Document Management API</h2>
+        <h3>5.5.1 Upload Evidence</h3>
+        <pre><code>POST /disputes/{disputeId}/evidence
+Content-Type: multipart/form-data
+Authorization: Bearer {access_token}
+
+Request (multipart):
+- file: [binary data]
+- description: "Photos of damaged product"
+- evidenceType: "PHOTOGRAPHIC"
+
+Response (201 Created):
+{
+  "evidenceId": "EVD-2025-246810",
+  "fileId": "FILE-2025-111",
+  "uploadedAt": "2025-01-16T09:15:00Z",
+  "hash": "sha256:e7h9j4l5...",
+  "virusScanStatus": "CLEAN",
+  "blockchain": {
+    "anchored": true,
+    "transactionHash": "0x8g9e4b5c..."
+  }
+}</code></pre>
+
+        <h2>5.6 API Error Handling</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Status Code</th>
+                    <th>Error Type</th>
+                    <th>Description</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>400</td>
+                    <td>Bad Request</td>
+                    <td>Invalid request format or missing required fields</td>
+                    <td>{"error": "MISSING_FIELD", "field": "claimant.email"}</td>
+                </tr>
+                <tr>
+                    <td>401</td>
+                    <td>Unauthorized</td>
+                    <td>Missing or invalid authentication token</td>
+                    <td>{"error": "INVALID_TOKEN"}</td>
+                </tr>
+                <tr>
+                    <td>403</td>
+                    <td>Forbidden</td>
+                    <td>Insufficient permissions for requested action</td>
+                    <td>{"error": "INSUFFICIENT_PERMISSIONS"}</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>Not Found</td>
+                    <td>Requested resource does not exist</td>
+                    <td>{"error": "DISPUTE_NOT_FOUND", "disputeId": "..."}</td>
+                </tr>
+                <tr>
+                    <td>429</td>
+                    <td>Rate Limit</td>
+                    <td>Too many requests</td>
+                    <td>{"error": "RATE_LIMIT_EXCEEDED", "retryAfter": 3600}</td>
+                </tr>
+                <tr>
+                    <td>500</td>
+                    <td>Server Error</td>
+                    <td>Internal server error</td>
+                    <td>{"error": "INTERNAL_ERROR", "requestId": "..."}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>5.7 Webhooks for Event Notifications</h2>
+        <h3>5.7.1 Webhook Configuration</h3>
+        <pre><code>POST /webhooks
+Authorization: Bearer {access_token}
+
+Request:
+{
+  "url": "https://your-app.example/odr-webhook",
+  "events": [
+    "dispute.created",
+    "dispute.status_changed",
+    "settlement.proposed",
+    "settlement.accepted",
+    "mediator.assigned"
+  ],
+  "secret": "whsec_abc123..."
+}
+
+Response (201 Created):
+{
+  "webhookId": "WEBHOOK-2025-999",
+  "status": "ACTIVE",
+  "events": [...],
+  "createdAt": "2025-01-15T10:00:00Z"
+}</code></pre>
+
+        <h3>5.7.2 Sample Webhook Event</h3>
+        <pre><code>POST https://your-app.example/odr-webhook
+X-ODR-Event: settlement.accepted
+X-ODR-Signature: sha256=abc123...
+
+{
+  "eventId": "EVT-2025-777",
+  "eventType": "settlement.accepted",
+  "timestamp": "2025-01-20T17:00:00Z",
+  "data": {
+    "disputeId": "ODR-2025-00012345",
+    "settlementId": "SETTLE-2025-789456",
+    "acceptedBy": "party-456def",
+    "amount": 1100.00
+  }
+}</code></pre>
+
+        <div class="summary-box">
+            <h3>Chapter Summary</h3>
+            <ul>
+                <li>WIA-LEGAL-002 provides comprehensive RESTful APIs for all ODR operations</li>
+                <li>Dispute submission API handles case creation and status tracking</li>
+                <li>Mediator matching API uses AI to find qualified neutral parties</li>
+                <li>Settlement processing API manages proposals, acceptance, and execution</li>
+                <li>Document management API handles evidence upload with blockchain anchoring</li>
+                <li>Webhooks enable real-time event notifications for integrations</li>
+                <li>Comprehensive error handling ensures robust API interactions</li>
+            </ul>
+        </div>
+
+        <div class="summary-box">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>What authentication method does the WIA-LEGAL-002 API use?</li>
+                <li>How does the mediator matching API determine the best match for a case?</li>
+                <li>What is the purpose of blockchain anchoring in the evidence upload API?</li>
+                <li>Explain the difference between a settlement proposal and a settlement acceptance.</li>
+                <li>How do webhooks improve integration with external systems?</li>
+                <li>What happens when an API rate limit is exceeded?</li>
+            </ol>
+        </div>
+
+        <div class="summary-box">
+            <h3>Looking Ahead</h3>
+            <p>Chapter 6 covers Phase 3: Protocol & Security, including secure communication protocols, video mediation standards, e-signature integration, and blockchain anchoring for tamper-proof records.</p>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-04.html" class="nav-btn">← Previous Chapter</a>
+            <a href="chapter-06.html" class="nav-btn">Next Chapter →</a>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid var(--border); color: var(--legal-color);">
+            <p><strong>弘益人間 (Hongik Ingan) - Benefit All Humanity</strong></p>
+            <p style="color: var(--text-secondary); margin-top: 10px;">© 2025 WIA - World Certification Industry Association</p>
+        </div>
+    </div>
+</body>
+</html>

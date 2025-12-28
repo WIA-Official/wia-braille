@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micro-Credential Simulator 📜</title>
+    <style>
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg) 100%);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Language Toggle */
+        .lang-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .lang-btn:hover {
+            color: var(--text);
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            padding: 0 10px;
+        }
+
+        .tab {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            border-color: var(--primary);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+            border: 2px solid var(--border);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Badge Display */
+        .badge-display {
+            background: var(--bg);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .badge-visual {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.5);
+        }
+
+        .badge-info {
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        .badge-info h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .badge-info p {
+            margin: 5px 0;
+            color: var(--text-muted);
+        }
+
+        /* Credential Stack */
+        .credential-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .credential-card {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .credential-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+
+        .credential-icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        .credential-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        .credential-date {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Verification Panel */
+        .verification-panel {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .verification-result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .verification-result.valid {
+            background: rgba(16, 185, 129, 0.2);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .verification-result.invalid {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            color: #ef4444;
+        }
+
+        /* Code Display */
+        .code-display {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        pre {
+            margin: 0;
+            color: var(--text);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            margin-top: 40px;
+            color: var(--text-muted);
+            border-top: 2px solid var(--border);
+        }
+
+        .philosophy {
+            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+
+            .badge-visual {
+                width: 150px;
+                height: 150px;
+                font-size: 60px;
+            }
+
+            .credential-stack {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Language Switch -->
+    <div class="lang-switch">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('ko')">KO</button>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <h1 data-en="Micro-Credential Simulator 📜" data-ko="마이크로 학위 시뮬레이터 📜">Micro-Credential Simulator 📜</h1>
+        <p class="subtitle" data-en="Experience digital badges, skill certifications, and stackable credentials" data-ko="디지털 배지, 스킬 인증, 누적 가능한 자격증을 경험하세요">Experience digital badges, skill certifications, and stackable credentials</p>
+    </header>
+
+    <!-- Tabs -->
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('badge')" data-en="🎖️ Create Badge" data-ko="🎖️ 배지 생성">🎖️ Create Badge</div>
+            <div class="tab" onclick="showTab('verify')" data-en="✅ Verify Credential" data-ko="✅ 자격 검증">✅ Verify Credential</div>
+            <div class="tab" onclick="showTab('stack')" data-en="📚 Credential Stack" data-ko="📚 자격증 스택">📚 Credential Stack</div>
+            <div class="tab" onclick="showTab('api')" data-en="🔧 API Demo" data-ko="🔧 API 데모">🔧 API Demo</div>
+        </div>
+
+        <!-- Tab 1: Create Badge -->
+        <div id="badge" class="tab-content active">
+            <h2 data-en="Create Digital Badge" data-ko="디지털 배지 생성">Create Digital Badge</h2>
+            <div class="form-group">
+                <label data-en="Badge Name" data-ko="배지 이름">Badge Name</label>
+                <input type="text" id="badgeName" placeholder="e.g., JavaScript Expert" value="JavaScript Expert">
+            </div>
+            <div class="form-group">
+                <label data-en="Skill Category" data-ko="스킬 카테고리">Skill Category</label>
+                <select id="badgeCategory">
+                    <option value="programming">Programming</option>
+                    <option value="design">Design</option>
+                    <option value="business">Business</option>
+                    <option value="language">Language</option>
+                    <option value="science">Science</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label data-en="Issuer Organization" data-ko="발급 기관">Issuer Organization</label>
+                <input type="text" id="badgeIssuer" placeholder="e.g., WIA Academy" value="WIA Academy">
+            </div>
+            <div class="form-group">
+                <label data-en="Description" data-ko="설명">Description</label>
+                <textarea id="badgeDescription" placeholder="Describe what this badge represents...">Demonstrates proficiency in JavaScript programming, including ES6+, async/await, and modern frameworks.</textarea>
+            </div>
+            <button class="btn" onclick="generateBadge()" data-en="🎨 Generate Badge" data-ko="🎨 배지 생성">🎨 Generate Badge</button>
+
+            <div id="badgeOutput" class="badge-display" style="display:none;">
+                <div class="badge-visual">🎖️</div>
+                <div class="badge-info">
+                    <h3 id="outputBadgeName"></h3>
+                    <p><strong data-en="Issuer:" data-ko="발급 기관:">Issuer:</strong> <span id="outputIssuer"></span></p>
+                    <p><strong data-en="Category:" data-ko="카테고리:">Category:</strong> <span id="outputCategory"></span></p>
+                    <p><strong data-en="Issue Date:" data-ko="발급일:">Issue Date:</strong> <span id="outputDate"></span></p>
+                    <p><strong data-en="Badge ID:" data-ko="배지 ID:">Badge ID:</strong> <span id="outputBadgeId"></span></p>
+                    <p id="outputDescription"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Verify Credential -->
+        <div id="verify" class="tab-content">
+            <h2 data-en="Verify Micro-Credential" data-ko="마이크로 자격 검증">Verify Micro-Credential</h2>
+            <div class="form-group">
+                <label data-en="Credential ID" data-ko="자격 ID">Credential ID</label>
+                <input type="text" id="credentialId" placeholder="e.g., WIA-MC-2025-001234">
+            </div>
+            <div class="form-group">
+                <label data-en="Verification Code" data-ko="검증 코드">Verification Code</label>
+                <input type="text" id="verificationCode" placeholder="e.g., A1B2C3D4E5F6">
+            </div>
+            <button class="btn" onclick="verifyCredential()" data-en="🔍 Verify" data-ko="🔍 검증">🔍 Verify</button>
+
+            <div id="verificationOutput" class="verification-panel" style="display:none;">
+                <h3 data-en="Verification Result" data-ko="검증 결과">Verification Result</h3>
+                <div id="verificationResult"></div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Credential Stack -->
+        <div id="stack" class="tab-content">
+            <h2 data-en="Your Credential Stack" data-ko="당신의 자격증 스택">Your Credential Stack</h2>
+            <p data-en="View all your accumulated micro-credentials" data-ko="누적된 모든 마이크로 자격증 보기">View all your accumulated micro-credentials</p>
+
+            <div class="credential-stack" id="credentialStack">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Tab 4: API Demo -->
+        <div id="api" class="tab-content">
+            <h2 data-en="API Integration Demo" data-ko="API 통합 데모">API Integration Demo</h2>
+            <p data-en="Example code for integrating micro-credentials into your application" data-ko="애플리케이션에 마이크로 자격증을 통합하는 예제 코드">Example code for integrating micro-credentials into your application</p>
+
+            <div class="code-display">
+                <pre id="apiCode"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p class="philosophy" data-en="弘益人間 · Benefit All Humanity" data-ko="弘益人間 · 널리 인간을 이롭게 하라">弘益人間 · Benefit All Humanity</p>
+        <p>WIA-EDU-012 Micro-Credential Standard</p>
+        <p>© 2025 MIT License</p>
+    </footer>
+
+    <script>
+        let currentLang = localStorage.getItem('wiaLang') || 'en';
+
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('wiaLang', lang);
+            document.querySelectorAll('[data-en]').forEach(el => {
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    el.placeholder = el.getAttribute('data-' + lang);
+                } else {
+                    el.textContent = el.getAttribute('data-' + lang);
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function generateBadge() {
+            const name = document.getElementById('badgeName').value;
+            const category = document.getElementById('badgeCategory').value;
+            const issuer = document.getElementById('badgeIssuer').value;
+            const description = document.getElementById('badgeDescription').value;
+            const badgeId = 'WIA-MC-' + Date.now().toString(36).toUpperCase();
+            const date = new Date().toISOString().split('T')[0];
+
+            document.getElementById('outputBadgeName').textContent = name;
+            document.getElementById('outputIssuer').textContent = issuer;
+            document.getElementById('outputCategory').textContent = category;
+            document.getElementById('outputDate').textContent = date;
+            document.getElementById('outputBadgeId').textContent = badgeId;
+            document.getElementById('outputDescription').textContent = description;
+            document.getElementById('badgeOutput').style.display = 'block';
+
+            // Save to local storage for credential stack
+            saveCredential({ name, category, issuer, description, badgeId, date });
+        }
+
+        function saveCredential(credential) {
+            let credentials = JSON.parse(localStorage.getItem('wiaCredentials') || '[]');
+            credentials.push(credential);
+            localStorage.setItem('wiaCredentials', JSON.stringify(credentials));
+            updateCredentialStack();
+        }
+
+        function updateCredentialStack() {
+            const credentials = JSON.parse(localStorage.getItem('wiaCredentials') || '[]');
+            const stackDiv = document.getElementById('credentialStack');
+
+            if (credentials.length === 0) {
+                stackDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted);">No credentials yet. Create your first badge!</p>';
+                return;
+            }
+
+            stackDiv.innerHTML = credentials.map(cred => `
+                <div class="credential-card">
+                    <div class="credential-icon">🎖️</div>
+                    <div class="credential-title">${cred.name}</div>
+                    <div class="credential-date">${cred.date}</div>
+                    <p style="font-size: 0.9rem; margin-top: 10px; color: var(--text-muted);">${cred.issuer}</p>
+                </div>
+            `).join('');
+        }
+
+        function verifyCredential() {
+            const credId = document.getElementById('credentialId').value;
+            const verCode = document.getElementById('verificationCode').value;
+            const outputDiv = document.getElementById('verificationOutput');
+            const resultDiv = document.getElementById('verificationResult');
+
+            // Simulate verification (in real implementation, this would call an API)
+            const isValid = credId.startsWith('WIA-MC-') && verCode.length >= 8;
+
+            if (isValid) {
+                resultDiv.className = 'verification-result valid';
+                resultDiv.innerHTML = currentLang === 'en'
+                    ? '✅ Valid Credential<br>This micro-credential has been verified and is authentic.'
+                    : '✅ 유효한 자격증<br>이 마이크로 자격증은 검증되었으며 진짜입니다.';
+            } else {
+                resultDiv.className = 'verification-result invalid';
+                resultDiv.innerHTML = currentLang === 'en'
+                    ? '❌ Invalid Credential<br>This credential could not be verified. Please check the ID and code.'
+                    : '❌ 유효하지 않은 자격증<br>이 자격증을 검증할 수 없습니다. ID와 코드를 확인하세요.';
+            }
+
+            outputDiv.style.display = 'block';
+        }
+
+        function initializeAPIDemo() {
+            const apiCode = `// WIA-EDU-012 Micro-Credential API Example
+
+import { MicroCredential } from '@wia/micro-credential';
+
+// Initialize the client
+const client = new MicroCredential({
+  apiKey: 'your-wia-api-key',
+  environment: 'production'
+});
+
+// Issue a new credential
+const credential = await client.issue({
+  recipientId: 'user-123',
+  recipientEmail: 'learner@example.com',
+  badgeName: 'JavaScript Expert',
+  skillCategory: 'programming',
+  issuerOrganization: 'WIA Academy',
+  competencies: [
+    'ES6+ Programming',
+    'Async/Await',
+    'Modern Frameworks'
+  ],
+  evidenceUrl: 'https://example.com/portfolio',
+  expirationDate: '2026-12-31'
+});
+
+console.log('Issued credential:', credential.id);
+
+// Verify a credential
+const verification = await client.verify({
+  credentialId: 'WIA-MC-2025-001234',
+  verificationCode: 'A1B2C3D4E5F6'
+});
+
+if (verification.valid) {
+  console.log('Credential verified!');
+  console.log('Holder:', verification.holder);
+  console.log('Skills:', verification.skills);
+}
+
+// Stack credentials for pathway
+const pathway = await client.createPathway({
+  name: 'Full-Stack Developer',
+  credentials: [
+    'WIA-MC-2025-001234', // Frontend
+    'WIA-MC-2025-001235', // Backend
+    'WIA-MC-2025-001236'  // DevOps
+  ]
+});
+
+// Export as Open Badge format
+const openBadge = await client.exportAsOpenBadge(
+  'WIA-MC-2025-001234'
+);
+
+// 弘益人間 - Benefit All Humanity`;
+
+            document.getElementById('apiCode').textContent = apiCode;
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            setLang(currentLang);
+            updateCredentialStack();
+            initializeAPIDemo();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 6: Streaming Data Quality - WIA-DATA-013</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; line-height: 1.8; max-width: 1000px; margin: 0 auto; padding: 40px 20px; background: #0f172a; color: #e2e8f0; }
+        h1, h2, h3 { color: #10B981; margin-top: 40px; }
+        h1 { font-size: 2.5em; border-bottom: 3px solid #10B981; padding-bottom: 15px; }
+        h2 { font-size: 2em; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        code { background: #1e293b; padding: 2px 6px; border-radius: 4px; color: #10B981; font-family: 'Courier New', monospace; }
+        pre { background: #1e293b; border-left: 4px solid #10B981; padding: 20px; border-radius: 8px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #1e293b; }
+        th, td { padding: 12px; text-align: left; border: 1px solid #334155; }
+        th { background: #10B981; color: #0f172a; font-weight: bold; }
+        .highlight { background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10B981; padding: 15px; margin: 20px 0; border-radius: 8px; }
+        ul, ol { margin: 15px 0; padding-left: 30px; }
+        li { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Chapter 6: Streaming Data Quality</h1>
+
+    <h2>6.1 Data Quality Dimensions</h2>
+    <p>Ensuring high-quality data in streaming pipelines requires addressing multiple dimensions of data quality in real-time.</p>
+
+    <table>
+        <tr><th>Dimension</th><th>Description</th><th>Streaming Challenge</th></tr>
+        <tr><td>Accuracy</td><td>Data correctly represents reality</td><td>No time for batch validation</td></tr>
+        <tr><td>Completeness</td><td>All required fields present</td><td>Missing data in real-time</td></tr>
+        <tr><td>Consistency</td><td>Data uniform across systems</td><td>Eventual consistency delays</td></tr>
+        <tr><td>Timeliness</td><td>Data available when needed</td><td>Latency vs. quality tradeoff</td></tr>
+        <tr><td>Validity</td><td>Data conforms to schema/rules</td><td>Schema evolution issues</td></tr>
+        <tr><td>Uniqueness</td><td>No duplicate records</td><td>Retries create duplicates</td></tr>
+    </table>
+
+    <h2>6.2 Data Validation Strategies</h2>
+    <h3>6.2.1 Schema Validation</h3>
+    <pre><code>// Using Avro schema
+const schema = {
+    type: 'record',
+    name: 'UserEvent',
+    fields: [
+        { name: 'userId', type: 'string' },
+        { name: 'eventType', type: 'string' },
+        { name: 'timestamp', type: 'long' },
+        { name: 'properties', type: ['null', 'map'], default: null }
+    ]
+};
+
+// Validation in stream processor
+function validateEvent(event) {
+    try {
+        avro.Type.forSchema(schema).isValid(event);
+        return { valid: true, event };
+    } catch (error) {
+        return { 
+            valid: false, 
+            event, 
+            error: error.message 
+        };
+    }
+}</code></pre>
+
+    <h3>6.2.2 Business Rule Validation</h3>
+    <pre><code>class EventValidator {
+    validate(event) {
+        const errors = [];
+
+        // Required fields
+        if (!event.userId) errors.push('userId required');
+        if (!event.timestamp) errors.push('timestamp required');
+
+        // Type validation
+        if (typeof event.userId !== 'string') {
+            errors.push('userId must be string');
+        }
+
+        // Range validation
+        if (event.amount && event.amount < 0) {
+            errors.push('amount cannot be negative');
+        }
+
+        // Temporal validation
+        const now = Date.now();
+        const eventTime = event.timestamp;
+        if (Math.abs(now - eventTime) > 24 * 60 * 60 * 1000) {
+            errors.push('timestamp more than 24h old/future');
+        }
+
+        return {
+            isValid: errors.length === 0,
+            errors
+        };
+    }
+}</code></pre>
+
+    <h2>6.3 Handling Bad Data</h2>
+    <h3>6.3.1 Dead Letter Queue Pattern</h3>
+    <pre><code>async function processEvent(event) {
+    try {
+        // Validate
+        const validation = validator.validate(event);
+        if (!validation.isValid) {
+            await deadLetterQueue.send({
+                originalEvent: event,
+                errors: validation.errors,
+                timestamp: new Date(),
+                source: 'validation'
+            });
+            return;
+        }
+
+        // Process
+        await processValidEvent(event);
+    } catch (error) {
+        // Processing errors also to DLQ
+        await deadLetterQueue.send({
+            originalEvent: event,
+            error: error.message,
+            stack: error.stack,
+            timestamp: new Date(),
+            source: 'processing'
+        });
+    }
+}</code></pre>
+
+    <h3>6.3.2 Data Cleansing</h3>
+    <pre><code>class DataCleanser {
+    cleanse(event) {
+        return {
+            // Trim whitespace
+            userId: event.userId?.trim(),
+            
+            // Normalize email
+            email: event.email?.toLowerCase().trim(),
+            
+            // Parse dates
+            timestamp: new Date(event.timestamp).getTime(),
+            
+            // Remove sensitive data
+            properties: this.redactPII(event.properties),
+            
+            // Fill defaults
+            country: event.country || 'UNKNOWN',
+            
+            // Normalize enums
+            eventType: event.eventType?.toUpperCase()
+        };
+    }
+
+    redactPII(properties) {
+        const { ssn, creditCard, ...safe } = properties || {};
+        return safe;
+    }
+}</code></pre>
+
+    <h2>6.4 Deduplication</h2>
+    <h3>6.4.1 Idempotent Processing</h3>
+    <pre><code>class IdempotentProcessor {
+    constructor() {
+        this.processedIds = new Set();
+        this.cache = new Redis();
+    }
+
+    async process(event) {
+        const eventId = event.eventId || this.generateId(event);
+
+        // Check if already processed
+        const exists = await this.cache.exists(`processed:${eventId}`);
+        if (exists) {
+            console.log(`Skipping duplicate: ${eventId}`);
+            return;
+        }
+
+        // Process event
+        await this.doProcess(event);
+
+        // Mark as processed (TTL 24 hours)
+        await this.cache.setex(`processed:${eventId}`, 86400, 'true');
+    }
+
+    generateId(event) {
+        // Deterministic ID from event content
+        return crypto
+            .createHash('sha256')
+            .update(JSON.stringify(event))
+            .digest('hex');
+    }
+}</code></pre>
+
+    <h3>6.4.2 Bloom Filters for Deduplication</h3>
+    <pre><code>const BloomFilter = require('bloom-filters').BloomFilter;
+
+class BloomDeduplicator {
+    constructor(capacity = 1000000, errorRate = 0.01) {
+        this.filter = new BloomFilter(capacity, errorRate);
+    }
+
+    isDuplicate(eventId) {
+        if (this.filter.has(eventId)) {
+            return true;  // Probably a duplicate
+        }
+        this.filter.add(eventId);
+        return false;  // Definitely not a duplicate
+    }
+}</code></pre>
+
+    <h2>6.5 Data Monitoring and Observability</h2>
+    <h3>6.5.1 Quality Metrics</h3>
+    <table>
+        <tr><th>Metric</th><th>Description</th><th>Alert Threshold</th></tr>
+        <tr><td>Validation Error Rate</td><td>% of invalid events</td><td>&gt; 1%</td></tr>
+        <tr><td>Schema Mismatch Rate</td><td>Schema validation failures</td><td>&gt; 0.1%</td></tr>
+        <tr><td>Null Field Rate</td><td>Missing required fields</td><td>&gt; 0.5%</td></tr>
+        <tr><td>Duplicate Rate</td><td>Duplicate events detected</td><td>&gt; 2%</td></tr>
+        <tr><td>Latency</td><td>Time from event to processing</td><td>&gt; 5 seconds</td></tr>
+        <tr><td>Backlog</td><td>Unprocessed events</td><td>&gt; 10000</td></tr>
+    </table>
+
+    <h3>6.5.2 Monitoring Implementation</h3>
+    <pre><code>class DataQualityMonitor {
+    constructor() {
+        this.metrics = {
+            total: 0,
+            valid: 0,
+            invalid: 0,
+            duplicates: 0
+        };
+    }
+
+    recordEvent(event, validation) {
+        this.metrics.total++;
+        
+        if (validation.isValid) {
+            this.metrics.valid++;
+        } else {
+            this.metrics.invalid++;
+            this.trackError(event, validation.errors);
+        }
+
+        // Export to monitoring system every 60 seconds
+        if (this.metrics.total % 1000 === 0) {
+            this.exportMetrics();
+        }
+    }
+
+    exportMetrics() {
+        const errorRate = (this.metrics.invalid / this.metrics.total) * 100;
+        
+        prometheus.gauge('streaming_events_total', this.metrics.total);
+        prometheus.gauge('streaming_events_valid', this.metrics.valid);
+        prometheus.gauge('streaming_events_invalid', this.metrics.invalid);
+        prometheus.gauge('streaming_error_rate', errorRate);
+
+        // Alert if error rate too high
+        if (errorRate > 1.0) {
+            alertManager.send({
+                severity: 'warning',
+                message: `High error rate: ${errorRate.toFixed(2)}%`
+            });
+        }
+    }
+}</code></pre>
+
+    <h2>6.6 Schema Evolution</h2>
+    <h3>6.6.1 Schema Registry</h3>
+    <pre><code>// Register schema version
+const schemaRegistry = new SchemaRegistry({
+    host: 'http://schema-registry:8081'
+});
+
+// V1 schema
+const schemaV1 = {
+    type: 'record',
+    name: 'UserEvent',
+    namespace: 'com.example',
+    fields: [
+        { name: 'userId', type: 'string' },
+        { name: 'eventType', type: 'string' }
+    ]
+};
+
+// V2 schema (added optional field - backward compatible)
+const schemaV2 = {
+    type: 'record',
+    name: 'UserEvent',
+    namespace: 'com.example',
+    fields: [
+        { name: 'userId', type: 'string' },
+        { name: 'eventType', type: 'string' },
+        { name: 'sessionId', type: ['null', 'string'], default: null }
+    ]
+};
+
+// Register both versions
+await schemaRegistry.register('user-events-value', schemaV1);
+await schemaRegistry.register('user-events-value', schemaV2);</code></pre>
+
+    <h3>6.6.2 Compatibility Modes</h3>
+    <table>
+        <tr><th>Mode</th><th>Description</th><th>Use Case</th></tr>
+        <tr><td>BACKWARD</td><td>New consumers, old producers</td><td>Most common</td></tr>
+        <tr><td>FORWARD</td><td>Old consumers, new producers</td><td>Producer upgrades first</td></tr>
+        <tr><td>FULL</td><td>Both directions compatible</td><td>Flexible evolution</td></tr>
+        <tr><td>NONE</td><td>No compatibility checks</td><td>Development only</td></tr>
+    </table>
+
+    <h2>6.7 Data Quality Testing</h2>
+    <h3>6.7.1 Unit Tests for Validation</h3>
+    <pre><code>describe('EventValidator', () => {
+    it('should accept valid event', () => {
+        const event = {
+            userId: 'user123',
+            eventType: 'CLICK',
+            timestamp: Date.now()
+        };
+        
+        const result = validator.validate(event);
+        expect(result.isValid).toBe(true);
+    });
+
+    it('should reject missing userId', () => {
+        const event = {
+            eventType: 'CLICK',
+            timestamp: Date.now()
+        };
+        
+        const result = validator.validate(event);
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toContain('userId required');
+    });
+
+    it('should reject old timestamps', () => {
+        const event = {
+            userId: 'user123',
+            eventType: 'CLICK',
+            timestamp: Date.now() - (48 * 60 * 60 * 1000)  // 48 hours ago
+        };
+        
+        const result = validator.validate(event);
+        expect(result.isValid).toBe(false);
+    });
+});</code></pre>
+
+    <h3>6.7.2 Integration Tests</h3>
+    <pre><code>describe('Stream Processing Pipeline', () => {
+    it('should process valid events', async () => {
+        const testEvent = createTestEvent();
+        await producer.send('test-topic', testEvent);
+        
+        const result = await waitForProcessing(testEvent.eventId);
+        expect(result.status).toBe('processed');
+    });
+
+    it('should send invalid events to DLQ', async () => {
+        const invalidEvent = { userId: null };  // Missing required field
+        await producer.send('test-topic', invalidEvent);
+        
+        const dlqMessage = await deadLetterQueue.poll();
+        expect(dlqMessage.errors).toBeDefined();
+    });
+});</code></pre>
+
+    <h2>6.8 Data Profiling</h2>
+    <pre><code>class DataProfiler {
+    async profile(stream, duration = 60000) {
+        const profile = {
+            eventCount: 0,
+            fieldStats: {},
+            valueDistributions: {}
+        };
+
+        const startTime = Date.now();
+        
+        while (Date.now() - startTime < duration) {
+            const event = await stream.poll();
+            profile.eventCount++;
+
+            for (const [field, value] of Object.entries(event)) {
+                if (!profile.fieldStats[field]) {
+                    profile.fieldStats[field] = {
+                        nullCount: 0,
+                        uniqueValues: new Set(),
+                        typeDistribution: {}
+                    };
+                }
+
+                const stats = profile.fieldStats[field];
+                
+                if (value === null || value === undefined) {
+                    stats.nullCount++;
+                } else {
+                    stats.uniqueValues.add(value);
+                    const type = typeof value;
+                    stats.typeDistribution[type] = (stats.typeDistribution[type] || 0) + 1;
+                }
+            }
+        }
+
+        return this.generateReport(profile);
+    }
+
+    generateReport(profile) {
+        const report = {
+            totalEvents: profile.eventCount,
+            fields: {}
+        };
+
+        for (const [field, stats] of Object.entries(profile.fieldStats)) {
+            report.fields[field] = {
+                nullPercentage: (stats.nullCount / profile.eventCount) * 100,
+                uniqueCount: stats.uniqueValues.size,
+                cardinality: stats.uniqueValues.size / profile.eventCount,
+                types: stats.typeDistribution
+            };
+        }
+
+        return report;
+    }
+}</code></pre>
+
+    <h2>6.9 Best Practices</h2>
+    <ol>
+        <li>Validate early in the pipeline to avoid processing bad data</li>
+        <li>Use schema registries for schema management and evolution</li>
+        <li>Implement dead letter queues for failed events</li>
+        <li>Monitor data quality metrics continuously</li>
+        <li>Use idempotent processing to handle duplicates</li>
+        <li>Profile data regularly to detect anomalies</li>
+        <li>Test validation logic thoroughly</li>
+        <li>Document data quality requirements and SLAs</li>
+    </ol>
+
+    <div class="highlight">
+        <strong>Looking Ahead:</strong> Chapter 7 explores streaming analytics and Complex Event Processing (CEP) for deriving insights from event streams.
+    </div>
+
+    <p style="text-align: center; margin-top: 50px; color: #64748b;">
+        © 2025 SmileStory Inc. / WIA · 弘益人間 (홍익인간) · Benefit All Humanity
+    </p>
+</body>
+</html>

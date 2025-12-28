@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: Smart Contract Standard | WIA-LEGAL-003</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --legal-color: #7C3AED;
+            --text: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #475569;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--bg-secondary);
+            padding: 3rem;
+            border-radius: 10px;
+        }
+
+        h1 { color: var(--legal-color); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--legal-color); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--legal-color); font-size: 1.4rem; margin: 2rem 0 1rem; }
+
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+
+        .highlight-box {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--legal-color);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 5px;
+        }
+
+        .info-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 5px;
+        }
+
+        .warning-box {
+            background: var(--bg);
+            border-left: 4px solid var(--warning);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 5px;
+        }
+
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            color: var(--legal-color);
+            font-weight: bold;
+        }
+
+        tr:hover { background: var(--bg-tertiary); }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin: 3rem 0;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--legal-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--success);
+            transform: translateY(-2px);
+        }
+
+        code {
+            background: var(--bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-family: 'Monaco', monospace;
+            color: var(--success);
+        }
+
+        pre {
+            background: var(--bg);
+            padding: 1.5rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-left: 4px solid var(--success);
+        }
+
+        pre code {
+            padding: 0;
+            color: var(--text);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">Chapter 3</p>
+        <h1>Smart Contract Architecture and Standards</h1>
+
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            Smart contracts are self-executing programs deployed on blockchain networks that automatically enforce agreement terms
+            through code. This chapter explores the architectural foundations of smart contracts, focusing on Solidity development
+            for Ethereum, execution models, oracle integration, and the WIA-LEGAL-003 standard for legal smart contracts that
+            bridge traditional law and blockchain technology.
+        </p>
+
+        <h2>Smart Contract Fundamentals</h2>
+
+        <p>
+            Nick Szabo first proposed smart contracts in 1994 as "computerized transaction protocols that execute the terms of a
+            contract." Blockchain technology made this vision practical by providing:
+        </p>
+
+        <ul>
+            <li><strong>Immutability:</strong> Once deployed, contract code cannot be altered (without explicit upgrade mechanisms)</li>
+            <li><strong>Transparency:</strong> All parties can inspect contract code and verify execution logic</li>
+            <li><strong>Trustless execution:</strong> No intermediary required; blockchain network enforces execution</li>
+            <li><strong>Atomic transactions:</strong> Contract operations either complete fully or revert entirely</li>
+            <li><strong>Determinism:</strong> Same inputs always produce same outputs, regardless of who executes</li>
+        </ul>
+
+        <h3>Ethereum Smart Contract Model</h3>
+
+        <p>
+            Ethereum pioneered general-purpose smart contracts through the Ethereum Virtual Machine (EVM), a Turing-complete
+            execution environment. Contracts are written in high-level languages (primarily Solidity or Vyper), compiled to EVM
+            bytecode, and deployed to blockchain addresses. Once deployed, anyone can invoke contract functions by sending
+            transactions containing function calls and required payment (in ETH or tokens).
+        </p>
+
+        <div class="info-box">
+            <h4 style="color: var(--legal-color); margin-bottom: 1rem;">Smart Contract Execution Flow</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>Actor</th>
+                        <th>Action</th>
+                        <th>Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1. Development</td>
+                        <td>Developer</td>
+                        <td>Write Solidity contract, compile to bytecode</td>
+                        <td>Free (local)</td>
+                    </tr>
+                    <tr>
+                        <td>2. Testing</td>
+                        <td>Developer</td>
+                        <td>Deploy to testnet (Goerli, Sepolia), verify behavior</td>
+                        <td>Free (test ETH)</td>
+                    </tr>
+                    <tr>
+                        <td>3. Deployment</td>
+                        <td>Developer</td>
+                        <td>Deploy bytecode to mainnet via transaction</td>
+                        <td>200K-2M gas (~$50-$500)</td>
+                    </tr>
+                    <tr>
+                        <td>4. Invocation</td>
+                        <td>User</td>
+                        <td>Send transaction calling contract function</td>
+                        <td>21K-500K gas (~$5-$125)</td>
+                    </tr>
+                    <tr>
+                        <td>5. Execution</td>
+                        <td>EVM (all nodes)</td>
+                        <td>Execute bytecode, update state, emit events</td>
+                        <td>Included in step 4</td>
+                    </tr>
+                    <tr>
+                        <td>6. Verification</td>
+                        <td>Network</td>
+                        <td>Miners/validators verify execution, include in block</td>
+                        <td>Included in step 4</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="margin-top: 1rem; font-style: italic; color: var(--text-secondary);">
+                Gas costs vary with network congestion. Amounts shown assume 50 Gwei gas price and $2,500 ETH.
+            </p>
+        </div>
+
+        <h2>Solidity Smart Contract Development</h2>
+
+        <p>
+            Solidity is a statically-typed, contract-oriented language designed for Ethereum. It features inheritance, libraries,
+            and complex user-defined types. Here's a complete example of a legal purchase agreement implemented as a smart contract:
+        </p>
+
+        <pre><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+/**
+ * @title PurchaseAgreement
+ * @dev WIA-LEGAL-003 compliant smart legal contract for goods purchase
+ * @notice This contract implements a legally binding purchase agreement with:
+ *   - Escrow payment holding
+ *   - Delivery confirmation mechanism
+ *   - Automated dispute resolution with arbiter
+ *   - Refund protection for buyer
+ *   - Payment guarantee for seller
+ */
+contract PurchaseAgreement {
+    // Contract parties
+    address payable public buyer;
+    address payable public seller;
+    address public arbiter;
+
+    // Contract terms
+    uint256 public purchasePrice;
+    string public itemDescription;
+    uint256 public deliveryDeadline;
+
+    // Contract state
+    enum State { Created, Funded, Delivered, Disputed, Completed, Refunded }
+    State public currentState;
+
+    // Events for legal audit trail
+    event ContractCreated(address buyer, address seller, uint256 price, uint256 deadline);
+    event FundsDeposited(address buyer, uint256 amount, uint256 timestamp);
+    event ItemShipped(address seller, string trackingNumber, uint256 timestamp);
+    event DeliveryConfirmed(address buyer, uint256 timestamp);
+    event DisputeRaised(address initiator, string reason, uint256 timestamp);
+    event DisputeResolved(address arbiter, address winner, uint256 timestamp);
+    event PaymentReleased(address seller, uint256 amount, uint256 timestamp);
+    event RefundIssued(address buyer, uint256 amount, uint256 timestamp);
+
+    // Tracking information
+    string public trackingNumber;
+    uint256 public shippedTimestamp;
+    string public disputeReason;
+
+    // Modifiers for access control
+    modifier onlyBuyer() {
+        require(msg.sender == buyer, "Only buyer can call this function");
+        _;
+    }
+
+    modifier onlySeller() {
+        require(msg.sender == seller, "Only seller can call this function");
+        _;
+    }
+
+    modifier onlyArbiter() {
+        require(msg.sender == arbiter, "Only arbiter can call this function");
+        _;
+    }
+
+    modifier inState(State expectedState) {
+        require(currentState == expectedState, "Invalid state for this operation");
+        _;
+    }
+
+    /**
+     * @dev Constructor creates purchase agreement contract
+     * @param _seller Address of the seller
+     * @param _arbiter Address of neutral third-party arbiter
+     * @param _itemDescription Description of item being purchased
+     * @param _deliveryDeadline Unix timestamp for delivery deadline
+     */
+    constructor(
+        address payable _seller,
+        address _arbiter,
+        string memory _itemDescription,
+        uint256 _deliveryDeadline
+    ) payable {
+        require(_seller != address(0), "Seller address cannot be zero");
+        require(_arbiter != address(0), "Arbiter address cannot be zero");
+        require(_deliveryDeadline > block.timestamp, "Deadline must be in future");
+        require(msg.value > 0, "Purchase price must be greater than zero");
+
+        buyer = payable(msg.sender);
+        seller = _seller;
+        arbiter = _arbiter;
+        itemDescription = _itemDescription;
+        deliveryDeadline = _deliveryDeadline;
+        purchasePrice = msg.value;
+        currentState = State.Funded;
+
+        emit ContractCreated(buyer, seller, purchasePrice, deliveryDeadline);
+        emit FundsDeposited(buyer, msg.value, block.timestamp);
+    }
+
+    /**
+     * @dev Seller confirms item shipped and provides tracking
+     * @param _trackingNumber Shipping tracking number for verification
+     */
+    function confirmShipment(string memory _trackingNumber)
+        external
+        onlySeller
+        inState(State.Funded)
+    {
+        require(bytes(_trackingNumber).length > 0, "Tracking number required");
+        require(block.timestamp < deliveryDeadline, "Delivery deadline passed");
+
+        trackingNumber = _trackingNumber;
+        shippedTimestamp = block.timestamp;
+
+        emit ItemShipped(seller, _trackingNumber, block.timestamp);
+    }
+
+    /**
+     * @dev Buyer confirms receipt and releases payment to seller
+     */
+    function confirmDelivery()
+        external
+        onlyBuyer
+        inState(State.Funded)
+    {
+        require(bytes(trackingNumber).length > 0, "Item not yet shipped");
+
+        currentState = State.Completed;
+        uint256 payment = purchasePrice;
+
+        emit DeliveryConfirmed(buyer, block.timestamp);
+        emit PaymentReleased(seller, payment, block.timestamp);
+
+        // Transfer funds to seller
+        seller.transfer(payment);
+    }
+
+    /**
+     * @dev Either party can raise dispute if issues arise
+     * @param reason Explanation of why dispute is being raised
+     */
+    function raiseDispute(string memory reason)
+        external
+        inState(State.Funded)
+    {
+        require(
+            msg.sender == buyer || msg.sender == seller,
+            "Only contract parties can raise dispute"
+        );
+        require(bytes(reason).length > 0, "Dispute reason required");
+
+        currentState = State.Disputed;
+        disputeReason = reason;
+
+        emit DisputeRaised(msg.sender, reason, block.timestamp);
+    }
+
+    /**
+     * @dev Arbiter resolves dispute by awarding funds to one party
+     * @param favorBuyer If true, refund buyer; if false, pay seller
+     */
+    function resolveDispute(bool favorBuyer)
+        external
+        onlyArbiter
+        inState(State.Disputed)
+    {
+        address payable winner = favorBuyer ? buyer : seller;
+        State finalState = favorBuyer ? State.Refunded : State.Completed;
+        uint256 amount = purchasePrice;
+
+        currentState = finalState;
+
+        emit DisputeResolved(arbiter, winner, block.timestamp);
+
+        if (favorBuyer) {
+            emit RefundIssued(buyer, amount, block.timestamp);
+        } else {
+            emit PaymentReleased(seller, amount, block.timestamp);
+        }
+
+        // Transfer funds to winner
+        winner.transfer(amount);
+    }
+
+    /**
+     * @dev Buyer can claim refund if seller misses delivery deadline
+     */
+    function claimRefundAfterDeadline()
+        external
+        onlyBuyer
+        inState(State.Funded)
+    {
+        require(block.timestamp > deliveryDeadline, "Deadline not yet passed");
+        require(currentState != State.Delivered, "Item already delivered");
+
+        currentState = State.Refunded;
+        uint256 refund = purchasePrice;
+
+        emit RefundIssued(buyer, refund, block.timestamp);
+
+        // Return funds to buyer
+        buyer.transfer(refund);
+    }
+
+    /**
+     * @dev Get complete contract status for legal review
+     * @return All relevant contract data as structured object
+     */
+    function getContractStatus()
+        external
+        view
+        returns (
+            address buyerAddr,
+            address sellerAddr,
+            uint256 price,
+            string memory description,
+            State state,
+            uint256 deadline,
+            string memory tracking,
+            uint256 shipped
+        )
+    {
+        return (
+            buyer,
+            seller,
+            purchasePrice,
+            itemDescription,
+            currentState,
+            deliveryDeadline,
+            trackingNumber,
+            shippedTimestamp
+        );
+    }
+}
+</code></pre>
+
+        <h3>Contract Design Patterns</h3>
+
+        <p>
+            The above contract demonstrates several critical smart contract patterns for legal agreements:
+        </p>
+
+        <div class="highlight-box">
+            <h4 style="color: var(--legal-color); margin-bottom: 1rem;">Legal Smart Contract Patterns</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pattern</th>
+                        <th>Purpose</th>
+                        <th>Implementation</th>
+                        <th>Legal Benefit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>State Machine</td>
+                        <td>Track contract lifecycle</td>
+                        <td>enum State with modifiers</td>
+                        <td>Clear contract progression</td>
+                    </tr>
+                    <tr>
+                        <td>Escrow</td>
+                        <td>Hold funds until conditions met</td>
+                        <td>payable constructor, conditional release</td>
+                        <td>Payment security for both parties</td>
+                    </tr>
+                    <tr>
+                        <td>Event Logging</td>
+                        <td>Create immutable audit trail</td>
+                        <td>emit events for all state changes</td>
+                        <td>Legal evidence of all actions</td>
+                    </tr>
+                    <tr>
+                        <td>Access Control</td>
+                        <td>Restrict function calls by role</td>
+                        <td>onlyBuyer, onlySeller modifiers</td>
+                        <td>Enforce party-specific rights</td>
+                    </tr>
+                    <tr>
+                        <td>Dispute Resolution</td>
+                        <td>Handle contract breaches</td>
+                        <td>Arbiter role with dispute functions</td>
+                        <td>Alternative to litigation</td>
+                    </tr>
+                    <tr>
+                        <td>Deadline Enforcement</td>
+                        <td>Time-based obligations</td>
+                        <td>require(block.timestamp &lt; deadline)</td>
+                        <td>Automatic deadline compliance</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Oracle Integration for Real-World Data</h2>
+
+        <p>
+            Smart contracts are deterministic and cannot directly access external data (APIs, databases, real-world events). Oracles
+            solve this by providing trusted data feeds to blockchain. Legal contracts often require external data: exchange rates,
+            weather conditions, shipment tracking, court decisions, or regulatory updates.
+        </p>
+
+        <h3>Chainlink Oracle Integration</h3>
+
+        <p>
+            Chainlink is the leading decentralized oracle network, providing reliable external data to smart contracts. Here's how
+            to integrate price feeds for international contracts with automatic currency conversion:
+        </p>
+
+        <pre><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
+/**
+ * @title InternationalPurchaseAgreement
+ * @dev Purchase contract with automatic currency conversion using Chainlink oracles
+ */
+contract InternationalPurchaseAgreement {
+    AggregatorV3Interface internal ethUsdPriceFeed;
+    AggregatorV3Interface internal eurUsdPriceFeed;
+
+    address payable public buyer;
+    address payable public seller;
+    uint256 public priceInUSD; // Price in USD cents (e.g., 100000 = $1,000.00)
+    uint256 public priceInEUR; // Price in EUR cents
+
+    /**
+     * @dev Constructor with Chainlink price feed addresses
+     * Mainnet ETH/USD: 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
+     * Mainnet EUR/USD: 0xb49f677943BC038e9857d61E7d053CaA2C1734C1
+     */
+    constructor(
+        address payable _seller,
+        uint256 _priceInUSD,
+        address _ethUsdFeed,
+        address _eurUsdFeed
+    ) {
+        buyer = payable(msg.sender);
+        seller = _seller;
+        priceInUSD = _priceInUSD;
+
+        ethUsdPriceFeed = AggregatorV3Interface(_ethUsdFeed);
+        eurUsdPriceFeed = AggregatorV3Interface(_eurUsdFeed);
+    }
+
+    /**
+     * @dev Get latest ETH price in USD from Chainlink oracle
+     * @return price ETH/USD price with 8 decimal places
+     */
+    function getLatestEthPrice() public view returns (int) {
+        (
+            /* uint80 roundID */,
+            int price,
+            /* uint startedAt */,
+            /* uint timeStamp */,
+            /* uint80 answeredInRound */
+        ) = ethUsdPriceFeed.latestRoundData();
+        return price; // Returns price like 250000000000 for $2,500.00
+    }
+
+    /**
+     * @dev Calculate required ETH payment based on USD price
+     * @return Required ETH amount in wei
+     */
+    function calculateEthPayment() public view returns (uint256) {
+        int ethPriceUsd = getLatestEthPrice(); // 8 decimals
+        require(ethPriceUsd > 0, "Invalid ETH price from oracle");
+
+        // priceInUSD has 2 decimals (cents), ethPriceUsd has 8 decimals
+        // Result should be in wei (18 decimals)
+        // Formula: (priceInUSD * 10^18) / (ethPriceUsd * 10^6)
+        uint256 requiredWei = (priceInUSD * 1e18) / (uint256(ethPriceUsd) * 1e6);
+        return requiredWei;
+    }
+
+    /**
+     * @dev Buyer deposits payment, automatically converted from USD price
+     */
+    function depositPayment() external payable {
+        uint256 requiredPayment = calculateEthPayment();
+        require(msg.value >= requiredPayment, "Insufficient payment");
+
+        // Refund excess payment
+        if (msg.value > requiredPayment) {
+            payable(msg.sender).transfer(msg.value - requiredPayment);
+        }
+    }
+
+    /**
+     * @dev Get EUR equivalent of contract price
+     * @return Price in EUR cents
+     */
+    function getPriceInEUR() public view returns (uint256) {
+        (
+            /* uint80 roundID */,
+            int eurUsdPrice,
+            /* uint startedAt */,
+            /* uint timeStamp */,
+            /* uint80 answeredInRound */
+        ) = eurUsdPriceFeed.latestRoundData();
+        require(eurUsdPrice > 0, "Invalid EUR price from oracle");
+
+        // Convert USD to EUR: priceInUSD / (EUR/USD rate)
+        // eurUsdPrice has 8 decimals, represents EUR per USD
+        uint256 priceInEurCents = (priceInUSD * 1e8) / uint256(eurUsdPrice);
+        return priceInEurCents;
+    }
+}
+</code></pre>
+
+        <div class="info-box">
+            <h4 style="color: var(--legal-color); margin-bottom: 1rem;">Common Oracle Use Cases for Legal Contracts</h4>
+            <ul>
+                <li><strong>Price Feeds:</strong> Currency exchange rates, commodity prices, stock prices for financial contracts</li>
+                <li><strong>Weather Data:</strong> Temperature, precipitation, natural disasters for insurance and agriculture contracts</li>
+                <li><strong>Shipping Data:</strong> Package delivery confirmation, customs clearance for logistics contracts</li>
+                <li><strong>Identity Verification:</strong> KYC/AML checks, accredited investor status for securities contracts</li>
+                <li><strong>Legal Events:</strong> Court decisions, regulatory changes, license status for compliance contracts</li>
+                <li><strong>IoT Data:</strong> Equipment sensors, vehicle telematics, facility access for asset monitoring contracts</li>
+                <li><strong>Off-chain Computation:</strong> Complex calculations, AI model outputs for algorithmic contracts</li>
+            </ul>
+        </div>
+
+        <h2>WIA-LEGAL-003 Standard Specification</h2>
+
+        <p>
+            The WIA-LEGAL-003 standard defines requirements for legal smart contracts to ensure enforceability, auditability, and
+            compliance with traditional legal frameworks. All compliant contracts must implement these interfaces and behaviors:
+        </p>
+
+        <h3>Core Interface Requirements</h3>
+
+        <pre><code>// SPDX-License-Identifier: CC-BY-SA-4.0
+pragma solidity ^0.8.20;
+
+/**
+ * @title IWIALEGAL003
+ * @dev Interface for WIA-LEGAL-003 compliant smart legal contracts
+ */
+interface IWIALEGAL003 {
+    // Required events for legal audit trail
+    event ContractCreated(address indexed creator, bytes32 indexed contractHash, uint256 timestamp);
+    event PartyAdded(address indexed party, string role, uint256 timestamp);
+    event StateChanged(uint8 indexed oldState, uint8 indexed newState, address indexed initiator);
+    event TermsAccepted(address indexed party, bytes32 termsHash, uint256 timestamp);
+    event ObligationFulfilled(bytes32 indexed obligationId, address indexed fulfiller, uint256 timestamp);
+    event DisputeInitiated(address indexed initiator, string reason, uint256 timestamp);
+    event DisputeResolved(address indexed resolver, bytes32 resolution, uint256 timestamp);
+
+    // Required metadata functions
+    function getContractHash() external view returns (bytes32);
+    function getParties() external view returns (address[] memory);
+    function getCurrentState() external view returns (uint8);
+    function getCreationTimestamp() external view returns (uint256);
+    function getLegalJurisdiction() external view returns (string memory);
+
+    // Required operational functions
+    function acceptTerms(bytes32 termsHash) external;
+    function fulfillObligation(bytes32 obligationId) external;
+    function initiateDispute(string calldata reason) external;
+
+    // Required compliance functions
+    function getAuditLog() external view returns (bytes memory);
+    function isCompliant() external view returns (bool);
+}
+</code></pre>
+
+        <h3>Legal Metadata Standard</h3>
+
+        <p>
+            WIA-LEGAL-003 compliant contracts must embed comprehensive legal metadata linking blockchain execution to traditional
+            legal frameworks:
+        </p>
+
+        <pre><code>/**
+ * @title LegalMetadata
+ * @dev Standard metadata structure for legal smart contracts
+ */
+struct LegalMetadata {
+    // Identification
+    string contractTitle;           // "Purchase Agreement for Widget Model X"
+    bytes32 contractHash;            // SHA-256 of complete legal prose
+    string legalProseURI;            // IPFS or Arweave URI of full legal document
+
+    // Parties
+    Party[] parties;                 // Array of all contract parties
+
+    // Jurisdiction and Law
+    string governingLaw;             // "Delaware General Corporation Law"
+    string jurisdiction;             // "Courts of Delaware"
+    string arbitrationRules;         // "AAA Commercial Arbitration Rules"
+
+    // Temporal
+    uint256 effectiveDate;           // Unix timestamp when contract becomes effective
+    uint256 expirationDate;          // Unix timestamp when contract expires (0 if perpetual)
+
+    // Compliance
+    string[] regulatoryFrameworks;   // ["SEC Rule 10b-5", "GDPR Article 6"]
+    bool requiresKYC;                // Whether parties need KYC verification
+    uint256 minimumAge;              // Minimum age for parties (0 if not applicable)
+
+    // Amendment
+    bool isAmendable;                // Whether contract can be amended
+    address amendmentAuthority;      // Who can propose amendments
+    uint256 amendmentThreshold;      // Required votes for amendment (basis points)
+}
+
+struct Party {
+    address walletAddress;           // Ethereum address
+    string legalName;                // "Acme Corporation"
+    string role;                     // "Buyer", "Seller", "Guarantor"
+    bytes32 identityHash;            // Hash of KYC/identity verification
+    bool hasAccepted;                // Whether party accepted terms
+    uint256 acceptanceTimestamp;     // When party accepted
+}
+</code></pre>
+
+        <h2>Gas Optimization for Legal Contracts</h2>
+
+        <p>
+            Legal contracts often involve complex logic and extensive state storage, making gas optimization critical for practical
+            deployment. Key optimization strategies include:
+        </p>
+
+        <div class="highlight-box">
+            <h4 style="color: var(--legal-color); margin-bottom: 1rem;">Gas Optimization Techniques</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Technique</th>
+                        <th>Description</th>
+                        <th>Gas Savings</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Use uint256</td>
+                        <td>EVM operates on 256-bit words</td>
+                        <td>10-20%</td>
+                        <td>uint256 instead of uint8, uint16</td>
+                    </tr>
+                    <tr>
+                        <td>Pack structs</td>
+                        <td>Combine variables into single storage slots</td>
+                        <td>20-40%</td>
+                        <td>Group uint128 + address (both 128-bit)</td>
+                    </tr>
+                    <tr>
+                        <td>Use events</td>
+                        <td>Store data in logs instead of state</td>
+                        <td>80-90%</td>
+                        <td>emit FullText(text) vs storing string</td>
+                    </tr>
+                    <tr>
+                        <td>Short-circuit logic</td>
+                        <td>Order conditions by likelihood</td>
+                        <td>5-15%</td>
+                        <td>require(cheap) before require(expensive)</td>
+                    </tr>
+                    <tr>
+                        <td>Immutable variables</td>
+                        <td>Use immutable for constants set in constructor</td>
+                        <td>15-25%</td>
+                        <td>address immutable seller;</td>
+                    </tr>
+                    <tr>
+                        <td>Custom errors</td>
+                        <td>Use custom errors instead of require strings</td>
+                        <td>30-50%</td>
+                        <td>error Unauthorized(); revert Unauthorized();</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Optimized Contract Example</h3>
+
+        <pre><code>// Gas-optimized version with custom errors and struct packing
+contract OptimizedPurchaseAgreement {
+    // Custom errors (saves 30-50% vs require strings)
+    error Unauthorized();
+    error InvalidState();
+    error DeadlinePassed();
+    error InsufficientPayment();
+
+    // Packed struct (fits in 2 storage slots instead of 4)
+    struct CompactParty {
+        address payable wallet;      // 20 bytes
+        uint88 contribution;         // 11 bytes (enough for 3.09e26 wei)
+        bool hasAccepted;            // 1 byte
+        // Total: 32 bytes = 1 slot
+    }
+
+    // Immutable variables (cheaper than storage)
+    address public immutable arbiter;
+    uint256 public immutable deliveryDeadline;
+    uint256 public immutable purchasePrice;
+
+    // Packed state variables
+    CompactParty public buyer;
+    CompactParty public seller;
+    uint8 public state;
+
+    constructor(
+        address payable _seller,
+        address _arbiter,
+        uint256 _deadline
+    ) payable {
+        if (msg.value == 0) revert InsufficientPayment();
+        if (_deadline <= block.timestamp) revert DeadlinePassed();
+
+        buyer = CompactParty(payable(msg.sender), uint88(msg.value), true);
+        seller = CompactParty(_seller, 0, false);
+        arbiter = _arbiter;
+        deliveryDeadline = _deadline;
+        purchasePrice = msg.value;
+        state = 1; // Funded
+    }
+
+    function confirmDelivery() external {
+        if (msg.sender != buyer.wallet) revert Unauthorized();
+        if (state != 1) revert InvalidState();
+
+        state = 3; // Completed
+        seller.wallet.transfer(purchasePrice);
+    }
+}
+</code></pre>
+
+        <h2>Testing and Verification</h2>
+
+        <p>
+            Legal smart contracts require rigorous testing beyond typical software QA. Bugs can result in permanent loss of funds
+            or unenforceable agreements. A comprehensive testing strategy includes:
+        </p>
+
+        <ul>
+            <li><strong>Unit tests:</strong> Test each function in isolation using Hardhat or Foundry frameworks</li>
+            <li><strong>Integration tests:</strong> Test complete contract workflows and party interactions</li>
+            <li><strong>Fuzzing:</strong> Use property-based testing to find edge cases (Echidna, Foundry fuzz)</li>
+            <li><strong>Formal verification:</strong> Mathematically prove contract correctness (Certora, K Framework)</li>
+            <li><strong>Security audits:</strong> Professional auditors review for vulnerabilities (OpenZeppelin, Trail of Bits)</li>
+            <li><strong>Economic simulation:</strong> Model game-theoretic attack scenarios and incentives</li>
+            <li><strong>Legal review:</strong> Attorneys verify blockchain execution matches legal intent</li>
+        </ul>
+
+        <div class="warning-box">
+            <h4 style="color: var(--warning); margin-bottom: 1rem;">Common Smart Contract Vulnerabilities</h4>
+            <ul>
+                <li><strong>Reentrancy:</strong> External calls allowing recursive exploitation (use checks-effects-interactions pattern)</li>
+                <li><strong>Integer overflow/underflow:</strong> Arithmetic errors (Solidity 0.8+ has built-in protection)</li>
+                <li><strong>Access control bugs:</strong> Missing or incorrect permission checks (use OpenZeppelin AccessControl)</li>
+                <li><strong>Front-running:</strong> Miners/bots exploiting transaction order (use commit-reveal schemes)</li>
+                <li><strong>Timestamp manipulation:</strong> Miners slightly adjusting block.timestamp (allow 15-minute tolerance)</li>
+                <li><strong>Denial of service:</strong> Gas limits or failed transfers preventing operations (pull over push payments)</li>
+                <li><strong>Oracle manipulation:</strong> Exploiting price feed data (use multiple oracles, time-weighted averages)</li>
+            </ul>
+        </div>
+
+        <h2>Deployment and Lifecycle Management</h2>
+
+        <p>
+            Deploying legal smart contracts to mainnet requires careful planning. Once deployed, contracts are immutable (unless
+            explicitly designed otherwise), so errors cannot be easily corrected. Best practices include:
+        </p>
+
+        <div class="info-box">
+            <h4 style="color: var(--legal-color); margin-bottom: 1rem;">Deployment Checklist</h4>
+            <ol>
+                <li>Complete development and unit testing on local blockchain (Hardhat, Anvil)</li>
+                <li>Deploy to public testnet (Sepolia, Goerli) and conduct integration testing</li>
+                <li>Perform security audit by qualified firm (budget $15K-$100K depending on complexity)</li>
+                <li>Implement audit recommendations and retest</li>
+                <li>Conduct legal review to verify code matches intended legal agreement</li>
+                <li>Prepare deployment transaction with accurate constructor parameters</li>
+                <li>Deploy to mainnet during low gas price period (typically weekends)</li>
+                <li>Verify contract source code on Etherscan for transparency</li>
+                <li>Document contract address and ABI for party interaction</li>
+                <li>Monitor contract execution and events through blockchain explorers</li>
+            </ol>
+        </div>
+
+        <h3>Upgradeability Strategies</h3>
+
+        <p>
+            While immutability provides certainty, legal contracts sometimes need amendments. Three approaches enable upgrades:
+        </p>
+
+        <ul>
+            <li><strong>Proxy pattern:</strong> Separate storage (proxy) from logic (implementation), allowing logic upgrades while preserving state</li>
+            <li><strong>Migration contract:</strong> Deploy new version and migrate state/funds through administrative function</li>
+            <li><strong>Amendment registry:</strong> Original contract remains but points to amendment contracts for modified terms</li>
+        </ul>
+
+        <div class="highlight-box">
+            <h4 style="color: var(--legal-color); margin-bottom: 1rem;">Chapter Summary</h4>
+            <ul>
+                <li>Smart contracts are self-executing programs on blockchain providing immutability, transparency, and trustless enforcement</li>
+                <li>Ethereum's Solidity language enables complex legal agreements through state machines, escrow, and event logging</li>
+                <li>Oracles bridge blockchain and real world by providing external data feeds for price, weather, shipping, and regulatory information</li>
+                <li>WIA-LEGAL-003 standard requires specific interfaces, events, and metadata for legal enforceability</li>
+                <li>Gas optimization techniques can reduce deployment costs by 50-80% through efficient variable packing and custom errors</li>
+                <li>Comprehensive testing including formal verification and security audits is essential before mainnet deployment</li>
+                <li>Deployment requires careful planning with testnet trials, audits, and legal review before immutable mainnet release</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <h4 style="color: var(--legal-color); margin-bottom: 1rem;">Review Questions</h4>
+            <ol>
+                <li>Explain the five key properties that blockchain provides to make smart contracts practical and enforceable.</li>
+                <li>What is the purpose of the state machine pattern in legal smart contracts, and how does it prevent invalid operations?</li>
+                <li>Why do smart contracts need oracles, and what are three common oracle use cases for legal agreements?</li>
+                <li>Describe how the WIA-LEGAL-003 LegalMetadata structure links blockchain execution to traditional legal frameworks.</li>
+                <li>What gas optimization techniques can reduce smart contract deployment costs, and which provides the largest savings?</li>
+                <li>Why is reentrancy a critical vulnerability in payment-handling contracts, and how is it prevented?</li>
+                <li>Outline the complete deployment checklist from development through mainnet release for a legal smart contract.</li>
+            </ol>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="chapter-02.html" class="btn">← Previous Chapter</a>
+            <a href="index.html" class="btn">Table of Contents</a>
+            <a href="chapter-04.html" class="btn">Next Chapter →</a>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-secondary);">
+            <p style="margin-bottom: 10px;">WIA-LEGAL-003: Smart Legal Contract Standard</p>
+            <p style="color: var(--legal-color); font-weight: bold;">弘益人間 (홍익인간) · Benefit All Humanity</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">© 2025 World Industry Association. Licensed under CC BY-SA 4.0</p>
+        </div>
+    </div>
+</body>
+</html>

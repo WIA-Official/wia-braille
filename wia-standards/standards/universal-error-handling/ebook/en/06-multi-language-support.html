@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: Multi-Language Implementation | WIA-CORE-010</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: rgba(30, 41, 59, 0.4); padding: 3rem; border-radius: 15px; border: 2px solid #6B7280; }
+        .chapter-header { border-bottom: 3px solid #6B7280; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #6B7280; font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #6B7280; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; color: #6B7280; margin: 2.5rem 0 1.5rem 0; border-left: 4px solid #6B7280; padding-left: 1rem; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; font-size: 1.1rem; }
+        .code-example { background: #0f172a; border: 2px solid #475569; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto; }
+        .code-example pre { color: #94a3b8; font-family: 'Courier New', monospace; font-size: 0.95rem; line-height: 1.6; }
+        ul { margin: 1.5rem 0 1.5rem 2rem; color: #cbd5e1; }
+        li { margin: 0.75rem 0; line-height: 1.6; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #475569; }
+        .nav-button { padding: 1rem 2rem; background: linear-gradient(135deg, #6B7280 0%, #4b5563 100%); border: none; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; }
+        strong { color: #6B7280; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 6</div>
+            <h1>Multi-Language Implementation</h1>
+        </div>
+
+        <h2>6.1 The 99 Languages Challenge</h2>
+
+        <p>WIA-CORE-010 supports 99 programming languages, from mainstream (JavaScript, Python, Java) to niche (Haskell, Erlang, Assembly). This chapter demonstrates implementation patterns across language paradigms.</p>
+
+        <h2>6.2 Object-Oriented Languages (Java, C#, TypeScript)</h2>
+
+        <div class="code-example">
+            <pre>
+// TypeScript
+class WIAError extends Error {
+  constructor(public config: {
+    code: string;
+    message: string;
+    severity: 'CRITICAL' | 'ERROR' | 'WARNING' | 'INFO';
+    recovery: 'RETRY_WITH_BACKOFF' | 'FALLBACK' | 'CIRCUIT_BREAKER' | 'GRACEFUL_DEGRADATION' | 'FAIL_FAST' | 'MANUAL';
+    context?: Record<string, any>;
+    correlationId?: string;
+  }) {
+    super(config.message);
+    this.name = 'WIAError';
+    this.config.correlationId = config.correlationId || generateUUID();
+  }
+
+  toJSON() {
+    return {
+      code: this.config.code,
+      message: this.message,
+      severity: this.config.severity,
+      recovery: this.config.recovery,
+      correlationId: this.config.correlationId,
+      context: this.config.context,
+      timestamp: new Date().toISOString(),
+      stackTrace: this.stack
+    };
+  }
+}
+
+// Usage
+throw new WIAError({
+  code: 'WIA-AUTH-INVALID-001',
+  message: 'Invalid credentials',
+  severity: 'ERROR',
+  recovery: 'FAIL_FAST'
+});
+            </pre>
+        </div>
+
+        <h2>6.3 Functional Languages (Haskell, Erlang, Elixir)</h2>
+
+        <div class="code-example">
+            <pre>
+-- Haskell
+data WIAError = WIAError
+  { errorCode :: String
+  , errorMessage :: String
+  , errorSeverity :: Severity
+  , errorRecovery :: Recovery
+  , errorContext :: Maybe Value
+  , errorCorrelationId :: UUID
+  }
+
+data Severity = Critical | Error | Warning | Info
+data Recovery = RetryWithBackoff | Fallback | CircuitBreaker | GracefulDegradation | FailFast | Manual
+
+-- Elixir
+defmodule WIAError do
+  defexception [:code, :message, :severity, :recovery, :context, :correlation_id]
+
+  @type t :: %__MODULE__{
+    code: String.t(),
+    message: String.t(),
+    severity: :critical | :error | :warning | :info,
+    recovery: :retry_with_backoff | :fallback | :circuit_breaker | :graceful_degradation | :fail_fast | :manual,
+    context: map(),
+    correlation_id: String.t()
+  }
+end
+
+# Usage
+raise WIAError,
+  code: "WIA-DB-TIMEOUT-015",
+  message: "Database timeout",
+  severity: :error,
+  recovery: :retry_with_backoff
+            </pre>
+        </div>
+
+        <h2>6.4 Systems Languages (C++, Rust, Go)</h2>
+
+        <div class="code-example">
+            <pre>
+// Rust
+#[derive(Debug, Clone)]
+pub struct WIAError {
+    pub code: String,
+    pub message: String,
+    pub severity: Severity,
+    pub recovery: Recovery,
+    pub context: Option<serde_json::Value>,
+    pub correlation_id: String,
+}
+
+impl WIAError {
+    pub fn new(code: &str, message: &str, severity: Severity, recovery: Recovery) -> Self {
+        WIAError {
+            code: code.to_string(),
+            message: message.to_string(),
+            severity,
+            recovery,
+            context: None,
+            correlation_id: uuid::Uuid::new_v4().to_string(),
+        }
+    }
+}
+
+// Go
+type WIAError struct {
+    Code          string                 `json:"code"`
+    Message       string                 `json:"message"`
+    Severity      string                 `json:"severity"`
+    Recovery      string                 `json:"recovery"`
+    Context       map[string]interface{} `json:"context,omitempty"`
+    CorrelationID string                 `json:"correlationId"`
+    Timestamp     time.Time              `json:"timestamp"`
+}
+
+func NewWIAError(code, message, severity, recovery string) *WIAError {
+    return &WIAError{
+        Code:          code,
+        Message:       message,
+        Severity:      severity,
+        Recovery:      recovery,
+        CorrelationID: uuid.New().String(),
+        Timestamp:     time.Now(),
+    }
+}
+            </pre>
+        </div>
+
+        <h2>6.5 Dynamic Languages (Python, Ruby, PHP)</h2>
+
+        <div class="code-example">
+            <pre>
+# Python
+class WIAError(Exception):
+    def __init__(self, code, message, severity, recovery, context=None, correlation_id=None):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.severity = severity
+        self.recovery = recovery
+        self.context = context or {}
+        self.correlation_id = correlation_id or str(uuid.uuid4())
+        self.timestamp = datetime.now().isoformat()
+
+    def to_dict(self):
+        return {
+            "code": self.code,
+            "message": self.message,
+            "severity": self.severity,
+            "recovery": self.recovery,
+            "context": self.context,
+            "correlationId": self.correlation_id,
+            "timestamp": self.timestamp
+        }
+
+// PHP
+class WIAError extends Exception {
+    private $code;
+    private $severity;
+    private $recovery;
+    private $context;
+    private $correlationId;
+
+    public function __construct(
+        string $code,
+        string $message,
+        string $severity,
+        string $recovery,
+        array $context = [],
+        ?string $correlationId = null
+    ) {
+        parent::__construct($message);
+        $this->code = $code;
+        $this->severity = $severity;
+        $this->recovery = $recovery;
+        $this->context = $context;
+        $this->correlationId = $correlationId ?? $this->generateUUID();
+    }
+}
+            </pre>
+        </div>
+
+        <h2>6.6 Web Assembly and Emerging Languages</h2>
+
+        <div class="code-example">
+            <pre>
+// AssemblyScript (WebAssembly)
+class WIAError extends Error {
+  code: string;
+  severity: string;
+  recovery: string;
+  correlationId: string;
+
+  constructor(code: string, message: string, severity: string, recovery: string) {
+    super(message);
+    this.code = code;
+    this.severity = severity;
+    this.recovery = recovery;
+    this.correlationId = generateUUID();
+  }
+}
+
+// Zig
+const WIAError = struct {
+    code: []const u8,
+    message: []const u8,
+    severity: Severity,
+    recovery: Recovery,
+    correlation_id: [36]u8,
+
+    pub const Severity = enum { Critical, Error, Warning, Info };
+    pub const Recovery = enum { RetryWithBackoff, Fallback, CircuitBreaker, GracefulDegradation, FailFast, Manual };
+};
+            </pre>
+        </div>
+
+        <h2>6.7 Language-Specific SDK Features</h2>
+
+        <p>Each SDK adapts to language conventions while maintaining standard compatibility:</p>
+
+        <ul>
+            <li><strong>JavaScript/TypeScript:</strong> Promise rejection handling, async/await integration</li>
+            <li><strong>Go:</strong> Error return values, error wrapping with fmt.Errorf</li>
+            <li><strong>Rust:</strong> Result&lt;T, WIAError&gt; types, ? operator integration</li>
+            <li><strong>Python:</strong> Context managers, exception chaining</li>
+            <li><strong>Java:</strong> Checked exceptions, try-with-resources</li>
+            <li><strong>Kotlin:</strong> Sealed classes, coroutine integration</li>
+            <li><strong>Swift:</strong> Error protocol, try/catch, Optional wrapping</li>
+            <li><strong>Elixir:</strong> Pattern matching on error tuples</li>
+        </ul>
+
+        <h2>6.8 Installation and Package Management</h2>
+
+        <div class="code-example">
+            <pre>
+# JavaScript/TypeScript (npm)
+npm install @wia/universal-error-handling
+
+# Python (pip)
+pip install wia-error-handling
+
+# Go (go get)
+go get github.com/wia-official/error-handling-go
+
+# Rust (Cargo.toml)
+wia-error-handling = "1.0"
+
+# Java (Maven)
+&lt;dependency&gt;
+  &lt;groupId&gt;dev.wia&lt;/groupId&gt;
+  &lt;artifactId&gt;error-handling&lt;/artifactId&gt;
+  &lt;version&gt;1.0.0&lt;/version&gt;
+&lt;/dependency&gt;
+
+# Ruby (Gemfile)
+gem 'wia-error-handling'
+
+# PHP (Composer)
+composer require wia/error-handling
+
+# Swift (Package.swift)
+.package(url: "https://github.com/wia-official/error-handling-swift", from: "1.0.0")
+            </pre>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="05-error-propagation.html" class="nav-button">← Chapter 5</a>
+            <a href="07-best-practices.html" class="nav-button">Chapter 7: Best Practices →</a>
+        </div>
+    </div>
+</body>
+</html>

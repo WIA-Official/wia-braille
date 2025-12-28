@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Certificate Management - WIA TLS-Lite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #e0e0e0; line-height: 1.8; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: rgba(236, 72, 153, 0.1); border-bottom: 3px solid #EC4899; padding: 30px 0; margin-bottom: 40px; }
+        h1 { color: #EC4899; font-size: 2.5em; margin-bottom: 10px; text-shadow: 0 0 20px rgba(236, 72, 153, 0.5); }
+        h2 { color: #EC4899; font-size: 2em; margin: 40px 0 20px 0; border-left: 5px solid #EC4899; padding-left: 15px; }
+        h3 { color: #EC4899; font-size: 1.5em; margin: 30px 0 15px 0; }
+        .breadcrumb { color: #808080; margin-bottom: 20px; }
+        .breadcrumb a { color: #EC4899; text-decoration: none; }
+        .content-section { background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 30px; margin-bottom: 30px; border: 1px solid rgba(236, 72, 153, 0.2); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(0, 0, 0, 0.3); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(236, 72, 153, 0.2); }
+        th { background: rgba(236, 72, 153, 0.3); color: #EC4899; font-weight: bold; }
+        tr:hover { background: rgba(236, 72, 153, 0.1); }
+        code { background: rgba(0, 0, 0, 0.5); padding: 2px 6px; border-radius: 4px; color: #EC4899; font-family: 'Courier New', monospace; }
+        pre { background: rgba(0, 0, 0, 0.5); border-left: 4px solid #EC4899; padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; }
+        pre code { background: none; padding: 0; color: #e0e0e0; }
+        .api-endpoint { background: rgba(236, 72, 153, 0.1); border-left: 4px solid #EC4899; padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .api-endpoint .method { display: inline-block; background: #EC4899; color: #fff; padding: 5px 15px; border-radius: 5px; font-weight: bold; margin-right: 10px; }
+        .certification-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin: 20px 0; }
+        .cert-item { background: rgba(236, 72, 153, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(236, 72, 153, 0.3); }
+        .cert-item h4 { color: #EC4899; margin-bottom: 8px; }
+        .navigation { display: flex; justify-content: space-between; margin: 40px 0; gap: 20px; }
+        .nav-button { background: rgba(236, 72, 153, 0.2); color: #EC4899; padding: 15px 30px; border-radius: 8px; text-decoration: none; border: 2px solid #EC4899; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-button:hover { background: #EC4899; color: #fff; transform: translateY(-2px); }
+        footer { text-align: center; padding: 30px 0; margin-top: 60px; border-top: 2px solid rgba(236, 72, 153, 0.3); color: #808080; }
+        footer .korean-text { color: #EC4899; font-size: 1.3em; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="breadcrumb"><a href="index.html">Home</a> / Chapter 4</div>
+            <h1>Chapter 4: Certificate Management</h1>
+        </header>
+
+        <div class="content-section">
+            <h2>Certificate Management for IoT Devices</h2>
+            <p>Certificate management presents unique challenges in IoT environments. Traditional X.509 certificates can be large and complex, consuming significant bandwidth and processing resources during validation. TLS-Lite addresses these challenges through compressed certificate formats, raw public key authentication, and efficient certificate chain validation optimized for constrained devices.</p>
+            <p>This chapter explores certificate provisioning strategies, compressed certificate formats, certificate caching techniques, and lightweight certificate validation mechanisms suitable for resource-constrained IoT deployments.</p>
+        </div>
+
+        <div class="content-section">
+            <h2>Certificate Format Comparison</h2>
+            <h3>Table 1: Certificate Format Sizes</h3>
+            <table>
+                <thead>
+                    <tr><th>Format</th><th>Typical Size</th><th>Compression</th><th>Use Case</th><th>TLS-Lite Support</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Standard X.509</td><td>1024-2048 bytes</td><td>None</td><td>Enterprise PKI</td><td>Optional</td></tr>
+                    <tr><td>Compressed X.509</td><td>256-512 bytes</td><td>75%</td><td>Class 2/3 devices</td><td>Recommended</td></tr>
+                    <tr><td>Raw Public Key</td><td>32-64 bytes</td><td>95%</td><td>Class 1 devices</td><td>Required</td></tr>
+                    <tr><td>Certificate Hash</td><td>32 bytes</td><td>97%</td><td>Pre-shared trust</td><td>Optional</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Table 2: Certificate Provisioning Methods</h3>
+            <table>
+                <thead>
+                    <tr><th>Method</th><th>Security Level</th><th>Complexity</th><th>Scalability</th><th>Offline Support</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Factory Provisioning</td><td>High</td><td>Low</td><td>Limited</td><td>Yes</td></tr>
+                    <tr><td>Just-in-Time Provisioning</td><td>High</td><td>Medium</td><td>Excellent</td><td>No</td></tr>
+                    <tr><td>EST Protocol</td><td>High</td><td>High</td><td>Good</td><td>Partial</td></tr>
+                    <tr><td>Raw Public Key</td><td>Medium</td><td>Very Low</td><td>Excellent</td><td>Yes</td></tr>
+                    <tr><td>Pre-shared Certificates</td><td>Medium</td><td>Low</td><td>Poor</td><td>Yes</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="content-section">
+            <h2>Certificate Management Implementation</h2>
+
+            <h3>Code Example 1: Compressed Certificate Format</h3>
+            <pre><code>/**
+ * Compressed X.509 certificate format for TLS-Lite
+ * Reduces certificate size by 75% through dictionary compression
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+
+#define CERT_DICT_SIZE 64
+#define MAX_CERT_SIZE 2048
+
+typedef struct {
+    uint8_t version;
+    uint8_t serial_number[8];
+    uint16_t signature_algorithm;
+    uint16_t issuer_ref;
+    uint32_t not_before;
+    uint32_t not_after;
+    uint16_t subject_ref;
+    uint8_t public_key_algorithm;
+    uint8_t public_key[64];
+    uint8_t signature[64];
+} compressed_cert_t;
+
+// Certificate dictionary for common DN components
+static const char *cert_dictionary[CERT_DICT_SIZE] = {
+    "CN=", "OU=", "O=", "C=", "IoT Device", "Manufacturing",
+    "US", "KR", "www.", ".com", "device-", /* ... more entries */
+};
+
+/**
+ * Compress X.509 certificate
+ */
+int compress_certificate(const uint8_t *x509_cert, size_t x509_len,
+                        compressed_cert_t *compressed) {
+    // Parse X.509 structure
+    x509_cert_t parsed;
+    if (parse_x509_certificate(x509_cert, x509_len, &parsed) != 0) {
+        return -1;
+    }
+
+    // Extract and compress fields
+    compressed->version = parsed.version;
+    memcpy(compressed->serial_number, parsed.serial, 8);
+    compressed->signature_algorithm = encode_algorithm(parsed.sig_alg);
+
+    // Compress DN using dictionary references
+    compressed->issuer_ref = compress_dn(parsed.issuer);
+    compressed->subject_ref = compress_dn(parsed.subject);
+
+    // Store validity period as Unix timestamps
+    compressed->not_before = parsed.validity.not_before;
+    compressed->not_after = parsed.validity.not_after;
+
+    // Store public key
+    compressed->public_key_algorithm = encode_algorithm(parsed.pubkey_alg);
+    memcpy(compressed->public_key, parsed.public_key, 64);
+
+    // Store signature
+    memcpy(compressed->signature, parsed.signature, 64);
+
+    return sizeof(compressed_cert_t);
+}
+
+/**
+ * Decompress certificate for validation
+ */
+int decompress_certificate(const compressed_cert_t *compressed,
+                          x509_cert_t *x509) {
+    x509->version = compressed->version;
+    memcpy(x509->serial, compressed->serial_number, 8);
+
+    // Decode signature algorithm
+    decode_algorithm(compressed->signature_algorithm, &x509->sig_alg);
+
+    // Decompress DN fields
+    decompress_dn(compressed->issuer_ref, x509->issuer);
+    decompress_dn(compressed->subject_ref, x509->subject);
+
+    // Convert timestamps
+    x509->validity.not_before = compressed->not_before;
+    x509->validity.not_after = compressed->not_after;
+
+    // Copy public key
+    decode_algorithm(compressed->public_key_algorithm, &x509->pubkey_alg);
+    memcpy(x509->public_key, compressed->public_key, 64);
+
+    // Copy signature
+    memcpy(x509->signature, compressed->signature, 64);
+
+    return 0;
+}
+</code></pre>
+
+            <h3>Code Example 2: Raw Public Key Authentication</h3>
+            <pre><code>/**
+ * Raw Public Key (RPK) authentication for TLS-Lite
+ * Bypasses X.509 complexity for constrained devices
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+#define RPK_KEY_SIZE 32
+#define RPK_MAX_KEYS 16
+
+typedef struct {
+    uint8_t key_id[8];
+    uint8_t public_key[RPK_KEY_SIZE];
+    uint8_t key_type;  // 0=Ed25519, 1=P256
+    uint32_t expiry;
+    bool revoked;
+} rpk_entry_t;
+
+typedef struct {
+    rpk_entry_t keys[RPK_MAX_KEYS];
+    size_t num_keys;
+} rpk_store_t;
+
+static rpk_store_t g_rpk_store = {0};
+
+/**
+ * Add raw public key to trust store
+ */
+int rpk_add_trusted_key(const uint8_t *key_id,
+                        const uint8_t *public_key,
+                        uint8_t key_type,
+                        uint32_t expiry) {
+    if (g_rpk_store.num_keys >= RPK_MAX_KEYS) {
+        return -1;  // Store full
+    }
+
+    rpk_entry_t *entry = &g_rpk_store.keys[g_rpk_store.num_keys];
+    memcpy(entry->key_id, key_id, 8);
+    memcpy(entry->public_key, public_key, RPK_KEY_SIZE);
+    entry->key_type = key_type;
+    entry->expiry = expiry;
+    entry->revoked = false;
+
+    g_rpk_store.num_keys++;
+    return 0;
+}
+
+/**
+ * Verify raw public key against trust store
+ */
+int rpk_verify_key(const uint8_t *key_id,
+                   const uint8_t *public_key,
+                   uint8_t key_type) {
+    for (size_t i = 0; i < g_rpk_store.num_keys; i++) {
+        rpk_entry_t *entry = &g_rpk_store.keys[i];
+
+        if (memcmp(entry->key_id, key_id, 8) != 0) {
+            continue;  // Key ID mismatch
+        }
+
+        if (entry->revoked) {
+            return -2;  // Key revoked
+        }
+
+        if (entry->expiry != 0 && get_current_time() > entry->expiry) {
+            return -3;  // Key expired
+        }
+
+        if (entry->key_type != key_type) {
+            return -4;  // Key type mismatch
+        }
+
+        if (memcmp(entry->public_key, public_key, RPK_KEY_SIZE) == 0) {
+            return 0;  // Key verified
+        }
+
+        return -5;  // Key mismatch
+    }
+
+    return -1;  // Key not found
+}
+
+/**
+ * TLS extension for RPK negotiation
+ */
+int rpk_create_extension(uint8_t *extension_data, size_t *length) {
+    // Extension type: server_certificate_type (20)
+    extension_data[0] = 0x00;
+    extension_data[1] = 0x14;
+
+    // Extension length
+    extension_data[2] = 0x00;
+    extension_data[3] = 0x01;
+
+    // Certificate type: RawPublicKey (2)
+    extension_data[4] = 0x02;
+
+    *length = 5;
+    return 0;
+}
+</code></pre>
+
+            <h3>Code Example 3: Certificate Path Validation</h3>
+            <pre><code>/**
+ * Lightweight certificate path validation
+ * Optimized for constrained devices with limited trust anchors
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+#define MAX_CHAIN_LENGTH 4
+#define MAX_TRUST_ANCHORS 4
+
+typedef struct {
+    compressed_cert_t cert;
+    bool is_ca;
+    uint8_t path_len_constraint;
+} cert_chain_entry_t;
+
+typedef struct {
+    cert_chain_entry_t chain[MAX_CHAIN_LENGTH];
+    size_t chain_length;
+} cert_path_t;
+
+typedef struct {
+    compressed_cert_t anchors[MAX_TRUST_ANCHORS];
+    size_t num_anchors;
+} trust_store_t;
+
+static trust_store_t g_trust_store = {0};
+
+/**
+ * Validate certificate chain
+ */
+int validate_cert_chain(cert_path_t *path) {
+    if (path->chain_length == 0 || path->chain_length > MAX_CHAIN_LENGTH) {
+        return -1;
+    }
+
+    uint32_t current_time = get_current_time();
+
+    // Validate each certificate
+    for (size_t i = 0; i < path->chain_length; i++) {
+        compressed_cert_t *cert = &path->chain[i].cert;
+
+        // Check validity period
+        if (current_time < cert->not_before ||
+            current_time > cert->not_after) {
+            return -2;  // Certificate expired or not yet valid
+        }
+
+        // Verify signature (except for root)
+        if (i < path->chain_length - 1) {
+            compressed_cert_t *issuer = &path->chain[i + 1].cert;
+            if (verify_cert_signature(cert, issuer) != 0) {
+                return -3;  // Signature verification failed
+            }
+
+            // Check issuer DN matches subject DN of parent
+            if (cert->issuer_ref != issuer->subject_ref) {
+                return -4;  // Issuer DN mismatch
+            }
+
+            // Check path length constraint
+            if (path->chain[i + 1].is_ca) {
+                if (path->chain[i + 1].path_len_constraint != 255 &&
+                    i > path->chain[i + 1].path_len_constraint) {
+                    return -5;  // Path length constraint violated
+                }
+            }
+        }
+    }
+
+    // Verify root certificate is trusted
+    compressed_cert_t *root = &path->chain[path->chain_length - 1].cert;
+    bool root_trusted = false;
+
+    for (size_t i = 0; i < g_trust_store.num_anchors; i++) {
+        if (memcmp(root, &g_trust_store.anchors[i],
+                   sizeof(compressed_cert_t)) == 0) {
+            root_trusted = true;
+            break;
+        }
+    }
+
+    if (!root_trusted) {
+        return -6;  // Root certificate not trusted
+    }
+
+    return 0;  // Chain validated successfully
+}
+
+/**
+ * Verify certificate signature
+ */
+static int verify_cert_signature(compressed_cert_t *cert,
+                                compressed_cert_t *issuer) {
+    uint8_t tbs_cert[512];
+    size_t tbs_len;
+
+    // Reconstruct TBS (To Be Signed) certificate
+    tbs_len = build_tbs_certificate(cert, tbs_cert);
+
+    // Verify signature using issuer's public key
+    if (cert->signature_algorithm == ALGO_ECDSA_P256_SHA256) {
+        return ecdsa_p256_verify(issuer->public_key,
+                                tbs_cert, tbs_len,
+                                cert->signature);
+    }
+
+    return -1;  // Unsupported signature algorithm
+}
+</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>Certificate Management APIs</h2>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/cert/provision</code>
+                <p>Provision device certificate and private key</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <code>/api/v1/cert/device</code>
+                <p>Retrieve current device certificate</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/cert/compress</code>
+                <p>Compress X.509 certificate to TLS-Lite format</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/cert/decompress</code>
+                <p>Decompress TLS-Lite certificate to X.509</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/cert/validate</code>
+                <p>Validate certificate chain against trust anchors</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">PUT</span>
+                <code>/api/v1/cert/trust-anchor</code>
+                <p>Add trusted root certificate to trust store</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <code>/api/v1/cert/trust-anchors</code>
+                <p>List all configured trust anchors</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/cert/rpk/add</code>
+                <p>Add raw public key to trust store</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/cert/rpk/verify</code>
+                <p>Verify raw public key against trust store</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">DELETE</span>
+                <code>/api/v1/cert/revoke/{serial}</code>
+                <p>Revoke certificate by serial number</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <code>/api/v1/cert/status/{serial}</code>
+                <p>Check certificate revocation status</p>
+            </div>
+
+            <div class="api-endpoint">
+                <span class="method">POST</span>
+                <code>/api/v1/cert/renew</code>
+                <p>Request certificate renewal</p>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2>Certificate Configuration Schema</h2>
+            <pre><code>{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TLS-Lite Certificate Configuration",
+  "type": "object",
+  "properties": {
+    "certificate_format": {
+      "type": "string",
+      "enum": ["x509", "compressed_x509", "raw_public_key"],
+      "default": "compressed_x509"
+    },
+    "provisioning": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["factory", "jit", "est", "manual"]
+        },
+        "auto_renew": {
+          "type": "boolean",
+          "default": false
+        },
+        "renewal_threshold_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 90,
+          "default": 30
+        }
+      }
+    },
+    "trust_anchors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "public_key": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]+$"
+          },
+          "key_type": {
+            "type": "string",
+            "enum": ["ed25519", "p256", "p384"]
+          }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "max_chain_length": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "default": 3
+        },
+        "require_valid_time": {
+          "type": "boolean",
+          "default": true
+        },
+        "check_revocation": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>Certificate Management Certification</h2>
+            <div class="certification-list">
+                <div class="cert-item"><h4>CERT-MGT-001: Certificate Compression</h4><p>Support for compressed X.509 certificate format</p></div>
+                <div class="cert-item"><h4>CERT-MGT-002: Raw Public Key</h4><p>Raw public key authentication implementation</p></div>
+                <div class="cert-item"><h4>CERT-MGT-003: Chain Validation</h4><p>Correct certificate chain validation logic</p></div>
+                <div class="cert-item"><h4>CERT-MGT-004: Trust Store</h4><p>Secure storage of trust anchors</p></div>
+                <div class="cert-item"><h4>CERT-MGT-005: Provisioning</h4><p>At least one provisioning method supported</p></div>
+                <div class="cert-item"><h4>CERT-MGT-006: Validity Checks</h4><p>Proper validity period verification</p></div>
+                <div class="cert-item"><h4>CERT-MGT-007: Signature Verification</h4><p>Correct signature verification algorithms</p></div>
+                <div class="cert-item"><h4>CERT-MGT-008: DN Processing</h4><p>Distinguished Name compression and decompression</p></div>
+                <div class="cert-item"><h4>CERT-MGT-009: Key Storage</h4><p>Secure private key storage</p></div>
+                <div class="cert-item"><h4>CERT-MGT-010: Renewal</h4><p>Certificate renewal mechanism</p></div>
+                <div class="cert-item"><h4>CERT-MGT-011: Revocation</h4><p>Certificate revocation support</p></div>
+                <div class="cert-item"><h4>CERT-MGT-012: Path Constraints</h4><p>Path length constraint enforcement</p></div>
+                <div class="cert-item"><h4>CERT-MGT-013: Extension Handling</h4><p>TLS certificate type extension support</p></div>
+                <div class="cert-item"><h4>CERT-MGT-014: Format Conversion</h4><p>Conversion between certificate formats</p></div>
+                <div class="cert-item"><h4>CERT-MGT-015: Memory Efficiency</h4><p>Optimized memory usage for certificate operations</p></div>
+                <div class="cert-item"><h4>CERT-MGT-016: Error Handling</h4><p>Proper error reporting for validation failures</p></div>
+                <div class="cert-item"><h4>CERT-MGT-017: Time Synchronization</h4><p>Handling of time synchronization for validity checks</p></div>
+                <div class="cert-item"><h4>CERT-MGT-018: Algorithm Support</h4><p>Support for required signature algorithms</p></div>
+                <div class="cert-item"><h4>CERT-MGT-019: Interoperability</h4><p>Compatibility with standard PKI infrastructure</p></div>
+                <div class="cert-item"><h4>CERT-MGT-020: Documentation</h4><p>Complete documentation of certificate management procedures</p></div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter3.html" class="nav-button">← Constrained Device Protocols</a>
+            <a href="chapter5.html" class="nav-button">Next: DTLS for IoT →</a>
+        </div>
+
+        <footer>
+            <div class="korean-text">弘益人間</div>
+            <p>Benefit All Mankind</p>
+            <p>&copy; 2025 WIA (Wireless IoT Alliance). All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

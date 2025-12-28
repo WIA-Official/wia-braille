@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Error Code Architecture | WIA-CORE-010</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            line-height: 1.8;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(30, 41, 59, 0.4);
+            padding: 3rem;
+            border-radius: 15px;
+            border: 2px solid #6B7280;
+        }
+        .chapter-header {
+            border-bottom: 3px solid #6B7280;
+            padding-bottom: 2rem;
+            margin-bottom: 3rem;
+        }
+        .chapter-number {
+            color: #6B7280;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: #6B7280;
+            margin-bottom: 1rem;
+        }
+        h2 {
+            font-size: 2rem;
+            color: #6B7280;
+            margin: 2.5rem 0 1.5rem 0;
+            border-left: 4px solid #6B7280;
+            padding-left: 1rem;
+        }
+        h3 {
+            font-size: 1.5rem;
+            color: #94a3b8;
+            margin: 2rem 0 1rem 0;
+        }
+        p {
+            margin-bottom: 1.5rem;
+            color: #cbd5e1;
+            font-size: 1.1rem;
+        }
+        .code-example {
+            background: #0f172a;
+            border: 2px solid #475569;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            overflow-x: auto;
+        }
+        .code-example pre {
+            color: #94a3b8;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .highlight-box {
+            background: rgba(107, 114, 128, 0.2);
+            border-left: 4px solid #6B7280;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        ul, ol {
+            margin: 1.5rem 0 1.5rem 2rem;
+            color: #cbd5e1;
+        }
+        li {
+            margin: 0.75rem 0;
+            line-height: 1.6;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid #475569;
+        }
+        .nav-button {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #6B7280 0%, #4b5563 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(107, 114, 128, 0.4);
+        }
+        strong { color: #6B7280; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: #0f172a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 1rem;
+            border: 1px solid #475569;
+            text-align: left;
+        }
+        th {
+            background: #1e293b;
+            color: #6B7280;
+            font-weight: bold;
+        }
+        td {
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 2</div>
+            <h1>Error Code Architecture</h1>
+        </div>
+
+        <h2>2.1 The Anatomy of a WIA Error Code</h2>
+
+        <p>Every WIA error code follows a precise structure: <code style="color: #6B7280;">WIA-{DOMAIN}-{CATEGORY}-{NUMBER}</code>. This four-part format is designed to be instantly readable by both humans and machines, while providing maximum information density.</p>
+
+        <div class="code-example">
+            <pre>
+WIA-AUTH-INVALID-001
+│   │    │       └── Unique identifier (001-999)
+│   │    └────────── Category (INVALID, TIMEOUT, NOTFOUND, etc.)
+│   └─────────────── Domain (AUTH, DB, NET, FILE, etc.)
+└─────────────────── Standard prefix (WIA)
+            </pre>
+        </div>
+
+        <h3>2.1.1 Component Breakdown</h3>
+
+        <p><strong>1. Standard Prefix (WIA):</strong> Identifies this as a WIA standard error. This prefix enables:</p>
+        <ul>
+            <li>Easy filtering in logs and monitoring systems</li>
+            <li>Disambiguation from application-specific error codes</li>
+            <li>Future extensibility for other standard families</li>
+            <li>Global uniqueness across all systems</li>
+        </ul>
+
+        <p><strong>2. Domain:</strong> The high-level system area where the error occurred. Domains are technology-agnostic and represent universal computing concepts.</p>
+
+        <div class="highlight-box">
+            <h4 style="color: #6B7280; margin-bottom: 1rem;">Standard Domains</h4>
+            <table>
+                <tr>
+                    <th>Domain</th>
+                    <th>Description</th>
+                    <th>Examples</th>
+                </tr>
+                <tr>
+                    <td>AUTH</td>
+                    <td>Authentication & Authorization</td>
+                    <td>Login failures, token validation, permissions</td>
+                </tr>
+                <tr>
+                    <td>DB</td>
+                    <td>Database Operations</td>
+                    <td>Query failures, connection issues, constraints</td>
+                </tr>
+                <tr>
+                    <td>NET</td>
+                    <td>Network Operations</td>
+                    <td>Timeouts, connection failures, DNS errors</td>
+                </tr>
+                <tr>
+                    <td>FILE</td>
+                    <td>File System Operations</td>
+                    <td>File not found, permission denied, disk full</td>
+                </tr>
+                <tr>
+                    <td>API</td>
+                    <td>API Operations</td>
+                    <td>Rate limiting, invalid requests, service unavailable</td>
+                </tr>
+                <tr>
+                    <td>VALIDATE</td>
+                    <td>Data Validation</td>
+                    <td>Invalid format, missing fields, constraint violations</td>
+                </tr>
+                <tr>
+                    <td>CRYPTO</td>
+                    <td>Cryptographic Operations</td>
+                    <td>Encryption failures, signature verification, key errors</td>
+                </tr>
+                <tr>
+                    <td>CACHE</td>
+                    <td>Caching Operations</td>
+                    <td>Cache misses, eviction, invalidation</td>
+                </tr>
+                <tr>
+                    <td>QUEUE</td>
+                    <td>Message Queue Operations</td>
+                    <td>Queue full, message expired, delivery failure</td>
+                </tr>
+                <tr>
+                    <td>STORAGE</td>
+                    <td>Storage Operations</td>
+                    <td>Upload failures, quota exceeded, corruption</td>
+                </tr>
+            </table>
+        </div>
+
+        <p><strong>3. Category:</strong> The specific error type within the domain. Categories are standardized verbs or conditions.</p>
+
+        <table>
+            <tr>
+                <th>Category</th>
+                <th>When to Use</th>
+                <th>Example</th>
+            </tr>
+            <tr>
+                <td>INVALID</td>
+                <td>Input doesn't meet requirements</td>
+                <td>WIA-AUTH-INVALID-001</td>
+            </tr>
+            <tr>
+                <td>NOTFOUND</td>
+                <td>Requested resource doesn't exist</td>
+                <td>WIA-FILE-NOTFOUND-003</td>
+            </tr>
+            <tr>
+                <td>TIMEOUT</td>
+                <td>Operation exceeded time limit</td>
+                <td>WIA-NET-TIMEOUT-015</td>
+            </tr>
+            <tr>
+                <td>CONNECTION</td>
+                <td>Failed to establish connection</td>
+                <td>WIA-DB-CONNECTION-008</td>
+            </tr>
+            <tr>
+                <td>PERMISSION</td>
+                <td>Insufficient permissions</td>
+                <td>WIA-FILE-PERMISSION-012</td>
+            </tr>
+            <tr>
+                <td>CONFLICT</td>
+                <td>Resource state conflict</td>
+                <td>WIA-DB-CONFLICT-005</td>
+            </tr>
+            <tr>
+                <td>RATE_LIMIT</td>
+                <td>Too many requests</td>
+                <td>WIA-API-RATE_LIMIT-007</td>
+            </tr>
+            <tr>
+                <td>INTERNAL</td>
+                <td>Unexpected internal error</td>
+                <td>WIA-API-INTERNAL-999</td>
+            </tr>
+        </table>
+
+        <p><strong>4. Number (001-999):</strong> A unique identifier for this specific error variant within the domain-category combination. Numbers allow for:</p>
+        <ul>
+            <li>Differentiation between similar errors</li>
+            <li>Version tracking as error definitions evolve</li>
+            <li>Up to 999 distinct errors per category</li>
+            <li>Easy lookup in documentation and knowledge bases</li>
+        </ul>
+
+        <h2>2.2 Error Code Design Principles</h2>
+
+        <h3>2.2.1 Self-Documenting</h3>
+
+        <p>A well-designed error code tells you immediately what went wrong, even without documentation:</p>
+
+        <div class="code-example">
+            <pre>
+✅ GOOD: WIA-AUTH-INVALID-001
+   - Clearly authentication domain
+   - Invalid credentials/input
+   - Can infer the problem from the code alone
+
+❌ BAD: E_AUTH_001
+   - What kind of auth error?
+   - Need to look up documentation
+   - Not self-documenting
+            </pre>
+        </div>
+
+        <h3>2.2.2 Hierarchical</h3>
+
+        <p>Error codes form a natural hierarchy that enables powerful filtering and aggregation:</p>
+
+        <div class="code-example">
+            <pre>
+WIA-*                 // All WIA errors
+WIA-AUTH-*            // All authentication errors
+WIA-AUTH-INVALID-*    // All invalid credential errors
+WIA-AUTH-INVALID-001  // Specific: username/password mismatch
+WIA-AUTH-INVALID-002  // Specific: expired token
+WIA-AUTH-INVALID-003  // Specific: malformed JWT
+            </pre>
+        </div>
+
+        <p>This hierarchy enables queries like:</p>
+        <ul>
+            <li>"Show me all authentication errors in the last hour"</li>
+            <li>"What percentage of API errors are timeouts vs rate limits?"</li>
+            <li>"Which specific database connection error is most common?"</li>
+        </ul>
+
+        <h3>2.2.3 Language Agnostic</h3>
+
+        <p>Error codes must work identically across all 99 supported programming languages. The same error code represents the same condition whether thrown in JavaScript, returned in Go, or wrapped in a Result type in Rust.</p>
+
+        <div class="code-example">
+            <pre>
+// JavaScript
+throw new WIAError({ code: 'WIA-DB-TIMEOUT-015' });
+
+// Go
+return &wia.Error{ Code: wia.DBTimeout015 }
+
+// Rust
+Err(WIAError::new("WIA-DB-TIMEOUT-015"))
+
+// Python
+raise WIAError(code="WIA-DB-TIMEOUT-015")
+
+// Java
+throw new WIAError("WIA-DB-TIMEOUT-015");
+
+// All represent the EXACT SAME ERROR
+            </pre>
+        </div>
+
+        <h2>2.3 Complete Error Code Catalog</h2>
+
+        <h3>2.3.1 Authentication Errors (AUTH)</h3>
+
+        <table>
+            <tr>
+                <th>Code</th>
+                <th>Description</th>
+                <th>Severity</th>
+                <th>Recovery</th>
+            </tr>
+            <tr>
+                <td>WIA-AUTH-INVALID-001</td>
+                <td>Invalid username or password</td>
+                <td>ERROR</td>
+                <td>FAIL_FAST</td>
+            </tr>
+            <tr>
+                <td>WIA-AUTH-INVALID-002</td>
+                <td>Expired authentication token</td>
+                <td>ERROR</td>
+                <td>RETRY_WITH_BACKOFF</td>
+            </tr>
+            <tr>
+                <td>WIA-AUTH-INVALID-003</td>
+                <td>Malformed JWT token</td>
+                <td>ERROR</td>
+                <td>FAIL_FAST</td>
+            </tr>
+            <tr>
+                <td>WIA-AUTH-PERMISSION-001</td>
+                <td>Insufficient permissions for operation</td>
+                <td>ERROR</td>
+                <td>FAIL_FAST</td>
+            </tr>
+            <tr>
+                <td>WIA-AUTH-PERMISSION-002</td>
+                <td>Role not authorized</td>
+                <td>ERROR</td>
+                <td>FAIL_FAST</td>
+            </tr>
+            <tr>
+                <td>WIA-AUTH-RATE_LIMIT-001</td>
+                <td>Too many authentication attempts</td>
+                <td>WARNING</td>
+                <td>RETRY_WITH_BACKOFF</td>
+            </tr>
+        </table>
+
+        <h3>2.3.2 Database Errors (DB)</h3>
+
+        <table>
+            <tr>
+                <th>Code</th>
+                <th>Description</th>
+                <th>Severity</th>
+                <th>Recovery</th>
+            </tr>
+            <tr>
+                <td>WIA-DB-CONNECTION-001</td>
+                <td>Failed to connect to database</td>
+                <td>CRITICAL</td>
+                <td>RETRY_WITH_BACKOFF</td>
+            </tr>
+            <tr>
+                <td>WIA-DB-TIMEOUT-015</td>
+                <td>Query execution timeout</td>
+                <td>ERROR</td>
+                <td>RETRY_WITH_BACKOFF</td>
+            </tr>
+            <tr>
+                <td>WIA-DB-NOTFOUND-001</td>
+                <td>Record not found</td>
+                <td>INFO</td>
+                <td>FAIL_FAST</td>
+            </tr>
+            <tr>
+                <td>WIA-DB-CONFLICT-001</td>
+                <td>Unique constraint violation</td>
+                <td>ERROR</td>
+                <td>FAIL_FAST</td>
+            </tr>
+            <tr>
+                <td>WIA-DB-CONFLICT-002</td>
+                <td>Optimistic locking failure</td>
+                <td>ERROR</td>
+                <td>RETRY_WITH_BACKOFF</td>
+            </tr>
+        </table>
+
+        <h3>2.3.3 Network Errors (NET)</h3>
+
+        <table>
+            <tr>
+                <th>Code</th>
+                <th>Description</th>
+                <th>Severity</th>
+                <th>Recovery</th>
+            </tr>
+            <tr>
+                <td>WIA-NET-TIMEOUT-015</td>
+                <td>Network request timeout</td>
+                <td>ERROR</td>
+                <td>RETRY_WITH_BACKOFF</td>
+            </tr>
+            <tr>
+                <td>WIA-NET-CONNECTION-008</td>
+                <td>Connection refused</td>
+                <td>CRITICAL</td>
+                <td>CIRCUIT_BREAKER</td>
+            </tr>
+            <tr>
+                <td>WIA-NET-CONNECTION-009</td>
+                <td>DNS resolution failed</td>
+                <td>CRITICAL</td>
+                <td>FALLBACK</td>
+            </tr>
+            <tr>
+                <td>WIA-NET-INVALID-001</td>
+                <td>Invalid URL format</td>
+                <td>ERROR</td>
+                <td>FAIL_FAST</td>
+            </tr>
+        </table>
+
+        <h2>2.4 Creating Custom Error Codes</h2>
+
+        <p>While WIA-CORE-010 provides 500+ standard error codes, you can create custom codes for domain-specific scenarios:</p>
+
+        <div class="highlight-box">
+            <h4 style="color: #6B7280; margin-bottom: 1rem;">Custom Error Code Guidelines</h4>
+            <ol>
+                <li><strong>Use WIA prefix:</strong> Maintain compatibility with tooling</li>
+                <li><strong>Choose appropriate domain:</strong> Use existing domains when possible</li>
+                <li><strong>Start at 100:</strong> Reserve 001-099 for standard errors</li>
+                <li><strong>Document thoroughly:</strong> Add to your error catalog</li>
+                <li><strong>Review regularly:</strong> Consolidate similar custom errors</li>
+            </ol>
+        </div>
+
+        <div class="code-example">
+            <pre>
+// Custom error code example
+WIA-PAYMENT-DECLINED-101  // Custom payment domain
+WIA-INVENTORY-OUTOFSTOCK-102  // Custom inventory category
+WIA-SHIPPING-DELAYED-103  // Business-specific error
+
+// These follow WIA standards but extend with domain-specific knowledge
+            </pre>
+        </div>
+
+        <h2>2.5 Error Code Versioning</h2>
+
+        <p>Error codes evolve over time. WIA-CORE-010 uses semantic versioning at the catalog level, but individual error codes are immutable once published.</p>
+
+        <p><strong>Rules:</strong></p>
+        <ul>
+            <li>Never change the meaning of an existing error code</li>
+            <li>Deprecated codes remain in catalog with deprecation notice</li>
+            <li>New codes use next available number in sequence</li>
+            <li>Major catalog versions can reorganize code space</li>
+        </ul>
+
+        <div class="nav-buttons">
+            <a href="01-introduction.html" class="nav-button">← Chapter 1</a>
+            <a href="03-severity-levels.html" class="nav-button">Chapter 3: Severity →</a>
+        </div>
+    </div>
+</body>
+</html>

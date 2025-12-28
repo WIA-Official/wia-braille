@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: PLC and SCADA Integration | WIA-IND-024</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #8B5CF6;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--surface); padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
+        h1 { color: var(--primary); font-size: 2.5em; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
+        h2 { color: var(--primary); font-size: 1.8em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: var(--text); font-size: 1.3em; margin-top: 20px; margin-bottom: 10px; }
+        p { margin-bottom: 15px; color: var(--text-dim); }
+        .nav { background: var(--bg); padding: 15px; border-radius: 5px; margin-bottom: 30px; border: 1px solid var(--border); }
+        .nav a { color: var(--primary); text-decoration: none; margin-right: 15px; }
+        .nav a:hover { text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: var(--bg); }
+        th, td { padding: 12px; text-align: left; border: 1px solid var(--border); }
+        th { background: var(--primary); color: var(--text); font-weight: bold; }
+        td { color: var(--text-dim); }
+        .code-block { background: var(--bg); border: 1px solid var(--border); border-left: 4px solid var(--primary); padding: 15px; margin: 20px 0; overflow-x: auto; font-family: 'Courier New', monospace; color: var(--text); }
+        .diagram { background: var(--bg); border: 1px solid var(--border); padding: 20px; margin: 20px 0; font-family: monospace; color: var(--text-dim); overflow-x: auto; }
+        .key-takeaways { background: var(--bg); border-left: 4px solid var(--primary); padding: 20px; margin: 30px 0; }
+        .key-takeaways h3 { color: var(--primary); margin-top: 0; }
+        .key-takeaways ul { margin-left: 20px; color: var(--text-dim); }
+        .key-takeaways li { margin: 10px 0; }
+        .review-questions { background: var(--bg); padding: 20px; margin: 30px 0; border: 1px solid var(--border); border-radius: 5px; }
+        .review-questions h3 { color: var(--primary); margin-top: 0; }
+        .review-questions ol { margin-left: 20px; color: var(--text-dim); }
+        .review-questions li { margin: 15px 0; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); }
+        ul { margin-left: 20px; color: var(--text-dim); }
+        li { margin: 8px 0; }
+        strong { color: var(--text); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="chapter-01.html">← Previous Chapter</a>
+            <a href="index.html">Back to Index</a>
+            <a href="chapter-03.html">Next Chapter →</a>
+        </nav>
+
+        <h1>Chapter 2: PLC and SCADA Integration</h1>
+
+        <h2>2.1 Programmable Logic Controllers (PLCs)</h2>
+        <p>Programmable Logic Controllers (PLCs) are the workhorses of industrial automation, providing real-time control of manufacturing processes. First introduced by General Motors in 1968 as a replacement for relay-based control systems, PLCs have evolved into sophisticated computing platforms capable of complex control algorithms, safety functions, and network communication.</p>
+
+        <p>A PLC consists of several key components: a central processing unit (CPU) that executes the control program, input/output (I/O) modules that interface with field devices, memory for storing programs and data, and communication interfaces for networking. Modern PLCs range from compact units with a dozen I/O points to large distributed systems managing thousands of points across multiple racks.</p>
+
+        <h3>PLC Scan Cycle</h3>
+        <p>PLCs operate on a cyclic execution model known as the scan cycle. Understanding this cycle is fundamental to programming industrial automation systems:</p>
+
+        <div class="diagram">
+┌─────────────────────────────────────────┐
+│  PLC Scan Cycle (typical: 1-20ms)     │
+│                                         │
+│  1. Read Input States                  │
+│     └─→ Scan all input modules         │
+│         Copy values to input image     │
+│                                         │
+│  2. Execute User Program                │
+│     └─→ Process ladder logic/ST/FBD    │
+│         Update internal variables      │
+│         Calculate output states        │
+│                                         │
+│  3. Update Outputs                      │
+│     └─→ Write output image to modules  │
+│         Physical outputs change state  │
+│                                         │
+│  4. Housekeeping                        │
+│     └─→ Communication processing        │
+│         Diagnostics and monitoring     │
+│                                         │
+│  Repeat cycle continuously...           │
+└─────────────────────────────────────────┘
+        </div>
+
+        <h2>2.2 PLC Programming Languages</h2>
+        <p>The IEC 61131-3 standard defines five programming languages for PLCs, each suited to different applications and programmer preferences:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Language</th>
+                    <th>Type</th>
+                    <th>Best For</th>
+                    <th>Pros</th>
+                    <th>Cons</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Ladder Diagram (LD)</strong></td>
+                    <td>Graphical</td>
+                    <td>Discrete logic, relay replacement</td>
+                    <td>Intuitive for electricians, easy to visualize</td>
+                    <td>Can become unwieldy for complex logic</td>
+                </tr>
+                <tr>
+                    <td><strong>Function Block (FBD)</strong></td>
+                    <td>Graphical</td>
+                    <td>Process control, data flow</td>
+                    <td>Shows signal flow clearly, reusable blocks</td>
+                    <td>Less intuitive for discrete control</td>
+                </tr>
+                <tr>
+                    <td><strong>Structured Text (ST)</strong></td>
+                    <td>Textual</td>
+                    <td>Complex algorithms, math</td>
+                    <td>Powerful, familiar to programmers</td>
+                    <td>Steeper learning curve for electricians</td>
+                </tr>
+                <tr>
+                    <td><strong>Sequential FC (SFC)</strong></td>
+                    <td>Graphical</td>
+                    <td>Sequential processes, state machines</td>
+                    <td>Perfect for batch processes, clear workflow</td>
+                    <td>Overhead for simple logic</td>
+                </tr>
+                <tr>
+                    <td><strong>Instruction List (IL)</strong></td>
+                    <td>Textual</td>
+                    <td>Low-level optimization</td>
+                    <td>Compact, efficient</td>
+                    <td>Hard to read, deprecated in IEC 61131-3 3rd ed</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Example: Conveyor Control in Ladder Logic</h3>
+        <div class="code-block">
+|                                                                    |
+| START_BTN    ESTOP         CONVEYOR_RUN                          |
+|  ├─┤/├──────┤/├──────┬────────( )─────────────────────────────  |
+|                       │                                            |
+|             CONVEYOR_RUN                                          |
+|                ├─┤├───┘                                           |
+|                                                                    |
+| STOP_BTN     CONVEYOR_RUN                                         |
+|  ├─┤├───────────( / )──────────────────────────────────────────  |
+|                                                                    |
+| CONVEYOR_RUN  PRODUCT_SENSOR  COUNTER                            |
+|  ├─┤├──────────├─┤P├──────────CTU────────────────────────────   |
+|                                 CU                                 |
+|                                 R    RESET_BTN                    |
+|                                 PV   1000                         |
+|                                                                    |
+        </div>
+
+        <h2>2.3 PLC Communication Protocols</h2>
+        <p>Modern manufacturing requires PLCs to communicate with diverse devices. Different vendors have developed proprietary and open protocols:</p>
+
+        <h3>Major Vendor Protocols</h3>
+        <p><strong>Siemens S7 Protocol:</strong> Used across Siemens SIMATIC family (S7-300, S7-400, S7-1200, S7-1500). Supports high-speed communication over PROFINET and Industrial Ethernet.</p>
+
+        <p><strong>Allen-Bradley EtherNet/IP:</strong> Based on the Common Industrial Protocol (CIP), EtherNet/IP is widely used in North American manufacturing. It uses standard Ethernet with TCP/IP and UDP/IP protocols.</p>
+
+        <p><strong>Modbus TCP/IP:</strong> An open protocol that has become a de facto standard for PLC communication. Simple to implement and widely supported across different manufacturers.</p>
+
+        <div class="code-block">
+# Python Example: Reading PLC Data via Modbus TCP
+
+from pymodbus.client import ModbusTcpClient
+
+# Connect to PLC
+client = ModbusTcpClient('192.168.1.100', port=502)
+connection = client.connect()
+
+if connection:
+    # Read 10 holding registers starting at address 100
+    result = client.read_holding_registers(100, 10, slave=1)
+
+    if not result.isError():
+        # Process the data
+        production_count = result.registers[0]
+        cycle_time = result.registers[1]
+        temperature = result.registers[2] / 10.0  # Scaled value
+
+        print(f"Production Count: {production_count}")
+        print(f"Cycle Time: {cycle_time} seconds")
+        print(f"Temperature: {temperature}°C")
+
+    client.close()
+        </div>
+
+        <h2>2.4 PLC Memory Organization</h2>
+        <p>Understanding PLC memory structure is essential for programming and troubleshooting. Siemens S7 PLCs use a structured memory model:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Area</th>
+                    <th>Symbol</th>
+                    <th>Description</th>
+                    <th>Example Address</th>
+                    <th>Use Case</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Process Input</td>
+                    <td>I</td>
+                    <td>Digital/analog inputs from field</td>
+                    <td>I0.0, IW10</td>
+                    <td>Read sensor states</td>
+                </tr>
+                <tr>
+                    <td>Process Output</td>
+                    <td>Q</td>
+                    <td>Digital/analog outputs to field</td>
+                    <td>Q2.5, QW20</td>
+                    <td>Control actuators</td>
+                </tr>
+                <tr>
+                    <td>Flags (Markers)</td>
+                    <td>M</td>
+                    <td>Internal memory</td>
+                    <td>M10.0, MW100</td>
+                    <td>Intermediate values</td>
+                </tr>
+                <tr>
+                    <td>Data Blocks</td>
+                    <td>DB</td>
+                    <td>Structured data storage</td>
+                    <td>DB1.DBW0</td>
+                    <td>Recipe data, parameters</td>
+                </tr>
+                <tr>
+                    <td>Timers</td>
+                    <td>T</td>
+                    <td>Timer functions</td>
+                    <td>T1</td>
+                    <td>Delays, timeouts</td>
+                </tr>
+                <tr>
+                    <td>Counters</td>
+                    <td>C</td>
+                    <td>Counter functions</td>
+                    <td>C5</td>
+                    <td>Production counting</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>2.5 SCADA Systems</h2>
+        <p>SCADA (Supervisory Control and Data Acquisition) systems provide the human interface to automation systems. They collect data from PLCs and field devices, display real-time process information, generate alarms, and store historical data for analysis.</p>
+
+        <h3>SCADA Architecture Components</h3>
+        <ul>
+            <li><strong>Master Terminal Unit (MTU):</strong> Central server that communicates with all field devices, runs the SCADA software, and hosts the historical database</li>
+            <li><strong>Human-Machine Interface (HMI):</strong> Graphical screens that operators use to monitor and control the process</li>
+            <li><strong>Remote Terminal Units (RTUs):</strong> Field devices that interface with sensors and actuators (often replaced by PLCs in modern systems)</li>
+            <li><strong>Communication Infrastructure:</strong> Networks connecting all components, may include Ethernet, wireless, and serial connections</li>
+            <li><strong>Historian:</strong> Time-series database storing process data for trending and analysis</li>
+        </ul>
+
+        <h3>SCADA Tag Configuration</h3>
+        <div class="code-block">
+{
+  "tag": {
+    "tagName": "LINE_A.STATION_01.TEMPERATURE",
+    "description": "Workstation 1 Process Temperature",
+    "dataSource": {
+      "protocol": "OPC-UA",
+      "server": "opc.tcp://192.168.1.100:4840",
+      "nodeId": "ns=2;s=Station.WS01.Temperature"
+    },
+    "dataType": "REAL",
+    "engineeringUnits": "°C",
+    "scanRate": 1000,
+    "deadband": 0.5,
+    "scaling": {
+      "rawLow": 0,
+      "rawHigh": 32767,
+      "engLow": 0.0,
+      "engHigh": 200.0
+    },
+    "alarms": [
+      {
+        "type": "HIGH_HIGH",
+        "setpoint": 85.0,
+        "priority": "CRITICAL",
+        "message": "Temperature critically high at WS01"
+      },
+      {
+        "type": "HIGH",
+        "setpoint": 80.0,
+        "priority": "WARNING",
+        "message": "Temperature high at WS01"
+      },
+      {
+        "type": "LOW",
+        "setpoint": 10.0,
+        "priority": "WARNING",
+        "message": "Temperature low at WS01"
+      }
+    ],
+    "trending": {
+      "enabled": true,
+      "retentionDays": 365,
+      "aggregation": "AVERAGE",
+      "interval": 60
+    }
+  }
+}
+        </div>
+
+        <h2>2.6 OPC UA Integration</h2>
+        <p>OPC UA (Open Platform Communications Unified Architecture) has become the dominant standard for industrial communication. Unlike its predecessor OPC DA (Data Access), OPC UA is platform-independent, secure, and supports complex data models.</p>
+
+        <h3>OPC UA Key Features</h3>
+        <ul>
+            <li><strong>Platform Independence:</strong> Works on Windows, Linux, embedded systems without COM/DCOM dependencies</li>
+            <li><strong>Security:</strong> Built-in encryption, authentication, and authorization</li>
+            <li><strong>Information Modeling:</strong> Rich data models beyond simple tags - includes relationships, methods, and metadata</li>
+            <li><strong>Scalability:</strong> Supports anything from single machines to enterprise-wide systems</li>
+            <li><strong>Service-Oriented Architecture:</strong> Client-server and publish-subscribe patterns</li>
+        </ul>
+
+        <h3>OPC UA Information Model Example</h3>
+        <div class="diagram">
+Factory (Object)
+├── ProductionLine_A (Object)
+│   ├── Attributes
+│   │   ├── Status: String = "Running"
+│   │   ├── OEE: Double = 0.842
+│   │   └── ProductionCount: Int32 = 1247
+│   ├── Workstation_01 (Object)
+│   │   ├── Robot (Object)
+│   │   │   ├── Position: CartesianCoordinates
+│   │   │   ├── Speed: Double = 0.8
+│   │   │   └── Methods
+│   │   │       ├── MoveTo(x, y, z, rx, ry, rz)
+│   │   │       └── EmergencyStop()
+│   │   └── Vision (Object)
+│   │       ├── CaptureImage(): Image
+│   │       └── InspectPart(): InspectionResult
+│   └── Conveyor_01 (Object)
+│       ├── Speed: Double = 0.5 m/s
+│       ├── Direction: String = "Forward"
+│       └── LoadStatus: Double = 75%
+└── Quality_Database (Object)
+    └── GetDefects(startTime, endTime): DefectList
+        </div>
+
+        <h2>2.7 Real-Time Data Collection</h2>
+        <p>Effective manufacturing automation requires reliable, high-frequency data collection. SCADA systems must handle thousands of tags updating at rates from milliseconds to hours, depending on the process requirements.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Data Type</th>
+                    <th>Typical Scan Rate</th>
+                    <th>Purpose</th>
+                    <th>Storage Strategy</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Critical Process Variables</td>
+                    <td>100-500ms</td>
+                    <td>Real-time control feedback</td>
+                    <td>High-resolution trending</td>
+                </tr>
+                <tr>
+                    <td>Equipment Status</td>
+                    <td>500-1000ms</td>
+                    <td>Monitoring, alarming</td>
+                    <td>State change recording</td>
+                </tr>
+                <tr>
+                    <td>Production Counters</td>
+                    <td>1-5 seconds</td>
+                    <td>Production tracking</td>
+                    <td>Time-weighted average</td>
+                </tr>
+                <tr>
+                    <td>Quality Data</td>
+                    <td>Per part/batch</td>
+                    <td>SPC, traceability</td>
+                    <td>Event-based storage</td>
+                </tr>
+                <tr>
+                    <td>Energy Consumption</td>
+                    <td>5-60 seconds</td>
+                    <td>Energy management</td>
+                    <td>Hourly aggregation</td>
+                </tr>
+                <tr>
+                    <td>Environmental Conditions</td>
+                    <td>1-5 minutes</td>
+                    <td>Facility monitoring</td>
+                    <td>Daily summaries</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>2.8 Alarm Management</h2>
+        <p>Effective alarm management is critical for operator effectiveness and plant safety. The ANSI/ISA-18.2 standard provides guidelines for alarm system design and management.</p>
+
+        <h3>Alarm Management Best Practices</h3>
+        <ul>
+            <li><strong>Rationalization:</strong> Every alarm must be necessary, unique, and actionable. Eliminate nuisance alarms that don't require operator action</li>
+            <li><strong>Prioritization:</strong> Use multiple priority levels (typically 3-4) based on consequences and required response time</li>
+            <li><strong>Rate Management:</strong> Limit alarm rates to prevent operator overload (target: <6 alarms per 10 minutes in steady state)</li>
+            <li><strong>Deadbands and Delays:</strong> Prevent chattering alarms with appropriate hysteresis and time delays</li>
+            <li><strong>State-Based Alarming:</strong> Suppress irrelevant alarms based on equipment state (e.g., don't alarm on low flow when pump is off)</li>
+            <li><strong>Documentation:</strong> Provide clear operator guidance for each alarm including cause, consequence, and corrective action</li>
+        </ul>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li><strong>PLC Fundamentals:</strong> PLCs operate on a cyclic scan basis, reading inputs, executing logic, and updating outputs in a continuous loop with typical scan times of 1-20 milliseconds.</li>
+                <li><strong>Multiple Programming Languages:</strong> IEC 61131-3 defines five languages, each suited for different applications - Ladder Logic for discrete control, Structured Text for complex algorithms, and SFC for sequential processes.</li>
+                <li><strong>Communication Protocols:</strong> Modern PLCs support various protocols including Modbus TCP/IP, EtherNet/IP, and PROFINET. OPC UA has emerged as the dominant standard for platform-independent integration.</li>
+                <li><strong>SCADA Integration:</strong> SCADA systems provide visualization, alarming, and historical data storage, bridging the gap between real-time PLC control and business systems.</li>
+                <li><strong>OPC UA Advantages:</strong> OPC UA offers platform independence, built-in security, rich information modeling, and scalability from edge to enterprise.</li>
+                <li><strong>Data Collection Strategy:</strong> Different process variables require different scan rates and storage strategies based on their criticality and rate of change.</li>
+                <li><strong>Alarm Management:</strong> Effective alarm systems are rationalized, prioritized, and rate-limited to prevent operator overload while ensuring critical issues are addressed.</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li><strong>Explain the PLC scan cycle.</strong> Describe each phase and explain why understanding the scan cycle is important for proper program design.</li>
+
+                <li><strong>Compare Ladder Logic and Structured Text.</strong> What are the strengths and weaknesses of each? Give an example of when you would choose one over the other.</li>
+
+                <li><strong>What is the difference between OPC DA and OPC UA?</strong> Why is OPC UA considered superior for modern automation systems?</li>
+
+                <li><strong>Describe the memory organization in a Siemens S7 PLC.</strong> Explain the purpose of different memory areas (I, Q, M, DB) and give examples of when to use each.</li>
+
+                <li><strong>What are the key components of a SCADA system?</strong> How do they work together to provide process monitoring and control?</li>
+
+                <li><strong>Why is alarm management important?</strong> Describe three best practices for designing an effective alarm system according to ANSI/ISA-18.2.</li>
+
+                <li><strong>Explain the concept of scan rate and deadband in SCADA tag configuration.</strong> How do these parameters affect data quality and system performance?</li>
+
+                <li><strong>How does Modbus TCP/IP differ from Modbus RTU?</strong> What are the advantages of using Modbus TCP/IP in modern manufacturing environments?</li>
+            </ol>
+        </div>
+
+        <div class="footer">
+            <p><strong>WIA-IND-024: Manufacturing Automation Standard</strong></p>
+            <p>弘益人間 (Hongik Ingan) - Benefit All Humanity</p>
+            <p>© 2025 World Certification Industry Association (WIA) | MIT License</p>
+        </div>
+
+        <nav class="nav">
+            <a href="chapter-01.html">← Previous Chapter</a>
+            <a href="index.html">Back to Index</a>
+            <a href="chapter-03.html">Next Chapter →</a>
+        </nav>
+    </div>
+</body>
+</html>

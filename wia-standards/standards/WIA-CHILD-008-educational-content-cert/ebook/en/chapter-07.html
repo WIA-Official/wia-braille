@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 07: Ecosystem Integration | WIA-CHILD-008</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #F59E0B; --text: #e2e8f0; --text-dim: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        header { border-bottom: 3px solid var(--primary); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.3rem; margin-top: 2rem; margin-bottom: 0.8rem; }
+        p, li { margin-bottom: 1.2rem; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: var(--surface); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: rgba(245, 158, 11, 0.1); }
+        code { background: var(--surface); padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--primary); }
+        pre { background: var(--surface); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1.5rem 0; border-left: 4px solid var(--primary); }
+        pre code { background: none; padding: 0; color: var(--text); }
+        .key-takeaways, .review-questions { background: var(--surface); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--primary); }
+        ul, ol { margin-left: 2rem; margin-bottom: 1.5rem; }
+        .navigation { display: flex; justify-content: space-between; margin: 3rem 0; padding: 1.5rem; background: var(--surface); border-radius: 8px; }
+        .nav-button { color: var(--primary); text-decoration: none; padding: 0.8rem 1.5rem; border: 2px solid var(--primary); border-radius: 6px; transition: all 0.3s; }
+        .nav-button:hover { background: var(--primary); color: white; }
+        .philosophy { text-align: center; margin: 3rem 0; padding: 2rem; background: var(--surface); border-radius: 8px; border: 2px solid var(--primary); }
+        footer { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chapter 07: Ecosystem Integration</h1>
+            <div style="color: var(--text-dim); font-size: 0.9rem;">WIA-CHILD-008 Educational Content Certification Standard | LMS & Systems Integration</div>
+        </header>
+
+        <h2>Learning Management System (LMS) Integration</h2>
+
+        <p>
+            Educational content rarely exists in isolation. Most schools use Learning Management Systems like Canvas,
+            Blackboard, Google Classroom, Moodle, or Schoology as the central hub for assignments, grades, communication,
+            and content delivery. WIA-CHILD-008 certified content must integrate seamlessly with major LMS platforms,
+            enabling teachers to assign certified content, track student progress, and receive standards-aligned grade data
+            without manual data entry or platform switching.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>LMS Platform</th>
+                    <th>Market Share</th>
+                    <th>Integration Standard</th>
+                    <th>Required Capabilities</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Canvas (Instructure)</td>
+                    <td>31% K-12, 29% higher ed</td>
+                    <td>LTI 1.3, Canvas API</td>
+                    <td>Single sign-on, grade passback, standards alignment reporting</td>
+                </tr>
+                <tr>
+                    <td>Google Classroom</td>
+                    <td>48% K-12 (especially elementary)</td>
+                    <td>Google Classroom API, LTI</td>
+                    <td>Roster sync, assignment creation, Google Drive integration</td>
+                </tr>
+                <tr>
+                    <td>Blackboard Learn</td>
+                    <td>18% K-12, 31% higher ed</td>
+                    <td>LTI 1.3, Blackboard REST API</td>
+                    <td>Deep linking, grade center integration, rubrics</td>
+                </tr>
+                <tr>
+                    <td>Schoology (PowerSchool)</td>
+                    <td>12% K-12</td>
+                    <td>LTI 1.3, Schoology API</td>
+                    <td>Rostering via OneRoster, standards reporting, analytics</td>
+                </tr>
+                <tr>
+                    <td>Moodle</td>
+                    <td>5% K-12, 15% higher ed</td>
+                    <td>LTI 1.3, Moodle plugins</td>
+                    <td>Activity module integration, gradebook, competency framework</td>
+                </tr>
+                <tr>
+                    <td>Microsoft Teams for Education</td>
+                    <td>Growing, especially international</td>
+                    <td>Microsoft Graph API, LTI</td>
+                    <td>Teams integration, assignments, OneDrive, insights</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>LTI (Learning Tools Interoperability) Implementation</h3>
+
+        <pre><code>// LTI 1.3 is the modern standard for EdTech integration
+interface LTI13Integration {
+  platformRegistration: PlatformRegistration;
+  deepLinking: DeepLinkingSupport;
+  assignmentGradeServices: AGS;
+  namesRoleProvisioning: NRPS;
+  standardsAlignmentReporting: boolean;
+}
+
+interface PlatformRegistration {
+  platformId: string;
+  clientId: string;
+  authorizationUrl: string;
+  jwksUrl: string;
+  tokenUrl: string;
+}
+
+interface DeepLinkingSupport {
+  enabled: boolean;
+  contentTypes: ContentType[];
+  customParameters: CustomParameter[];
+}
+
+interface AGS {  // Assignment and Grade Services
+  enabled: boolean;
+  lineItemUrl: string;
+  scopesClaimed: string[];  // ['lineitem', 'result.readonly', 'score']
+  gradePassbackFormat: 'numeric' | 'percentage' | 'letter' | 'passfail';
+  includesStandardsAlignment: boolean;
+}
+
+class LTIIntegrationService {
+  async handleLTILaunch(request: LTILaunchRequest): Promise<LTISession> {
+    // 1. Validate LTI launch request (security)
+    const validatedClaims = await this.validateLTIToken(request.idToken);
+
+    if (!validatedClaims) {
+      throw new Error('Invalid LTI launch - token validation failed');
+    }
+
+    // 2. Extract user and context information
+    const user = this.extractUserInfo(validatedClaims);
+    const context = this.extractContextInfo(validatedClaims);
+    const resourceLink = this.extractResourceLink(validatedClaims);
+
+    // 3. Create or retrieve user session
+    const session = await this.createUserSession(user, context);
+
+    // 4. Determine what content to show based on deep linking or resource link
+    const content = resourceLink.id
+      ? await this.loadResourceLink(resourceLink.id)
+      : await this.showContentSelection(context);
+
+    // 5. Set up grade passback if AGS is available
+    if (validatedClaims.ags && validatedClaims.ags.lineitem) {
+      session.gradePassbackEnabled = true;
+      session.lineItemUrl = validatedClaims.ags.lineitem;
+    }
+
+    return {
+      sessionId: session.id,
+      user: user,
+      context: context,
+      content: content,
+      gradePassbackEnabled: session.gradePassbackEnabled
+    };
+  }
+
+  async passbackGrade(
+    session: LTISession,
+    studentId: string,
+    score: number,
+    metadata: GradeMetadata
+  ): Promise<void> {
+    if (!session.gradePassbackEnabled) {
+      console.warn('Grade passback not enabled for this session');
+      return;
+    }
+
+    // Get access token for grade passback
+    const accessToken = await this.getAccessToken(session.platformId);
+
+    // Prepare grade payload
+    const gradePayload = {
+      timestamp: new Date().toISOString(),
+      scoreGiven: score,
+      scoreMaximum: metadata.maxScore,
+      activityProgress: metadata.completed ? 'Completed' : 'InProgress',
+      gradingProgress: 'FullyGraded',
+      userId: studentId,
+      comment: metadata.comment,
+
+      // WIA-CHILD-008 specific: Include standards alignment
+      'https://wia.org/vocab/standards': metadata.standardsAligned.map(std => ({
+        frameworkCode: std.frameworkCode,
+        standardCode: std.standardCode,
+        masteryLevel: std.masteryLevel,  // 0-1 or specific levels
+        confidenceScore: std.confidence
+      }))
+    };
+
+    // Send grade to LMS
+    await this.sendGradeToLMS(
+      session.lineItemUrl,
+      gradePayload,
+      accessToken
+    );
+
+    console.log(`Grade passback successful: ${score}/${metadata.maxScore} for student ${studentId}`);
+  }
+
+  async implementDeepLinking(
+    context: LTIContext,
+    availableContent: Content[]
+  ): Promise<DeepLinkingResponse> {
+    // Teacher selects content from catalog
+    const selectedContent = await this.showContentSelectionUI(availableContent);
+
+    // Create deep link items for selected content
+    const linkItems = selectedContent.map(content => ({
+      type: 'ltiResourceLink',
+      title: content.title,
+      text: content.description,
+      url: this.generateLaunchUrl(content.id),
+      custom: {
+        content_id: content.id,
+        standards: content.alignedStandards.join(','),
+        grade_level: content.gradeLevel,
+        estimated_time: content.estimatedMinutes
+      },
+      lineItem: {
+        scoreMaximum: 100,
+        label: content.title,
+        resourceId: content.id,
+        tag: 'score'
+      },
+      available: {
+        startDateTime: content.availableFrom,
+        endDateTime: content.availableTo
+      }
+    }));
+
+    // Return deep linking response
+    return {
+      contentItems: linkItems,
+      message: `${linkItems.length} activities added to ${context.label}`
+    };
+  }
+}
+</code></pre>
+
+        <h2>Student Information Systems (SIS) Integration</h2>
+
+        <p>
+            Student Information Systems like PowerSchool, Infinite Campus, Skyward, and Aspen maintain the official record
+            of student enrollment, demographics, schedules, and grades. Certified content integrates with SIS for automated
+            rostering (student/teacher assignments), demographic data for personalization and equity analysis, and official
+            grade reporting for transcripts.
+        </p>
+
+        <h3>OneRoster Standard for Rostering</h3>
+
+        <pre><code>// OneRoster is the IMS Global standard for roster data exchange
+interface OneRosterIntegration {
+  version: '1.1' | '1.2';
+  endpoints: OneRosterEndpoints;
+  supportedEntities: OneRosterEntity[];
+  syncSchedule: SyncSchedule;
+}
+
+interface OneRosterEndpoints {
+  baseUrl: string;
+  authentication: 'OAuth 1.0' | 'OAuth 2.0';
+  endpoints: {
+    orgs: string;          // /orgs - Schools and districts
+    courses: string;       // /courses - Course offerings
+    classes: string;       // /classes - Class sections
+    users: string;         // /users - Students and teachers
+    enrollments: string;   // /enrollments - Student-class relationships
+    demographics: string;  // /demographics - Student demographic data
+    academicSessions: string;  // /academicSessions - Terms, semesters
+  };
+}
+
+type OneRosterEntity =
+  | 'org'
+  | 'course'
+  | 'class'
+  | 'user'
+  | 'enrollment'
+  | 'academicSession'
+  | 'demographic';
+
+class OneRosterSyncService {
+  async syncRosterData(config: OneRosterIntegration): Promise<SyncResult> {
+    const results = {
+      orgs: { created: 0, updated: 0, deleted: 0 },
+      courses: { created: 0, updated: 0, deleted: 0 },
+      classes: { created: 0, updated: 0, deleted: 0 },
+      users: { created: 0, updated: 0, deleted: 0 },
+      enrollments: { created: 0, updated: 0, deleted: 0 },
+      errors: []
+    };
+
+    try {
+      // 1. Sync organizations (districts, schools)
+      const orgs = await this.fetchOneRosterData(config, 'orgs');
+      results.orgs = await this.syncEntities('org', orgs);
+
+      // 2. Sync courses
+      const courses = await this.fetchOneRosterData(config, 'courses');
+      results.courses = await this.syncEntities('course', courses);
+
+      // 3. Sync classes (sections)
+      const classes = await this.fetchOneRosterData(config, 'classes');
+      results.classes = await this.syncEntities('class', classes);
+
+      // 4. Sync users (students, teachers)
+      const users = await this.fetchOneRosterData(config, 'users');
+      results.users = await this.syncEntities('user', users);
+
+      // 5. Sync enrollments (student-class relationships)
+      const enrollments = await this.fetchOneRosterData(config, 'enrollments');
+      results.enrollments = await this.syncEntities('enrollment', enrollments);
+
+      // 6. Handle deletions (students who transferred, classes that ended)
+      await this.processStatusChanges(config);
+
+    } catch (error) {
+      results.errors.push({
+        stage: 'sync',
+        error: error.message,
+        timestamp: new Date()
+      });
+    }
+
+    return results;
+  }
+
+  async fetchOneRosterData(
+    config: OneRosterIntegration,
+    entity: string
+  ): Promise<any[]> {
+    const url = config.endpoints[entity];
+    const auth = await this.getOAuthToken(config);
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${auth.accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`OneRoster API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // OneRoster responses are wrapped in entity type
+    return data[entity] || [];
+  }
+
+  async processStatusChanges(config: OneRosterIntegration): Promise<void> {
+    // OneRoster uses status field: 'active', 'tobedeleted', 'inactive'
+
+    // Find users marked 'tobedeleted'
+    const deletedUsers = await this.findEntitiesByStatus('user', 'tobedeleted');
+
+    for (const user of deletedUsers) {
+      // Anonymize data, retain for analytics but remove PII
+      await this.anonymizeUser(user.sourcedId);
+
+      // Remove from active rosters
+      await this.removeEnrollments(user.sourcedId);
+    }
+
+    // Find classes marked 'inactive' (ended classes)
+    const inactiveClasses = await this.findEntitiesByStatus('class', 'inactive');
+
+    for (const cls of inactiveClasses) {
+      // Archive class data
+      await this.archiveClass(cls.sourcedId);
+
+      // Keep enrollments for historical reporting
+      await this.markEnrollmentsHistorical(cls.sourcedId);
+    }
+  }
+}
+</code></pre>
+
+        <h2>Teacher Portal and Dashboard Integration</h2>
+
+        <p>
+            Teachers need visibility into student progress, standards mastery, and instructional recommendations without
+            leaving their workflow. Certified content provides teacher dashboards that integrate into existing portals,
+            showing class-wide trends, individual student progress, standards coverage gaps, and suggested interventions—all
+            aligned to the curriculum teachers are responsible for teaching.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Dashboard Feature</th>
+                    <th>Basic View (Uncertified)</th>
+                    <th>Certified Standards-Aligned View</th>
+                    <th>Teacher Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Class Progress</td>
+                    <td>Average score: 78%</td>
+                    <td>Mastery by standard: CCSS.MATH.5.NF.A.1 (85%), 5.NF.A.2 (62%), 5.NF.B.3 (91%)</td>
+                    <td>Know exactly which standards need reteaching</td>
+                </tr>
+                <tr>
+                    <td>Student Performance</td>
+                    <td>Student A: 82%, Student B: 74%</td>
+                    <td>Student A: Mastered 7/10 standards, struggling with fractions. Student B: Mastered 5/10, needs decimal place value support</td>
+                    <td>Target instruction to specific student needs</td>
+                </tr>
+                <tr>
+                    <td>Intervention Recommendations</td>
+                    <td>None (teacher must interpret data)</td>
+                    <td>"15 students below 70% on 5.NF.A.2. Suggested small group lesson: 'Comparing Fractions with Visual Models' (20 min)"</td>
+                    <td>Actionable next steps, not just data</td>
+                </tr>
+                <tr>
+                    <td>Standards Coverage</td>
+                    <td>None (not tracked)</td>
+                    <td>Timeline view: Q1 taught 8/12 standards, Q2 teaching 4/12, upcoming 0/12. Warning: 2 standards not scheduled</td>
+                    <td>Ensure all standards taught before testing</td>
+                </tr>
+                <tr>
+                    <td>Assessment Insights</td>
+                    <td>Class average, score distribution</td>
+                    <td>Item analysis showing 78% missed problem #7 (misconception: adding denominators). Suggested remediation attached</td>
+                    <td>Understand why students missed questions</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Teacher Dashboard API</h3>
+
+        <pre><code>interface TeacherDashboardData {
+  classId: string;
+  className: string;
+  gradeLevel: string;
+  subject: string;
+
+  // Standards coverage and mastery
+  standardsCoverage: StandardsCoverageReport;
+
+  // Student progress
+  studentProgress: StudentProgressSummary[];
+
+  // Instructional recommendations
+  recommendations: InstructionalRecommendation[];
+
+  // Recent activity
+  recentActivity: ActivitySummary;
+}
+
+interface StandardsCoverageReport {
+  targetStandards: string[];           // All standards for this grade/subject
+  taughtStandards: StandardMastery[];  // Standards with instruction
+  upcomingStandards: string[];         // Planned but not yet taught
+  uncoveredStandards: string[];        // Not yet scheduled - WARNING!
+
+  averageMasteryByStandard: Map<string, number>;
+  classWideTrends: MasteryTrend[];
+}
+
+interface StandardMastery {
+  standardCode: string;
+  standardText: string;
+  studentsAttempted: number;
+  studentsAtMastery: number;           // ≥80% accuracy
+  studentsApproaching: number;         // 60-79%
+  studentsBelow: number;               // <60%
+  averageScore: number;
+  lastAssessed: Date;
+  commonMisconceptions: Misconception[];
+}
+
+interface InstructionalRecommendation {
+  priority: 'high' | 'medium' | 'low';
+  recommendationType: 'reteach' | 'small_group' | 'intervention' | 'enrichment';
+  targetStudents: string[];            // Student IDs or "whole class"
+  targetStandard: string;
+  issue: string;
+  suggestedActivity: {
+    title: string;
+    description: string;
+    duration: number;
+    materials: string[];
+    certifiedContentLink?: string;
+  };
+  rationale: string;
+}
+
+class TeacherDashboardService {
+  async generateClassDashboard(
+    teacherId: string,
+    classId: string
+  ): Promise<TeacherDashboardData> {
+    // Get class info
+    const classInfo = await this.getClassInfo(classId);
+
+    // Determine target standards for this grade/subject
+    const targetStandards = await this.getTargetStandards(
+      classInfo.gradeLevel,
+      classInfo.subject
+    );
+
+    // Analyze standards coverage
+    const coverage = await this.analyzeStandardsCoverage(classId, targetStandards);
+
+    // Get student progress data
+    const studentProgress = await this.getStudentProgress(classId);
+
+    // Generate instructional recommendations
+    const recommendations = await this.generateRecommendations(
+      coverage,
+      studentProgress,
+      classInfo
+    );
+
+    // Get recent activity
+    const recentActivity = await this.getRecentActivity(classId, days: 7);
+
+    return {
+      classId: classId,
+      className: classInfo.name,
+      gradeLevel: classInfo.gradeLevel,
+      subject: classInfo.subject,
+      standardsCoverage: coverage,
+      studentProgress: studentProgress,
+      recommendations: recommendations,
+      recentActivity: recentActivity
+    };
+  }
+
+  async generateRecommendations(
+    coverage: StandardsCoverageReport,
+    studentProgress: StudentProgressSummary[],
+    classInfo: ClassInfo
+  ): Promise<InstructionalRecommendation[]> {
+    const recommendations: InstructionalRecommendation[] = [];
+
+    // Recommendation 1: Standards with low mastery
+    for (const standard of coverage.taughtStandards) {
+      const masteryPercent = standard.studentsAtMastery / standard.studentsAttempted;
+
+      if (masteryPercent < 0.50) {
+        // Less than 50% mastery - whole class reteach
+        recommendations.push({
+          priority: 'high',
+          recommendationType: 'reteach',
+          targetStudents: ['whole_class'],
+          targetStandard: standard.standardCode,
+          issue: `Only ${(masteryPercent * 100).toFixed(0)}% of students at mastery`,
+          suggestedActivity: await this.findReteachingActivity(
+            standard,
+            classInfo.gradeLevel
+          ),
+          rationale: 'Majority of class has not mastered this standard. Whole-class reteaching recommended before moving forward.'
+        });
+      } else if (masteryPercent < 0.75) {
+        // 50-75% mastery - small group intervention
+        const strugglingStudents = studentProgress.filter(s =>
+          s.standardScores[standard.standardCode] < 0.60
+        );
+
+        recommendations.push({
+          priority: 'medium',
+          recommendationType: 'small_group',
+          targetStudents: strugglingStudents.map(s => s.studentId),
+          targetStandard: standard.standardCode,
+          issue: `${strugglingStudents.length} students below 60% mastery`,
+          suggestedActivity: await this.findSmallGroupActivity(
+            standard,
+            classInfo.gradeLevel
+          ),
+          rationale: `While ${(masteryPercent * 100).toFixed(0)}% are at mastery, ${strugglingStudents.length} students need targeted support.`
+        });
+      }
+    }
+
+    // Recommendation 2: Uncovered standards
+    if (coverage.uncoveredStandards.length > 0) {
+      for (const standardCode of coverage.uncoveredStandards) {
+        const standard = await this.getStandardInfo(standardCode);
+
+        recommendations.push({
+          priority: 'high',
+          recommendationType: 'reteach',  // Actually "teach" but using reteach type
+          targetStudents: ['whole_class'],
+          targetStandard: standardCode,
+          issue: 'Standard not yet scheduled for instruction',
+          suggestedActivity: await this.findIntroductoryActivity(
+            standard,
+            classInfo.gradeLevel
+          ),
+          rationale: `This standard is required for ${classInfo.gradeLevel} but has not been taught. Ensure coverage before end of year.`
+        });
+      }
+    }
+
+    // Recommendation 3: Enrichment for high performers
+    const highPerformers = studentProgress.filter(s =>
+      s.averageMastery >= 0.90
+    );
+
+    if (highPerformers.length >= 3) {
+      const nextLevelStandards = await this.getNextGradeLevelStandards(
+        classInfo.gradeLevel,
+        classInfo.subject
+      );
+
+      recommendations.push({
+        priority: 'low',
+        recommendationType: 'enrichment',
+        targetStudents: highPerformers.map(s => s.studentId),
+        targetStandard: nextLevelStandards[0],
+        issue: `${highPerformers.length} students have mastered current grade level`,
+        suggestedActivity: {
+          title: 'Enrichment: Preview Next Grade Level',
+          description: `Introduction to ${nextLevelStandards[0]} for advanced learners`,
+          duration: 20,
+          materials: ['Enrichment worksheet', 'Challenge problems'],
+          certifiedContentLink: await this.findEnrichmentContent(nextLevelStandards[0])
+        },
+        rationale: 'These students are ready for challenge beyond grade level. Prevent boredom and maintain engagement.'
+      });
+    }
+
+    // Sort by priority
+    return recommendations.sort((a, b) => {
+      const priorityOrder = { high: 3, medium: 2, low: 1 };
+      return priorityOrder[b.priority] - priorityOrder[a.priority];
+    });
+  }
+}
+</code></pre>
+
+        <h2>Parent Portal Integration</h2>
+
+        <p>
+            Parents need visibility into their child's learning without overwhelming complexity. Certified content provides
+            parent-friendly dashboards integrated into parent portals, showing progress in plain language, standards mastery
+            explained accessibly, and actionable suggestions for home support—without educational jargon.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Parent Dashboard Feature</th>
+                    <th>Information Provided</th>
+                    <th>Plain Language Translation</th>
+                    <th>Home Support Suggestions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Current Progress</td>
+                    <td>Mastered 8/12 standards this quarter</td>
+                    <td>"Your child has learned 8 of 12 important math skills for Grade 5"</td>
+                    <td>None (on track)</td>
+                </tr>
+                <tr>
+                    <td>Standards Mastery</td>
+                    <td>CCSS.MATH.5.NF.A.1: 92% mastery</td>
+                    <td>"Fractions: Can add and subtract fractions with different denominators ✓"</td>
+                    <td>"Great! Challenge: Try real-world problems like adjusting recipe measurements"</td>
+                </tr>
+                <tr>
+                    <td>Areas Needing Support</td>
+                    <td>CCSS.MATH.5.NF.B.3: 58% mastery</td>
+                    <td>"Needs practice: Multiplying fractions and whole numbers"</td>
+                    <td>"Practice: 'If a recipe calls for 2/3 cup and you make 3 batches, how many cups?' Work through with visual models (drawings)"</td>
+                </tr>
+                <tr>
+                    <td>Recent Activity</td>
+                    <td>Completed 15 problems on decimal place value</td>
+                    <td>"This week: Practiced understanding decimals (like money: $1.50 means 1 dollar and 50 cents)"</td>
+                    <td>"Real-world practice: Have your child count change, round prices to nearest dollar when shopping"</td>
+                </tr>
+                <tr>
+                    <td>Upcoming Skills</td>
+                    <td>Next standard: CCSS.MATH.5.NBT.B.7</td>
+                    <td>"Next up: Adding and subtracting decimals"</td>
+                    <td>"Preview: Practice making change from purchases, add up total cost of multiple items"</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>District Analytics and Reporting</h2>
+
+        <p>
+            District administrators need aggregated data across schools to identify systemic curriculum gaps, evaluate
+            program effectiveness, and make data-driven decisions about professional development, curriculum adoption, and
+            resource allocation. Certified content provides district-level dashboards with standards coverage analysis,
+            equity metrics, and effectiveness evidence.
+        </p>
+
+        <h3>District Analytics API</h3>
+
+        <pre><code>interface DistrictAnalytics {
+  districtId: string;
+  schools: SchoolSummary[];
+  standardsCoverageDistrictWide: StandardsCoverageAnalysis;
+  equityMetrics: EquityAnalysis;
+  effectivenessEvidence: EffectivenessData;
+  professionalDevelopmentNeeds: PDNeed[];
+}
+
+interface EquityAnalysis {
+  accessEquity: AccessMetrics;
+  outcomeEquity: OutcomeMetrics;
+  opportunityGaps: OpportunityGap[];
+}
+
+interface AccessMetrics {
+  // Are all students getting access to certified content?
+  bySchool: Map<string, number>;          // % students with access
+  byDemographic: Map<string, number>;     // % by race, SES, ELL, special ed
+  digitalDivide: DigitalAccessAnalysis;
+}
+
+interface OutcomeMetrics {
+  // Are outcomes equitable across demographics?
+  achievementByDemographic: Map<string, AchievementData>;
+  achievementGaps: AchievementGap[];
+  trendAnalysis: TrendData;
+}
+
+class DistrictAnalyticsService {
+  async generateDistrictDashboard(
+    districtId: string,
+    academicYear: string
+  ): Promise<DistrictAnalytics> {
+    // Aggregate data across all schools
+    const schools = await this.getDistrictSchools(districtId);
+    const schoolSummaries = await Promise.all(
+      schools.map(s => this.generateSchoolSummary(s.id, academicYear))
+    );
+
+    // Analyze district-wide standards coverage
+    const coverage = await this.analyzeDistrictStandardsCoverage(
+      schoolSummaries,
+      academicYear
+    );
+
+    // Analyze equity
+    const equity = await this.analyzeEquity(schoolSummaries);
+
+    // Analyze effectiveness
+    const effectiveness = await this.analyzeEffectiveness(
+      districtId,
+      academicYear
+    );
+
+    // Identify PD needs
+    const pdNeeds = await this.identifyPDNeeds(coverage, schoolSummaries);
+
+    return {
+      districtId: districtId,
+      schools: schoolSummaries,
+      standardsCoverageDistrictWide: coverage,
+      equityMetrics: equity,
+      effectivenessEvidence: effectiveness,
+      professionalDevelopmentNeeds: pdNeeds
+    };
+  }
+
+  async analyzeEquity(schools: SchoolSummary[]): Promise<EquityAnalysis> {
+    // Access equity: Do all students have access?
+    const accessEquity = await this.analyzeAccessEquity(schools);
+
+    // Outcome equity: Are outcomes equitable?
+    const outcomeEquity = await this.analyzeOutcomeEquity(schools);
+
+    // Identify opportunity gaps
+    const gaps = this.identifyOpportunityGaps(accessEquity, outcomeEquity);
+
+    return {
+      accessEquity: accessEquity,
+      outcomeEquity: outcomeEquity,
+      opportunityGaps: gaps
+    };
+  }
+
+  identifyOpportunityGaps(
+    access: AccessMetrics,
+    outcomes: OutcomeMetrics
+  ): OpportunityGap[] {
+    const gaps: OpportunityGap[] = [];
+
+    // Check for access gaps
+    for (const [demographic, accessRate] of access.byDemographic.entries()) {
+      const districtAverage = this.calculateAverageAccessRate(access.byDemographic);
+
+      if (accessRate < districtAverage - 0.10) {  // 10+ percentage points below average
+        gaps.push({
+          type: 'access',
+          demographic: demographic,
+          gap: districtAverage - accessRate,
+          severity: 'high',
+          description: `${demographic} students have ${((districtAverage - accessRate) * 100).toFixed(0)}% less access to certified content than district average`,
+          recommendation: `Ensure all ${demographic} students have devices and internet access. Consider school-based access for students without home internet.`
+        });
+      }
+    }
+
+    // Check for achievement gaps
+    for (const gap of outcomes.achievementGaps) {
+      if (gap.standardDeviations >= 0.3) {  // 0.3 SD or more = meaningful gap
+        gaps.push({
+          type: 'achievement',
+          demographic: gap.demographic,
+          gap: gap.standardDeviations,
+          severity: gap.standardDeviations >= 0.5 ? 'high' : 'medium',
+          description: `${gap.demographic} students scoring ${gap.standardDeviations.toFixed(2)} SD below ${gap.comparisonGroup}`,
+          recommendation: gap.standardDeviations >= 0.5
+            ? `Significant achievement gap requires intensive intervention. Consider: culturally responsive pedagogy training, targeted tutoring, family engagement programs.`
+            : `Moderate achievement gap. Recommend: differentiated instruction, additional support resources, monitor progress closely.`
+        });
+      }
+    }
+
+    return gaps.sort((a, b) => {
+      const severityOrder = { high: 2, medium: 1, low: 0 };
+      return severityOrder[b.severity] - severityOrder[a.severity];
+    });
+  }
+}
+</code></pre>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>WIA-CHILD-008 certified content integrates with major LMS platforms (Canvas 31%, Google Classroom 48%,
+                Blackboard 18%) via LTI 1.3 standard, enabling single sign-on, grade passback with standards alignment, deep
+                linking, and roster synchronization.</li>
+
+                <li>SIS integration through OneRoster standard automates rostering (student/teacher assignments), demographic
+                data import, enrollment management, and status handling (active, inactive, tobedeleted) across PowerSchool,
+                Infinite Campus, and other major SIS platforms.</li>
+
+                <li>Teacher dashboards provide standards-aligned insights: mastery by specific standard code (CCSS.MATH.5.NF.A.1:
+                85%), targeted intervention recommendations ("15 students need small group on fractions"), coverage gaps (2
+                standards not scheduled), and item-level misconception analysis.</li>
+
+                <li>Parent portals translate educational standards into plain language ("Fractions: Can add and subtract
+                fractions ✓" vs. "CCSS.MATH.5.NF.A.1"), provide home support suggestions (recipe measurement practice, counting
+                change), and show progress without overwhelming jargon.</li>
+
+                <li>District analytics aggregate data across schools for standards coverage analysis (district-wide gaps),
+                equity metrics (access by demographic, achievement gaps ≥0.3 SD), effectiveness evidence, and professional
+                development needs identification.</li>
+
+                <li>Equity analysis identifies opportunity gaps through access metrics (device/internet access by demographic),
+                outcome metrics (achievement by race/SES/ELL/special ed), and generates targeted recommendations (culturally
+                responsive pedagogy, differentiated instruction, family engagement).</li>
+
+                <li>Integration architecture requires grade passback with WIA-CHILD-008 extensions embedding standards alignment
+                metadata (framework code, standard code, mastery level, confidence score) in LTI grade payloads, enabling
+                standards-based reporting across all integrated systems.</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>The LTI integration passes back standards alignment data with each grade. What are the privacy implications
+                of sharing detailed learning analytics through third-party integrations? Who owns this data—the school, the
+                EdTech vendor, or the student/family?</li>
+
+                <li>OneRoster status handling includes 'tobedeleted' for students who have transferred or graduated. The system
+                "anonymizes data, retains for analytics." Is this ethical? Should student data be deleted entirely or does
+                aggregated historical data serve legitimate educational research purposes?</li>
+
+                <li>Teacher dashboard recommendations suggest specific interventions ("Small group lesson: Comparing Fractions").
+                Could this lead to over-reliance on algorithm recommendations, reducing teacher professional judgment? When should
+                teachers trust the system versus their own assessment?</li>
+
+                <li>The parent portal translates "CCSS.MATH.5.NF.A.1" to "Fractions: Can add and subtract fractions." Does this
+                simplification lose important nuance? Should parents understand the actual standards, or is accessibility more
+                important than precision?</li>
+
+                <li>District equity analysis flags achievement gaps ≥0.3 SD as "meaningful." But gaps might reflect historical
+                inequity, not current program quality. How do we distinguish between gaps caused by certified content versus
+                systemic factors outside the curriculum?</li>
+
+                <li>Google Classroom has 48% K-12 market share while Canvas has 31%, yet certification requires both. Should
+                standards prioritize platforms by market share, or require integration with all major platforms regardless of
+                cost to EdTech developers?</li>
+
+                <li>The recommendation engine suggests "15 students need small group intervention" but doesn't schedule it, find
+                time, or provide the teacher. Are these recommendations helpful or just highlighting problems teachers already
+                know but lack resources to address?</li>
+
+                <li>Deep linking allows teachers to add certified content directly from LMS. But what prevents teachers from
+                bypassing certification by using non-certified content? Should LMS platforms filter non-certified content,
+                or is that censorship of teacher autonomy?</li>
+            </ol>
+        </div>
+
+        <div class="philosophy">
+            <h3>弘益人間 (Hongik Ingan)</h3>
+            <p><em>"Benefit All Humanity"</em></p>
+            <p style="margin-top: 1rem;">
+                Educational technology ecosystems only benefit humanity when they serve equity, not just efficiency. By requiring
+                certified content to integrate seamlessly across LMS, SIS, teacher portals, and parent systems, we ensure that
+                quality education is accessible in any district—wealthy or under-resourced—using any platform.
+            </p>
+            <p style="margin-top: 1rem;">
+                The equity analysis requirements embody 弘益人間 by making opportunity gaps visible and actionable. When districts
+                can see exactly which students lack access or lag in achievement, they can allocate resources where most needed.
+                Technology serving equity—not just those already advantaged—truly benefits all humanity.
+            </p>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-06.html" class="nav-button">← Previous: Advanced Features</a>
+            <a href="chapter-08.html" class="nav-button">Next: Future Outlook →</a>
+        </div>
+
+        <footer>
+            <p>© 2025 SmileStory Inc. / WIA</p>
+            <p style="margin-top: 0.5rem; color: var(--primary);">弘益人間 (Benefit All Humanity)</p>
+            <p style="margin-top: 0.5rem;">WIA-CHILD-008 Educational Content Certification Standard v1.0</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>제01장: DRAM 메모리 기술 - WIA-SEMI-002</title>
+    <style>
+        :root { --bg: #0f172a; --primary: #8B5CF6; --secondary: #1e293b; --text: #e2e8f0; --text-dim: #94a3b8; --accent: #a78bfa; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: var(--primary); }
+        h1 { font-size: 2.5rem; border-bottom: 3px solid var(--primary); padding-bottom: 1rem; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; margin: 2.5rem 0 1rem; }
+        h3 { font-size: 1.5rem; color: var(--accent); margin: 2rem 0 0.75rem; }
+        h4 { font-size: 1.25rem; color: var(--accent); margin: 1.5rem 0 0.5rem; }
+        p { margin: 1rem 0; }
+        .chapter-nav { background: var(--secondary); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; }
+        .chapter-nav a { color: var(--primary); text-decoration: none; padding: 0.5rem 1rem; border: 2px solid var(--primary); border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: var(--secondary); }
+        th, td { padding: 1rem; border-bottom: 1px solid var(--border); text-align: left; }
+        th { background: var(--bg); color: var(--primary); font-weight: bold; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.75rem 0; }
+        .code-block { background: var(--secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+        .code-block code { font-family: 'Courier New', monospace; color: var(--accent); }
+        .info-box { background: var(--secondary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 1.5rem 0; }
+        .summary { background: var(--secondary); border: 2px solid var(--primary); border-radius: 10px; padding: 2rem; margin: 3rem 0; }
+        footer { text-align: center; margin-top: 4rem; padding: 2rem; border-top: 2px solid var(--primary); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-nav">
+            <a href="index.html">← 목차</a>
+            <span style="color: var(--text-dim);">제01장 / 8</span>
+            <a href="chapter-02.html">다음 장 →</a>
+        </div>
+
+        <h1>제01장: DRAM 메모리 기술</h1>
+
+        <p>DRAM(Dynamic Random Access Memory)은 현대 컴퓨팅 시스템의 핵심 메모리 기술로, 메인 메모리로 널리 사용됩니다. 이 장에서는 DRAM의 동작 원리, 아키텍처, 성능 특성 및 최신 기술 발전을 상세히 다룹니다.</p>
+
+        <h2>DRAM 기본 원리</h2>
+
+        <h3>1. DRAM 셀 구조</h3>
+        <p>DRAM은 1트랜지스터 1캐패시터(1T1C) 구조를 사용하여 데이터를 저장합니다. 각 메모리 셀은 하나의 접근 트랜지스터와 하나의 저장 캐패시터로 구성됩니다.</p>
+
+        <div class="info-box">
+            <h4>DRAM 셀의 주요 구성 요소</h4>
+            <ul>
+                <li><strong>접근 트랜지스터(Access Transistor):</strong> 워드 라인(Word Line)에 의해 제어되며, 비트 라인(Bit Line)과 캐패시터 사이의 연결을 담당</li>
+                <li><strong>저장 캐패시터(Storage Capacitor):</strong> 전하의 유무로 0과 1을 표현. 일반적으로 25-30 펨토패럿(fF) 용량</li>
+                <li><strong>비트 라인(Bit Line):</strong> 데이터 읽기/쓰기 경로</li>
+                <li><strong>워드 라인(Word Line):</strong> 셀 선택 신호</li>
+            </ul>
+        </div>
+
+        <h3>2. 리프레시 메커니즘</h3>
+        <p>DRAM의 가장 중요한 특성 중 하나는 주기적인 리프레시가 필요하다는 점입니다. 캐패시터에 저장된 전하는 누설 전류로 인해 시간이 지나면 소실되므로, 데이터 유지를 위해 정기적으로 재충전해야 합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>리프레시 유형</th>
+                    <th>주기</th>
+                    <th>특징</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>자동 리프레시</strong></td>
+                    <td>64ms</td>
+                    <td>메모리 컨트롤러가 자동으로 모든 행 리프레시</td>
+                </tr>
+                <tr>
+                    <td><strong>셀프 리프레시</strong></td>
+                    <td>가변</td>
+                    <td>저전력 모드에서 DRAM 내부 회로가 리프레시 수행</td>
+                </tr>
+                <tr>
+                    <td><strong>타겟 리프레시</strong></td>
+                    <td>필요시</td>
+                    <td>로우해머 공격 방지를 위한 특정 행 리프레시</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>DRAM 아키텍처</h2>
+
+        <h3>1. 뱅크 구조</h3>
+        <p>현대 DRAM은 여러 뱅크로 구성되어 병렬 처리를 통해 성능을 향상시킵니다. 각 뱅크는 독립적으로 동작할 수 있어 여러 읽기/쓰기 작업을 동시에 수행할 수 있습니다.</p>
+
+        <div class="code-block">
+            <code>
+// DRAM 주소 디코딩 구조<br>
+struct DRAMAddress {<br>
+&nbsp;&nbsp;uint8_t  bank;      // 뱅크 선택 (예: 8 뱅크)<br>
+&nbsp;&nbsp;uint16_t row;       // 행 주소 (예: 16K 행)<br>
+&nbsp;&nbsp;uint16_t column;    // 열 주소 (예: 1K 열)<br>
+};<br>
+<br>
+// DDR4-3200 사양 예시<br>
+const DRAMSpec DDR4_3200 = {<br>
+&nbsp;&nbsp;.banks = 16,          // 16 뱅크<br>
+&nbsp;&nbsp;.rows = 65536,        // 64K 행<br>
+&nbsp;&nbsp;.columns = 1024,      // 1K 열<br>
+&nbsp;&nbsp;.bus_width = 64,      // 64비트 데이터 버스<br>
+&nbsp;&nbsp;.frequency = 1600,    // 1600 MHz (DDR: 3200 MT/s)<br>
+&nbsp;&nbsp;.capacity_gb = 8      // 8GB 모듈<br>
+};
+            </code>
+        </div>
+
+        <h3>2. DDR 세대별 발전</h3>
+        <p>DDR(Double Data Rate) SDRAM은 클럭의 상승 및 하강 에지 모두에서 데이터를 전송하여 효율성을 높입니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>DDR 세대</th>
+                    <th>데이터 전송률</th>
+                    <th>전압</th>
+                    <th>프리페치</th>
+                    <th>뱅크 그룹</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>DDR3</strong></td>
+                    <td>800-2133 MT/s</td>
+                    <td>1.5V</td>
+                    <td>8n</td>
+                    <td>1</td>
+                </tr>
+                <tr>
+                    <td><strong>DDR4</strong></td>
+                    <td>1600-3200 MT/s</td>
+                    <td>1.2V</td>
+                    <td>8n</td>
+                    <td>2-4</td>
+                </tr>
+                <tr>
+                    <td><strong>DDR5</strong></td>
+                    <td>3200-6400 MT/s</td>
+                    <td>1.1V</td>
+                    <td>16n</td>
+                    <td>4-8</td>
+                </tr>
+                <tr>
+                    <td><strong>DDR6 (예정)</strong></td>
+                    <td>8000+ MT/s</td>
+                    <td>1.0V</td>
+                    <td>32n</td>
+                    <td>8-16</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>DRAM 타이밍 파라미터</h2>
+
+        <h3>1. 주요 타이밍 스펙</h3>
+        <p>DRAM 성능은 여러 타이밍 파라미터에 의해 결정됩니다. 이러한 파라미터는 메모리 액세스 지연과 대역폭에 직접적인 영향을 미칩니다.</p>
+
+        <div class="info-box">
+            <h4>핵심 타이밍 파라미터 (DDR4-3200 CL16 예시)</h4>
+            <ul>
+                <li><strong>CL (CAS Latency):</strong> 16 클럭 사이클 - 읽기 명령 후 데이터 출력까지의 지연</li>
+                <li><strong>tRCD (RAS to CAS Delay):</strong> 16 클럭 - 행 활성화 후 열 명령까지의 지연</li>
+                <li><strong>tRP (Row Precharge Time):</strong> 16 클럭 - 행 프리차지 시간</li>
+                <li><strong>tRAS (Row Active Time):</strong> 36 클럭 - 행 활성 최소 시간</li>
+                <li><strong>tRFC (Refresh Cycle Time):</strong> 350ns - 리프레시 사이클 시간</li>
+            </ul>
+        </div>
+
+        <div class="code-block">
+            <code>
+// DRAM 레이턴시 계산 예시<br>
+function calculateDRAMLatency(frequency_mhz, cl) {<br>
+&nbsp;&nbsp;const cycle_time_ns = 1000 / frequency_mhz;<br>
+&nbsp;&nbsp;const latency_ns = cl * cycle_time_ns;<br>
+&nbsp;&nbsp;return latency_ns;<br>
+}<br>
+<br>
+// DDR4-3200 CL16의 실제 레이턴시<br>
+// 1600 MHz 실제 클럭, 3200 MT/s DDR 레이트<br>
+const latency = calculateDRAMLatency(1600, 16);<br>
+console.log(`CAS Latency: ${latency}ns`); // 10ns
+            </code>
+        </div>
+
+        <h2>DRAM 제조 기술</h2>
+
+        <h3>1. 공정 노드 발전</h3>
+        <p>DRAM 제조 공정은 지속적으로 미세화되어 왔으며, 현재 10나노미터 이하 공정이 사용됩니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>세대</th>
+                    <th>공정 노드</th>
+                    <th>셀 크기</th>
+                    <th>용량/칩</th>
+                    <th>주요 제조사</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1x nm</td>
+                    <td>10-19nm</td>
+                    <td>~6F²</td>
+                    <td>8Gb</td>
+                    <td>Samsung, SK Hynix, Micron</td>
+                </tr>
+                <tr>
+                    <td>1y nm</td>
+                    <td>14-16nm</td>
+                    <td>~6F²</td>
+                    <td>16Gb</td>
+                    <td>Samsung, SK Hynix, Micron</td>
+                </tr>
+                <tr>
+                    <td>1z nm</td>
+                    <td>12-14nm</td>
+                    <td>~6F²</td>
+                    <td>16Gb</td>
+                    <td>Samsung, SK Hynix, Micron</td>
+                </tr>
+                <tr>
+                    <td>1α nm</td>
+                    <td>10-12nm</td>
+                    <td>~6F²</td>
+                    <td>24Gb</td>
+                    <td>Samsung, SK Hynix, Micron</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. 캐패시터 구조</h3>
+        <p>미세 공정에서 충분한 전하 저장 용량을 유지하기 위해 다양한 3D 캐패시터 구조가 개발되었습니다.</p>
+
+        <ul>
+            <li><strong>스택 캐패시터(Stack Capacitor):</strong> 수직으로 적층된 구조로 높은 종횡비 달성</li>
+            <li><strong>트렌치 캐패시터(Trench Capacitor):</strong> 실리콘 기판에 깊은 홈을 파서 면적 증대</li>
+            <li><strong>MIM 캐패시터(Metal-Insulator-Metal):</strong> 고유전율 절연체 사용으로 용량 증가</li>
+            <li><strong>3D 캐패시터:</strong> 복잡한 3차원 구조로 극대화된 표면적</li>
+        </ul>
+
+        <h2>LPDDR: 저전력 DRAM</h2>
+
+        <h3>1. LPDDR 특징</h3>
+        <p>LPDDR(Low Power DDR)은 모바일 기기를 위한 저전력 DRAM으로, 배터리 수명 연장이 핵심 목표입니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>LPDDR 세대</th>
+                    <th>데이터 전송률</th>
+                    <th>전압</th>
+                    <th>전력 효율</th>
+                    <th>주요 응용</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>LPDDR4X</strong></td>
+                    <td>4266 MT/s</td>
+                    <td>0.6V</td>
+                    <td>기준</td>
+                    <td>스마트폰, 태블릿</td>
+                </tr>
+                <tr>
+                    <td><strong>LPDDR5</strong></td>
+                    <td>6400 MT/s</td>
+                    <td>0.5V</td>
+                    <td>+20%</td>
+                    <td>5G 스마트폰, AI</td>
+                </tr>
+                <tr>
+                    <td><strong>LPDDR5X</strong></td>
+                    <td>8533 MT/s</td>
+                    <td>0.5V</td>
+                    <td>+30%</td>
+                    <td>프리미엄 스마트폰</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>DRAM 성능 최적화</h2>
+
+        <h3>1. 메모리 인터리빙</h3>
+        <p>여러 메모리 뱅크와 채널을 활용하여 병렬 액세스를 통해 대역폭을 극대화합니다.</p>
+
+        <div class="code-block">
+            <code>
+// 듀얼 채널 메모리 설정 예시<br>
+class DualChannelMemory {<br>
+&nbsp;&nbsp;constructor() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.channel_a = new MemoryChannel(0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.channel_b = new MemoryChannel(1);<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;read(address) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 주소의 최하위 비트로 채널 선택<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const channel = (address & 0x40) ? this.channel_b : this.channel_a;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return channel.read(address >> 7);<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;getBandwidth() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 듀얼 채널로 2배 대역폭<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return 2 * 3200 * 8; // 51.2 GB/s (DDR4-3200)<br>
+&nbsp;&nbsp;}<br>
+}
+            </code>
+        </div>
+
+        <h3>2. 로우 버퍼 히트 최적화</h3>
+        <p>동일한 메모리 행에 대한 연속적인 액세스는 행 버퍼 히트를 발생시켜 레이턴시를 크게 감소시킵니다.</p>
+
+        <div class="info-box">
+            <h4>행 버퍼 히트 vs 미스</h4>
+            <ul>
+                <li><strong>행 버퍼 히트:</strong> 동일 행 액세스 시 CL만 소요 (~10ns)</li>
+                <li><strong>행 버퍼 미스:</strong> 다른 행 액세스 시 tRP + tRCD + CL 소요 (~50ns)</li>
+                <li><strong>성능 향상:</strong> 순차 액세스 패턴으로 최대 5배 향상 가능</li>
+            </ul>
+        </div>
+
+        <h2>DRAM 보안 및 신뢰성</h2>
+
+        <h3>1. ECC (Error Correction Code)</h3>
+        <p>서버용 DRAM은 ECC를 통해 비트 오류를 감지하고 수정합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ECC 방식</th>
+                    <th>감지 능력</th>
+                    <th>수정 능력</th>
+                    <th>오버헤드</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>SEC (Single Error Correction)</td>
+                    <td>2비트 오류</td>
+                    <td>1비트 오류</td>
+                    <td>12.5%</td>
+                </tr>
+                <tr>
+                    <td>SECDED</td>
+                    <td>2비트 오류</td>
+                    <td>1비트 오류</td>
+                    <td>12.5%</td>
+                </tr>
+                <tr>
+                    <td>Chipkill</td>
+                    <td>칩 전체 장애</td>
+                    <td>1칩 장애</td>
+                    <td>25%</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. 로우해머 공격 대응</h3>
+        <p>로우해머(Rowhammer)는 특정 메모리 행을 반복적으로 액세스하여 인접 행의 데이터를 변조하는 공격입니다. 최신 DRAM은 다양한 대응책을 구현합니다.</p>
+
+        <ul>
+            <li><strong>타겟 행 리프레시(TRR):</strong> 빈번하게 액세스되는 행의 인접 행을 추가 리프레시</li>
+            <li><strong>증가된 리프레시 율:</strong> 전체적인 리프레시 빈도 증가</li>
+            <li><strong>하드웨어 카운터:</strong> 행별 액세스 횟수 모니터링</li>
+        </ul>
+
+        <div class="summary">
+            <h2>요약</h2>
+            <p>DRAM은 1T1C 구조의 단순함으로 높은 집적도를 달성하며, 현대 컴퓨터 시스템의 메인 메모리로 필수적입니다. DDR5와 LPDDR5X 같은 최신 세대는 더 높은 대역폭과 낮은 전력 소비를 제공합니다.</p>
+
+            <h3>핵심 요점</h3>
+            <ul>
+                <li>DRAM은 주기적 리프레시가 필요한 휘발성 메모리</li>
+                <li>뱅크 구조와 인터리빙을 통한 병렬 처리로 성능 향상</li>
+                <li>DDR 세대가 발전할수록 속도는 증가하고 전압은 감소</li>
+                <li>ECC와 TRR 같은 기술로 신뢰성과 보안 강화</li>
+                <li>10nm 이하 공정 기술로 더 높은 용량 달성</li>
+            </ul>
+        </div>
+
+        <div class="chapter-nav">
+            <a href="index.html">← 목차</a>
+            <span style="color: var(--text-dim);">제01장 / 8</span>
+            <a href="chapter-02.html">다음 장 →</a>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / 세계산업인증협회 (WIA)</p>
+            <p>弘益人間 (홍익인간) · 널리 인간을 이롭게 하라</p>
+        </footer>
+    </div>
+</body>
+</html>

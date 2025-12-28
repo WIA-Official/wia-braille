@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-UNI-014: Legal System Harmonization Simulator ⚖️</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .lang-switch {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-card);
+            padding: 0.25rem;
+            border-radius: 8px;
+            z-index: 100;
+        }
+
+        .lang-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .tab:hover {
+            border-color: var(--primary);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+
+        .panel.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn-center {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .btn {
+            padding: 1rem 3rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        }
+
+        .output {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .card h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 0.25rem;
+        }
+
+        .badge-primary { background: rgba(59, 130, 246, 0.2); color: var(--primary); }
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--secondary); }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .philosophy {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .tab {
+                width: 100%;
+                text-align: center;
+            }
+
+            .lang-switch {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin-bottom: 1rem;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="lang-switch">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('ko')">KO</button>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>⚖️ Legal System Harmonization Simulator</h1>
+            <p data-en="Interactive simulation for inter-Korean legal framework unification" data-ko="남북한 법률 프레임워크 통합을 위한 대화형 시뮬레이션">Interactive simulation for inter-Korean legal framework unification</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showPanel(0)" data-en="📊 Data Format" data-ko="📊 데이터 형식">📊 Data Format</div>
+            <div class="tab" onclick="showPanel(1)" data-en="🔢 Algorithms" data-ko="🔢 알고리즘">🔢 Algorithms</div>
+            <div class="tab" onclick="showPanel(2)" data-en="📡 Protocol" data-ko="📡 프로토콜">📡 Protocol</div>
+            <div class="tab" onclick="showPanel(3)" data-en="🔗 Integration" data-ko="🔗 통합">🔗 Integration</div>
+            <div class="tab" onclick="showPanel(4)" data-en="📱 QR & VC" data-ko="📱 QR & VC">📱 QR & VC</div>
+        </div>
+
+        <!-- Panel 0: Data Format -->
+        <div class="panel active" id="panel-0">
+            <h2 data-en="Legal Document Data Format" data-ko="법률 문서 데이터 형식">Legal Document Data Format</h2>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Document Type" data-ko="문서 유형">Document Type</label>
+                    <select id="docType">
+                        <option value="law">Law / 법률</option>
+                        <option value="regulation">Regulation / 규정</option>
+                        <option value="judgment">Court Judgment / 판결</option>
+                        <option value="contract">Contract / 계약</option>
+                        <option value="property">Property Rights / 재산권</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label data-en="Jurisdiction" data-ko="관할권">Jurisdiction</label>
+                    <select id="jurisdiction">
+                        <option value="north">North Korea / 북한</option>
+                        <option value="south">South Korea / 남한</option>
+                        <option value="unified">Unified / 통일</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label data-en="Document ID" data-ko="문서 ID">Document ID</label>
+                    <input type="text" id="docId" placeholder="WIA-UNI-014-LEGAL-001">
+                </div>
+
+                <div class="form-group">
+                    <label data-en="Issue Date" data-ko="발행일">Issue Date</label>
+                    <input type="date" id="issueDate">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Document Title" data-ko="문서 제목">Document Title</label>
+                <input type="text" id="docTitle" placeholder="Inter-Korean Property Rights Agreement">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Legal Content" data-ko="법률 내용">Legal Content</label>
+                <textarea id="legalContent" placeholder="Enter legal document content..."></textarea>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="generateLegalFormat()">
+                    <span data-en="Generate Format" data-ko="형식 생성">Generate Format</span>
+                </button>
+            </div>
+
+            <div id="output0" class="output" style="display:none;"></div>
+        </div>
+
+        <!-- Panel 1: Algorithms -->
+        <div class="panel" id="panel-1">
+            <h2 data-en="Legal Harmonization Algorithms" data-ko="법률 조화 알고리즘">Legal Harmonization Algorithms</h2>
+
+            <div class="grid">
+                <div class="card">
+                    <h3 data-en="Law Comparison" data-ko="법률 비교">Law Comparison</h3>
+                    <p data-en="Compare North and South Korean laws to identify conflicts and similarities" data-ko="남북한 법률을 비교하여 충돌 및 유사점 식별">Compare North and South Korean laws to identify conflicts and similarities</p>
+                    <div class="btn-center">
+                        <button class="btn btn-primary" onclick="compareLaws()">
+                            <span data-en="Compare" data-ko="비교">Compare</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 data-en="Conflict Resolution" data-ko="충돌 해결">Conflict Resolution</h3>
+                    <p data-en="Propose harmonized legal provisions that resolve conflicts" data-ko="충돌을 해결하는 조화된 법률 조항 제안">Propose harmonized legal provisions that resolve conflicts</p>
+                    <div class="btn-center">
+                        <button class="btn btn-primary" onclick="resolveConflicts()">
+                            <span data-en="Resolve" data-ko="해결">Resolve</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 data-en="Property Rights Mapping" data-ko="재산권 매핑">Property Rights Mapping</h3>
+                    <p data-en="Map property ownership across different legal systems" data-ko="다양한 법률 시스템에 걸친 재산 소유권 매핑">Map property ownership across different legal systems</p>
+                    <div class="btn-center">
+                        <button class="btn btn-primary" onclick="mapPropertyRights()">
+                            <span data-en="Map" data-ko="매핑">Map</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="output1" class="output" style="display:none;"></div>
+        </div>
+
+        <!-- Panel 2: Protocol -->
+        <div class="panel" id="panel-2">
+            <h2 data-en="Legal Protocol Simulator" data-ko="법률 프로토콜 시뮬레이터">Legal Protocol Simulator</h2>
+
+            <div class="form-group">
+                <label data-en="Protocol Action" data-ko="프로토콜 작업">Protocol Action</label>
+                <select id="protocolAction">
+                    <option value="register">Register Legal Document / 법률 문서 등록</option>
+                    <option value="verify">Verify Authenticity / 진위 확인</option>
+                    <option value="amend">Amend Document / 문서 수정</option>
+                    <option value="transfer">Transfer Rights / 권리 이전</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Source System" data-ko="소스 시스템">Source System</label>
+                <select id="sourceSystem">
+                    <option value="north-court">North Korean Court / 북한 법원</option>
+                    <option value="south-court">South Korean Court / 남한 법원</option>
+                    <option value="unified-registry">Unified Legal Registry / 통합 법률 등록부</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Target System" data-ko="대상 시스템">Target System</label>
+                <select id="targetSystem">
+                    <option value="north-court">North Korean Court / 북한 법원</option>
+                    <option value="south-court">South Korean Court / 남한 법원</option>
+                    <option value="unified-registry">Unified Legal Registry / 통합 법률 등록부</option>
+                </select>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="simulateProtocol()">
+                    <span data-en="Simulate Protocol" data-ko="프로토콜 시뮬레이션">Simulate Protocol</span>
+                </button>
+            </div>
+
+            <div id="output2" class="output" style="display:none;"></div>
+        </div>
+
+        <!-- Panel 3: Integration -->
+        <div class="panel" id="panel-3">
+            <h2 data-en="WIA System Integration" data-ko="WIA 시스템 통합">WIA System Integration</h2>
+
+            <div class="grid">
+                <div class="card">
+                    <h3>🆔 WIA-UNI-001</h3>
+                    <p data-en="Unified ID System" data-ko="통합 ID 시스템">Unified ID System</p>
+                    <span class="badge badge-primary" data-en="Identity Verification" data-ko="신원 확인">Identity Verification</span>
+                </div>
+
+                <div class="card">
+                    <h3>💹 WIA-UNI-004</h3>
+                    <p data-en="Economic Integration" data-ko="경제 통합">Economic Integration</p>
+                    <span class="badge badge-success" data-en="Contract Enforcement" data-ko="계약 집행">Contract Enforcement</span>
+                </div>
+
+                <div class="card">
+                    <h3>🏥 WIA-UNI-003</h3>
+                    <p data-en="Healthcare Integration" data-ko="의료 통합">Healthcare Integration</p>
+                    <span class="badge badge-warning" data-en="Medical Rights" data-ko="의료 권리">Medical Rights</span>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 2rem;">
+                <label data-en="Integration Scenario" data-ko="통합 시나리오">Integration Scenario</label>
+                <select id="integrationScenario">
+                    <option value="property-transfer">Property Transfer with ID Verification / ID 확인이 포함된 재산 이전</option>
+                    <option value="cross-border-contract">Cross-border Contract / 국경 간 계약</option>
+                    <option value="inheritance-rights">Inheritance Rights / 상속권</option>
+                    <option value="business-registration">Business Registration / 사업자 등록</option>
+                </select>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="simulateIntegration()">
+                    <span data-en="Simulate Integration" data-ko="통합 시뮬레이션">Simulate Integration</span>
+                </button>
+            </div>
+
+            <div id="output3" class="output" style="display:none;"></div>
+        </div>
+
+        <!-- Panel 4: QR & VC -->
+        <div class="panel" id="panel-4">
+            <h2 data-en="QR Code & Verifiable Credentials" data-ko="QR 코드 및 검증 가능한 자격 증명">QR Code & Verifiable Credentials</h2>
+
+            <div class="form-group">
+                <label data-en="Credential Type" data-ko="자격 증명 유형">Credential Type</label>
+                <select id="credentialType">
+                    <option value="court-judgment">Court Judgment / 법원 판결</option>
+                    <option value="property-deed">Property Deed / 재산 증서</option>
+                    <option value="contract">Contract / 계약</option>
+                    <option value="legal-certificate">Legal Certificate / 법률 증명서</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Holder Name" data-ko="소지자 이름">Holder Name</label>
+                <input type="text" id="holderName" placeholder="Kim Min-jun">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Legal Reference" data-ko="법률 참조">Legal Reference</label>
+                <input type="text" id="legalRef" placeholder="Case No. 2025-민-12345">
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="generateVC()">
+                    <span data-en="Generate QR & VC" data-ko="QR & VC 생성">Generate QR & VC</span>
+                </button>
+            </div>
+
+            <div id="output4" class="output" style="display:none;"></div>
+            <div id="qrcode" style="text-align: center; margin-top: 2rem;"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p class="philosophy" data-en="弘益人間 · Benefit All Humanity" data-ko="弘益人間 · 널리 인간을 이롭게 하라">弘益人間 · Benefit All Humanity</p>
+        <p>WIA - World Certification Industry Association</p>
+        <p>© 2025 MIT License</p>
+    </footer>
+
+    <script>
+        let currentLang = localStorage.getItem('wiaLang') || 'en';
+
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('wiaLang', lang);
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute('data-' + lang);
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+        }
+
+        function showPanel(index) {
+            document.querySelectorAll('.panel').forEach((panel, i) => {
+                panel.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+        }
+
+        function generateLegalFormat() {
+            const docType = document.getElementById('docType').value;
+            const jurisdiction = document.getElementById('jurisdiction').value;
+            const docId = document.getElementById('docId').value || 'WIA-UNI-014-LEGAL-001';
+            const issueDate = document.getElementById('issueDate').value || new Date().toISOString().split('T')[0];
+            const docTitle = document.getElementById('docTitle').value || 'Untitled Legal Document';
+            const legalContent = document.getElementById('legalContent').value || 'No content provided';
+
+            const format = {
+                standard: "WIA-UNI-014",
+                version: "1.0",
+                document: {
+                    id: docId,
+                    type: docType,
+                    jurisdiction: jurisdiction,
+                    title: docTitle,
+                    issueDate: issueDate,
+                    content: legalContent,
+                    status: "active",
+                    harmonization: {
+                        northCompliant: true,
+                        southCompliant: true,
+                        conflictResolution: "applied"
+                    }
+                },
+                verification: {
+                    hash: "sha256:" + Math.random().toString(36).substring(7),
+                    timestamp: new Date().toISOString(),
+                    authority: "WIA Unified Legal Registry"
+                }
+            };
+
+            const output = document.getElementById('output0');
+            output.style.display = 'block';
+            output.textContent = JSON.stringify(format, null, 2);
+        }
+
+        function compareLaws() {
+            const result = {
+                comparison: "Law Comparison Analysis",
+                northKoreaLaw: {
+                    code: "NK-PROPERTY-2015",
+                    provision: "Property rights are granted by the state",
+                    scope: "Collective ownership emphasized"
+                },
+                southKoreaLaw: {
+                    code: "SK-CIVIL-2011",
+                    provision: "Property rights are individual rights",
+                    scope: "Private ownership emphasized"
+                },
+                conflicts: [
+                    "Ownership model (collective vs individual)",
+                    "Transfer mechanisms",
+                    "Inheritance rules"
+                ],
+                similarities: [
+                    "Legal registration required",
+                    "Protection against unlawful seizure",
+                    "Dispute resolution mechanisms"
+                ],
+                harmonizationProposal: "Hybrid model: Individual ownership with state oversight for public interest"
+            };
+
+            const output = document.getElementById('output1');
+            output.style.display = 'block';
+            output.textContent = JSON.stringify(result, null, 2);
+        }
+
+        function resolveConflicts() {
+            const resolution = {
+                conflictId: "WIA-UNI-014-CONFLICT-001",
+                issue: "Property Ownership Model",
+                northPosition: "State-granted collective rights",
+                southPosition: "Individual private rights",
+                harmonizedSolution: {
+                    principle: "Dual recognition system",
+                    implementation: [
+                        "Phase 1: Recognize existing property rights under both systems",
+                        "Phase 2: Establish conversion mechanism",
+                        "Phase 3: Create unified registry with dual notation",
+                        "Phase 4: Gradual convergence over 10-year period"
+                    ],
+                    safeguards: [
+                        "No forced conversion",
+                        "Protection of existing rights",
+                        "Compensation for conflicts",
+                        "International arbitration option"
+                    ]
+                },
+                status: "Proposed",
+                nextSteps: "Legal review by joint commission"
+            };
+
+            const output = document.getElementById('output1');
+            output.style.display = 'block';
+            output.textContent = JSON.stringify(resolution, null, 2);
+        }
+
+        function mapPropertyRights() {
+            const mapping = {
+                standard: "WIA-UNI-014",
+                propertyId: "PROP-2025-001",
+                location: "Kaesong Industrial Complex",
+                northSystem: {
+                    registrationId: "NK-PROP-2010-5432",
+                    ownershipType: "State leasehold",
+                    holder: "Kaesong Management Committee",
+                    term: "50 years from 2010"
+                },
+                southSystem: {
+                    registrationId: "SK-CORP-2010-1234",
+                    ownershipType: "Corporate investment",
+                    holder: "ROK Industrial Consortium",
+                    investmentValue: "250 million USD"
+                },
+                unifiedMapping: {
+                    wiaId: "WIA-UNI-014-PROP-001",
+                    recognizedOwnership: "Joint economic zone model",
+                    northRights: "Land sovereignty",
+                    southRights: "Development and operation rights",
+                    revenueSharing: "60% NK / 40% SK",
+                    disputeResolution: "WIA Arbitration Board"
+                }
+            };
+
+            const output = document.getElementById('output1');
+            output.style.display = 'block';
+            output.textContent = JSON.stringify(mapping, null, 2);
+        }
+
+        function simulateProtocol() {
+            const action = document.getElementById('protocolAction').value;
+            const source = document.getElementById('sourceSystem').value;
+            const target = document.getElementById('targetSystem').value;
+
+            const protocol = {
+                protocol: "WIA-UNI-014-PROTOCOL",
+                version: "1.0",
+                action: action,
+                flow: {
+                    step1: {
+                        name: "Initiate request",
+                        source: source,
+                        authentication: "WIA-UNI-001 Unified ID",
+                        status: "✅ Authenticated"
+                    },
+                    step2: {
+                        name: "Verify legal authority",
+                        check: "Court jurisdiction validation",
+                        status: "✅ Verified"
+                    },
+                    step3: {
+                        name: "Cross-system protocol handshake",
+                        from: source,
+                        to: target,
+                        encryption: "TLS 1.3 + WIA encryption",
+                        status: "✅ Secure channel established"
+                    },
+                    step4: {
+                        name: "Execute action",
+                        action: action,
+                        timestamp: new Date().toISOString(),
+                        status: "✅ Completed"
+                    },
+                    step5: {
+                        name: "Update unified registry",
+                        registry: "WIA Unified Legal Registry",
+                        status: "✅ Synchronized"
+                    }
+                },
+                result: "Protocol executed successfully",
+                transactionId: "WIA-TX-" + Date.now()
+            };
+
+            const output = document.getElementById('output2');
+            output.style.display = 'block';
+            output.textContent = JSON.stringify(protocol, null, 2);
+        }
+
+        function simulateIntegration() {
+            const scenario = document.getElementById('integrationScenario').value;
+
+            const integration = {
+                scenario: scenario,
+                wiaStandards: [
+                    "WIA-UNI-014 (Legal System Harmonization)",
+                    "WIA-UNI-001 (Unified ID System)",
+                    "WIA-UNI-004 (Economic Integration)"
+                ],
+                workflow: {
+                    step1: "Identity verification via WIA-UNI-001",
+                    step2: "Legal capacity check via WIA-UNI-014",
+                    step3: "Economic validation via WIA-UNI-004",
+                    step4: "Cross-standard data exchange",
+                    step5: "Unified transaction execution",
+                    step6: "Multi-registry update"
+                },
+                dataFlow: {
+                    from_UNI001: {
+                        citizenId: "WIA-ID-2025-12345",
+                        legalCapacity: "verified",
+                        jurisdiction: "unified"
+                    },
+                    from_UNI014: {
+                        legalStatus: "eligible",
+                        propertyRights: "confirmed",
+                        contractCapacity: "full"
+                    },
+                    from_UNI004: {
+                        economicStatus: "active",
+                        creditScore: 850,
+                        transactionLimit: "unlimited"
+                    }
+                },
+                result: "Integration successful - all systems synchronized",
+                benefits: [
+                    "Single point of verification",
+                    "Reduced processing time from days to minutes",
+                    "Automatic compliance with all legal frameworks",
+                    "Real-time cross-border coordination"
+                ]
+            };
+
+            const output = document.getElementById('output3');
+            output.style.display = 'block';
+            output.textContent = JSON.stringify(integration, null, 2);
+        }
+
+        function generateVC() {
+            const credType = document.getElementById('credentialType').value;
+            const holder = document.getElementById('holderName').value || 'Kim Min-jun';
+            const legalRef = document.getElementById('legalRef').value || 'Case No. 2025-민-12345';
+
+            const vc = {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://wiastandards.com/contexts/legal/v1"
+                ],
+                "type": ["VerifiableCredential", "LegalCredential"],
+                "issuer": "did:wia:unified-legal-registry",
+                "issuanceDate": new Date().toISOString(),
+                "credentialSubject": {
+                    "id": "did:wia:" + holder.toLowerCase().replace(/\s/g, '-'),
+                    "name": holder,
+                    "credentialType": credType,
+                    "legalReference": legalRef,
+                    "jurisdiction": "WIA Unified Legal System",
+                    "status": "active",
+                    "validFrom": new Date().toISOString(),
+                    "validUntil": "2030-12-31T23:59:59Z"
+                },
+                "proof": {
+                    "type": "WIALegalSignature2025",
+                    "created": new Date().toISOString(),
+                    "proofPurpose": "assertionMethod",
+                    "verificationMethod": "did:wia:unified-legal-registry#key-1",
+                    "jws": "eyJhbGciOiJFZERTQSJ9..." + Math.random().toString(36).substring(7)
+                }
+            };
+
+            const output = document.getElementById('output4');
+            output.style.display = 'block';
+            output.textContent = JSON.stringify(vc, null, 2);
+
+            // QR Code (simplified representation)
+            const qrDiv = document.getElementById('qrcode');
+            qrDiv.innerHTML = '<div style="width: 200px; height: 200px; margin: 0 auto; background: white; display: flex; align-items: center; justify-content: center; border-radius: 12px;"><span style="color: black; font-size: 3rem;">⚖️</span></div><p style="margin-top: 1rem; color: var(--text-muted);">QR Code: WIA-UNI-014-VC-' + Date.now() + '</p>';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setLang(currentLang);
+            document.getElementById('issueDate').valueAsDate = new Date();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7장: 감사 로깅과 모니터링 - WIA 의료 데이터 프라이버시 표준</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        header { padding: 2rem 0; border-bottom: 2px solid #14B8A6; margin-bottom: 2rem; }
+        .chapter-number { font-size: 1rem; color: #14B8A6; font-weight: 600; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #f8fafc; margin-bottom: 1rem; }
+        h2 { color: #14B8A6; font-size: 1.8rem; margin: 2.5rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(20, 184, 166, 0.3); }
+        h3 { color: #14B8A6; font-size: 1.3rem; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.2rem; color: #cbd5e1; }
+        .chapter-nav { background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .nav-button { padding: 0.75rem 1.5rem; background: #334155; color: #14B8A6; text-decoration: none; border-radius: 6px; transition: all 0.3s ease; border: 1px solid #14B8A6; }
+        .nav-button:hover { background: #14B8A6; color: #0f172a; transform: translateY(-2px); }
+        .highlight-box { background: rgba(20, 184, 166, 0.1); border-left: 4px solid #14B8A6; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: #1e293b; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #14B8A6; color: #0f172a; font-weight: 600; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #334155; }
+        .code-block { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto; }
+        .code-header { color: #14B8A6; font-size: 0.9rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #334155; }
+        pre { margin: 0; color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; }
+        ul, ol { margin: 1rem 0 1rem 2rem; color: #cbd5e1; }
+        li { margin-bottom: 0.5rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0; }
+        .stat-card { background: #1e293b; padding: 1.5rem; border-radius: 8px; border: 1px solid #334155; text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #14B8A6; margin-bottom: 0.5rem; }
+        .stat-label { color: #94a3b8; font-size: 0.9rem; }
+        footer { margin-top: 4rem; padding: 2rem 0; text-align: center; border-top: 2px solid #334155; color: #64748b; }
+        .footer-tagline { font-size: 1.1rem; color: #14B8A6; margin-bottom: 0.5rem; }
+        .warning-box { background: rgba(251, 191, 36, 0.1); border-left: 4px solid #fbbf24; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        .info-box { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        @media (max-width: 768px) { h1 { font-size: 2rem; } .container { padding: 1rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-number">7장</div>
+            <h1>감사 로깅과 모니터링</h1>
+        </header>
+
+        <div class="chapter-nav">
+            <a href="chapter-06.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">목차</a>
+            <a href="chapter-08.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <div class="highlight-box">
+            <strong>장 개요:</strong> 이 장에서는 의료 데이터 접근 추적, 이상 탐지, 규정 준수 보고를 위한 포괄적인 감사 로깅과 모니터링 시스템 구축 방법을 다룹니다.
+        </div>
+
+        <h2>감사 로깅의 중요성</h2>
+
+        <p>감사 로깅(Audit Logging)은 누가, 언제, 무엇을, 어떻게 했는지를 기록하여 책임성을 보장하고 보안 사고를 탐지하는 핵심 메커니즘입니다. HIPAA Security Rule은 감사 제어를 필수 요구사항으로 명시하고 있습니다.</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">6년</div>
+                <div class="stat-label">HIPAA 로그 보관 기간</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">207일</div>
+                <div class="stat-label">평균 침해 탐지 소요 시간</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">68%</div>
+                <div class="stat-label">로그 분석으로 탐지된 침해</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">TB</div>
+                <div class="stat-label">대형 병원 일일 로그 볼륨</div>
+            </div>
+        </div>
+
+        <h2>로깅 대상 이벤트</h2>
+
+        <p>HIPAA 및 GDPR에서 요구하거나 권장하는 로깅 이벤트:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>카테고리</th>
+                    <th>이벤트</th>
+                    <th>필수 정보</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>인증</strong></td>
+                    <td>로그인/로그아웃, 인증 실패, MFA 이벤트</td>
+                    <td>사용자 ID, 타임스탬프, IP 주소, 결과</td>
+                </tr>
+                <tr>
+                    <td><strong>PHI 접근</strong></td>
+                    <td>읽기, 생성, 수정, 삭제, 다운로드, 출력</td>
+                    <td>사용자, 환자 ID, 데이터 유형, 작업, 시간</td>
+                </tr>
+                <tr>
+                    <td><strong>권한 변경</strong></td>
+                    <td>역할 할당, 권한 수정, 계정 생성/삭제</td>
+                    <td>관리자, 대상 사용자, 변경 내용, 승인자</td>
+                </tr>
+                <tr>
+                    <td><strong>시스템 설정</strong></td>
+                    <td>구성 변경, 정책 수정, 시스템 시작/종료</td>
+                    <td>관리자, 변경 사항, 이전/이후 값</td>
+                </tr>
+                <tr>
+                    <td><strong>보안 이벤트</strong></td>
+                    <td>접근 거부, 무결성 검증 실패, 암호화 오류</td>
+                    <td>이벤트 유형, 심각도, 영향받은 리소스</td>
+                </tr>
+                <tr>
+                    <td><strong>데이터 전송</strong></td>
+                    <td>외부 전송, 백업, 복구, 폐기</td>
+                    <td>데이터 유형, 수신자, 전송 방법, 볼륨</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>로그 데이터 구조</h2>
+
+        <div class="code-block">
+            <div class="code-header">표준 감사 로그 포맷 (JSON)</div>
+            <pre>
+{
+  "eventId": "EVT-2024-001234567",
+  "timestamp": "2024-01-15T14:32:18.123Z",
+  "eventType": "PHI_ACCESS",
+  "action": "READ",
+  "result": "SUCCESS",
+  "severity": "INFO",
+  
+  "actor": {
+    "userId": "U-2024-98765",
+    "username": "dr.smith@hospital.org",
+    "role": "physician",
+    "department": "cardiology"
+  },
+  
+  "subject": {
+    "resourceType": "patient_record",
+    "patientId": "P-2024-123456",
+    "dataType": "lab_results",
+    "sensitivity": "PHI"
+  },
+  
+  "context": {
+    "ipAddress": "10.20.30.40",
+    "userAgent": "EMR/5.2 (Windows NT 10.0)",
+    "sessionId": "SES-20240115-XY789",
+    "location": "Building_A_Floor_3",
+    "deviceId": "WS-1234"
+  },
+  
+  "details": {
+    "accessReason": "routine_care",
+    "dataVolume": 1,
+    "queryDuration": 234,
+    "changedFields": null
+  },
+  
+  "metadata": {
+    "applicationVersion": "5.2.1",
+    "logSource": "emr-api-server-02",
+    "correlationId": "REQ-789ABC"
+  }
+}
+</pre>
+        </div>
+
+        <h3>로그 무결성 보장</h3>
+
+        <p>감사 로그는 변조될 수 없어야 하며, 다음 기술을 활용합니다:</p>
+
+        <ul>
+            <li><strong>Write-Once-Read-Many (WORM) 스토리지:</strong> 한 번 쓰면 수정 불가</li>
+            <li><strong>암호화 해싱:</strong> 각 로그 엔트리의 해시 체인 생성</li>
+            <li><strong>디지털 서명:</strong> 로그 배치에 타임스탬프 서명</li>
+            <li><strong>분산 저장:</strong> 중앙 로그 서버와 백업 동시 저장</li>
+            <li><strong>접근 제어:</strong> 로그는 읽기 전용, 삭제 불가</li>
+        </ul>
+
+        <div class="code-block">
+            <div class="code-header">로그 무결성 검증 (Python)</div>
+            <pre>
+import hashlib
+import json
+from datetime import datetime
+
+class TamperProofLogger:
+    def __init__(self):
+        self.previous_hash = "0" * 64  # 제네시스 해시
+        self.log_chain = []
+
+    def log_event(self, event: dict) -> str:
+        """
+        변조 방지 로그 생성
+        """
+        # 타임스탬프 추가
+        event['timestamp'] = datetime.utcnow().isoformat()
+        event['previousHash'] = self.previous_hash
+
+        # 이벤트 해시 계산
+        event_json = json.dumps(event, sort_keys=True)
+        current_hash = hashlib.sha256(event_json.encode()).hexdigest()
+        event['hash'] = current_hash
+
+        # 체인에 추가
+        self.log_chain.append(event)
+        self.previous_hash = current_hash
+
+        return current_hash
+
+    def verify_integrity(self) -> bool:
+        """
+        로그 체인 무결성 검증
+        """
+        previous_hash = "0" * 64
+
+        for entry in self.log_chain:
+            # 저장된 이전 해시 확인
+            if entry['previousHash'] != previous_hash:
+                return False
+
+            # 현재 엔트리 해시 재계산
+            entry_copy = {k: v for k, v in entry.items() if k != 'hash'}
+            calculated_hash = hashlib.sha256(
+                json.dumps(entry_copy, sort_keys=True).encode()
+            ).hexdigest()
+
+            # 저장된 해시와 비교
+            if entry['hash'] != calculated_hash:
+                return False
+
+            previous_hash = entry['hash']
+
+        return True
+
+# 사용 예시
+logger = TamperProofLogger()
+
+# 이벤트 로깅
+logger.log_event({
+    "eventType": "PHI_ACCESS",
+    "action": "READ",
+    "userId": "dr.smith",
+    "patientId": "P-123456"
+})
+
+logger.log_event({
+    "eventType": "PHI_MODIFY",
+    "action": "UPDATE",
+    "userId": "nurse.jones",
+    "patientId": "P-123456"
+})
+
+# 무결성 검증
+is_valid = logger.verify_integrity()
+print(f"로그 체인 무결성: {'유효' if is_valid else '손상됨'}")
+</pre>
+        </div>
+
+        <h2>실시간 모니터링 및 경고</h2>
+
+        <p>로그를 수집하는 것만으로는 부족합니다. 실시간 모니터링과 이상 탐지가 필요합니다:</p>
+
+        <h3>경고 트리거 시나리오</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>시나리오</th>
+                    <th>임계값</th>
+                    <th>심각도</th>
+                    <th>조치</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>반복 로그인 실패</td>
+                    <td>5회 이상 / 10분</td>
+                    <td>높음</td>
+                    <td>계정 잠금, 보안팀 통지</td>
+                </tr>
+                <tr>
+                    <td>대량 데이터 접근</td>
+                    <td>100+ 환자 기록 / 1시간</td>
+                    <td>매우 높음</td>
+                    <td>접근 차단, 관리자 승인 요구</td>
+                </tr>
+                <tr>
+                    <td>근무 시간 외 접근</td>
+                    <td>22:00-06:00 PHI 접근</td>
+                    <td>중간</td>
+                    <td>로그 기록, 다음날 검토</td>
+                </tr>
+                <tr>
+                    <td>비정상 위치 접근</td>
+                    <td>외국 IP, 알 수 없는 위치</td>
+                    <td>높음</td>
+                    <td>MFA 재인증, 세션 종료</td>
+                </tr>
+                <tr>
+                    <td>권한 상승</td>
+                    <td>관리자 권한 부여</td>
+                    <td>매우 높음</td>
+                    <td>즉시 승인자 통지, 감사</td>
+                </tr>
+                <tr>
+                    <td>민감 데이터 다운로드</td>
+                    <td>대량 PHI 다운로드</td>
+                    <td>매우 높음</td>
+                    <td>다운로드 차단, 조사 개시</td>
+                </tr>
+                <tr>
+                    <td>데이터 무결성 오류</td>
+                    <td>체크섬 불일치</td>
+                    <td>긴급</td>
+                    <td>시스템 격리, 긴급 대응</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>이상 탐지 알고리즘</h3>
+
+        <p>기계 학습을 활용한 이상 행위 탐지:</p>
+
+        <ol>
+            <li><strong>행위 프로파일링:</strong>
+                <ul>
+                    <li>각 사용자의 정상 접근 패턴 학습</li>
+                    <li>시간, 위치, 접근 빈도, 데이터 유형 등</li>
+                    <li>편차가 큰 행위를 이상으로 플래그</li>
+                </ul>
+            </li>
+
+            <li><strong>피어 그룹 분석:</strong>
+                <ul>
+                    <li>동일 역할 사용자들의 평균 행동 패턴</li>
+                    <li>통계적 이상치 탐지 (z-score, IQR)</li>
+                    <li>부서별, 역할별 벤치마크</li>
+                </ul>
+            </li>
+
+            <li><strong>시계열 분석:</strong>
+                <ul>
+                    <li>접근 빈도의 급격한 변화 탐지</li>
+                    <li>주기성 분석 (일간, 주간 패턴)</li>
+                    <li>계절성 고려</li>
+                </ul>
+            </li>
+
+            <li><strong>그래프 분석:</strong>
+                <ul>
+                    <li>사용자-데이터 접근 관계 그래프</li>
+                    <li>비정상적 연결 패턴 탐지</li>
+                    <li>클러스터 분석</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h2>로그 수집 및 중앙화</h2>
+
+        <p>분산된 시스템에서 로그를 중앙으로 집계하는 것은 필수입니다:</p>
+
+        <h3>로그 수집 아키텍처</h3>
+
+        <div class="code-block">
+            <div class="code-header">중앙 로그 수집 아키텍처</div>
+            <pre>
+┌──────────────────────────────────────────────────────────┐
+│                   로그 소스                               │
+├──────────────────────────────────────────────────────────┤
+│  EMR    PACS    Lab    Pharmacy    Portal    Firewall   │
+│  API    DB      Auth   Network     Mobile    IDS/IPS    │
+└────┬─────┬──────┬───────┬──────────┬─────────┬──────────┘
+     │     │      │       │          │         │
+     │  로그 에이전트 (Filebeat, Fluentd, Logstash)
+     │     │      │       │          │         │
+     └─────┴──────┴───────┴──────────┴─────────┘
+                    │
+            ┌───────┴──────────┐
+            │  Message Queue   │
+            │  (Kafka, RabbitMQ) │
+            └───────┬──────────┘
+                    │
+     ┌──────────────┼──────────────┐
+     │              │              │
+     ▼              ▼              ▼
+┌────────┐   ┌────────┐   ┌────────┐
+│Stream  │   │Stream  │   │Stream  │
+│Process │   │Process │   │Process │
+│  #1    │   │  #2    │   │  #3    │
+└────┬───┘   └────┬───┘   └────┬───┘
+     │            │            │
+     └────────────┴────────────┘
+                  │
+       ┌──────────┴──────────┐
+       │                     │
+       ▼                     ▼
+┌─────────────┐    ┌─────────────┐
+│  Hot Storage│    │Cold Storage │
+│(Elasticsearch)│  │  (S3, Glacier)│
+│ 30일 검색    │    │  6년 보관    │
+└─────────────┘    └─────────────┘
+       │
+       ▼
+┌─────────────┐
+│  Visualization │
+│   & Alerting  │
+│(Kibana, Grafana)│
+└─────────────┘
+</pre>
+        </div>
+
+        <h3>로그 보관 전략</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>계층</th>
+                    <th>기간</th>
+                    <th>스토리지</th>
+                    <th>용도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Hot</strong></td>
+                    <td>최근 30일</td>
+                    <td>Elasticsearch, SSD</td>
+                    <td>실시간 검색, 분석, 경고</td>
+                </tr>
+                <tr>
+                    <td><strong>Warm</strong></td>
+                    <td>31-180일</td>
+                    <td>HDD, 압축</td>
+                    <td>조사, 규정 준수 검토</td>
+                </tr>
+                <tr>
+                    <td><strong>Cold</strong></td>
+                    <td>181일-6년</td>
+                    <td>S3, Glacier</td>
+                    <td>장기 보관, 법적 요구</td>
+                </tr>
+                <tr>
+                    <td><strong>Archive</strong></td>
+                    <td>6년+</td>
+                    <td>Tape, Deep Archive</td>
+                    <td>법적 홀드, 역사적 기록</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>규정 준수 보고</h2>
+
+        <p>감사 로그를 기반으로 규정 준수 보고서를 생성합니다:</p>
+
+        <h3>HIPAA 감사 보고서 예시</h3>
+
+        <ul>
+            <li><strong>PHI 접근 보고서:</strong>
+                <ul>
+                    <li>전체 접근 건수 및 추세</li>
+                    <li>사용자별, 부서별, 시간대별 분류</li>
+                    <li>이상 접근 플래그</li>
+                </ul>
+            </li>
+
+            <li><strong>보안 사고 보고서:</strong>
+                <ul>
+                    <li>인증 실패 건수</li>
+                    <li>접근 거부 사유</li>
+                    <li>무결성 검증 실패</li>
+                </ul>
+            </li>
+
+            <li><strong>권한 변경 보고서:</strong>
+                <ul>
+                    <li>신규 사용자 생성</li>
+                    <li>역할 변경 내역</li>
+                    <li>권한 상승 승인 기록</li>
+                </ul>
+            </li>
+
+            <li><strong>환자 요청 대응 보고서:</strong>
+                <ul>
+                    <li>접근 기록 제공 요청</li>
+                    <li>수정 요청 처리</li>
+                    <li>동의 철회 처리</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>프라이버시 보호 로깅</h2>
+
+        <p>로그 자체에도 PHI가 포함될 수 있으므로 주의가 필요합니다:</p>
+
+        <ul>
+            <li><strong>로그 최소화:</strong> 필요한 정보만 로깅 (전체 PHI 내용 제외)</li>
+            <li><strong>데이터 마스킹:</strong> 환자 이름, SSN 등을 일부 마스킹</li>
+            <li><strong>해싱:</strong> 민감한 식별자를 해시로 대체</li>
+            <li><strong>암호화:</strong> 로그 파일 자체를 암호화</li>
+            <li><strong>접근 제어:</strong> 로그 접근도 RBAC 적용</li>
+        </ul>
+
+        <h2>로깅 모범 사례</h2>
+
+        <ol>
+            <li><strong>포괄적 로깅:</strong> 모든 PHI 접근 및 보안 이벤트 기록</li>
+            <li><strong>중앙 집중화:</strong> 모든 시스템 로그를 중앙으로 수집</li>
+            <li><strong>실시간 분석:</strong> 지연 없는 이상 탐지 및 경고</li>
+            <li><strong>무결성 보장:</strong> 변조 방지 메커니즘 적용</li>
+            <li><strong>장기 보관:</strong> HIPAA 요구사항(6년) 이상 보관</li>
+            <li><strong>자동화:</strong> 로그 수집, 분석, 보고 자동화</li>
+            <li><strong>정기 검토:</strong> 로그 샘플링 및 수동 검토</li>
+            <li><strong>성능 고려:</strong> 로깅이 시스템 성능에 미치는 영향 최소화</li>
+            <li><strong>테스트:</strong> 로깅 시스템 자체의 안정성 테스트</li>
+            <li><strong>교육:</strong> 직원들에게 로깅의 목적과 중요성 교육</li>
+        </ol>
+
+        <h2>결론</h2>
+
+        <p>감사 로깅과 모니터링은 의료 데이터 보안의 마지막 방어선이자 사고 대응의 핵심 도구입니다. 포괄적인 로깅, 실시간 이상 탐지, 장기 보관, 그리고 무결성 보장을 통해 환자 프라이버시를 보호하고 규정 준수를 입증할 수 있습니다.</p>
+
+        <p>다음 장에서는 국경 간 의료 데이터 전송의 법적 요구사항과 기술적 보호 조치를 살펴보겠습니다.</p>
+
+        <div class="chapter-nav" style="margin-top: 3rem;">
+            <a href="chapter-06.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">목차</a>
+            <a href="chapter-08.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <footer>
+            <p class="footer-tagline">弘益人間 · 널리 인간을 이롭게 하라</p>
+            <p>WIA (World Certification Industry Association)</p>
+            <p>© 2025 MIT License</p>
+        </footer>
+    </div>
+</body>
+</html>

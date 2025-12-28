@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Phase 1 - Data Format Specification | WIA-LEGAL-001</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --legal-color: #7C3AED;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            padding: 60px;
+            border-radius: 16px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: var(--legal-color);
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--legal-color);
+        }
+        h2 {
+            font-size: 1.8rem;
+            color: var(--legal-color);
+            margin: 40px 0 20px;
+        }
+        h3 {
+            font-size: 1.3rem;
+            color: var(--legal-color);
+            margin: 30px 0 15px;
+        }
+        p { margin: 15px 0; text-align: justify; }
+        .highlight {
+            background: var(--bg);
+            padding: 20px;
+            border-left: 4px solid var(--legal-color);
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 2px solid var(--border);
+        }
+        .nav-btn {
+            padding: 12px 24px;
+            background: var(--legal-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .nav-btn:hover {
+            background: var(--legal-color-dark);
+            transform: translateY(-2px);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: var(--bg);
+            color: var(--legal-color);
+            font-weight: 600;
+        }
+        ul, ol { margin: 15px 0 15px 30px; }
+        li { margin: 8px 0; }
+        .summary-box {
+            background: var(--bg);
+            padding: 30px;
+            border-radius: 12px;
+            margin: 40px 0;
+            border: 2px solid var(--legal-color);
+        }
+        .summary-box h3 { margin-top: 0; }
+        code {
+            background: var(--bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: var(--legal-color);
+            font-size: 0.9em;
+        }
+        pre {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+        pre code {
+            padding: 0;
+            background: transparent;
+            color: #a5b4fc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chapter 4: Phase 1 - Data Format Specification</h1>
+
+        <p>
+            Phase 1 of WIA-LEGAL-001 implementation establishes the foundation for all digital court operations: standardized
+            data formats. This chapter provides comprehensive technical specifications for representing legal information in
+            machine-readable, interoperable formats that work across jurisdictions and systems.
+        </p>
+
+        <h2>4.1 JSON Schema Overview</h2>
+
+        <p>
+            WIA-LEGAL-001 uses JSON Schema (Draft 2020-12) as the primary mechanism for defining and validating data structures.
+            JSON Schema provides machine-readable specifications that enable:
+        </p>
+
+        <ul>
+            <li><strong>Automatic Validation:</strong> Tools can automatically verify data conforms to specifications</li>
+            <li><strong>Documentation Generation:</strong> Human-readable docs auto-generated from schemas</li>
+            <li><strong>Code Generation:</strong> Type-safe classes and interfaces generated for multiple languages</li>
+            <li><strong>Interoperability:</strong> Universal format understood across platforms and ecosystems</li>
+        </ul>
+
+        <div class="highlight">
+            <strong>Why JSON?</strong> JSON is human-readable, widely supported, and has excellent tooling support across all
+            major programming languages. Its simplicity makes it accessible while remaining powerful enough for complex legal data.
+        </div>
+
+        <h2>4.2 Case Data Schema</h2>
+
+        <h3>4.2.1 Core Case Structure</h3>
+
+        <p>
+            Every case in the WIA-LEGAL-001 system conforms to the <code>Case</code> schema, which represents the fundamental
+            unit of legal proceedings:
+        </p>
+
+        <pre><code>{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wia.org/legal/001/case/v1.0",
+  "title": "Case",
+  "description": "A legal case in a digital court system",
+  "type": "object",
+  "required": [
+    "caseId",
+    "caseNumber",
+    "filingDate",
+    "caseType",
+    "jurisdiction",
+    "status",
+    "parties"
+  ],
+  "properties": {
+    "caseId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier (UUID v4)"
+    },
+    "caseNumber": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}-\d{4}-\d{6}$",
+      "description": "Human-readable case number (e.g., CV-2025-000123)",
+      "examples": ["CV-2025-000123", "CR-2025-005678"]
+    },
+    "filingDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 date and time of case filing"
+    },
+    "caseType": {
+      "type": "string",
+      "enum": [
+        "civil",
+        "criminal",
+        "family",
+        "probate",
+        "administrative",
+        "appellate",
+        "small-claims",
+        "bankruptcy"
+      ],
+      "description": "Primary case classification"
+    },
+    "caseSubtype": {
+      "type": "string",
+      "description": "Jurisdiction-specific subcategory",
+      "examples": ["personal-injury", "contract-dispute", "DUI", "divorce"]
+    },
+    "jurisdiction": {
+      "type": "object",
+      "required": ["country", "region", "court"],
+      "properties": {
+        "country": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "description": "ISO 3166-1 alpha-2 country code"
+        },
+        "region": {
+          "type": "string",
+          "description": "State, province, or region code"
+        },
+        "court": {
+          "type": "string",
+          "description": "Specific court identifier"
+        },
+        "division": {
+          "type": "string",
+          "description": "Court division or department (optional)"
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "filed",
+        "pending",
+        "active",
+        "settled",
+        "dismissed",
+        "decided",
+        "appealed",
+        "closed",
+        "archived"
+      ]
+    },
+    "statusHistory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["status", "timestamp", "updatedBy"],
+        "properties": {
+          "status": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "updatedBy": { "type": "string" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "parties": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/Party" }
+    },
+    "judge": { "$ref": "#/$defs/Judge" },
+    "metadata": { "$ref": "#/$defs/CaseMetadata" }
+  },
+  "$defs": {
+    "Party": {
+      "type": "object",
+      "required": ["partyId", "role", "name"],
+      "properties": {
+        "partyId": { "type": "string", "format": "uuid" },
+        "role": {
+          "type": "string",
+          "enum": ["plaintiff", "defendant", "petitioner", "respondent", "appellant", "appellee"]
+        },
+        "name": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["individual", "organization", "government"]
+        },
+        "contact": { "$ref": "#/$defs/Contact" },
+        "attorney": { "$ref": "#/$defs/Attorney" }
+      }
+    },
+    "Judge": {
+      "type": "object",
+      "required": ["judgeId", "name"],
+      "properties": {
+        "judgeId": { "type": "string" },
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "assignedDate": { "type": "string", "format": "date" }
+      }
+    },
+    "Contact": {
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "address": { "$ref": "#/$defs/Address" }
+      }
+    },
+    "Attorney": {
+      "type": "object",
+      "required": ["attorneyId", "name", "barNumber"],
+      "properties": {
+        "attorneyId": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "barNumber": { "type": "string" },
+        "firm": { "type": "string" },
+        "contact": { "$ref": "#/$defs/Contact" }
+      }
+    },
+    "Address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "region": { "type": "string" },
+        "postalCode": { "type": "string" },
+        "country": { "type": "string", "pattern": "^[A-Z]{2}$" }
+      }
+    },
+    "CaseMetadata": {
+      "type": "object",
+      "properties": {
+        "confidential": { "type": "boolean", "default": false },
+        "sealed": { "type": "boolean", "default": false },
+        "publicAccess": { "type": "boolean", "default": true },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "relatedCases": {
+          "type": "array",
+          "items": { "type": "string", "format": "uuid" }
+        }
+      }
+    }
+  }
+}</code></pre>
+
+        <h3>4.2.2 Case Instance Example</h3>
+
+        <p>
+            Here's a concrete example of a case following the schema:
+        </p>
+
+        <pre><code>{
+  "caseId": "a7f3e9d2-4c8b-11ef-9a5c-0242ac120002",
+  "caseNumber": "CV-2025-000789",
+  "filingDate": "2025-01-15T09:30:00Z",
+  "caseType": "civil",
+  "caseSubtype": "contract-dispute",
+  "jurisdiction": {
+    "country": "US",
+    "region": "CA",
+    "court": "Superior Court of California, County of San Francisco",
+    "division": "Civil Division"
+  },
+  "status": "active",
+  "statusHistory": [
+    {
+      "status": "filed",
+      "timestamp": "2025-01-15T09:30:00Z",
+      "updatedBy": "clerk-jsmith",
+      "notes": "Initial filing accepted"
+    },
+    {
+      "status": "pending",
+      "timestamp": "2025-01-16T14:22:00Z",
+      "updatedBy": "system",
+      "notes": "Awaiting initial case management conference"
+    },
+    {
+      "status": "active",
+      "timestamp": "2025-01-22T10:00:00Z",
+      "updatedBy": "judge-martinez",
+      "notes": "CMC completed, discovery schedule set"
+    }
+  ],
+  "parties": [
+    {
+      "partyId": "b3c8f1e4-4c8b-11ef-9a5c-0242ac120003",
+      "role": "plaintiff",
+      "name": "Acme Corporation",
+      "type": "organization",
+      "contact": {
+        "email": "legal@acmecorp.example",
+        "phone": "+1-415-555-0100",
+        "address": {
+          "street": "123 Market Street, Suite 500",
+          "city": "San Francisco",
+          "region": "CA",
+          "postalCode": "94105",
+          "country": "US"
+        }
+      },
+      "attorney": {
+        "attorneyId": "c5d9a2f6-4c8b-11ef-9a5c-0242ac120004",
+        "name": "Sarah Chen",
+        "barNumber": "CA-285947",
+        "firm": "Chen & Associates LLP",
+        "contact": {
+          "email": "schen@chenlaw.example",
+          "phone": "+1-415-555-0200"
+        }
+      }
+    },
+    {
+      "partyId": "d7e8b3c9-4c8b-11ef-9a5c-0242ac120005",
+      "role": "defendant",
+      "name": "Beta Industries Inc.",
+      "type": "organization",
+      "contact": {
+        "email": "litigation@betaindustries.example",
+        "phone": "+1-650-555-0300"
+      },
+      "attorney": {
+        "attorneyId": "e9f0c4da-4c8b-11ef-9a5c-0242ac120006",
+        "name": "Michael Torres",
+        "barNumber": "CA-301254",
+        "firm": "Torres Law Group",
+        "contact": {
+          "email": "mtorres@torreslaw.example",
+          "phone": "+1-650-555-0400"
+        }
+      }
+    }
+  ],
+  "judge": {
+    "judgeId": "judge-martinez-001",
+    "name": "Hon. Maria Martinez",
+    "title": "Superior Court Judge",
+    "assignedDate": "2025-01-16"
+  },
+  "metadata": {
+    "confidential": false,
+    "sealed": false,
+    "publicAccess": true,
+    "tags": ["commercial", "contract", "business"],
+    "relatedCases": []
+  }
+}</code></pre>
+
+        <h2>4.3 Document Data Schema</h2>
+
+        <h3>4.3.1 Document Structure</h3>
+
+        <p>
+            Legal documents are represented with comprehensive metadata enabling searchability, version control,
+            and proper classification:
+        </p>
+
+        <pre><code>{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wia.org/legal/001/document/v1.0",
+  "title": "LegalDocument",
+  "type": "object",
+  "required": ["documentId", "caseId", "filedDate", "documentType", "title", "filedBy"],
+  "properties": {
+    "documentId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "caseId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Associated case ID"
+    },
+    "filedDate": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "documentType": {
+      "type": "string",
+      "enum": [
+        "complaint",
+        "answer",
+        "motion",
+        "brief",
+        "order",
+        "judgment",
+        "declaration",
+        "exhibit",
+        "stipulation",
+        "notice",
+        "memorandum",
+        "transcript",
+        "evidence",
+        "correspondence"
+      ]
+    },
+    "documentSubtype": {
+      "type": "string",
+      "description": "Specific motion/brief/order type",
+      "examples": ["motion-to-dismiss", "motion-for-summary-judgment", "discovery-request"]
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "description": {
+      "type": "string"
+    },
+    "filedBy": {
+      "type": "object",
+      "required": ["partyId", "role"],
+      "properties": {
+        "partyId": { "type": "string", "format": "uuid" },
+        "role": { "type": "string" },
+        "attorneyId": { "type": "string", "format": "uuid" }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["fileId", "filename", "mimeType", "sizeBytes", "hash"],
+        "properties": {
+          "fileId": { "type": "string", "format": "uuid" },
+          "filename": { "type": "string" },
+          "mimeType": {
+            "type": "string",
+            "enum": ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/png", "image/jpeg"]
+          },
+          "sizeBytes": { "type": "integer", "minimum": 0 },
+          "hash": {
+            "type": "object",
+            "required": ["algorithm", "value"],
+            "properties": {
+              "algorithm": { "type": "string", "enum": ["SHA-256", "SHA-512"] },
+              "value": { "type": "string", "pattern": "^[a-f0-9]{64,128}$" }
+            }
+          },
+          "pages": { "type": "integer", "minimum": 1 },
+          "storageUrl": { "type": "string", "format": "uri" },
+          "version": { "type": "string" }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "filed", "served", "rejected", "withdrawn"]
+    },
+    "confidentialityLevel": {
+      "type": "string",
+      "enum": ["public", "confidential", "sealed", "restricted"],
+      "default": "public"
+    },
+    "accessControl": {
+      "type": "object",
+      "properties": {
+        "allowedParties": {
+          "type": "array",
+          "items": { "type": "string", "format": "uuid" }
+        },
+        "allowedAttorneys": {
+          "type": "array",
+          "items": { "type": "string", "format": "uuid" }
+        },
+        "publicAccess": { "type": "boolean", "default": true }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "required": ["signedBy", "signatureDate", "signatureType"],
+      "properties": {
+        "signedBy": { "type": "string" },
+        "signatureDate": { "type": "string", "format": "date-time" },
+        "signatureType": {
+          "type": "string",
+          "enum": ["electronic", "digital-certificate", "wet-signature-scanned"]
+        },
+        "certificateId": { "type": "string" }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "keywords": { "type": "array", "items": { "type": "string" } },
+        "abstract": { "type": "string", "maxLength": 1000 },
+        "language": { "type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$" }
+      }
+    }
+  }
+}</code></pre>
+
+        <h2>4.4 Participant Data Schema</h2>
+
+        <p>
+            Participants (individuals and attorneys) are tracked with identity verification and role-based access:
+        </p>
+
+        <pre><code>{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wia.org/legal/001/participant/v1.0",
+  "title": "Participant",
+  "type": "object",
+  "required": ["participantId", "participantType", "fullName", "authentication"],
+  "properties": {
+    "participantId": { "type": "string", "format": "uuid" },
+    "participantType": {
+      "type": "string",
+      "enum": ["party", "attorney", "judge", "witness", "expert", "court-staff", "mediator", "arbitrator"]
+    },
+    "fullName": { "type": "string" },
+    "organizationName": { "type": "string" },
+    "barAdmissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "jurisdiction": { "type": "string" },
+          "barNumber": { "type": "string" },
+          "admissionDate": { "type": "string", "format": "date" },
+          "status": { "type": "string", "enum": ["active", "inactive", "suspended", "disbarred"] }
+        }
+      }
+    },
+    "authentication": {
+      "type": "object",
+      "required": ["method"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["password", "certificate", "biometric", "two-factor", "sso"]
+        },
+        "certificateFingerprint": { "type": "string" },
+        "lastAuthenticated": { "type": "string", "format": "date-time" }
+      }
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "caseId": { "type": "string", "format": "uuid" },
+          "role": { "type": "string" },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["read", "write", "file", "serve", "access-confidential", "access-sealed"]
+            }
+          }
+        }
+      }
+    },
+    "notificationPreferences": {
+      "type": "object",
+      "properties": {
+        "email": { "type": "boolean", "default": true },
+        "sms": { "type": "boolean", "default": false },
+        "inApp": { "type": "boolean", "default": true }
+      }
+    }
+  }
+}</code></pre>
+
+        <h2>4.5 Hearing and Event Schema</h2>
+
+        <p>
+            Court hearings and events are scheduled with support for both virtual and in-person attendance:
+        </p>
+
+        <pre><code>{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wia.org/legal/001/hearing/v1.0",
+  "title": "Hearing",
+  "type": "object",
+  "required": ["hearingId", "caseId", "hearingType", "scheduledDateTime", "judge"],
+  "properties": {
+    "hearingId": { "type": "string", "format": "uuid" },
+    "caseId": { "type": "string", "format": "uuid" },
+    "hearingType": {
+      "type": "string",
+      "enum": [
+        "case-management-conference",
+        "motion-hearing",
+        "trial",
+        "status-conference",
+        "settlement-conference",
+        "arraignment",
+        "sentencing",
+        "oral-argument"
+      ]
+    },
+    "scheduledDateTime": { "type": "string", "format": "date-time" },
+    "estimatedDuration": {
+      "type": "integer",
+      "description": "Estimated duration in minutes",
+      "minimum": 5
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "venue": {
+          "type": "string",
+          "enum": ["in-person", "virtual", "hybrid"]
+        },
+        "courtroom": { "type": "string" },
+        "virtualMeetingUrl": { "type": "string", "format": "uri" },
+        "dialInNumber": { "type": "string" },
+        "meetingId": { "type": "string" },
+        "address": { "$ref": "#/$defs/Address" }
+      }
+    },
+    "judge": {
+      "type": "object",
+      "required": ["judgeId", "name"],
+      "properties": {
+        "judgeId": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "participantId": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "role": { "type": "string" },
+          "attendanceRequired": { "type": "boolean" },
+          "attendanceStatus": {
+            "type": "string",
+            "enum": ["expected", "confirmed", "declined", "present", "absent", "excused"]
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["scheduled", "confirmed", "postponed", "cancelled", "in-progress", "completed"]
+    },
+    "recording": {
+      "type": "object",
+      "properties": {
+        "recordingId": { "type": "string", "format": "uuid" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "storageUrl": { "type": "string", "format": "uri" },
+        "transcriptId": { "type": "string", "format": "uuid" }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": { "type": "string", "format": "uuid" }
+        },
+        "minuteOrder": { "type": "string" },
+        "nextHearingDate": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}</code></pre>
+
+        <h2>4.6 Evidence Data Schema</h2>
+
+        <p>
+            Digital evidence maintains chain of custody with cryptographic integrity verification:
+        </p>
+
+        <pre><code>{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wia.org/legal/001/evidence/v1.0",
+  "title": "Evidence",
+  "type": "object",
+  "required": ["evidenceId", "caseId", "description", "submittedBy", "submittedDate", "chainOfCustody"],
+  "properties": {
+    "evidenceId": { "type": "string", "format": "uuid" },
+    "exhibitNumber": { "type": "string" },
+    "caseId": { "type": "string", "format": "uuid" },
+    "description": { "type": "string" },
+    "evidenceType": {
+      "type": "string",
+      "enum": [
+        "document",
+        "photograph",
+        "video",
+        "audio",
+        "physical-item-photo",
+        "expert-report",
+        "correspondence",
+        "digital-artifact",
+        "forensic-data"
+      ]
+    },
+    "submittedBy": {
+      "type": "object",
+      "required": ["partyId"],
+      "properties": {
+        "partyId": { "type": "string", "format": "uuid" },
+        "attorneyId": { "type": "string", "format": "uuid" }
+      }
+    },
+    "submittedDate": { "type": "string", "format": "date-time" },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["fileId", "hash"],
+        "properties": {
+          "fileId": { "type": "string", "format": "uuid" },
+          "filename": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "sizeBytes": { "type": "integer" },
+          "hash": {
+            "type": "object",
+            "required": ["algorithm", "value"],
+            "properties": {
+              "algorithm": { "type": "string" },
+              "value": { "type": "string" }
+            }
+          },
+          "blockchainAnchor": {
+            "type": "object",
+            "properties": {
+              "transactionId": { "type": "string" },
+              "blockchainNetwork": { "type": "string" },
+              "timestamp": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      }
+    },
+    "chainOfCustody": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["timestamp", "custodian", "action"],
+        "properties": {
+          "timestamp": { "type": "string", "format": "date-time" },
+          "custodian": { "type": "string" },
+          "action": {
+            "type": "string",
+            "enum": ["collected", "transferred", "analyzed", "stored", "accessed", "presented"]
+          },
+          "location": { "type": "string" },
+          "notes": { "type": "string" },
+          "digitalSignature": { "type": "string" }
+        }
+      }
+    },
+    "admissibility": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["proposed", "admitted", "excluded", "pending"]
+        },
+        "rulingDate": { "type": "string", "format": "date-time" },
+        "rulingBy": { "type": "string" },
+        "basis": { "type": "string" }
+      }
+    }
+  }
+}</code></pre>
+
+        <h2>4.7 Metadata Standards</h2>
+
+        <h3>4.7.1 Required Metadata Fields</h3>
+
+        <p>
+            All data objects must include standardized metadata for tracking and audit purposes:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Purpose</th>
+                    <th>Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>createdAt</td>
+                    <td>date-time</td>
+                    <td>ISO 8601 timestamp of creation</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>createdBy</td>
+                    <td>uuid</td>
+                    <td>Participant ID who created</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>modifiedAt</td>
+                    <td>date-time</td>
+                    <td>Last modification timestamp</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>modifiedBy</td>
+                    <td>uuid</td>
+                    <td>Participant ID who last modified</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>version</td>
+                    <td>string</td>
+                    <td>Schema version (e.g., "1.0.3")</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>jurisdiction</td>
+                    <td>object</td>
+                    <td>Governing jurisdiction</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>tags</td>
+                    <td>array</td>
+                    <td>Searchable keywords</td>
+                    <td>No</td>
+                </tr>
+                <tr>
+                    <td>checksum</td>
+                    <td>string</td>
+                    <td>SHA-256 hash of canonical JSON</td>
+                    <td>No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>4.7.2 Audit Trail Metadata</h3>
+
+        <p>
+            Every data modification generates an immutable audit record:
+        </p>
+
+        <pre><code>{
+  "auditEntry": {
+    "entryId": "f8e9d7c6-4c8b-11ef-9a5c-0242ac120007",
+    "timestamp": "2025-01-22T14:35:12Z",
+    "operation": "UPDATE",
+    "objectType": "Case",
+    "objectId": "a7f3e9d2-4c8b-11ef-9a5c-0242ac120002",
+    "performedBy": {
+      "participantId": "c5d9a2f6-4c8b-11ef-9a5c-0242ac120004",
+      "name": "Sarah Chen",
+      "role": "attorney"
+    },
+    "changes": [
+      {
+        "field": "status",
+        "oldValue": "pending",
+        "newValue": "active"
+      }
+    ],
+    "ipAddress": "192.0.2.100",
+    "userAgent": "WIA-Legal-Portal/1.0",
+    "signature": "3a4b5c6d7e8f9a0b..."
+  }
+}</code></pre>
+
+        <h2>4.8 Validation Rules</h2>
+
+        <h3>4.8.1 Business Logic Validation</h3>
+
+        <p>
+            Beyond schema validation, WIA-LEGAL-001 enforces business rules:
+        </p>
+
+        <ul>
+            <li><strong>Chronological Consistency:</strong> Filing dates cannot be in the future; events must occur after case filing</li>
+            <li><strong>Party Validation:</strong> At least two distinct parties required for most case types</li>
+            <li><strong>Status Transitions:</strong> Cases can only transition between valid status pairs (e.g., "filed" → "pending", not "filed" → "decided")</li>
+            <li><strong>Document Requirements:</strong> Certain case types require specific documents (e.g., criminal cases require charging documents)</li>
+            <li><strong>Jurisdiction Authority:</strong> Judges can only be assigned to cases in their jurisdictions</li>
+            <li><strong>Confidentiality Rules:</strong> Sealed documents cannot have public access enabled</li>
+        </ul>
+
+        <h3>4.8.2 Cross-Field Validation</h3>
+
+        <p>
+            Example validation rules implemented in application code:
+        </p>
+
+        <pre><code>// Validation: Case filing date must be before first hearing date
+function validateCaseDates(caseData, hearings) {
+  const filingDate = new Date(caseData.filingDate);
+  for (const hearing of hearings) {
+    const hearingDate = new Date(hearing.scheduledDateTime);
+    if (hearingDate < filingDate) {
+      throw new ValidationError(
+        `Hearing ${hearing.hearingId} scheduled before case filing date`
+      );
+    }
+  }
+  return true;
+}
+
+// Validation: Attorney must be authorized in case jurisdiction
+function validateAttorneyJurisdiction(attorney, jurisdiction) {
+  const hasAdmission = attorney.barAdmissions.some(admission => 
+    admission.jurisdiction === jurisdiction.region &&
+    admission.status === 'active'
+  );
+  if (!hasAdmission) {
+    throw new ValidationError(
+      `Attorney ${attorney.name} not admitted in ${jurisdiction.region}`
+    );
+  }
+  return true;
+}</code></pre>
+
+        <h2>4.9 Data Migration</h2>
+
+        <h3>4.9.1 Legacy Data Conversion</h3>
+
+        <p>
+            Courts with existing systems must migrate data to WIA-LEGAL-001 formats. The standard provides
+            transformation guidelines:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Legacy Format</th>
+                    <th>Transformation Approach</th>
+                    <th>Data Quality</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Structured Database</td>
+                    <td>Direct field mapping with data cleansing</td>
+                    <td>High (90-95%)</td>
+                </tr>
+                <tr>
+                    <td>Semi-structured (XML/CSV)</td>
+                    <td>Parser with validation and correction</td>
+                    <td>Medium (70-85%)</td>
+                </tr>
+                <tr>
+                    <td>Scanned Documents</td>
+                    <td>OCR + AI extraction + manual review</td>
+                    <td>Low-Medium (50-70%)</td>
+                </tr>
+                <tr>
+                    <td>Paper Records</td>
+                    <td>Digitization + OCR + data entry + QA</td>
+                    <td>Variable (40-80%)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>4.9.2 Migration Best Practices</h3>
+
+        <ol>
+            <li><strong>Pilot Migration:</strong> Start with 100-1000 recent cases to test processes</li>
+            <li><strong>Data Cleansing:</strong> Correct inconsistencies before migration</li>
+            <li><strong>Dual Operation:</strong> Run legacy and new systems in parallel for 3-6 months</li>
+            <li><strong>Validation Testing:</strong> Automated comparison of legacy vs. migrated data</li>
+            <li><strong>Rollback Plan:</strong> Maintain ability to revert to legacy system if needed</li>
+            <li><strong>Incremental Migration:</strong> Migrate in phases by case type or date range</li>
+        </ol>
+
+        <div class="summary-box">
+            <h3>Chapter Summary</h3>
+            <p><strong>Key Takeaways:</strong></p>
+            <ul>
+                <li>WIA-LEGAL-001 uses JSON Schema for all data definitions, enabling validation and interoperability</li>
+                <li>Core schemas include Case, Document, Participant, Hearing, and Evidence</li>
+                <li>All data objects include comprehensive metadata for audit trails and tracking</li>
+                <li>Validation occurs at multiple levels: schema, business rules, and cross-field constraints</li>
+                <li>Chain of custody for evidence uses cryptographic hashes and blockchain anchoring</li>
+                <li>Legacy data migration requires careful planning, cleansing, and validation</li>
+                <li>Standards support both current operations and long-term archival requirements</li>
+            </ul>
+        </div>
+
+        <div class="summary-box">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>What are the required fields in the Case schema?</li>
+                <li>How does WIA-LEGAL-001 ensure evidence integrity?</li>
+                <li>Describe the purpose of the audit trail metadata.</li>
+                <li>What validation rule prevents hearings from being scheduled before case filing?</li>
+                <li>Why is SHA-256 hashing used for document verification?</li>
+                <li>What are the four levels of data confidentiality in the standard?</li>
+                <li>How should courts approach migrating legacy paper records?</li>
+            </ol>
+        </div>
+
+        <div class="summary-box">
+            <h3>Looking Ahead</h3>
+            <p>
+                In Chapter 5, we'll explore Phase 2: API Interface Design. Building on the data formats established
+                in this chapter, we'll examine the RESTful and GraphQL APIs that enable programmatic access to court
+                data, including authentication, authorization, rate limiting, and SDK development.
+            </p>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-03.html" class="nav-btn">← Previous Chapter</a>
+            <a href="chapter-05.html" class="nav-btn">Next Chapter →</a>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid var(--border); color: var(--legal-color);">
+            <p><strong>弘益人間 (Hongik Ingan) - Benefit All Humanity</strong></p>
+            <p style="color: var(--text-secondary); margin-top: 10px;">© 2025 WIA - World Certification Industry Association</p>
+        </div>
+    </div>
+</body>
+</html>

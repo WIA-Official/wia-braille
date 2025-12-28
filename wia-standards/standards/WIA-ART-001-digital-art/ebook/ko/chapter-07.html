@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>제7장: Phase 4 - 통합 | WIA-ART-001</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface-2:#283548;--primary:#F59E0B;--primary-dark:#D97706;--text:#f1f5f9;--text-dim:#94a3b8;--border:#334155;--gold:#ffd700;--success:#10b981;--warning:#f59e0b;--error:#ef4444;--info:#3b82f6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Malgun Gothic','맑은 고딕',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.9;min-height:100vh}
+.container{max-width:900px;margin:0 auto;padding:2rem}
+header{text-align:center;padding:3rem 0;border-bottom:2px solid var(--primary);margin-bottom:3rem}
+.badge{display:inline-block;background:var(--primary);color:var(--bg);padding:0.5rem 1.5rem;border-radius:2rem;font-weight:600;margin-bottom:1rem}
+h1{font-size:2.5rem;color:var(--primary);margin-bottom:0.5rem}
+.subtitle{color:var(--text-dim);font-size:1.2rem}
+h2{color:var(--primary);font-size:1.8rem;margin:2.5rem 0 1.5rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)}
+h3{color:var(--gold);font-size:1.4rem;margin:2rem 0 1rem}
+p{margin-bottom:1.2rem;text-align:justify;word-break:keep-all}
+.callout{background:var(--surface);border-left:4px solid var(--primary);padding:1.5rem;margin:1.5rem 0;border-radius:0 0.5rem 0.5rem 0}
+.callout.info{border-color:var(--info);background:rgba(59,130,246,0.1)}
+.callout.success{border-color:var(--success);background:rgba(16,185,129,0.1)}
+.callout-title{font-weight:600;margin-bottom:0.5rem}
+pre{background:var(--surface-2);border:1px solid var(--border);border-radius:0.5rem;padding:1.5rem;overflow-x:auto;margin:1.5rem 0;font-family:'Fira Code',monospace;font-size:0.9rem}
+code{background:var(--surface-2);padding:0.2rem 0.5rem;border-radius:0.25rem;font-family:'Fira Code',monospace}
+table{width:100%;border-collapse:collapse;margin:1.5rem 0;background:var(--surface);border-radius:0.5rem;overflow:hidden}
+th,td{padding:1rem;text-align:left;border-bottom:1px solid var(--border)}
+th{background:var(--surface-2);color:var(--primary);font-weight:600}
+tr:hover{background:var(--surface-2)}
+ul,ol{margin:1rem 0 1.5rem 1.5rem}
+li{margin-bottom:0.5rem}
+.nav{display:flex;justify-content:space-between;padding:2rem 0;border-top:1px solid var(--border);margin-top:3rem}
+.nav a{color:var(--primary);text-decoration:none;padding:0.75rem 1.5rem;background:var(--surface);border-radius:0.5rem;transition:all 0.3s}
+.nav a:hover{background:var(--primary);color:var(--bg)}
+.philosophy{text-align:center;padding:2rem;background:linear-gradient(135deg,var(--surface),var(--surface-2));border-radius:1rem;margin:2rem 0}
+.philosophy-text{font-size:1.5rem;color:var(--gold);margin-bottom:0.5rem}
+.integration-card{background:var(--surface);border:1px solid var(--border);border-radius:0.5rem;padding:1.5rem;margin:1rem 0}
+.integration-card h4{margin-top:0;color:var(--primary)}
+footer{text-align:center;padding:2rem;color:var(--text-dim);font-size:0.9rem}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<div class="badge">제7장 / 8장</div>
+<h1>Phase 4: 통합</h1>
+<p class="subtitle">WIA-ART-001 - 플랫폼 및 에코시스템 통합</p>
+</header>
+
+<section id="overview">
+<h2>7.1 통합 개요</h2>
+<p>Phase 4는 WIA-ART-001 표준을 기존 플랫폼, 도구, 그리고 WIA 에코시스템과 연결하는 방법을 다룹니다. 웹 애플리케이션, 모바일 앱, 창작 도구, 마켓플레이스 등 다양한 환경에서의 통합 가이드를 제공합니다.</p>
+
+<div class="callout info">
+<div class="callout-title">🔗 통합 철학</div>
+<p>WIA-ART-001은 "개발자가 있는 곳으로 간다"는 원칙을 따릅니다. 플랫폼 전면 재작성이 아닌, 기존 워크플로우에 자연스럽게 녹아드는 어댑터와 플러그인을 제공합니다.</p>
+</div>
+</section>
+
+<section id="web">
+<h2>7.2 웹 애플리케이션 통합</h2>
+
+<h3>7.2.1 CDN 통합</h3>
+<pre><code>&lt;!-- 프로덕션 CDN --&gt;
+&lt;script src="https://cdn.wia.org/art-001/v1/wia-art-001.min.js"&gt;&lt;/script&gt;
+
+&lt;script&gt;
+  const sdk = new WIAART001({
+    apiKey: 'your-api-key',
+    environment: 'production'
+  });
+  
+  async function uploadArtwork(file) {
+    const result = await sdk.create({
+      title: '내 작품',
+      file: file
+    });
+    console.log('작품 생성됨:', result.id);
+  }
+&lt;/script&gt;</code></pre>
+
+<h3>7.2.2 React 통합</h3>
+<pre><code>import { useWIAArt, WIAProvider } from '@wia/art-001-react';
+
+function ArtworkUploader() {
+  const { upload, uploading, progress } = useWIAArt();
+  
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    const artwork = await upload(file, {
+      title: 'React 작품',
+      autoValidate: true
+    });
+    console.log('업로드 완료:', artwork.id);
+  };
+  
+  return (
+    &lt;div&gt;
+      &lt;input type="file" onChange={handleUpload} disabled={uploading} /&gt;
+      {uploading && &lt;ProgressBar value={progress} /&gt;}
+    &lt;/div&gt;
+  );
+}
+
+// 앱 레벨 Provider
+function App() {
+  return (
+    &lt;WIAProvider apiKey={process.env.REACT_APP_WIA_API_KEY}&gt;
+      &lt;ArtworkUploader /&gt;
+    &lt;/WIAProvider&gt;
+  );
+}</code></pre>
+
+<h3>7.2.3 Vue.js 통합</h3>
+<pre><code>// Vue 3 Composition API
+import { useWIAArt } from '@wia/art-001-vue';
+
+&lt;script setup&gt;
+const { upload, validate } = useWIAArt();
+
+const handleUpload = async (file) => {
+  const result = await upload(file, {
+    title: 'Vue 작품'
+  });
+  return result;
+};
+&lt;/script&gt;
+
+// 플러그인 설치
+import { createApp } from 'vue';
+import { WIAArtPlugin } from '@wia/art-001-vue';
+
+const app = createApp(App);
+app.use(WIAArtPlugin, {
+  apiKey: import.meta.env.VITE_WIA_API_KEY
+});
+app.mount('#app');</code></pre>
+</section>
+
+<section id="mobile">
+<h2>7.3 모바일 앱 통합</h2>
+
+<h3>7.3.1 iOS/Swift</h3>
+<pre><code>import WIAART001
+
+class ArtworkManager {
+    private let sdk: WIAART001
+    
+    init() {
+        sdk = WIAART001(
+            apiKey: Environment.wiaApiKey,
+            options: WIAOptions(timeout: 30)
+        )
+    }
+    
+    func uploadArtwork(image: UIImage) async throws -> Artwork {
+        guard let imageData = image.pngData() else {
+            throw WIAError.invalidImage
+        }
+        
+        let artwork = try await sdk.create(
+            data: imageData,
+            metadata: ArtworkMetadata(
+                title: "iOS 작품",
+                colorSpace: .adobeRGB
+            )
+        )
+        
+        return artwork
+    }
+}</code></pre>
+
+<h3>7.3.2 Android/Kotlin</h3>
+<pre><code>import org.wia.art001.WIAART001
+import org.wia.art001.models.*
+
+class ArtworkRepository(private val sdk: WIAART001) {
+    
+    suspend fun uploadArtwork(bitmap: Bitmap): Result&lt;Artwork&gt; = runCatching {
+        val outputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+        val imageData = outputStream.toByteArray()
+        
+        sdk.create(
+            data = imageData,
+            metadata = ArtworkMetadata(
+                title = "안드로이드 작품",
+                colorSpace = ColorSpace.ADOBE_RGB
+            )
+        )
+    }
+}</code></pre>
+
+<h3>7.3.3 React Native</h3>
+<pre><code>import { useWIAArt } from '@wia/art-001-react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
+
+function ArtworkUploader() {
+  const { upload, uploading, progress } = useWIAArt();
+  
+  const selectAndUpload = async () => {
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      quality: 1
+    });
+    
+    if (result.assets?.[0]) {
+      const artwork = await upload(result.assets[0].uri, {
+        title: '모바일 작품'
+      });
+      Alert.alert('성공', `작품 ID: ${artwork.id}`);
+    }
+  };
+  
+  return (
+    &lt;View&gt;
+      &lt;Button title="선택 및 업로드" onPress={selectAndUpload} /&gt;
+      {uploading && &lt;ProgressBar progress={progress} /&gt;}
+    &lt;/View&gt;
+  );
+}</code></pre>
+</section>
+
+<section id="ecosystem">
+<h2>7.4 WIA 에코시스템 통합</h2>
+
+<h3>7.4.1 WIA-INTENT 연동</h3>
+<pre><code>import { WIAIntent } from '@wia/intent';
+import { WIAART001 } from '@wia/art-001-sdk';
+
+const intent = new WIAIntent();
+const artSdk = new WIAART001({ apiKey: 'your-key' });
+
+// 자연어 검색
+const query = "지난 달에 만든 Adobe RGB 풍경화 찾아줘";
+const parsedIntent = await intent.parse(query);
+
+/*
+{
+  action: "search",
+  domain: "art-001",
+  parameters: {
+    keywords: ["풍경화"],
+    colorSpace: "Adobe RGB",
+    dateRange: { from: "2024-12-15", to: "2025-01-15" }
+  }
+}
+*/
+
+const results = await artSdk.search(parsedIntent.parameters);</code></pre>
+
+<h3>7.4.2 WIA-OMNI-API 게이트웨이</h3>
+<pre><code>import { WIAOmniAPI } from '@wia/omni-api';
+
+const omni = new WIAOmniAPI({
+  apiKey: 'your-universal-key'
+});
+
+// 여러 WIA 서비스 통합 접근
+const artwork = await omni.art001.create({...});
+const social = await omni.social.share(artwork.id, {...});
+const blockchain = await omni.blockchain.register(artwork.id);
+
+// 트랜잭션 작업
+const result = await omni.execute({
+  operations: [
+    { service: 'art-001', action: 'create', params: {...} },
+    { service: 'social', action: 'share', params: {...} },
+    { service: 'blockchain', action: 'register', params: {...} }
+  ],
+  transactional: true  // 전부 성공 또는 전부 롤백
+});</code></pre>
+
+<h3>7.4.3 WIA-BLOCKCHAIN 출처 기록</h3>
+<pre><code>import { WIABlockchain } from '@wia/blockchain';
+
+const blockchain = new WIABlockchain({ apiKey: 'your-key' });
+
+// 작품 블록체인 등록
+const registration = await blockchain.register({
+  artworkId: 'art_123',
+  chain: 'ethereum',
+  metadata: {
+    creatorSignature: '...',
+    certificateLevel: 'professional'
+  }
+});
+
+console.log('트랜잭션:', registration.txHash);
+console.log('토큰 ID:', registration.tokenId);
+
+// 출처 검증
+const provenance = await blockchain.verify('art_123');
+console.log('현재 소유자:', provenance.currentOwner);
+console.log('이전 기록:', provenance.transferHistory);</code></pre>
+</section>
+
+<section id="third-party">
+<h2>7.5 서드파티 통합</h2>
+
+<div class="integration-card">
+<h4>Adobe Creative Cloud</h4>
+<p>Photoshop, Illustrator 등 Adobe 앱용 네이티브 패널 통합</p>
+<pre><code>// Adobe CEP 패널
+const csInterface = new CSInterface();
+
+async function exportWithWIA() {
+  const doc = app.activeDocument;
+  
+  const metadata = {
+    title: doc.name,
+    colorSpace: doc.colorProfileName
+  };
+  
+  const exportPath = await exportDocument(doc, 'PNG');
+  const result = await wiaSDK.create({
+    file: exportPath,
+    metadata
+  });
+  
+  alert(`등록 완료: ${result.id}`);
+}</code></pre>
+</div>
+
+<div class="integration-card">
+<h4>Blender 애드온</h4>
+<p>3D 렌더 이미지를 WIA 메타데이터와 함께 내보내기</p>
+<pre><code># Blender Python 애드온
+import bpy
+from wia_art_001 import SDK
+
+class WIA_OT_ExportRender(bpy.types.Operator):
+    bl_idname = "wia.export_render"
+    bl_label = "WIA로 내보내기"
+    
+    def execute(self, context):
+        scene = context.scene
+        bpy.ops.render.render(write_still=True)
+        
+        sdk = SDK(api_key=scene.wia_api_key)
+        result = sdk.create(
+            file=scene.render.filepath,
+            metadata={
+                "title": scene.name,
+                "medium": "3D 렌더링",
+                "software": "Blender " + bpy.app.version_string
+            }
+        )
+        
+        self.report({'INFO'}, f"내보내기 완료: {result.id}")
+        return {'FINISHED'}</code></pre>
+</div>
+
+<h3>7.5.1 마켓플레이스 통합</h3>
+<table>
+<thead>
+<tr><th>마켓플레이스</th><th>통합 방식</th><th>기능</th></tr>
+</thead>
+<tbody>
+<tr><td>OpenSea</td><td>API + 메타데이터</td><td>자동 가져오기, 출처 동기화</td></tr>
+<tr><td>Rarible</td><td>플러그인</td><td>WIA 메타데이터로 직접 민팅</td></tr>
+<tr><td>Foundation</td><td>API</td><td>컬렉션 관리</td></tr>
+<tr><td>SuperRare</td><td>파트너십</td><td>인증 작가 프로그램</td></tr>
+</tbody>
+</table>
+
+<h3>7.5.2 스토리지 통합</h3>
+<pre><code>// IPFS 통합
+import { create } from 'ipfs-http-client';
+import { WIAART001 } from '@wia/art-001-sdk';
+
+const ipfs = create({ host: 'ipfs.infura.io', port: 5001 });
+const wia = new WIAART001({ apiKey: 'your-key' });
+
+async function storeOnIPFS(artworkId) {
+  const artwork = await wia.read(artworkId);
+  const content = await wia.getContent(artworkId);
+  
+  // 콘텐츠 저장
+  const contentResult = await ipfs.add(content);
+  
+  // 메타데이터 저장
+  const metadataResult = await ipfs.add(
+    JSON.stringify(artwork.metadata)
+  );
+  
+  // WIA 레코드 업데이트
+  await wia.updateMetadata(artworkId, {
+    storage: {
+      ipfs: {
+        content: contentResult.cid.toString(),
+        metadata: metadataResult.cid.toString()
+      }
+    }
+  });
+  
+  return { contentCID: contentResult.cid, metadataCID: metadataResult.cid };
+}</code></pre>
+</section>
+
+<section id="summary">
+<h2>7.6 장 요약</h2>
+<div class="callout success">
+<div class="callout-title">✅ 핵심 정리</div>
+<ul>
+<li>웹 통합: CDN, NPM, React, Vue 지원</li>
+<li>모바일 통합: iOS (Swift), Android (Kotlin), React Native</li>
+<li>WIA 에코시스템: INTENT, OMNI-API, BLOCKCHAIN 연동</li>
+<li>서드파티: Adobe, Blender, 마켓플레이스, IPFS</li>
+</ul>
+</div>
+
+<h3>복습 문제</h3>
+<ol>
+<li>React에서 WIA-ART-001을 통합하는 방법을 설명하세요.</li>
+<li>WIA-INTENT와의 연동이 제공하는 이점은?</li>
+<li>블록체인 출처 기록의 장점을 설명하세요.</li>
+<li>IPFS 스토리지 통합이 중요한 이유는?</li>
+</ol>
+
+<div class="philosophy">
+<div class="philosophy-text">弘益人間</div>
+<p>원활한 통합은 진입 장벽을 낮춥니다. 모든 창작자가 전문적인 표준을 쉽게 사용할 수 있게 합니다.</p>
+</div>
+</section>
+
+<nav class="nav">
+<a href="chapter-06.html">← 제6장: 프로토콜</a>
+<a href="chapter-08.html">제8장: 구현 및 인증 →</a>
+</nav>
+
+<footer>
+<p>WIA-ART-001 디지털 아트 표준 v1.0</p>
+<p>© 2025 World Industry Association. All rights reserved.</p>
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: Phase 3 - Communication Protocols - WIA ROB-012</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%); color: #e0e0e0; line-height: 1.8; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); padding: 40px 20px; text-align: center; box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3); margin-bottom: 40px; }
+        h1 { font-size: 2.5em; margin-bottom: 10px; color: #ffffff; }
+        .chapter-info { color: #E9D5FF; font-size: 1.1em; }
+        nav { background: #1e1e3f; padding: 15px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); }
+        nav a { color: #8B5CF6; text-decoration: none; margin: 0 15px; font-weight: 500; transition: all 0.3s; }
+        nav a:hover { color: #C4B5FD; }
+        .content-section { background: #1e1e3f; padding: 40px; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); border-left: 5px solid #8B5CF6; }
+        h2 { color: #8B5CF6; font-size: 2em; margin-bottom: 20px; margin-top: 30px; }
+        h3 { color: #C4B5FD; font-size: 1.5em; margin-bottom: 15px; margin-top: 25px; }
+        h4 { color: #DDD6FE; font-size: 1.2em; margin-bottom: 10px; margin-top: 20px; }
+        p { margin-bottom: 15px; color: #d0d0d0; }
+        code { background: #0f0f23; padding: 2px 8px; border-radius: 4px; color: #C4B5FD; font-family: 'Courier New', monospace; font-size: 0.9em; }
+        pre { background: #0f0f23; padding: 20px; border-radius: 10px; overflow-x: auto; margin: 20px 0; border: 1px solid #8B5CF6; }
+        pre code { background: none; padding: 0; color: #e0e0e0; font-size: 0.95em; line-height: 1.6; }
+        table { width: 100%; border-collapse: collapse; margin: 25px 0; background: #2d2d5f; border-radius: 10px; overflow: hidden; }
+        th { background: #8B5CF6; color: white; padding: 15px; text-align: left; font-weight: 600; }
+        td { padding: 12px 15px; border-bottom: 1px solid #3a3a6a; }
+        tr:hover { background: rgba(139, 92, 246, 0.1); }
+        .key-takeaways { background: rgba(139, 92, 246, 0.1); border-left: 4px solid #8B5CF6; padding: 20px; margin: 30px 0; border-radius: 8px; }
+        .key-takeaways h3 { margin-top: 0; }
+        .key-takeaways ul { margin-left: 20px; margin-top: 15px; }
+        .key-takeaways li { margin: 10px 0; }
+        footer { text-align: center; padding: 30px 0; margin-top: 40px; border-top: 1px solid #334155; color: #94a3b8; }
+        .philosophy { color: #ffd700; font-size: 1.1rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chapter 6: Phase 3 - Communication Protocols</h1>
+            <p class="chapter-info">Real-time Streaming and Bidirectional Communication</p>
+        </header>
+
+        <nav>
+            <a href="index.html">← Table of Contents</a>
+            <a href="chapter5.html">← Previous</a>
+            <a href="chapter7.html">Next →</a>
+        </nav>
+
+        <div class="content-section">
+            <h2>6.1 Overview of Phase 3 Communication Protocols</h2>
+            <p>Phase 3 of the WIA Security Robot Standard addresses real-time communication requirements that request-response APIs cannot adequately serve. Security operations demand continuous bidirectional data flows: live video streaming from robot cameras, real-time sensor telemetry for situational awareness, immediate alert delivery requiring sub-second latency, and dynamic command execution with instant feedback. Phase 2 APIs excel at configuration and status queries, but streaming applications need different architectural patterns.</p>
+
+            <p>The standard supports multiple protocol options, each optimized for specific communication patterns and requirements. MQTT (Message Queuing Telemetry Transport) provides lightweight publish-subscribe messaging ideal for sensor telemetry and alert distribution across distributed systems. WebSocket enables full-duplex communication over single TCP connections, perfect for control interfaces requiring low-latency bidirectional exchanges. RTSP (Real-Time Streaming Protocol) and RTP (Real-Time Protocol) deliver time-sensitive media streams including live video from robot cameras compatible with existing video management systems.</p>
+
+            <p>Protocol selection depends on use case requirements. Control applications prioritizing responsiveness favor WebSocket. Sensor data aggregation from multiple robots benefits from MQTT's efficient pub-sub model. Video surveillance integration leverages RTSP for compatibility with enterprise VMS platforms. Organizations often deploy multiple protocols simultaneously, each serving its optimal use case within comprehensive security architectures.</p>
+
+            <h3>Quality of Service Requirements</h3>
+            <p>Different message types demand different reliability guarantees. Critical alert notifications require guaranteed delivery with acknowledgment - missing a security breach notification is unacceptable. Sensor telemetry tolerates occasional packet loss since subsequent readings supersede earlier values. Video streams prioritize low latency over perfect reliability - dropping occasional frames maintains real-time viewing while retransmitting dropped packets introduces unacceptable delays.</p>
+
+            <p>Phase 3 defines QoS levels aligned with message importance. Level 0 (at most once delivery) suits high-frequency sensor readings where latest value matters most. Level 1 (at least once delivery) ensures messages reach recipients though duplicates may occur, appropriate for alerts where processing duplicates is acceptable but missing notifications is not. Level 2 (exactly once delivery) guarantees single delivery without duplicates, critical for command execution and billing/audit events where duplicates cause problems.</p>
+
+            <h2>6.2 MQTT for Sensor Telemetry and Alerts</h2>
+            <p>MQTT excels at distributing sensor data and alerts across security operations centers, analytics platforms, and integrated systems. The publish-subscribe model decouples message producers (robots) from consumers (monitoring systems, databases, analytics engines), enabling flexible architectures that scale gracefully.</p>
+
+            <h3>Topic Structure and Naming Conventions</h3>
+            <p>MQTT organizes messages into hierarchical topics. The standard defines topic naming conventions ensuring consistency across implementations and preventing collisions in multi-vendor deployments.</p>
+
+            <pre><code>wia/rob-012/{facility_id}/{robot_id}/{message_type}/{detail}
+
+Examples:
+wia/rob-012/campus-north/ROB-SEC-001/status/battery
+wia/rob-012/campus-north/ROB-SEC-001/alerts/intrusion
+wia/rob-012/campus-north/ROB-SEC-001/sensors/lidar/obstacles
+wia/rob-012/campus-north/ROB-SEC-001/location/current</code></pre>
+
+            <p>Wildcard subscriptions enable flexible monitoring. Security operations centers can subscribe to all alerts across facilities using <code>wia/rob-012/+/+/alerts/#</code> or monitor specific robot types using <code>wia/rob-012/campus-north/+/status/health</code>. This flexibility supports diverse operational patterns without requiring point-to-point configuration.</p>
+
+            <h3>Message Payloads</h3>
+            <p>MQTT message payloads use Phase 1 JSON formats, ensuring consistency with REST API data structures. This unified data model simplifies integration - systems processing REST API responses also parse MQTT messages without format translation.</p>
+
+            <pre><code>Topic: wia/rob-012/campus-north/ROB-SEC-001/alerts/intrusion
+QoS: 1 (at least once)
+Payload:
+{
+  "$schema": "https://wiastandards.com/schemas/security-robot/v1.0.0/alert.json",
+  "version": "1.0.0",
+  "alert_id": "alert_20251226_103045_001",
+  "timestamp": "2025-12-26T10:30:45.123Z",
+  "robot_id": "ROB-SEC-001",
+  "alert_type": "intrusion_detected",
+  "severity": "high",
+  "confidence": 0.92,
+  "location": {
+    "type": "geographic",
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "zone": "Building A - Perimeter - North Side"
+  },
+  "detection": {
+    "method": "ai_vision",
+    "sensor_id": "cam_front_01",
+    "object_type": "person",
+    "object_count": 2,
+    "behavior": "climbing_fence"
+  },
+  "recommended_action": "dispatch_security_personnel"
+}</code></pre>
+
+            <h3>Retained Messages and Last Known State</h3>
+            <p>MQTT supports retained messages where brokers store the last message published to a topic and deliver it immediately when new clients subscribe. This enables new monitoring systems to discover current robot states without waiting for next status update. Robots publish status updates with retain flag set, ensuring dashboards display current fleet status immediately upon connection.</p>
+
+            <h2>6.3 WebSocket for Real-time Control</h2>
+            <p>WebSocket protocol provides full-duplex communication channels over single TCP connections, enabling low-latency bidirectional exchanges between security operations centers and robots. Unlike HTTP request-response patterns, WebSocket maintains persistent connections where both parties can send messages asynchronously.</p>
+
+            <h3>Connection Establishment</h3>
+            <p>WebSocket connections begin with HTTP upgrade handshake, then transition to WebSocket framing protocol. The standard defines connection URLs and authentication patterns:</p>
+
+            <pre><code>wss://robot-001.local/api/v1/ws/control
+Authorization: Bearer {api_key}
+
+Connection upgrade:
+GET /api/v1/ws/control HTTP/1.1
+Host: robot-001.local
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Sec-WebSocket-Version: 13
+Authorization: Bearer {api_key}
+
+Response:
+HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=</code></pre>
+
+            <h3>Message Format</h3>
+            <p>WebSocket messages carry JSON payloads with message type indicators and sequence numbers enabling reliable communication over unreliable networks.</p>
+
+            <pre><code>{
+  "message_type": "command",
+  "sequence": 12847,
+  "timestamp": "2025-12-26T10:31:15.234Z",
+  "command": {
+    "type": "navigate",
+    "destination": {
+      "latitude": 37.7749,
+      "longitude": -122.4194
+    },
+    "priority": "high"
+  }
+}
+
+Response:
+{
+  "message_type": "command_ack",
+  "sequence": 12847,
+  "timestamp": "2025-12-26T10:31:15.456Z",
+  "status": "accepted",
+  "command_id": "cmd_20251226_103115",
+  "eta_seconds": 127
+}</code></pre>
+
+            <h3>Heartbeat and Connection Management</h3>
+            <p>WebSocket connections may traverse NAT gateways and firewalls that timeout idle connections. The standard mandates periodic ping/pong messages maintaining connection liveness. Clients send ping frames every 30 seconds; servers respond with pong frames within 5 seconds. Missing pong responses indicate connection failure triggering reconnection attempts with exponential backoff.</p>
+
+
+            <h2>6.4 RTSP/RTP for Video Streaming</h2>
+            <p>Security robots equipped with cameras stream live video to video management systems and security operations centers. The standard leverages existing RTSP (Real-Time Streaming Protocol) and RTP (Real-Time Transport Protocol) specifications ensuring compatibility with enterprise VMS platforms while defining security robot-specific extensions.</p>
+
+            <h3>Stream URLs and Camera Identification</h3>
+            <p>Each robot camera exposes RTSP streams through standardized URLs incorporating robot and camera identifiers:</p>
+
+            <pre><code>rtsp://robot-001.local:554/wia/rob-012/{robot_id}/{camera_id}/{stream_profile}
+
+Examples:
+rtsp://robot-001.local:554/wia/rob-012/ROB-SEC-001/cam_front_01/main
+rtsp://robot-001.local:554/wia/rob-012/ROB-SEC-001/cam_front_01/sub
+rtsp://robot-001.local:554/wia/rob-012/ROB-SEC-001/cam_thermal_01/main</code></pre>
+
+            <p>Multiple stream profiles support different bandwidth and quality requirements. Main streams deliver full resolution and frame rate for detailed viewing and recording. Sub streams provide lower resolution for bandwidth-constrained scenarios and multi-camera monitoring displays. Mobile streams optimize for cellular connections with aggressive compression.</p>
+
+            <h3>Codec Standards</h3>
+            <p>The standard mandates support for common video codecs ensuring broad compatibility:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codec</th>
+                        <th>Profile</th>
+                        <th>Use Case</th>
+                        <th>Bandwidth</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>H.264 (AVC)</td>
+                        <td>High Profile</td>
+                        <td>Primary stream, recording</td>
+                        <td>2-8 Mbps</td>
+                    </tr>
+                    <tr>
+                        <td>H.265 (HEVC)</td>
+                        <td>Main Profile</td>
+                        <td>Bandwidth optimization</td>
+                        <td>1-4 Mbps</td>
+                    </tr>
+                    <tr>
+                        <td>MJPEG</td>
+                        <td>-</td>
+                        <td>Compatibility, snapshots</td>
+                        <td>4-12 Mbps</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Metadata Embedding</h3>
+            <p>Video streams embed metadata using SEI (Supplemental Enhancement Information) messages in H.264/H.265 streams. Metadata includes timestamp synchronization (correlating video frames with sensor readings and alerts), location data (GPS coordinates or local position), sensor parameters (exposure, gain, focus distance), and alert context (when video captured during alert investigation).</p>
+
+            <p>This embedded metadata enables advanced analytics. Video management systems can geolocate recorded footage automatically, search historical video by location, and correlate video with sensor data timelines. Forensic analysis benefits from precise timestamp synchronization ensuring video evidence aligns with other data sources.</p>
+
+            <h2>6.5 Security and Encryption</h2>
+            <p>Communication security is paramount for security robot deployments. Phase 3 mandates encryption for all network communications protecting against eavesdropping, tampering, and man-in-the-middle attacks.</p>
+
+            <h3>Transport Layer Security</h3>
+            <p>All protocols use TLS encryption. MQTT connections use MQTT over TLS (MQTTS) on port 8883. WebSocket connections use secure WebSocket (wss://) URLs. RTSP streams support RTSPS with SRTP (Secure Real-time Transport Protocol) for encrypted media.</p>
+
+            <p>TLS 1.2 is minimum required version; TLS 1.3 is recommended for enhanced security and performance. Cipher suites must provide forward secrecy using ECDHE key exchange. Weak ciphers including RC4, DES, and export-grade encryption are prohibited.</p>
+
+            <h3>Certificate Management</h3>
+            <p>Robots present X.509 certificates during TLS handshakes for authentication. Certificates can be issued by organization private CAs or public certificate authorities depending on deployment architecture and network topology.</p>
+
+            <p>Certificate validation prevents impersonation attacks. Clients verify server certificates match expected robot identity through CN (Common Name) or SAN (Subject Alternative Name) fields. Certificate revocation checking using OCSP (Online Certificate Status Protocol) or CRL (Certificate Revocation Lists) detects compromised certificates.</p>
+
+            <p>Automated certificate renewal using ACME protocol or similar mechanisms prevents expiration-related outages. Robots request new certificates 30 days before expiration, allowing time for manual intervention if automated renewal fails.</p>
+
+            <div class="key-takeaways">
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li>Comprehensive standardization enables interoperability and reduces integration complexity across diverse security robot platforms and systems</li>
+                    <li>Open standards accelerate innovation by providing stable foundations while preserving competitive differentiation opportunities for manufacturers</li>
+                    <li>Real-world deployment validation ensures specifications address practical operational needs rather than theoretical ideals</li>
+                    <li>WIA certification provides third-party validation building trust and enabling objective platform comparison for procurement decisions</li>
+                    <li>The four-phase architecture enables progressive adoption allowing organizations to gain value incrementally while working toward full compliance</li>
+                </ul>
+            </div>
+
+            <h2>Review Questions</h2>
+            <ol>
+                <li>What are the primary benefits of standardized communication protocols for security robot deployments in enterprise environments?</li>
+                <li>How does the WIA ROB-012 standard balance interoperability requirements with vendor innovation and competitive differentiation?</li>
+                <li>Describe the progression from Phase 1 through Phase 4 compliance. Why is this incremental approach beneficial for market adoption?</li>
+                <li>Compare the security implications of different authentication methods supported by the standard. When is each most appropriate?</li>
+                <li>Explain how standardized data formats enable cross-platform analytics and machine learning model sharing across robot fleets.</li>
+                <li>What role does WIA certification play in reducing procurement risk and enabling objective vendor comparison?</li>
+            </ol>
+
+            <h2>Looking Ahead</h2>
+            <p>With the technical foundation complete, we now turn to practical implementation. The next chapter provides comprehensive guidance for deploying WIA ROB-012 compliant systems, achieving certification, and realizing the full benefits of standardization in production environments.</p>
+        </div>
+
+        <nav>
+            <a href="index.html">← Table of Contents</a>
+            <a href="chapter{num-1}.html">← Previous</a>
+            {"" if num == 8 else f'<a href="chapter{num+1}.html">Next →</a>'}
+        </nav>
+
+        <footer>
+            <p class="philosophy">弘益人間 · Benefit All Humanity</p>
+            <p>WIA Security Robot Standard - ROB-012</p>
+            <p>© 2025 MIT License</p>
+        </footer>
+    </div>
+</body>
+</html>

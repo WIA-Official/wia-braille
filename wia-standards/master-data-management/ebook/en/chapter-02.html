@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Master Data Modeling and Design | WIA-DATA-009</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; }
+        .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+        .nav { display: flex; justify-content: space-between; margin-bottom: 2rem; }
+        .nav a { color: #10B981; text-decoration: none; }
+        header { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 3px solid #10B981; }
+        .chapter-number { color: #10B981; font-size: 1.2rem; font-weight: 600; }
+        h1 { font-size: 2.5rem; color: #e2e8f0; margin-bottom: 1rem; }
+        h2 { font-size: 1.8rem; color: #10B981; margin-top: 3rem; margin-bottom: 1rem; }
+        h3 { font-size: 1.4rem; color: #10B981; margin-top: 2rem; margin-bottom: 0.75rem; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; }
+        ul { margin-left: 2rem; margin-bottom: 1.5rem; color: #cbd5e1; }
+        .highlight-box { background: #1e293b; border-left: 4px solid #10B981; padding: 1.5rem; margin: 2rem 0; border-radius: 0.5rem; }
+        pre { background: #1e293b; border: 2px solid #334155; padding: 1.5rem; border-radius: 0.5rem; overflow-x: auto; margin: 1.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 0.75rem; border: 1px solid #334155; text-align: left; }
+        th { background: #1e293b; color: #10B981; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="chapter-01.html">← Previous</a>
+            <a href="chapter-03.html">Next →</a>
+        </div>
+        <header>
+            <div class="chapter-number">Chapter 2</div>
+            <h1>Master Data Modeling and Design</h1>
+        </header>
+
+        <p>Effective master data management begins with thoughtful data modeling and design. A well-designed master data model serves as the blueprint for your MDM implementation, defining the structure, relationships, and business rules that govern your critical business entities.</p>
+
+        <h2>Understanding Entity-Relationship Modeling</h2>
+
+        <p>Master data modeling uses entity-relationship (ER) modeling techniques adapted for the unique requirements of MDM. Unlike transactional database design, MDM models must accommodate:</p>
+
+        <ul>
+            <li><strong>Multiple source systems</strong> with different schemas and business rules</li>
+            <li><strong>Temporal dimensions</strong> to track changes over time</li>
+            <li><strong>Data quality metadata</strong> including confidence scores and data lineage</li>
+            <li><strong>Complex hierarchies and relationships</strong> that may vary by context</li>
+        </ul>
+
+        <h2>Core Master Data Domains</h2>
+
+        <p>Most organizations focus on a core set of master data domains. Let's examine each in detail:</p>
+
+        <h3>Customer Master Data</h3>
+
+        <p>Customer master data represents individuals and organizations who interact with your business. A comprehensive customer model includes:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Entity</th>
+                    <th>Attributes</th>
+                    <th>Relationships</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Party</td>
+                    <td>PartyID, PartyType, CreatedDate</td>
+                    <td>Base entity for Person and Organization</td>
+                </tr>
+                <tr>
+                    <td>Person</td>
+                    <td>FirstName, LastName, DateOfBirth, Gender</td>
+                    <td>Extends Party, has Addresses, ContactMethods</td>
+                </tr>
+                <tr>
+                    <td>Organization</td>
+                    <td>LegalName, TaxID, Industry, NumberOfEmployees</td>
+                    <td>Extends Party, has Locations, Relationships</td>
+                </tr>
+                <tr>
+                    <td>Address</td>
+                    <td>AddressLine1, City, State, PostalCode, Country</td>
+                    <td>Belongs to Party, has AddressType</td>
+                </tr>
+                <tr>
+                    <td>ContactMethod</td>
+                    <td>ContactType, ContactValue, IsPrimary</td>
+                    <td>Email, Phone, Social media handles</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Product Master Data</h3>
+
+        <p>Product master data encompasses the goods and services your organization offers. Key considerations include:</p>
+
+        <pre>
+Product Hierarchy Example:
+
+Category
+  └─ Product Family
+      └─ Product Line
+          └─ Base Product
+              └─ Product Variant (SKU)
+                  └─ Item (Serialized)
+
+Example:
+Electronics
+  └─ Computers
+      └─ Laptops
+          └─ MacBook Pro
+              └─ MacBook Pro 16" M3 512GB Space Gray
+                  └─ Serial# C02XK12345
+        </pre>
+
+        <p>Product attributes vary significantly by industry but typically include:</p>
+
+        <ul>
+            <li><strong>Identifying attributes:</strong> SKU, UPC, GTIN, Part Number</li>
+            <li><strong>Descriptive attributes:</strong> Name, Description, Brand, Specifications</li>
+            <li><strong>Classification attributes:</strong> Category, Product Line, Material Group</li>
+            <li><strong>Commercial attributes:</strong> Price, Cost, Currency, Tax Category</li>
+            <li><strong>Operational attributes:</strong> Weight, Dimensions, Hazmat Class, Shelf Life</li>
+        </ul>
+
+        <h3>Supplier/Vendor Master Data</h3>
+
+        <p>Supplier master data tracks organizations that provide goods or services to your company:</p>
+
+        <ul>
+            <li><strong>Legal Entity Information:</strong> Legal name, registration number, tax identifiers</li>
+            <li><strong>Financial Details:</strong> Payment terms, bank accounts, credit limits</li>
+            <li><strong>Compliance Data:</strong> Certifications, audit results, risk ratings</li>
+            <li><strong>Performance Metrics:</strong> On-time delivery, quality scores, spend history</li>
+            <li><strong>Relationship Data:</strong> Contracts, contacts, negotiated rates</li>
+        </ul>
+
+        <h2>Canonical Data Model Design</h2>
+
+        <p>A canonical data model (CDM) represents the "gold standard" structure for master data within your organization. The CDM serves several purposes:</p>
+
+        <div class="highlight-box">
+            <strong>Benefits of a Canonical Data Model:</strong>
+            <ul style="margin-top: 1rem; margin-bottom: 0;">
+                <li>Provides a common language across business and IT stakeholders</li>
+                <li>Simplifies integration by defining standard structures for data exchange</li>
+                <li>Reduces the complexity of point-to-point integrations (N-to-N becomes N-to-1)</li>
+                <li>Enables data quality rules to be defined once and applied consistently</li>
+                <li>Facilitates compliance by establishing authoritative data definitions</li>
+            </ul>
+        </div>
+
+        <h3>CDM Design Principles</h3>
+
+        <p>When designing a canonical data model, follow these principles:</p>
+
+        <ul>
+            <li><strong>Business-driven:</strong> Model should reflect business concepts, not technical implementation</li>
+            <li><strong>Source-agnostic:</strong> Don't favor one source system's structure over others</li>
+            <li><strong>Future-proof:</strong> Accommodate expected business changes and new data sources</li>
+            <li><strong>Normalized where appropriate:</strong> Reduce redundancy while maintaining usability</li>
+            <li><strong>Extensible:</strong> Allow for custom attributes without breaking the core model</li>
+        </ul>
+
+        <h2>Handling Complex Relationships</h2>
+
+        <p>Master data often involves complex relationships that must be carefully modeled:</p>
+
+        <h3>Hierarchies</h3>
+
+        <p>Hierarchies represent parent-child relationships within a domain:</p>
+
+        <ul>
+            <li><strong>Product hierarchies:</strong> Category → Family → Line → Product → SKU</li>
+            <li><strong>Organizational hierarchies:</strong> Corporation → Division → Department → Team</li>
+            <li><strong>Customer hierarchies:</strong> Global Account → Regional Office → Local Branch</li>
+            <li><strong>Location hierarchies:</strong> Country → Region → City → Site → Building → Floor</li>
+        </ul>
+
+        <p>Advanced hierarchy modeling must support:</p>
+
+        <ul>
+            <li><strong>Multiple hierarchies:</strong> Same entity in different hierarchies (sales territory vs. support region)</li>
+            <li><strong>Time-variant hierarchies:</strong> Hierarchy changes over time (reorganizations)</li>
+            <li><strong>Multiple parents:</strong> Entity belongs to multiple parent nodes (matrix organizations)</li>
+            <li><strong>Circular references:</strong> Detection and prevention of circular parent-child relationships</li>
+        </ul>
+
+        <h3>Many-to-Many Relationships</h3>
+
+        <p>Some business relationships are many-to-many, requiring associative entities:</p>
+
+        <pre>
+Example: Product-Supplier Relationship
+
+Product ←→ ProductSupplier ←→ Supplier
+
+ProductSupplier attributes:
+  - ProductID (FK)
+  - SupplierID (FK)
+  - PreferredSupplier (Boolean)
+  - LeadTimeDays (Integer)
+  - MinimumOrderQuantity (Decimal)
+  - UnitPrice (Decimal)
+  - EffectiveDate (Date)
+  - ExpirationDate (Date)
+        </pre>
+
+        <h2>Temporal Modeling</h2>
+
+        <p>Master data changes over time, and MDM systems must track these changes. There are three main approaches:</p>
+
+        <h3>Type 1: Overwrite</h3>
+
+        <p>Simply update the record with new values. No history is maintained.</p>
+
+        <ul>
+            <li><strong>Pros:</strong> Simple, no storage overhead</li>
+            <li><strong>Cons:</strong> Historical data lost, can't reconstruct past states</li>
+            <li><strong>Use case:</strong> Correcting errors, updating non-critical attributes</li>
+        </ul>
+
+        <h3>Type 2: Add New Row</h3>
+
+        <p>Create a new version of the record when changes occur, keeping all versions.</p>
+
+        <ul>
+            <li><strong>Pros:</strong> Complete history, can reconstruct any point in time</li>
+            <li><strong>Cons:</strong> Increased storage, more complex queries</li>
+            <li><strong>Use case:</strong> Regulatory requirements, audit trails, trend analysis</li>
+        </ul>
+
+        <h3>Type 3: Add New Column</h3>
+
+        <p>Add separate columns to track current and previous values (or specific dates).</p>
+
+        <ul>
+            <li><strong>Pros:</strong> Easy to query current vs. previous, limited storage overhead</li>
+            <li><strong>Cons:</strong> Limited history (typically only 1-2 previous values)</li>
+            <li><strong>Use case:</strong> Tracking specific attribute changes (e.g., customer segment)</li>
+        </ul>
+
+        <div class="highlight-box">
+            <strong>Hybrid Approach:</strong> Many MDM implementations use a hybrid approach, applying different temporal strategies to different attributes based on business requirements. For example, customer name changes might use Type 2 (full history) while email address updates use Type 1 (overwrite).
+        </div>
+
+        <h2>Data Quality Attributes</h2>
+
+        <p>The master data model should include metadata to track data quality:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Attribute</th>
+                    <th>Purpose</th>
+                    <th>Example Values</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>SourceSystem</td>
+                    <td>Identify the origin of the data</td>
+                    <td>CRM, ERP, E-Commerce</td>
+                </tr>
+                <tr>
+                    <td>SourceSystemID</td>
+                    <td>Original identifier in source system</td>
+                    <td>CRM-12345, ERP-98765</td>
+                </tr>
+                <tr>
+                    <td>DataQualityScore</td>
+                    <td>Overall quality rating</td>
+                    <td>0-100</td>
+                </tr>
+                <tr>
+                    <td>CompletenessScore</td>
+                    <td>Percentage of required fields populated</td>
+                    <td>0-100</td>
+                </tr>
+                <tr>
+                    <td>TrustScore</td>
+                    <td>Confidence in data accuracy</td>
+                    <td>0-100</td>
+                </tr>
+                <tr>
+                    <td>LastVerifiedDate</td>
+                    <td>When data was last confirmed accurate</td>
+                    <td>2025-12-26</td>
+                </tr>
+                <tr>
+                    <td>CreatedBy</td>
+                    <td>User or system that created the record</td>
+                    <td>john.smith@company.com</td>
+                </tr>
+                <tr>
+                    <td>CreatedDate</td>
+                    <td>When the record was created</td>
+                    <td>2025-12-26T10:30:00Z</td>
+                </tr>
+                <tr>
+                    <td>ModifiedBy</td>
+                    <td>User or system that last modified</td>
+                    <td>data.steward@company.com</td>
+                </tr>
+                <tr>
+                    <td>ModifiedDate</td>
+                    <td>When the record was last updated</td>
+                    <td>2025-12-26T14:22:15Z</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Extensibility and Customization</h2>
+
+        <p>Your data model must accommodate organization-specific and industry-specific requirements. Common extensibility patterns include:</p>
+
+        <h3>1. Custom Attributes Table</h3>
+
+        <pre>
+CREATE TABLE CustomerCustomAttribute (
+    CustomerID VARCHAR(50),
+    AttributeName VARCHAR(100),
+    AttributeValue VARCHAR(4000),
+    DataType VARCHAR(20),
+    EffectiveDate DATE,
+    ExpirationDate DATE
+);
+        </pre>
+
+        <h3>2. JSON/XML Extension Fields</h3>
+
+        <pre>
+CREATE TABLE Customer (
+    CustomerID VARCHAR(50) PRIMARY KEY,
+    FirstName VARCHAR(100),
+    LastName VARCHAR(100),
+    -- ... standard fields ...
+    CustomAttributes JSON,
+    ExtensionData XML
+);
+        </pre>
+
+        <h3>3. Typed Extension Tables</h3>
+
+        <pre>
+-- Base customer table with common attributes
+CREATE TABLE Customer ( ... );
+
+-- Industry-specific extension for healthcare
+CREATE TABLE CustomerHealthcare (
+    CustomerID VARCHAR(50) PRIMARY KEY,
+    PatientID VARCHAR(50),
+    PrimaryPhysician VARCHAR(100),
+    InsuranceProvider VARCHAR(100),
+    FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
+);
+        </pre>
+
+        <h2>Reference Data Management</h2>
+
+        <p>Reference data (code lists, valid values, lookup tables) plays a critical role in master data management:</p>
+
+        <ul>
+            <li><strong>Country codes:</strong> ISO 3166 country list</li>
+            <li><strong>Currency codes:</strong> ISO 4217 currency list</li>
+            <li><strong>Industry classifications:</strong> NAICS, SIC codes</li>
+            <li><strong>Product categories:</strong> Organization-specific taxonomies</li>
+            <li><strong>Status codes:</strong> Active, Inactive, Suspended, etc.</li>
+        </ul>
+
+        <p>Reference data should be:</p>
+
+        <ul>
+            <li><strong>Centrally managed:</strong> Single source of truth for code lists</li>
+            <li><strong>Version controlled:</strong> Track changes to reference data over time</li>
+            <li><strong>Synchronized:</strong> Distribute to all consuming systems</li>
+            <li><strong>Governed:</strong> Changes require approval and impact analysis</li>
+        </ul>
+
+        <h2>Model Validation and Testing</h2>
+
+        <p>Before implementing your data model, validate it against real-world scenarios:</p>
+
+        <div class="highlight-box">
+            <strong>Data Model Validation Checklist:</strong>
+            <ul style="margin-top: 1rem; margin-bottom: 0;">
+                <li>Can the model accommodate all known use cases?</li>
+                <li>Does it support required reporting and analytics?</li>
+                <li>Can it handle the expected data volume and query load?</li>
+                <li>Does it comply with relevant regulations and standards?</li>
+                <li>Is it flexible enough for anticipated future requirements?</li>
+                <li>Can source system data be mapped to the model without loss of critical information?</li>
+                <li>Are all relationships properly defined and enforced?</li>
+                <li>Is the model documented and understandable to business stakeholders?</li>
+            </ul>
+        </div>
+
+        <h2>Summary</h2>
+
+        <p>A well-designed master data model is the foundation of MDM success. It must balance standardization with flexibility, accommodate multiple source systems while providing a unified view, and support both current and future business needs. By following the principles and patterns outlined in this chapter, you can create a robust data model that serves as the blueprint for your MDM implementation.</p>
+
+        <p>In the next chapter, we'll explore how to integrate data quality and governance processes to ensure the ongoing integrity and trustworthiness of your master data.</p>
+    </div>
+</body>
+</html>

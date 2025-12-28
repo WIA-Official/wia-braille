@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA E-Waste Management - Simulator</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: #334155;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .back-link {
+            color: var(--text-dim);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        /* Language Selector */
+        .lang-selector {
+            margin-bottom: 2rem;
+        }
+
+        select {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            width: 100%;
+            max-width: 300px;
+            cursor: pointer;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: var(--text);
+            background: var(--surface);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-dim);
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+
+        textarea {
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+        }
+
+        button.btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button.btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Output */
+        .output {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* Status Badge */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .badge-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .badge-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: var(--surface-light);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div class="logo">♻️ E-Waste Simulator</div>
+            <a href="../" class="back-link">← Back to Home</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Language Selector -->
+        <div class="lang-selector">
+            <label for="language-select">Output Language:</label>
+            <select id="language-select">
+                <option value="en">English</option>
+                <option value="ko">한국어 (Korean)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="fr">Français (French)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="ja">日本語 (Japanese)</option>
+                <option value="zh">中文 (Chinese)</option>
+                <option value="ar">العربية (Arabic)</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+                <option value="pt">Português (Portuguese)</option>
+                <option value="ru">Русский (Russian)</option>
+                <option value="it">Italiano (Italian)</option>
+                <option value="nl">Nederlands (Dutch)</option>
+                <option value="pl">Polski (Polish)</option>
+                <option value="tr">Türkçe (Turkish)</option>
+                <option value="vi">Tiếng Việt (Vietnamese)</option>
+                <option value="th">ไทย (Thai)</option>
+                <option value="id">Bahasa Indonesia</option>
+                <option value="sv">Svenska (Swedish)</option>
+                <option value="no">Norsk (Norwegian)</option>
+                <option value="da">Dansk (Danish)</option>
+                <option value="fi">Suomi (Finnish)</option>
+                <option value="cs">Čeština (Czech)</option>
+                <option value="el">Ελληνικά (Greek)</option>
+                <option value="he">עברית (Hebrew)</option>
+                <option value="hu">Magyar (Hungarian)</option>
+                <option value="ro">Română (Romanian)</option>
+                <option value="uk">Українська (Ukrainian)</option>
+                <option value="bg">Български (Bulgarian)</option>
+                <option value="hr">Hrvatski (Croatian)</option>
+                <option value="sk">Slovenčina (Slovak)</option>
+                <option value="sl">Slovenščina (Slovenian)</option>
+                <option value="lt">Lietuvių (Lithuanian)</option>
+                <option value="lv">Latviešu (Latvian)</option>
+                <option value="et">Eesti (Estonian)</option>
+                <option value="sr">Српски (Serbian)</option>
+                <option value="mk">Македонски (Macedonian)</option>
+                <option value="sq">Shqip (Albanian)</option>
+                <option value="ka">ქართული (Georgian)</option>
+                <option value="hy">Հայերեն (Armenian)</option>
+                <option value="az">Azərbaycan (Azerbaijani)</option>
+                <option value="kk">Қазақ (Kazakh)</option>
+                <option value="uz">Oʻzbek (Uzbek)</option>
+                <option value="mn">Монгол (Mongolian)</option>
+                <option value="ne">नेपाली (Nepali)</option>
+                <option value="si">සිංහල (Sinhala)</option>
+                <option value="my">မြန်မာ (Burmese)</option>
+                <option value="km">ខ្មែរ (Khmer)</option>
+                <option value="lo">ລາວ (Lao)</option>
+                <option value="am">አማርኛ (Amharic)</option>
+                <option value="sw">Kiswahili (Swahili)</option>
+                <option value="zu">isiZulu (Zulu)</option>
+                <option value="xh">isiXhosa (Xhosa)</option>
+                <option value="af">Afrikaans</option>
+                <option value="ms">Bahasa Melayu (Malay)</option>
+                <option value="tl">Tagalog (Filipino)</option>
+                <option value="bn">বাংলা (Bengali)</option>
+                <option value="ur">اردو (Urdu)</option>
+                <option value="fa">فارسی (Persian)</option>
+                <option value="ta">தமிழ் (Tamil)</option>
+                <option value="te">తెలుగు (Telugu)</option>
+                <option value="mr">मराठी (Marathi)</option>
+                <option value="gu">ગુજરાતી (Gujarati)</option>
+                <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                <option value="ml">മലയാളം (Malayalam)</option>
+                <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                <option value="or">ଓଡ଼ିଆ (Odia)</option>
+                <option value="as">অসমীয়া (Assamese)</option>
+                <option value="is">Íslenska (Icelandic)</option>
+                <option value="mt">Malti (Maltese)</option>
+                <option value="ga">Gaeilge (Irish)</option>
+                <option value="cy">Cymraeg (Welsh)</option>
+                <option value="eu">Euskara (Basque)</option>
+                <option value="ca">Català (Catalan)</option>
+                <option value="gl">Galego (Galician)</option>
+                <option value="lb">Lëtzebuergesch (Luxembourgish)</option>
+                <option value="fo">Føroyskt (Faroese)</option>
+                <option value="kl">Kalaallisut (Greenlandic)</option>
+                <option value="gd">Gàidhlig (Scottish Gaelic)</option>
+                <option value="br">Brezhoneg (Breton)</option>
+                <option value="oc">Occitan</option>
+                <option value="co">Corsu (Corsican)</option>
+                <option value="sc">Sardu (Sardinian)</option>
+                <option value="rm">Rumantsch (Romansh)</option>
+                <option value="fy">Frysk (Frisian)</option>
+                <option value="yi">ייִדיש (Yiddish)</option>
+                <option value="la">Latina (Latin)</option>
+                <option value="eo">Esperanto</option>
+                <option value="jv">Basa Jawa (Javanese)</option>
+                <option value="su">Basa Sunda (Sundanese)</option>
+                <option value="ceb">Cebuano</option>
+                <option value="haw">ʻŌlelo Hawaiʻi (Hawaiian)</option>
+                <option value="mi">Te Reo Māori (Maori)</option>
+                <option value="sm">Gagana Samoa (Samoan)</option>
+                <option value="to">Lea Faka-Tonga (Tongan)</option>
+                <option value="fj">Na Vosa Vakaviti (Fijian)</option>
+            </select>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('data-format')">Data Format</button>
+            <button class="tab" onclick="switchTab('algorithms')">Algorithms</button>
+            <button class="tab" onclick="switchTab('protocol')">Protocol</button>
+            <button class="tab" onclick="switchTab('integration')">Integration</button>
+            <button class="tab" onclick="switchTab('test')">Test</button>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div id="data-format" class="tab-content active">
+            <div class="card">
+                <h3>E-Waste Data Format Generator</h3>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>Device Type</label>
+                        <select id="device-type">
+                            <option value="smartphone">Smartphone</option>
+                            <option value="laptop">Laptop</option>
+                            <option value="tablet">Tablet</option>
+                            <option value="monitor">Monitor</option>
+                            <option value="printer">Printer</option>
+                            <option value="tv">Television</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Weight (kg)</label>
+                        <input type="number" id="device-weight" value="0.5" step="0.1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Serial Number</label>
+                    <input type="text" id="serial-number" placeholder="e.g., SN-2025-001234">
+                </div>
+                <button class="btn" onclick="generateDataFormat()">Generate Data Format</button>
+                <div id="data-output" class="output"></div>
+            </div>
+
+            <div class="card">
+                <h3>WEEE Categories</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Examples</th>
+                            <th>Hazard Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1. Temperature Exchange</td>
+                            <td>Refrigerators, Air conditioners</td>
+                            <td><span class="badge badge-danger">High</span></td>
+                        </tr>
+                        <tr>
+                            <td>2. Screens & Monitors</td>
+                            <td>TVs, Monitors, Laptops</td>
+                            <td><span class="badge badge-warning">Medium</span></td>
+                        </tr>
+                        <tr>
+                            <td>3. Lamps</td>
+                            <td>LED, Fluorescent lamps</td>
+                            <td><span class="badge badge-warning">Medium</span></td>
+                        </tr>
+                        <tr>
+                            <td>4. Large Equipment</td>
+                            <td>Washing machines, Ovens</td>
+                            <td><span class="badge badge-warning">Medium</span></td>
+                        </tr>
+                        <tr>
+                            <td>5. Small Equipment</td>
+                            <td>Phones, Tablets, Cameras</td>
+                            <td><span class="badge badge-success">Low</span></td>
+                        </tr>
+                        <tr>
+                            <td>6. Small IT</td>
+                            <td>Routers, Keyboards, Mice</td>
+                            <td><span class="badge badge-success">Low</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div id="algorithms" class="tab-content">
+            <div class="card">
+                <h3>Material Recovery Calculator</h3>
+                <div class="form-group">
+                    <label>Device Type</label>
+                    <select id="algo-device">
+                        <option value="smartphone">Smartphone</option>
+                        <option value="laptop">Laptop</option>
+                        <option value="pcb">Circuit Board</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Quantity</label>
+                    <input type="number" id="algo-quantity" value="100" min="1">
+                </div>
+                <button class="btn" onclick="calculateRecovery()">Calculate Recovery</button>
+                <div id="algo-output" class="output"></div>
+            </div>
+
+            <div class="card">
+                <h3>Recycling Value Estimation</h3>
+                <p style="color: var(--text-dim); margin-bottom: 1rem;">
+                    Estimated material value based on current market prices
+                </p>
+                <div class="grid">
+                    <div>
+                        <strong>Gold:</strong> ~$60,000/kg<br>
+                        <small style="color: var(--text-dim)">Found in: Circuit boards, connectors</small>
+                    </div>
+                    <div>
+                        <strong>Copper:</strong> ~$9/kg<br>
+                        <small style="color: var(--text-dim)">Found in: Wiring, motors</small>
+                    </div>
+                    <div>
+                        <strong>Aluminum:</strong> ~$2.5/kg<br>
+                        <small style="color: var(--text-dim)">Found in: Casings, heat sinks</small>
+                    </div>
+                    <div>
+                        <strong>Rare Earths:</strong> ~$50-200/kg<br>
+                        <small style="color: var(--text-dim)">Found in: Magnets, displays</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div id="protocol" class="tab-content">
+            <div class="card">
+                <h3>Recycling Process Workflow</h3>
+                <div class="form-group">
+                    <label>Current Stage</label>
+                    <select id="protocol-stage">
+                        <option value="collection">1. Collection</option>
+                        <option value="sorting">2. Sorting</option>
+                        <option value="dismantling">3. Dismantling</option>
+                        <option value="processing">4. Processing</option>
+                        <option value="recovery">5. Material Recovery</option>
+                        <option value="disposal">6. Safe Disposal</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="generateProtocol()">Generate Protocol</button>
+                <div id="protocol-output" class="output"></div>
+            </div>
+
+            <div class="card">
+                <h3>Basel Convention Compliance</h3>
+                <div class="form-group">
+                    <label>Export Country</label>
+                    <input type="text" id="export-country" placeholder="e.g., USA">
+                </div>
+                <div class="form-group">
+                    <label>Import Country</label>
+                    <input type="text" id="import-country" placeholder="e.g., Ghana">
+                </div>
+                <button class="btn" onclick="checkBasel()">Check Compliance</button>
+                <div id="basel-output" class="output"></div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div id="integration" class="tab-content">
+            <div class="card">
+                <h3>API Integration Example</h3>
+                <div class="form-group">
+                    <label>Endpoint</label>
+                    <select id="api-endpoint">
+                        <option value="track">POST /api/v1/waste/track</option>
+                        <option value="collect">POST /api/v1/waste/collect</option>
+                        <option value="recycle">POST /api/v1/waste/recycle</option>
+                        <option value="certify">POST /api/v1/waste/certify</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="generateAPICall()">Generate API Call</button>
+                <div id="api-output" class="output"></div>
+            </div>
+
+            <div class="card">
+                <h3>Certification Systems</h3>
+                <div class="grid">
+                    <div>
+                        <h4 style="color: var(--primary);">R2 Certification</h4>
+                        <p style="color: var(--text-dim);">
+                            Responsible Recycling standard for electronics recyclers.
+                            Focuses on data security, worker safety, and environmental protection.
+                        </p>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--primary);">e-Stewards</h4>
+                        <p style="color: var(--text-dim);">
+                            Highest standard for responsible e-waste recycling.
+                            Prohibits export to developing nations and landfill disposal.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Test -->
+        <div id="test" class="tab-content">
+            <div class="card">
+                <h3>End-to-End Test Scenario</h3>
+                <p style="color: var(--text-dim); margin-bottom: 1rem;">
+                    Simulate a complete e-waste lifecycle from collection to recycling
+                </p>
+                <div class="form-group">
+                    <label>Test Scenario</label>
+                    <select id="test-scenario">
+                        <option value="smartphone">Smartphone Recycling</option>
+                        <option value="laptop">Laptop Recycling</option>
+                        <option value="batch">Batch Processing (100 devices)</option>
+                        <option value="hazardous">Hazardous Material Handling</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="runTest()">Run Test</button>
+                <div id="test-output" class="output"></div>
+            </div>
+
+            <div class="card">
+                <h3>Validation Checklist</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Validation Step</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="validation-checklist">
+                        <tr>
+                            <td>Device identification and classification</td>
+                            <td><span class="badge badge-success">✓ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>Hazardous material detection</td>
+                            <td><span class="badge badge-success">✓ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>Weight and composition verification</td>
+                            <td><span class="badge badge-success">✓ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>Basel Convention compliance check</td>
+                            <td><span class="badge badge-success">✓ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>API endpoint connectivity</td>
+                            <td><span class="badge badge-success">✓ Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td>Certification validation</td>
+                            <td><span class="badge badge-success">✓ Pass</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Data Format Generator
+        function generateDataFormat() {
+            const deviceType = document.getElementById('device-type').value;
+            const weight = document.getElementById('device-weight').value;
+            const serial = document.getElementById('serial-number').value || 'SN-' + Date.now();
+            const lang = document.getElementById('language-select').value;
+
+            const data = {
+                "schema_version": "1.0",
+                "waste_id": "WIA-EWASTE-" + Date.now(),
+                "timestamp": new Date().toISOString(),
+                "device": {
+                    "type": deviceType,
+                    "serial_number": serial,
+                    "weight_kg": parseFloat(weight),
+                    "weee_category": getWEEECategory(deviceType)
+                },
+                "materials": {
+                    "precious_metals": ["gold", "silver", "palladium"],
+                    "base_metals": ["copper", "aluminum", "steel"],
+                    "rare_earths": ["neodymium", "dysprosium"],
+                    "hazardous": ["lead", "mercury", "cadmium"]
+                },
+                "status": "collected",
+                "location": {
+                    "facility_id": "FAC-" + Math.floor(Math.random() * 1000),
+                    "country": "ISO-3166-1",
+                    "coordinates": null
+                },
+                "certifications": ["R2", "e-Stewards"],
+                "language": lang
+            };
+
+            document.getElementById('data-output').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function getWEEECategory(deviceType) {
+            const categories = {
+                'smartphone': '5 - Small Equipment',
+                'laptop': '2 - Screens & Monitors',
+                'tablet': '2 - Screens & Monitors',
+                'monitor': '2 - Screens & Monitors',
+                'printer': '4 - Large Equipment',
+                'tv': '2 - Screens & Monitors'
+            };
+            return categories[deviceType] || '5 - Small Equipment';
+        }
+
+        // Material Recovery Calculator
+        function calculateRecovery() {
+            const device = document.getElementById('algo-device').value;
+            const quantity = parseInt(document.getElementById('algo-quantity').value);
+
+            const recoveryRates = {
+                smartphone: { gold: 0.024, copper: 24, aluminum: 10, rare_earth: 0.5 },
+                laptop: { gold: 0.150, copper: 200, aluminum: 500, rare_earth: 2 },
+                pcb: { gold: 0.200, copper: 100, aluminum: 50, rare_earth: 1 }
+            };
+
+            const rates = recoveryRates[device];
+            const recovery = {
+                "devices_processed": quantity,
+                "materials_recovered_grams": {
+                    "gold": (rates.gold * quantity).toFixed(3),
+                    "copper": (rates.copper * quantity).toFixed(2),
+                    "aluminum": (rates.aluminum * quantity).toFixed(2),
+                    "rare_earth_elements": (rates.rare_earth * quantity).toFixed(3)
+                },
+                "estimated_value_usd": {
+                    "gold": (rates.gold * quantity * 60).toFixed(2),
+                    "copper": (rates.copper * quantity * 0.009).toFixed(2),
+                    "aluminum": (rates.aluminum * quantity * 0.0025).toFixed(2),
+                    "rare_earth": (rates.rare_earth * quantity * 0.1).toFixed(2)
+                },
+                "total_value_usd": ((rates.gold * quantity * 60) +
+                                    (rates.copper * quantity * 0.009) +
+                                    (rates.aluminum * quantity * 0.0025) +
+                                    (rates.rare_earth * quantity * 0.1)).toFixed(2),
+                "environmental_impact": {
+                    "co2_saved_kg": (quantity * 47).toFixed(2),
+                    "energy_saved_kwh": (quantity * 190).toFixed(2),
+                    "landfill_avoided_kg": (quantity * 0.5).toFixed(2)
+                }
+            };
+
+            document.getElementById('algo-output').textContent = JSON.stringify(recovery, null, 2);
+        }
+
+        // Protocol Generator
+        function generateProtocol() {
+            const stage = document.getElementById('protocol-stage').value;
+
+            const protocols = {
+                collection: "1. Verify device type and condition\n2. Issue collection receipt\n3. Log weight and serial number\n4. Apply tracking label\n5. Store in designated area\n6. Update inventory system",
+                sorting: "1. Separate by WEEE category\n2. Identify hazardous materials\n3. Test for functionality\n4. Sort by recycling method\n5. Document batch composition\n6. Prepare for dismantling",
+                dismantling: "1. Remove batteries (hazardous)\n2. Extract circuit boards\n3. Separate plastics from metals\n4. Remove hazardous components\n5. Catalog valuable materials\n6. Prepare for processing",
+                processing: "1. Shred non-hazardous materials\n2. Separate by density\n3. Magnetic separation for ferrous metals\n4. Eddy current for non-ferrous\n5. Optical sorting for plastics\n6. Prepare for recovery",
+                recovery: "1. Smelt precious metals\n2. Refine copper and aluminum\n3. Extract rare earth elements\n4. Chemical processing for purity\n5. Quality assurance testing\n6. Certify recovered materials",
+                disposal: "1. Identify non-recyclable materials\n2. Neutralize hazardous substances\n3. Comply with Basel Convention\n4. Document disposal method\n5. Issue disposal certificate\n6. Update compliance records"
+            };
+
+            const output = {
+                "protocol_stage": stage,
+                "steps": protocols[stage].split('\n'),
+                "compliance_requirements": ["Basel Convention", "WEEE Directive", "Local regulations"],
+                "required_certifications": ["R2", "e-Stewards"],
+                "safety_requirements": ["PPE", "Ventilation", "Hazmat training"],
+                "documentation": ["Process log", "Material manifest", "Certification"]
+            };
+
+            document.getElementById('protocol-output').textContent = JSON.stringify(output, null, 2);
+        }
+
+        // Basel Convention Check
+        function checkBasel() {
+            const exportCountry = document.getElementById('export-country').value;
+            const importCountry = document.getElementById('import-country').value;
+
+            const result = {
+                "export_country": exportCountry,
+                "import_country": importCountry,
+                "basel_convention_status": "compliant",
+                "requirements": [
+                    "Prior Informed Consent (PIC) required",
+                    "Hazardous waste manifest",
+                    "Approved recycling facility certification",
+                    "Transportation documentation",
+                    "Import permit from receiving country"
+                ],
+                "restrictions": [
+                    "No export to non-Basel signatory countries",
+                    "No disposal in landfills",
+                    "No burning or incineration",
+                    "Proper handling of hazardous materials"
+                ],
+                "estimated_compliance_time": "14-30 days"
+            };
+
+            document.getElementById('basel-output').textContent = JSON.stringify(result, null, 2);
+        }
+
+        // API Integration
+        function generateAPICall() {
+            const endpoint = document.getElementById('api-endpoint').value;
+
+            const examples = {
+                track: {
+                    method: "POST",
+                    url: "https://api.wia-ewaste.org/v1/waste/track",
+                    headers: {
+                        "Authorization": "Bearer YOUR_API_KEY",
+                        "Content-Type": "application/json"
+                    },
+                    body: {
+                        waste_id: "WIA-EWASTE-" + Date.now(),
+                        device_type: "smartphone",
+                        location: "Collection Center A",
+                        timestamp: new Date().toISOString()
+                    }
+                },
+                collect: {
+                    method: "POST",
+                    url: "https://api.wia-ewaste.org/v1/waste/collect",
+                    headers: {
+                        "Authorization": "Bearer YOUR_API_KEY",
+                        "Content-Type": "application/json"
+                    },
+                    body: {
+                        batch_id: "BATCH-" + Date.now(),
+                        items: [
+                            { type: "smartphone", quantity: 50 },
+                            { type: "laptop", quantity: 20 }
+                        ],
+                        collector_id: "COL-123"
+                    }
+                },
+                recycle: {
+                    method: "POST",
+                    url: "https://api.wia-ewaste.org/v1/waste/recycle",
+                    headers: {
+                        "Authorization": "Bearer YOUR_API_KEY",
+                        "Content-Type": "application/json"
+                    },
+                    body: {
+                        waste_id: "WIA-EWASTE-123456",
+                        recycling_method: "urban_mining",
+                        facility_id: "FAC-789",
+                        materials_recovered: {
+                            gold_g: 2.4,
+                            copper_kg: 1.2
+                        }
+                    }
+                },
+                certify: {
+                    method: "POST",
+                    url: "https://api.wia-ewaste.org/v1/waste/certify",
+                    headers: {
+                        "Authorization": "Bearer YOUR_API_KEY",
+                        "Content-Type": "application/json"
+                    },
+                    body: {
+                        facility_id: "FAC-789",
+                        certification_type: "R2",
+                        audit_date: new Date().toISOString(),
+                        status: "certified"
+                    }
+                }
+            };
+
+            const example = examples[endpoint];
+            document.getElementById('api-output').textContent =
+                `# cURL Example\ncurl -X ${example.method} ${example.url} \\\n` +
+                `  -H "Authorization: ${example.headers.Authorization}" \\\n` +
+                `  -H "Content-Type: ${example.headers['Content-Type']}" \\\n` +
+                `  -d '${JSON.stringify(example.body, null, 2)}'`;
+        }
+
+        // Test Runner
+        function runTest() {
+            const scenario = document.getElementById('test-scenario').value;
+
+            const testResults = {
+                smartphone: {
+                    scenario: "Smartphone Recycling",
+                    steps: [
+                        "✓ Device received and logged",
+                        "✓ Battery removed safely",
+                        "✓ Circuit board extracted",
+                        "✓ Materials separated",
+                        "✓ Precious metals recovered: 0.024g gold",
+                        "✓ Recycling certificate issued"
+                    ],
+                    duration_ms: 1247,
+                    status: "PASS"
+                },
+                laptop: {
+                    scenario: "Laptop Recycling",
+                    steps: [
+                        "✓ Laptop received and logged",
+                        "✓ Data wiped securely",
+                        "✓ Battery and screen removed",
+                        "✓ Components dismantled",
+                        "✓ Materials recovered: 0.15g gold, 200g copper",
+                        "✓ Environmental impact: 47kg CO2 saved"
+                    ],
+                    duration_ms: 2891,
+                    status: "PASS"
+                },
+                batch: {
+                    scenario: "Batch Processing (100 devices)",
+                    steps: [
+                        "✓ Batch logged: 100 smartphones",
+                        "✓ Automated sorting completed",
+                        "✓ Mass dismantling process",
+                        "✓ Material recovery: 2.4g gold, 2.4kg copper",
+                        "✓ Total value: $144.00",
+                        "✓ Basel compliance verified"
+                    ],
+                    duration_ms: 15234,
+                    status: "PASS"
+                },
+                hazardous: {
+                    scenario: "Hazardous Material Handling",
+                    steps: [
+                        "✓ Hazard assessment completed",
+                        "✓ PPE protocol verified",
+                        "✓ Mercury-containing components isolated",
+                        "✓ Lead solder extracted safely",
+                        "✓ Hazmat disposal documented",
+                        "✓ Compliance certificate issued"
+                    ],
+                    duration_ms: 3456,
+                    status: "PASS"
+                }
+            };
+
+            const result = testResults[scenario];
+            const output = {
+                test_scenario: result.scenario,
+                execution_steps: result.steps,
+                duration_ms: result.duration_ms,
+                status: result.status,
+                timestamp: new Date().toISOString(),
+                compliance_verified: true
+            };
+
+            document.getElementById('test-output').textContent = JSON.stringify(output, null, 2);
+        }
+
+        // Initialize with sample data
+        window.addEventListener('DOMContentLoaded', () => {
+            generateDataFormat();
+        });
+    </script>
+</body>
+</html>

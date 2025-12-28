@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>제4장: 실시간 데이터 처리 엔진 - WIA-DATA-013</title>
+    <style>
+        body{font-family:'Malgun Gothic',sans-serif;line-height:1.8;max-width:1000px;margin:0 auto;padding:40px 20px;background:#0f172a;color:#e2e8f0}
+        h1,h2,h3{color:#10B981;margin-top:40px}
+        h1{font-size:2.5em;border-bottom:3px solid #10B981;padding-bottom:15px}
+        h2{font-size:2em;border-bottom:2px solid #334155;padding-bottom:10px}
+        code{background:#1e293b;padding:2px 6px;border-radius:4px;color:#10B981;font-family:'Courier New',monospace}
+        pre{background:#1e293b;border-left:4px solid #10B981;padding:20px;border-radius:8px;overflow-x:auto}
+        table{width:100%;border-collapse:collapse;margin:20px 0;background:#1e293b}
+        th,td{padding:12px;text-align:left;border:1px solid #334155}
+        th{background:#10B981;color:#0f172a;font-weight:bold}
+        .highlight{background:rgba(16,185,129,0.1);border-left:4px solid #10B981;padding:15px;margin:20px 0;border-radius:8px}
+        ul,ol{margin:15px 0;padding-left:30px}
+        li{margin:10px 0}
+    </style>
+</head>
+<body>
+<h1>제4장: 실시간 데이터 처리 엔진</h1>
+
+<h2>개요</h2>
+<p>실시간 데이터 처리 엔진은 대용량 스트리밍 데이터를 빠르게 처리하고 분석하는 핵심 컴포넌트입니다. 이 장에서는 Apache Flink, Apache Spark Streaming, Apache Storm 등 주요 스트림 처리 엔진의 아키텍처, 특징, 장단점, 구현 예제를 비교 분석합니다.</p>
+
+<h2>스트림 처리 엔진 비교</h2>
+<table>
+<tr><th>엔진</th><th>처리 모델</th><th>지연 시간</th><th>처리량</th><th>상태 관리</th><th>정확히 한 번</th><th>학습 곡선</th></tr>
+<tr><td>Apache Flink</td><td>진정한 스트리밍</td><td>밀리초</td><td>매우 높음</td><td>탁월함</td><td>지원</td><td>중간</td></tr>
+<tr><td>Spark Streaming</td><td>마이크로 배치</td><td>초 단위</td><td>높음</td><td>양호</td><td>지원</td><td>낮음</td></tr>
+<tr><td>Storm</td><td>튜플 단위</td><td>밀리초</td><td>중간</td><td>수동</td><td>Trident</td><td>높음</td></tr>
+<tr><td>Kafka Streams</td><td>스트림</td><td>밀리초</td><td>높음</td><td>양호</td><td>지원</td><td>낮음</td></tr>
+<tr><td>Samza</td><td>스트림</td><td>밀리초</td><td>높음</td><td>양호</td><td>지원</td><td>중간</td></tr>
+</table>
+
+<h2>Apache Flink</h2>
+<p>Apache Flink는 상태 기반(stateful) 스트림 처리를 위한 분산 처리 프레임워크로, 이벤트 시간 처리, 정확히 한 번 보장, 강력한 상태 관리 기능을 제공합니다.</p>
+
+<h3>Flink 아키텍처</h3>
+<pre><code>// Flink 클러스터 아키텍처
+┌────────────────────────────────────────────────────┐
+│                  JobManager (마스터)                │
+│  - 작업 스케줄링                                     │
+│  - 체크포인트 조정                                   │
+│  - 장애 복구                                        │
+└────────────────────────────────────────────────────┘
+                        ↓
+        ┌───────────────┴───────────────┐
+        ↓                               ↓
+┌─────────────────┐            ┌─────────────────┐
+│  TaskManager 1  │            │  TaskManager 2  │
+│  ┌───────────┐  │            │  ┌───────────┐  │
+│  │  Task 1   │  │            │  │  Task 3   │  │
+│  ├───────────┤  │            │  ├───────────┤  │
+│  │  Task 2   │  │            │  │  Task 4   │  │
+│  ├───────────┤  │            │  ├───────────┤  │
+│  │ State     │  │            │  │ State     │  │
+│  │ (RocksDB) │  │            │  │ (RocksDB) │  │
+│  └───────────┘  │            │  └───────────┘  │
+└─────────────────┘            └─────────────────┘
+
+// 데이터 흐름
+Source → Transformation → Transformation → Sink
+(Kafka)   (필터, 맵)       (윈도우, 집계)     (HDFS, DB)
+
+// 체크포인트 메커니즘
+State Snapshot ───→ Distributed Storage (HDFS/S3)
+  (주기적)            (내결함성 보장)
+</code></pre>
+
+<h3>Flink DataStream API 구현</h3>
+<pre><code>// Flink 스트림 처리 애플리케이션
+import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.state.*;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+
+public class FlinkStreamingJob {
+    public static void main(String[] args) throws Exception {
+        // 실행 환경 설정
+        StreamExecutionEnvironment env =
+            StreamExecutionEnvironment.getExecutionEnvironment();
+
+        // 체크포인트 활성화 (1분마다)
+        env.enableCheckpointing(60000);
+        env.getCheckpointConfig().setMinPauseBetweenCheckpoints(30000);
+        env.getCheckpointConfig().setCheckpointTimeout(120000);
+
+        // Kafka 소스
+        FlinkKafkaConsumer<SensorReading> kafkaSource =
+            new FlinkKafkaConsumer<>(
+                "sensor-readings",
+                new SensorReadingSchema(),
+                properties);
+
+        // 이벤트 시간 설정
+        kafkaSource.assignTimestampsAndWatermarks(
+            WatermarkStrategy.<SensorReading>forBoundedOutOfOrderness(
+                Duration.ofSeconds(10))
+                .withTimestampAssigner((event, timestamp) ->
+                    event.getTimestamp()));
+
+        DataStream<SensorReading> readings = env.addSource(kafkaSource);
+
+        // 변환 및 집계
+        DataStream<Alert> alerts = readings
+            .filter(r -> r.getTemperature() > 100)
+            .keyBy(SensorReading::getSensorId)
+            .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+            .aggregate(new TemperatureAggregator())
+            .filter(agg -> agg.getMaxTemp() > 150)
+            .map(new AlertMapper());
+
+        // 상태 기반 처리 (사용자 정의 함수)
+        DataStream<Enriched> enriched = readings
+            .keyBy(SensorReading::getSensorId)
+            .process(new EnrichmentFunction());
+
+        // 사이드 아웃풋 (분기 처리)
+        OutputTag<SensorReading> lateDataTag =
+            new OutputTag<SensorReading>("late-data"){};
+
+        SingleOutputStreamOperator<Stats> stats = readings
+            .keyBy(SensorReading::getSensorId)
+            .window(TumblingEventTimeWindows.of(Time.hours(1)))
+            .sideOutputLateData(lateDataTag)
+            .aggregate(new StatsAggregator());
+
+        DataStream<SensorReading> lateData =
+            stats.getSideOutput(lateDataTag);
+
+        // 스트림 조인
+        DataStream<Joined> joined = readings
+            .join(enriched)
+            .where(SensorReading::getSensorId)
+            .equalTo(Enriched::getSensorId)
+            .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+            .apply(new JoinFunction<>());
+
+        // Sink (여러 출력)
+        alerts.addSink(new FlinkKafkaProducer<>("alerts", ...));
+        stats.addSink(new CassandraSink<>(...));
+        lateData.addSink(new RollingSink<>(...));
+
+        // 작업 실행
+        env.execute("Sensor Monitoring Job");
+    }
+}
+
+// 상태 기반 처리 함수
+public class EnrichmentFunction
+    extends KeyedProcessFunction<String, SensorReading, Enriched> {
+
+    // 상태 선언
+    private transient ValueState<SensorMetadata> metadataState;
+
+    @Override
+    public void open(Configuration parameters) {
+        // 상태 초기화
+        ValueStateDescriptor<SensorMetadata> descriptor =
+            new ValueStateDescriptor<>(
+                "sensor-metadata",
+                TypeInformation.of(SensorMetadata.class));
+
+        metadataState = getRuntimeContext().getState(descriptor);
+    }
+
+    @Override
+    public void processElement(
+            SensorReading reading,
+            Context ctx,
+            Collector<Enriched> out) throws Exception {
+
+        // 상태 읽기
+        SensorMetadata metadata = metadataState.value();
+        if (metadata == null) {
+            // 외부 소스에서 메타데이터 조회
+            metadata = lookupMetadata(reading.getSensorId());
+            metadataState.update(metadata);
+        }
+
+        // 데이터 보강
+        Enriched enriched = new Enriched(
+            reading,
+            metadata.getLocation(),
+            metadata.getType()
+        );
+
+        out.collect(enriched);
+
+        // 타이머 등록 (1시간 후 메타데이터 갱신)
+        long refreshTime = ctx.timestamp() + 3600000;
+        ctx.timerService().registerEventTimeTimer(refreshTime);
+    }
+
+    @Override
+    public void onTimer(
+            long timestamp,
+            OnTimerContext ctx,
+            Collector<Enriched> out) {
+        // 메타데이터 갱신
+        metadataState.clear();
+    }
+}
+
+// Python Flink API (PyFlink)
+from pyflink.datastream import StreamExecutionEnvironment
+from pyflink.datastream.window import TumblingEventTimeWindows
+from pyflink.common.time import Time
+
+env = StreamExecutionEnvironment.get_execution_environment()
+env.set_parallelism(4)
+
+# Kafka 소스
+ds = env.add_source(FlinkKafkaConsumer(...))
+
+# 변환
+result = ds \
+    .filter(lambda x: x['temperature'] > 100) \
+    .key_by(lambda x: x['sensor_id']) \
+    .window(TumblingEventTimeWindows.of(Time.minutes(5))) \
+    .reduce(lambda a, b: {'max_temp': max(a['temp'], b['temp'])})
+
+# Sink
+result.add_sink(FlinkKafkaProducer(...))
+
+env.execute("PyFlink Job")
+</code></pre>
+
+<h2>Apache Spark Streaming</h2>
+<p>Spark Streaming은 Spark의 배치 처리 API를 활용하여 마이크로 배치 방식으로 스트림 데이터를 처리합니다.</p>
+
+<h3>Spark Streaming vs Structured Streaming</h3>
+<table>
+<tr><th>측면</th><th>Spark Streaming (DStream)</th><th>Structured Streaming</th></tr>
+<tr><td>API</td><td>RDD 기반</td><td>DataFrame/Dataset 기반</td></tr>
+<tr><td>처리 모델</td><td>마이크로 배치</td><td>마이크로 배치 + 연속 처리</td></tr>
+<tr><td>이벤트 시간</td><td>제한적</td><td>완전 지원</td></tr>
+<tr><td>상태 관리</td><td>수동</td><td>자동 (mapGroupsWithState)</td></tr>
+<tr><td>쿼리 최적화</td><td>수동</td><td>Catalyst 최적화</td></tr>
+<tr><td>권장 사용</td><td>레거시</td><td>신규 개발</td></tr>
+</table>
+
+<h3>Structured Streaming 구현</h3>
+<pre><code>// Spark Structured Streaming (Scala)
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming._
+
+object StructuredStreamingApp {
+  def main(args: Array[String]): Unit = {
+    val spark = SparkSession.builder()
+      .appName("Structured Streaming")
+      .master("local[*]")
+      .getOrCreate()
+
+    import spark.implicits._
+
+    // Kafka 소스
+    val kafkaDF = spark.readStream
+      .format("kafka")
+      .option("kafka.bootstrap.servers", "kafka:9092")
+      .option("subscribe", "sensor-data")
+      .option("startingOffsets", "latest")
+      .load()
+
+    // JSON 파싱
+    val sensorSchema = new StructType()
+      .add("sensor_id", StringType)
+      .add("temperature", DoubleType)
+      .add("timestamp", TimestampType)
+
+    val sensorDF = kafkaDF
+      .selectExpr("CAST(value AS STRING) as json")
+      .select(from_json($"json", sensorSchema).as("data"))
+      .select("data.*")
+
+    // 이벤트 시간 윈도우 집계
+    val aggDF = sensorDF
+      .withWatermark("timestamp", "10 minutes")
+      .groupBy(
+        window($"timestamp", "5 minutes", "1 minute"),
+        $"sensor_id"
+      )
+      .agg(
+        avg("temperature").as("avg_temp"),
+        max("temperature").as("max_temp"),
+        count("*").as("count")
+      )
+
+    // 상태 기반 처리
+    val stateDF = sensorDF
+      .groupByKey(_.sensor_id)
+      .mapGroupsWithState(GroupStateTimeout.ProcessingTimeTimeout()) {
+        (sensorId: String, values: Iterator[SensorReading],
+         state: GroupState[SensorState]) =>
+
+        var currentState = state.getOption.getOrElse(
+          SensorState(sensorId, 0, 0.0))
+
+        values.foreach { reading =>
+          currentState = currentState.copy(
+            count = currentState.count + 1,
+            totalTemp = currentState.totalTemp + reading.temperature
+          )
+        }
+
+        state.update(currentState)
+        state.setTimeoutDuration("1 hour")
+
+        (sensorId, currentState.totalTemp / currentState.count)
+      }
+
+    // 스트림 조인 (내부 조인)
+    val joinedDF = sensorDF.as("sensor")
+      .join(
+        metadataDF.as("metadata"),
+        expr("""
+          sensor.sensor_id = metadata.sensor_id AND
+          sensor.timestamp >= metadata.start_time AND
+          sensor.timestamp <= metadata.end_time
+        """)
+      )
+
+    // 출력 (여러 Sink)
+    // 1. 콘솔 출력 (디버깅)
+    val consoleQuery = aggDF.writeStream
+      .format("console")
+      .outputMode("update")
+      .start()
+
+    // 2. Kafka 출력
+    val kafkaQuery = aggDF
+      .selectExpr("to_json(struct(*)) AS value")
+      .writeStream
+      .format("kafka")
+      .option("kafka.bootstrap.servers", "kafka:9092")
+      .option("topic", "aggregated-data")
+      .option("checkpointLocation", "/tmp/checkpoint")
+      .start()
+
+    // 3. Parquet 파일 출력 (파티셔닝)
+    val fileQuery = sensorDF.writeStream
+      .format("parquet")
+      .option("path", "/data/sensors")
+      .option("checkpointLocation", "/tmp/checkpoint2")
+      .partitionBy("sensor_id")
+      .trigger(Trigger.ProcessingTime("1 minute"))
+      .start()
+
+    // 쿼리 대기
+    spark.streams.awaitAnyTermination()
+  }
+}
+
+// Python PySpark Streaming
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+
+spark = SparkSession.builder \
+    .appName("PySpark Streaming") \
+    .getOrCreate()
+
+# Kafka 소스
+df = spark.readStream \
+    .format("kafka") \
+    .option("kafka.bootstrap.servers", "kafka:9092") \
+    .option("subscribe", "events") \
+    .load()
+
+# 스키마 정의
+schema = StructType([
+    StructField("user_id", StringType()),
+    StructField("event_type", StringType()),
+    StructField("timestamp", TimestampType())
+])
+
+# JSON 파싱 및 변환
+events = df.selectExpr("CAST(value AS STRING)") \
+    .select(from_json(col("value"), schema).alias("data")) \
+    .select("data.*")
+
+# 윈도우 집계
+windowed = events \
+    .withWatermark("timestamp", "10 minutes") \
+    .groupBy(
+        window(col("timestamp"), "5 minutes"),
+        col("event_type")
+    ) \
+    .count()
+
+# 출력
+query = windowed.writeStream \
+    .format("console") \
+    .outputMode("update") \
+    .start()
+
+query.awaitTermination()
+</code></pre>
+
+<h2>Apache Storm</h2>
+<p>Storm은 초기의 분산 실시간 처리 시스템으로, 튜플 단위의 이벤트 처리를 지원합니다.</p>
+
+<pre><code>// Storm 토폴로지
+import org.apache.storm.Config;
+import org.apache.storm.StormSubmitter;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
+
+public class StormTopology {
+    public static void main(String[] args) throws Exception {
+        TopologyBuilder builder = new TopologyBuilder();
+
+        // Spout (데이터 소스)
+        builder.setSpout("kafka-spout",
+            new KafkaSpout<>(kafkaSpoutConfig), 1);
+
+        // Bolt (처리 로직)
+        builder.setBolt("parse-bolt", new ParseBolt(), 4)
+            .shuffleGrouping("kafka-spout");
+
+        builder.setBolt("filter-bolt", new FilterBolt(), 4)
+            .shuffleGrouping("parse-bolt");
+
+        builder.setBolt("aggregate-bolt", new AggregateBolt(), 8)
+            .fieldsGrouping("filter-bolt", new Fields("sensor_id"));
+
+        builder.setBolt("alert-bolt", new AlertBolt(), 2)
+            .shuffleGrouping("aggregate-bolt");
+
+        // 설정
+        Config conf = new Config();
+        conf.setNumWorkers(4);
+        conf.setMaxSpoutPending(1000);
+
+        // 제출
+        StormSubmitter.submitTopology("sensor-topology",
+            conf, builder.createTopology());
+    }
+}
+
+// Custom Bolt
+public class AggregateBolt extends BaseRichBolt {
+    private OutputCollector collector;
+    private Map<String, SensorStats> stats;
+
+    @Override
+    public void prepare(Map conf, TopologyContext context,
+                        OutputCollector collector) {
+        this.collector = collector;
+        this.stats = new HashMap<>();
+    }
+
+    @Override
+    public void execute(Tuple tuple) {
+        String sensorId = tuple.getStringByField("sensor_id");
+        double temp = tuple.getDoubleByField("temperature");
+
+        SensorStats stat = stats.computeIfAbsent(
+            sensorId, k -> new SensorStats());
+
+        stat.update(temp);
+
+        if (stat.shouldEmit()) {
+            collector.emit(new Values(sensorId,
+                stat.getAverage(), stat.getMax()));
+            collector.ack(tuple);
+        }
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declare(new Fields("sensor_id", "avg_temp", "max_temp"));
+    }
+}
+</code></pre>
+
+<h2>윈도우 연산</h2>
+<table>
+<tr><th>윈도우 타입</th><th>설명</th><th>사용 사례</th><th>Flink</th><th>Spark</th></tr>
+<tr><td>Tumbling</td><td>고정 크기, 겹치지 않음</td><td>5분마다 집계</td><td>TumblingWindow</td><td>window()</td></tr>
+<tr><td>Sliding</td><td>고정 크기, 슬라이드</td><td>1분마다 5분 집계</td><td>SlidingWindow</td><td>window()</td></tr>
+<tr><td>Session</td><td>비활동 갭 기반</td><td>사용자 세션</td><td>SessionWindow</td><td>session_window</td></tr>
+<tr><td>Global</td><td>모든 데이터</td><td>전체 집계</td><td>GlobalWindow</td><td>-</td></tr>
+</table>
+
+<h2>체크포인트 및 상태 관리</h2>
+<pre><code>// Flink 체크포인트 설정
+StreamExecutionEnvironment env = ...;
+
+// 정확히 한 번 보장
+env.enableCheckpointing(60000, CheckpointingMode.EXACTLY_ONCE);
+
+// 체크포인트 설정
+CheckpointConfig config = env.getCheckpointConfig();
+config.setMinPauseBetweenCheckpoints(30000);
+config.setCheckpointTimeout(120000);
+config.setMaxConcurrentCheckpoints(1);
+config.setExternalizedCheckpointCleanup(
+    ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
+
+// 상태 백엔드 설정 (RocksDB)
+env.setStateBackend(new EmbeddedRocksDBStateBackend());
+env.getCheckpointConfig().setCheckpointStorage(
+    new FileSystemCheckpointStorage("hdfs:///checkpoints"));
+
+// Spark 체크포인트
+sparkSession.sparkContext.setCheckpointDir("hdfs:///spark-checkpoint")
+
+streamingQuery.writeStream
+    .option("checkpointLocation", "/tmp/checkpoint")
+    .start()
+</code></pre>
+
+<h2>성능 최적화 전략</h2>
+<table>
+<tr><th>전략</th><th>Flink</th><th>Spark Streaming</th><th>효과</th></tr>
+<tr><td>병렬화</td><td>setParallelism()</td><td>repartition()</td><td>처리량 증가</td></tr>
+<tr><td>체인 최적화</td><td>자동 체이닝</td><td>coalesce()</td><td>네트워크 감소</td></tr>
+<tr><td>상태 크기 제한</td><td>TTL 설정</td><td>mapGroupsWithState</td><td>메모리 절약</td></tr>
+<tr><td>백프레셔</td><td>자동 조절</td><td>maxRatePerPartition</td><td>안정성</td></tr>
+<tr><td>로컬 집계</td><td>combiner</td><td>reduceByKey</td><td>네트워크 감소</td></tr>
+</table>
+
+<h2>장애 복구 메커니즘</h2>
+<div class="highlight">
+<p><strong>Flink:</strong> 분산 스냅샷(Chandy-Lamport 알고리즘)을 사용하여 전체 애플리케이션의 일관된 상태를 저장하고, 장애 발생 시 마지막 성공한 체크포인트로 복구합니다.</p>
+
+<p><strong>Spark:</strong> RDD 계보(lineage) 정보를 유지하여 손실된 파티션을 재계산하고, 체크포인트를 통해 상태를 주기적으로 저장합니다.</p>
+
+<p><strong>Storm:</strong> 튜플 추적(acker) 메커니즘을 통해 실패한 튜플을 재처리하며, Trident를 사용하면 정확히 한 번 처리를 보장할 수 있습니다.</p>
+</div>
+
+<h2>요약</h2>
+<p>실시간 데이터 처리 엔진 선택은 요구사항에 따라 달라집니다. Flink는 저지연과 복잡한 상태 관리가 필요한 경우, Spark Streaming은 기존 Spark 생태계와 통합이 필요한 경우, Kafka Streams는 단순하고 Kafka 중심의 파이프라인이 필요한 경우에 적합합니다.</p>
+
+<h2>복습 문제</h2>
+<ol>
+<li>Flink의 진정한 스트리밍과 Spark의 마이크로 배치 방식의 차이점과 각각의 장단점을 논의하세요.</li>
+<li>이벤트 시간 처리와 워터마크의 개념을 설명하고, 왜 중요한지 논의하세요.</li>
+<li>스트림 처리에서 상태 관리의 중요성과 Flink의 상태 관리 메커니즘을 설명하세요.</li>
+<li>체크포인트를 통한 장애 복구 과정을 설명하고, 정확히 한 번 보장을 어떻게 달성하는지 논의하세요.</li>
+<li>윈도우 연산의 종류(Tumbling, Sliding, Session)를 비교하고, 각각의 사용 사례를 제시하세요.</li>
+</ol>
+
+<p style="text-align:center;margin-top:50px;color:#64748b">
+© 2025 SmileStory Inc. / WIA · 弘益人間 (홍익인간) · Benefit All Humanity
+</p>
+</body>
+</html>

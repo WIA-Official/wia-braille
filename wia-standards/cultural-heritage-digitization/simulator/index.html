@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cultural Heritage Digitization Simulator 🏛️</title>
+    <style>
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg) 100%);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Language Toggle */
+        .lang-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .lang-btn:hover {
+            color: var(--text);
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            padding: 0 10px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .tab:hover {
+            border-color: var(--primary);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Panels */
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin: 20px 0;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .panel h2 {
+            color: var(--primary);
+            margin-bottom: 25px;
+            font-size: 2rem;
+        }
+
+        .panel h3 {
+            color: var(--primary);
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin: 20px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="url"],
+        input[type="date"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Buttons */
+        .btn-center {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .btn {
+            padding: 14px 40px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Output */
+        .output {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin: 25px 0;
+        }
+
+        .output h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .json-output {
+            background: #000;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .json-key {
+            color: #10B981;
+        }
+
+        .json-string {
+            color: #fbbf24;
+        }
+
+        .json-number {
+            color: #60a5fa;
+        }
+
+        .json-boolean {
+            color: #f472b6;
+        }
+
+        /* Scanner Visualization */
+        .scanner-viz {
+            background: var(--bg);
+            padding: 30px;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .artifact-model {
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 50%;
+            position: relative;
+            animation: rotate3d 4s linear infinite;
+        }
+
+        @keyframes rotate3d {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        .scan-progress {
+            width: 100%;
+            height: 30px;
+            background: var(--bg-card);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .scan-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .stat-card {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            color: var(--primary);
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .panel {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Language Toggle -->
+    <div class="lang-switch">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('ko')">KO</button>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <h1>🏛️ <span data-en="Cultural Heritage Digitization Simulator" data-ko="문화유산 디지털화 시뮬레이터">Cultural Heritage Digitization Simulator</span></h1>
+        <p class="subtitle" data-en="Experience 3D scanning, digital preservation, and virtual heritage creation" data-ko="3D 스캐닝, 디지털 보존 및 가상 문화유산 제작 체험">Experience 3D scanning, digital preservation, and virtual heritage creation</p>
+    </header>
+
+    <div class="container">
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)" data-en="📸 3D Scanning" data-ko="📸 3D 스캐닝">📸 3D Scanning</div>
+            <div class="tab" onclick="switchTab(1)" data-en="📊 Metadata Creation" data-ko="📊 메타데이터 생성">📊 Metadata Creation</div>
+            <div class="tab" onclick="switchTab(2)" data-en="🌐 Virtual Tour" data-ko="🌐 가상 투어">🌐 Virtual Tour</div>
+            <div class="tab" onclick="switchTab(3)" data-en="🔍 Reconstruction" data-ko="🔍 복원">🔍 Reconstruction</div>
+        </div>
+
+        <!-- Panel 1: 3D Scanning -->
+        <div class="panel active">
+            <h2 data-en="3D Artifact Scanning" data-ko="3D 유물 스캐닝">3D Artifact Scanning</h2>
+
+            <div class="form-group">
+                <label data-en="Artifact Name" data-ko="유물 이름">Artifact Name</label>
+                <input type="text" id="artifactName" placeholder="e.g., Ancient Vase" value="Ancient Greek Amphora">
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Scanning Technology" data-ko="스캐닝 기술">Scanning Technology</label>
+                    <select id="scanTech">
+                        <option value="photogrammetry">Photogrammetry</option>
+                        <option value="lidar">LiDAR</option>
+                        <option value="structured_light">Structured Light</option>
+                        <option value="ct_scan">CT Scan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-en="Resolution (points/mm²)" data-ko="해상도 (points/mm²)">Resolution (points/mm²)</label>
+                    <input type="number" id="resolution" value="1000">
+                </div>
+            </div>
+
+            <div class="scanner-viz">
+                <div class="artifact-model"></div>
+                <div class="scan-progress">
+                    <div class="scan-progress-bar" id="scanProgress">0%</div>
+                </div>
+                <button class="btn" onclick="startScan()" data-en="Start 3D Scan" data-ko="3D 스캔 시작">Start 3D Scan</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label" data-en="Point Cloud Size" data-ko="포인트 클라우드 크기">Point Cloud Size</div>
+                    <div class="stat-value" id="pointCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label" data-en="Mesh Polygons" data-ko="메시 폴리곤">Mesh Polygons</div>
+                    <div class="stat-value" id="polyCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label" data-en="Texture Resolution" data-ko="텍스처 해상도">Texture Resolution</div>
+                    <div class="stat-value" id="texRes">0K</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label" data-en="File Size" data-ko="파일 크기">File Size</div>
+                    <div class="stat-value" id="fileSize">0 MB</div>
+                </div>
+            </div>
+
+            <div class="output" id="scanOutput" style="display:none;">
+                <h3 data-en="📦 3D Model Output" data-ko="📦 3D 모델 출력">📦 3D Model Output</h3>
+                <div class="json-output" id="scanJson"></div>
+            </div>
+        </div>
+
+        <!-- Panel 2: Metadata Creation -->
+        <div class="panel">
+            <h2 data-en="Cultural Heritage Metadata" data-ko="문화유산 메타데이터">Cultural Heritage Metadata</h2>
+
+            <div class="form-group">
+                <label data-en="Object Title" data-ko="객체 제목">Object Title</label>
+                <input type="text" id="objTitle" placeholder="e.g., Terracotta Warrior" value="Tang Dynasty Pottery">
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Culture/Civilization" data-ko="문화/문명">Culture/Civilization</label>
+                    <input type="text" id="culture" placeholder="e.g., Ancient Egypt" value="Tang Dynasty China">
+                </div>
+                <div class="form-group">
+                    <label data-en="Time Period" data-ko="시대">Time Period</label>
+                    <input type="text" id="period" placeholder="e.g., 2500 BCE" value="618-907 CE">
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Material" data-ko="재료">Material</label>
+                    <input type="text" id="material" placeholder="e.g., Bronze, Marble" value="Glazed ceramic">
+                </div>
+                <div class="form-group">
+                    <label data-en="Dimensions (cm)" data-ko="크기 (cm)">Dimensions (cm)</label>
+                    <input type="text" id="dimensions" placeholder="H x W x D" value="45 x 30 x 30">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Location/Origin" data-ko="위치/출처">Location/Origin</label>
+                <input type="text" id="location" placeholder="e.g., Valley of the Kings" value="Xi'an, Shaanxi Province">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Historical Description" data-ko="역사적 설명">Historical Description</label>
+                <textarea id="description" placeholder="Describe the artifact's historical significance...">A fine example of Tang Dynasty ceramic art, featuring the characteristic three-color glaze technique (sancai). This pottery piece demonstrates the sophisticated craftsmanship and artistic achievement of the Tang period.</textarea>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Conservation Status" data-ko="보존 상태">Conservation Status</label>
+                <select id="conservation">
+                    <option value="excellent">Excellent</option>
+                    <option value="good" selected>Good</option>
+                    <option value="fair">Fair</option>
+                    <option value="poor">Poor</option>
+                    <option value="fragment">Fragment</option>
+                </select>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="generateMetadata()" data-en="Generate Metadata" data-ko="메타데이터 생성">Generate Metadata</button>
+            </div>
+
+            <div class="output" id="metadataOutput" style="display:none;">
+                <h3 data-en="📊 Dublin Core / CIDOC-CRM Metadata" data-ko="📊 Dublin Core / CIDOC-CRM 메타데이터">📊 Dublin Core / CIDOC-CRM Metadata</h3>
+                <div class="json-output" id="metadataJson"></div>
+            </div>
+        </div>
+
+        <!-- Panel 3: Virtual Tour -->
+        <div class="panel">
+            <h2 data-en="Virtual Heritage Tour Creator" data-ko="가상 문화유산 투어 생성기">Virtual Heritage Tour Creator</h2>
+
+            <div class="form-group">
+                <label data-en="Site/Museum Name" data-ko="유적지/박물관 이름">Site/Museum Name</label>
+                <input type="text" id="siteName" placeholder="e.g., The Louvre" value="Forbidden City">
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Tour Type" data-ko="투어 유형">Tour Type</label>
+                    <select id="tourType">
+                        <option value="vr">VR Immersive</option>
+                        <option value="ar">AR Overlay</option>
+                        <option value="360">360° Panorama</option>
+                        <option value="guided">Guided Video</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-en="Number of Stops" data-ko="정거장 수">Number of Stops</label>
+                    <input type="number" id="tourStops" value="8">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Tour Description" data-ko="투어 설명">Tour Description</label>
+                <textarea id="tourDesc" placeholder="Describe the virtual tour experience...">Explore the magnificent Forbidden City, home to Chinese emperors for nearly 500 years. This immersive tour takes you through the grand halls, imperial gardens, and hidden chambers of this UNESCO World Heritage site.</textarea>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Audio Guide Language" data-ko="오디오 가이드 언어">Audio Guide Language</label>
+                    <select id="audioLang" multiple size="5">
+                        <option value="en" selected>English</option>
+                        <option value="zh" selected>中文</option>
+                        <option value="ja">日本語</option>
+                        <option value="ko">한국어</option>
+                        <option value="fr">Français</option>
+                        <option value="es">Español</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-en="Accessibility Features" data-ko="접근성 기능">Accessibility Features</label>
+                    <select id="a11y" multiple size="5">
+                        <option value="subtitles" selected>Subtitles</option>
+                        <option value="audio_desc" selected>Audio Description</option>
+                        <option value="sign_lang">Sign Language</option>
+                        <option value="high_contrast">High Contrast</option>
+                        <option value="screen_reader">Screen Reader</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="createVirtualTour()" data-en="Create Virtual Tour" data-ko="가상 투어 생성">Create Virtual Tour</button>
+            </div>
+
+            <div class="output" id="tourOutput" style="display:none;">
+                <h3 data-en="🌐 Virtual Tour Configuration" data-ko="🌐 가상 투어 구성">🌐 Virtual Tour Configuration</h3>
+                <div class="json-output" id="tourJson"></div>
+            </div>
+        </div>
+
+        <!-- Panel 4: Historical Reconstruction -->
+        <div class="panel">
+            <h2 data-en="AI-Powered Historical Reconstruction" data-ko="AI 기반 역사적 복원">AI-Powered Historical Reconstruction</h2>
+
+            <div class="form-group">
+                <label data-en="Object to Reconstruct" data-ko="복원할 객체">Object to Reconstruct</label>
+                <input type="text" id="reconObject" placeholder="e.g., Damaged fresco" value="Parthenon Frieze Fragment">
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Damage Type" data-ko="손상 유형">Damage Type</label>
+                    <select id="damageType">
+                        <option value="erosion">Erosion</option>
+                        <option value="fragment">Fragmentation</option>
+                        <option value="discoloration">Discoloration</option>
+                        <option value="missing">Missing Parts</option>
+                        <option value="structural">Structural Damage</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-en="Confidence Threshold" data-ko="신뢰도 임계값">Confidence Threshold</label>
+                    <input type="number" id="confidence" min="0" max="100" value="85">%
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Reference Sources" data-ko="참고 자료">Reference Sources</label>
+                <textarea id="references" placeholder="List historical documents, similar artifacts, etc...">- Historical photographs from 1890s
+- Archaeological drawings by Heinrich Schliemann
+- Comparative analysis of similar Parthenon sculptures
+- British Museum catalog entries</textarea>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Reconstruction Method" data-ko="복원 방법">Reconstruction Method</label>
+                    <select id="reconMethod">
+                        <option value="ai_ml">AI/Machine Learning</option>
+                        <option value="photogrammetric">Photogrammetric Analysis</option>
+                        <option value="comparative">Comparative Study</option>
+                        <option value="manual">Manual Modeling</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-en="Visualization Style" data-ko="시각화 스타일">Visualization Style</label>
+                    <select id="vizStyle">
+                        <option value="realistic">Photorealistic</option>
+                        <option value="scholarly">Scholarly Wireframe</option>
+                        <option value="hybrid">Hybrid</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="reconstructArtifact()" data-en="Start Reconstruction" data-ko="복원 시작">Start Reconstruction</button>
+            </div>
+
+            <div class="output" id="reconOutput" style="display:none;">
+                <h3 data-en="🔍 Reconstruction Report" data-ko="🔍 복원 보고서">🔍 Reconstruction Report</h3>
+                <div class="json-output" id="reconJson"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+
+        function setLang(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[data-en]').forEach(el => {
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    el.placeholder = el.getAttribute('data-' + lang);
+                } else {
+                    el.textContent = el.getAttribute('data-' + lang);
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+        }
+
+        function switchTab(index) {
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.panel').forEach((panel, i) => {
+                panel.classList.toggle('active', i === index);
+            });
+        }
+
+        function startScan() {
+            const name = document.getElementById('artifactName').value;
+            const tech = document.getElementById('scanTech').value;
+            const resolution = parseInt(document.getElementById('resolution').value);
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 2;
+                document.getElementById('scanProgress').style.width = progress + '%';
+                document.getElementById('scanProgress').textContent = progress + '%';
+
+                // Update stats
+                document.getElementById('pointCount').textContent = Math.floor(resolution * progress * 100).toLocaleString();
+                document.getElementById('polyCount').textContent = Math.floor(resolution * progress * 50).toLocaleString();
+                document.getElementById('texRes').textContent = Math.floor(progress * 40) + 'K';
+                document.getElementById('fileSize').textContent = Math.floor(progress * 5) + ' MB';
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        const output = {
+                            type: "3D_SCAN_RESULT",
+                            wiaStandard: "WIA-EDU-023",
+                            artifact: {
+                                name: name,
+                                scanDate: new Date().toISOString(),
+                                technology: tech,
+                                resolution: resolution + " points/mm²"
+                            },
+                            model: {
+                                format: "GLB",
+                                pointCloud: {
+                                    points: parseInt(document.getElementById('pointCount').textContent.replace(/,/g, '')),
+                                    colorDepth: "24-bit RGB"
+                                },
+                                mesh: {
+                                    vertices: parseInt(document.getElementById('polyCount').textContent.replace(/,/g, '')),
+                                    faces: parseInt(document.getElementById('polyCount').textContent.replace(/,/g, '')) * 2,
+                                    uvMapped: true
+                                },
+                                textures: {
+                                    diffuse: document.getElementById('texRes').textContent,
+                                    normal: document.getElementById('texRes').textContent,
+                                    roughness: document.getElementById('texRes').textContent
+                                }
+                            },
+                            files: {
+                                glb: `${name.replace(/\s+/g, '_')}.glb`,
+                                obj: `${name.replace(/\s+/g, '_')}.obj`,
+                                fbx: `${name.replace(/\s+/g, '_')}.fbx`,
+                                totalSize: document.getElementById('fileSize').textContent
+                            },
+                            quality: {
+                                accuracy: "±0.05mm",
+                                completeness: "98.7%",
+                                validated: true
+                            }
+                        };
+
+                        document.getElementById('scanJson').textContent = JSON.stringify(output, null, 2);
+                        document.getElementById('scanOutput').style.display = 'block';
+                    }, 500);
+                }
+            }, 50);
+        }
+
+        function generateMetadata() {
+            const output = {
+                "@context": "http://www.cidoc-crm.org/cidoc-crm/",
+                type: "E22_Man-Made_Object",
+                wiaStandard: "WIA-EDU-023",
+                dublinCore: {
+                    title: document.getElementById('objTitle').value,
+                    creator: document.getElementById('culture').value,
+                    date: document.getElementById('period').value,
+                    type: "Physical Object",
+                    format: "3D Digital Model",
+                    identifier: `WIA-EDU-023-${Date.now()}`,
+                    source: document.getElementById('location').value,
+                    language: ["en", "zh"],
+                    coverage: {
+                        spatial: document.getElementById('location').value,
+                        temporal: document.getElementById('period').value
+                    },
+                    description: document.getElementById('description').value
+                },
+                cidocCrm: {
+                    P45_consists_of: document.getElementById('material').value,
+                    P43_has_dimension: document.getElementById('dimensions').value,
+                    P53_has_former_or_current_location: document.getElementById('location').value,
+                    P44_has_condition: document.getElementById('conservation').value
+                },
+                technical: {
+                    dimensions: {
+                        value: document.getElementById('dimensions').value,
+                        unit: "cm"
+                    },
+                    material: document.getElementById('material').value.split(',').map(m => m.trim()),
+                    condition: document.getElementById('conservation').value,
+                    weight: "Not specified"
+                },
+                preservation: {
+                    format: "glTF 2.0",
+                    colorSpace: "sRGB",
+                    archivalCompliance: "ISO 16363:2012",
+                    checksums: {
+                        md5: "d41d8cd98f00b204e9800998ecf8427e",
+                        sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    }
+                },
+                accessibility: {
+                    wcagLevel: "AA",
+                    features: ["High contrast", "Screen reader compatible", "Keyboard navigation"]
+                },
+                rights: {
+                    license: "CC BY-SA 4.0",
+                    attribution: "WIA Cultural Heritage Initiative",
+                    usageRights: "Educational and research purposes"
+                }
+            };
+
+            document.getElementById('metadataJson').textContent = JSON.stringify(output, null, 2);
+            document.getElementById('metadataOutput').style.display = 'block';
+        }
+
+        function createVirtualTour() {
+            const audioLangs = Array.from(document.getElementById('audioLang').selectedOptions).map(o => o.value);
+            const a11yFeatures = Array.from(document.getElementById('a11y').selectedOptions).map(o => o.value);
+
+            const output = {
+                type: "VIRTUAL_HERITAGE_TOUR",
+                wiaStandard: "WIA-EDU-023",
+                tour: {
+                    name: document.getElementById('siteName').value,
+                    type: document.getElementById('tourType').value,
+                    description: document.getElementById('tourDesc').value,
+                    created: new Date().toISOString(),
+                    duration: parseInt(document.getElementById('tourStops').value) * 3 + " minutes"
+                },
+                stops: Array.from({length: parseInt(document.getElementById('tourStops').value)}, (_, i) => ({
+                    id: `stop-${i + 1}`,
+                    name: `Point of Interest ${i + 1}`,
+                    position: {x: Math.random() * 100, y: 0, z: Math.random() * 100},
+                    hotspots: Math.floor(Math.random() * 5) + 1,
+                    mediaAssets: {
+                        panorama: `360_${i + 1}.jpg`,
+                        model3d: `artifact_${i + 1}.glb`,
+                        audio: audioLangs.map(lang => `audio_${i + 1}_${lang}.mp3`)
+                    }
+                })),
+                navigation: {
+                    mode: "free-roam",
+                    controls: ["mouse", "keyboard", "gamepad", "vr-controllers"],
+                    minimap: true,
+                    compass: true
+                },
+                multimedia: {
+                    audioGuides: audioLangs,
+                    videoClips: parseInt(document.getElementById('tourStops').value),
+                    interactiveElements: parseInt(document.getElementById('tourStops').value) * 2,
+                    totalAssets: parseInt(document.getElementById('tourStops').value) * 10
+                },
+                accessibility: {
+                    wcagCompliance: "AA",
+                    features: a11yFeatures,
+                    subtitles: a11yFeatures.includes('subtitles'),
+                    audioDescription: a11yFeatures.includes('audio_desc'),
+                    signLanguage: a11yFeatures.includes('sign_lang')
+                },
+                technical: {
+                    platform: "WebXR",
+                    minRequirements: {
+                        gpu: "DirectX 11 compatible",
+                        ram: "8GB",
+                        browser: "Chrome 90+, Firefox 88+, Safari 14+"
+                    },
+                    fileSize: (parseInt(document.getElementById('tourStops').value) * 150) + " MB"
+                },
+                analytics: {
+                    trackingEnabled: true,
+                    metrics: ["visit_duration", "stop_engagement", "interaction_count"]
+                }
+            };
+
+            document.getElementById('tourJson').textContent = JSON.stringify(output, null, 2);
+            document.getElementById('tourOutput').style.display = 'block';
+        }
+
+        function reconstructArtifact() {
+            const confidence = parseInt(document.getElementById('confidence').value);
+
+            const output = {
+                type: "HISTORICAL_RECONSTRUCTION",
+                wiaStandard: "WIA-EDU-023",
+                subject: {
+                    name: document.getElementById('reconObject').value,
+                    damageType: document.getElementById('damageType').value,
+                    originalCondition: "Estimated based on references"
+                },
+                reconstruction: {
+                    method: document.getElementById('reconMethod').value,
+                    algorithm: "Deep Learning CNN + GANs",
+                    trainingData: "10,000+ similar artifacts",
+                    iterations: 50000,
+                    confidenceThreshold: confidence + "%"
+                },
+                results: {
+                    overallConfidence: confidence + "%",
+                    reconstructedAreas: [
+                        {area: "Upper section", confidence: confidence + 5 + "%", method: "AI prediction"},
+                        {area: "Left fragment", confidence: confidence - 3 + "%", method: "Comparative study"},
+                        {area: "Surface details", confidence: confidence + 2 + "%", method: "Photogrammetric analysis"}
+                    ],
+                    uncertaintyMap: "heatmap_uncertainty.png",
+                    visualizationStyle: document.getElementById('vizStyle').value
+                },
+                validation: {
+                    expertReviews: 3,
+                    peerValidated: true,
+                    historicalAccuracy: (confidence - 5) + "%",
+                    sources: document.getElementById('references').value.split('\n').filter(s => s.trim())
+                },
+                outputs: {
+                    original: "original_scan.glb",
+                    reconstructed: "reconstructed_model.glb",
+                    comparison: "before_after_comparison.mp4",
+                    report: "reconstruction_methodology.pdf"
+                },
+                metadata: {
+                    reconstructionDate: new Date().toISOString(),
+                    software: "WIA Heritage Reconstructor v1.0",
+                    computeTime: "4.5 hours",
+                    researcher: "WIA Digital Heritage Lab"
+                },
+                disclaimer: "This reconstruction is a scholarly interpretation based on available evidence. Uncertainty areas are marked and documented."
+            };
+
+            document.getElementById('reconJson').textContent = JSON.stringify(output, null, 2);
+            document.getElementById('reconOutput').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

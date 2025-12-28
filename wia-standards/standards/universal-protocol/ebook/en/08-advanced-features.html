@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 8: Advanced Features | WIA-CORE-007</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f1f5f9; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 3rem; border-radius: 15px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #10b981; border-bottom: 3px solid #6B7280; padding-bottom: 1rem; }
+        h2 { font-size: 2rem; margin: 2rem 0 1rem; color: #6B7280; }
+        h3 { font-size: 1.5rem; margin: 1.5rem 0 1rem; color: #10b981; }
+        p { margin: 1rem 0; font-size: 1.1rem; }
+        code { background: #0f172a; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: Monaco, monospace; color: #10b981; }
+        pre { background: #0f172a; padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; border-left: 4px solid #6B7280; }
+        pre code { background: none; padding: 0; }
+        .nav { margin: 2rem 0; display: flex; justify-content: space-between; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #10b981; text-decoration: none; font-weight: 600; padding: 0.5rem 1rem; border: 2px solid #6B7280; border-radius: 5px; transition: all 0.3s; }
+        .nav a:hover { background: #6B7280; color: white; }
+        .highlight { background: #334155; padding: 1.5rem; border-left: 4px solid #10b981; border-radius: 5px; margin: 1.5rem 0; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; font-size: 1.1rem; }
+        .emoji { font-size: 1.5em; margin-right: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">🚀</span>Chapter 8: Advanced Features</h1>
+
+        <h2>8.1 Middleware System</h2>
+        <p>Middleware allows you to intercept and modify messages at various stages of processing.</p>
+
+        <h3>8.1.1 Request Middleware</h3>
+        <pre><code>// Logging middleware
+protocol.use(async (context, next) => {
+  const startTime = Date.now();
+
+  console.log(`→ ${context.method}`, context.params);
+
+  await next();
+
+  const duration = Date.now() - startTime;
+  console.log(`← ${context.method} (${duration}ms)`);
+});
+
+// Authentication middleware
+protocol.use(async (context, next) => {
+  const token = context.metadata.authorization;
+
+  if (!token) {
+    throw new UnauthorizedError('Missing authorization token');
+  }
+
+  const user = await validateToken(token);
+  context.user = user;
+
+  await next();
+});
+
+// Rate limiting middleware
+const rateLimiter = new RateLimiter({ max: 100, windowMs: 60000 });
+
+protocol.use(async (context, next) => {
+  const key = context.user?.id || context.metadata['x-client-ip'];
+
+  const allowed = await rateLimiter.checkLimit(key);
+
+  if (!allowed) {
+    throw new RateLimitError('Too many requests');
+  }
+
+  await next();
+});</code></pre>
+
+        <h3>8.1.2 Response Middleware</h3>
+        <pre><code>// Transform responses
+protocol.use(async (context, next) => {
+  await next();
+
+  // Add standard fields to all responses
+  if (context.response) {
+    context.response = {
+      data: context.response,
+      timestamp: new Date().toISOString(),
+      requestId: context.requestId,
+      version: '1.0'
+    };
+  }
+});
+
+// Compression middleware
+protocol.use(async (context, next) => {
+  await next();
+
+  if (context.response && context.metadata.acceptEncoding?.includes('gzip')) {
+    const compressed = await gzip(JSON.stringify(context.response));
+    context.response = compressed;
+    context.metadata.contentEncoding = 'gzip';
+  }
+});</code></pre>
+
+        <h2>8.2 Interceptors</h2>
+        <p>Interceptors provide fine-grained control over specific operations.</p>
+
+        <pre><code>// Request interceptor
+protocol.interceptRequest((request) => {
+  // Add trace ID to all requests
+  request.metadata['x-trace-id'] = generateTraceId();
+
+  // Add timestamp
+  request.metadata['x-timestamp'] = Date.now();
+
+  return request;
+});
+
+// Response interceptor
+protocol.interceptResponse((response, request) => {
+  // Calculate server processing time
+  const serverTime = Date.now() - request.metadata['x-timestamp'];
+
+  response.metadata['x-server-time'] = serverTime;
+
+  // Log slow requests
+  if (serverTime > 1000) {
+    logger.warn('Slow request detected', {
+      method: request.method,
+      duration: serverTime,
+      traceId: request.metadata['x-trace-id']
+    });
+  }
+
+  return response;
+});
+
+// Error interceptor
+protocol.interceptError((error, request) => {
+  // Transform errors for client
+  return {
+    code: error.code || 'UNKNOWN_ERROR',
+    message: error.message,
+    requestId: request.id,
+    timestamp: new Date().toISOString(),
+    // Only include stack trace in development
+    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+  };
+});</code></pre>
+
+        <h2>8.3 Plugin Architecture</h2>
+
+        <h3>8.3.1 Creating Plugins</h3>
+        <pre><code>// Plugin interface
+class ProtocolPlugin {
+  constructor(options) {
+    this.options = options;
+  }
+
+  // Called when plugin is registered
+  install(protocol) {
+    // Add methods to protocol
+    protocol.customMethod = this.customMethod.bind(this);
+
+    // Register middleware
+    protocol.use(this.middleware.bind(this));
+
+    // Register handlers
+    protocol.handle('plugin.method', this.handler.bind(this));
+  }
+
+  middleware(context, next) {
+    // Plugin-specific middleware logic
+    return next();
+  }
+
+  handler(params) {
+    // Plugin-specific handler logic
+  }
+
+  customMethod() {
+    // Custom method added to protocol
+  }
+}
+
+// Use plugin
+const plugin = new ProtocolPlugin({ option: 'value' });
+protocol.use(plugin);</code></pre>
+
+        <h3>8.3.2 Telemetry Plugin</h3>
+        <pre><code>class TelemetryPlugin {
+  constructor(options) {
+    this.metrics = options.metrics;
+    this.tracer = options.tracer;
+  }
+
+  install(protocol) {
+    protocol.use(async (context, next) => {
+      const span = this.tracer.startSpan(context.method);
+
+      try {
+        await next();
+
+        this.metrics.increment('requests.success', {
+          method: context.method
+        });
+
+        span.setStatus({ code: 'OK' });
+      } catch (error) {
+        this.metrics.increment('requests.error', {
+          method: context.method,
+          error: error.code
+        });
+
+        span.setStatus({
+          code: 'ERROR',
+          message: error.message
+        });
+
+        throw error;
+      } finally {
+        span.end();
+      }
+    });
+  }
+}
+
+protocol.use(new TelemetryPlugin({
+  metrics: metricsClient,
+  tracer: tracingClient
+}));</code></pre>
+
+        <h2>8.4 Service Discovery</h2>
+
+        <pre><code>// Service registry
+class ServiceRegistry {
+  constructor() {
+    this.services = new Map();
+  }
+
+  register(serviceName, endpoint) {
+    this.services.set(serviceName, {
+      endpoint,
+      registeredAt: Date.now(),
+      health: 'healthy'
+    });
+  }
+
+  discover(serviceName) {
+    return this.services.get(serviceName);
+  }
+
+  healthCheck() {
+    for (const [name, service] of this.services) {
+      // Perform health check
+      checkHealth(service.endpoint)
+        .then(() => {
+          service.health = 'healthy';
+        })
+        .catch(() => {
+          service.health = 'unhealthy';
+          this.services.delete(name);
+        });
+    }
+  }
+}
+
+// Use with protocol
+const registry = new ServiceRegistry();
+
+// Register service
+registry.register('user-service', 'http://user-service:3000');
+registry.register('order-service', 'http://order-service:3000');
+
+// Discover and call
+const userService = registry.discover('user-service');
+const protocol = new UniversalProtocol({
+  transport: new HTTPTransport({ baseURL: userService.endpoint })
+});
+
+const user = await protocol.call('users.get', { id: '123' });</code></pre>
+
+        <h2>8.5 Load Balancing</h2>
+
+        <pre><code>// Round-robin load balancer
+class LoadBalancer {
+  constructor(endpoints) {
+    this.endpoints = endpoints;
+    this.currentIndex = 0;
+  }
+
+  getNext() {
+    const endpoint = this.endpoints[this.currentIndex];
+    this.currentIndex = (this.currentIndex + 1) % this.endpoints.length;
+    return endpoint;
+  }
+}
+
+// Use with protocol
+const loadBalancer = new LoadBalancer([
+  'http://api1.example.com',
+  'http://api2.example.com',
+  'http://api3.example.com'
+]);
+
+const protocol = new UniversalProtocol({
+  transport: {
+    send: async (message) => {
+      const endpoint = loadBalancer.getNext();
+      return await sendToEndpoint(endpoint, message);
+    }
+  }
+});</code></pre>
+
+        <h2>8.6 Message Transformation</h2>
+
+        <pre><code>// Transform messages between versions
+protocol.use(async (context, next) => {
+  const apiVersion = context.metadata['api-version'] || '1.0';
+
+  // Transform request to internal format
+  if (apiVersion === '1.0') {
+    context.params = transformV1ToInternal(context.params);
+  } else if (apiVersion === '2.0') {
+    context.params = transformV2ToInternal(context.params);
+  }
+
+  await next();
+
+  // Transform response back to requested version
+  if (apiVersion === '1.0') {
+    context.response = transformInternalToV1(context.response);
+  } else if (apiVersion === '2.0') {
+    context.response = transformInternalToV2(context.response);
+  }
+});
+
+function transformV1ToInternal(data) {
+  return {
+    userId: data.user_id, // Snake case to camel case
+    fullName: `${data.first_name} ${data.last_name}`, // Combine fields
+    metadata: { legacy: true }
+  };
+}
+
+function transformInternalToV1(data) {
+  const [firstName, lastName] = data.fullName.split(' ');
+  return {
+    user_id: data.userId,
+    first_name: firstName,
+    last_name: lastName
+  };
+}</code></pre>
+
+        <h2>8.7 Multi-Tenancy</h2>
+
+        <pre><code>// Tenant isolation
+protocol.use(async (context, next) => {
+  const tenantId = context.metadata['x-tenant-id'];
+
+  if (!tenantId) {
+    throw new Error('Tenant ID required');
+  }
+
+  // Set tenant context
+  context.tenant = await getTenantConfig(tenantId);
+
+  // Switch database connection
+  context.database = getDatabaseForTenant(tenantId);
+
+  await next();
+});
+
+protocol.handle('users.list', async (params, context) => {
+  // Automatically scoped to tenant
+  return await context.database.users.find({
+    tenantId: context.tenant.id
+  });
+});</code></pre>
+
+        <h2>8.8 Request Coalescing</h2>
+
+        <pre><code>// Deduplicate identical concurrent requests
+class RequestCoalescer {
+  constructor() {
+    this.pending = new Map();
+  }
+
+  async coalesce(key, fn) {
+    if (this.pending.has(key)) {
+      // Wait for existing request
+      return await this.pending.get(key);
+    }
+
+    // Create new request
+    const promise = fn();
+    this.pending.set(key, promise);
+
+    try {
+      const result = await promise;
+      return result;
+    } finally {
+      this.pending.delete(key);
+    }
+  }
+}
+
+const coalescer = new RequestCoalescer();
+
+protocol.use(async (context, next) => {
+  // Generate key from method and params
+  const key = `${context.method}:${JSON.stringify(context.params)}`;
+
+  context.response = await coalescer.coalesce(key, async () => {
+    await next();
+    return context.response;
+  });
+});</code></pre>
+
+        <h2>8.9 Offline Support</h2>
+
+        <pre><code>// Queue messages when offline
+class OfflineQueue {
+  constructor(storage) {
+    this.storage = storage;
+    this.queue = [];
+  }
+
+  async enqueue(message) {
+    this.queue.push(message);
+    await this.storage.save('offline_queue', this.queue);
+  }
+
+  async flush(protocol) {
+    const messages = [...this.queue];
+    this.queue = [];
+
+    for (const message of messages) {
+      try {
+        await protocol.send(message);
+      } catch (error) {
+        // Re-queue failed messages
+        this.queue.push(message);
+      }
+    }
+
+    await this.storage.save('offline_queue', this.queue);
+  }
+}
+
+const offlineQueue = new OfflineQueue(localStorage);
+
+protocol.on('disconnected', () => {
+  protocol.useOfflineQueue(offlineQueue);
+});
+
+protocol.on('connected', () => {
+  offlineQueue.flush(protocol);
+});</code></pre>
+
+        <h2>8.10 Schema Validation</h2>
+
+        <pre><code>// Validate messages against schema
+import Ajv from 'ajv';
+
+const ajv = new Ajv();
+
+const schemas = {
+  'users.create': {
+    type: 'object',
+    required: ['email', 'name'],
+    properties: {
+      email: { type: 'string', format: 'email' },
+      name: { type: 'string', minLength: 2 },
+      age: { type: 'integer', minimum: 0 }
+    }
+  }
+};
+
+protocol.use(async (context, next) => {
+  const schema = schemas[context.method];
+
+  if (schema) {
+    const validate = ajv.compile(schema);
+    const valid = validate(context.params);
+
+    if (!valid) {
+      throw new ValidationError('Invalid parameters', validate.errors);
+    }
+  }
+
+  await next();
+});</code></pre>
+
+        <div class="highlight">
+            <h3>Advanced Features Summary</h3>
+            <ul>
+                <li>Middleware for cross-cutting concerns</li>
+                <li>Interceptors for fine-grained control</li>
+                <li>Plugin architecture for extensibility</li>
+                <li>Service discovery for dynamic environments</li>
+                <li>Load balancing for high availability</li>
+                <li>Message transformation for versioning</li>
+                <li>Multi-tenancy for SaaS applications</li>
+                <li>Request coalescing for efficiency</li>
+                <li>Offline support for resilience</li>
+                <li>Schema validation for reliability</li>
+            </ul>
+        </div>
+
+        <div class="nav">
+            <a href="07-pubsub-messaging.html">← Previous: Pub/Sub Messaging</a>
+            <a href="09-best-practices.html">Next: Best Practices →</a>
+        </div>
+
+        <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; opacity: 0.7; text-align: center;">
+            <p>&copy; 2025 SmileStory Inc. / WIA | 弘益人間 · Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

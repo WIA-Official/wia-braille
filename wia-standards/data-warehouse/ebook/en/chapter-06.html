@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chapter 6: Slowly Changing Dimensions - WIA-DATA-003</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="standard-badge">WIA-DATA-003 v1.0</div>
+    <h1>Chapter 6</h1>
+    <p class="subtitle">Slowly Changing Dimensions (SCD)</p>
+  </header>
+
+  <main>
+    <h2>6.1 The Challenge of Changing Dimensions</h2>
+    <p>
+      Dimension attributes change over time. A customer moves to a new city, a product changes categories, or an employee gets promoted. How should we handle these changes while preserving analytical accuracy?
+    </p>
+
+    <h2>6.2 SCD Type 0: Retain Original</h2>
+    <p>
+      The simplest approach: never change dimension values. Once set, attributes remain fixed forever.
+    </p>
+    <ul>
+      <li><strong>Use case:</strong> Immutable attributes like birth date</li>
+      <li><strong>Pros:</strong> Simple, no historical tracking needed</li>
+      <li><strong>Cons:</strong> Cannot reflect reality when changes occur</li>
+    </ul>
+
+    <h2>6.3 SCD Type 1: Overwrite</h2>
+    <p>
+      Replace old values with new ones, maintaining no history.
+    </p>
+    <pre><code>-- Before
+customer_id | name | city
+123        | John | Boston
+
+-- After update
+customer_id | name | city
+123        | John | Seattle</code></pre>
+
+    <ul>
+      <li><strong>Use case:</strong> Correcting errors, unimportant changes</li>
+      <li><strong>Pros:</strong> Simple, no storage overhead</li>
+      <li><strong>Cons:</strong> Historical data lost forever</li>
+    </ul>
+
+    <h2>6.4 SCD Type 2: Add New Row</h2>
+    <p>
+      The most common approach. Create a new row for each change, preserving full history.
+    </p>
+    <pre><code>customer_key | customer_id | name | city    | effective_date | expiration_date | is_current
+1           | 123        | John | Boston  | 2023-01-01    | 2024-12-31     | false
+2           | 123        | John | Seattle | 2025-01-01    | 9999-12-31     | true</code></pre>
+
+    <ul>
+      <li><strong>Use case:</strong> Tracking important historical changes</li>
+      <li><strong>Pros:</strong> Complete history, accurate point-in-time analysis</li>
+      <li><strong>Cons:</strong> Storage overhead, more complex queries</li>
+    </ul>
+
+    <h2>6.5 SCD Type 3: Add New Column</h2>
+    <p>
+      Track limited history by adding columns for previous values.
+    </p>
+    <pre><code>customer_id | name | current_city | previous_city | city_change_date
+123        | John | Seattle     | Boston       | 2025-01-01</code></pre>
+
+    <ul>
+      <li><strong>Use case:</strong> Tracking one or two previous values</li>
+      <li><strong>Pros:</strong> No new rows, simpler queries</li>
+      <li><strong>Cons:</strong> Limited history, schema changes needed</li>
+    </ul>
+
+    <h2>6.6 SCD Type 4: History Table</h2>
+    <p>
+      Maintain current data in the main table and historical data in a separate history table.
+    </p>
+
+    <h2>6.7 SCD Type 6: Hybrid (1+2+3)</h2>
+    <p>
+      Combines Types 1, 2, and 3 to track both current and historical values.
+    </p>
+
+    <h2>6.8 Implementation Best Practices</h2>
+    <div class="info-box">
+      <h4>💡 SCD Guidelines</h4>
+      <ul>
+        <li>Use Type 2 for most business-critical dimensions</li>
+        <li>Use Type 1 for error corrections and insignificant changes</li>
+        <li>Always include effective_date and is_current flag for Type 2</li>
+        <li>Use surrogate keys to handle Type 2 properly</li>
+        <li>Consider performance impact of large Type 2 dimensions</li>
+      </ul>
+    </div>
+  </main>
+
+  <div class="navigation">
+    <a href="chapter-05.html" class="nav-button prev">Previous Chapter</a>
+    <a href="chapter-07.html" class="nav-button next">Next Chapter</a>
+  </div>
+
+  <footer>
+    <p>© 2025 WIA Standards - MIT License</p>
+    <p class="footer-motto">弘益人間 · Benefit All Humanity</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 04: Real-World Applications | WIA-CHILD-011</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #F59E0B; --text: #e2e8f0; --text-dim: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        header { border-bottom: 3px solid var(--primary); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.3rem; margin-top: 2rem; margin-bottom: 0.8rem; }
+        p, li { margin-bottom: 1.2rem; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: var(--surface); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: rgba(245, 158, 11, 0.1); }
+        code { background: var(--surface); padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--primary); }
+        pre { background: var(--surface); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1.5rem 0; border-left: 4px solid var(--primary); }
+        pre code { background: none; padding: 0; color: var(--text); }
+        .key-takeaways, .review-questions { background: var(--surface); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--primary); }
+        ul, ol { margin-left: 2rem; margin-bottom: 1.5rem; }
+        .navigation { display: flex; justify-content: space-between; margin: 3rem 0; padding: 1.5rem; background: var(--surface); border-radius: 8px; }
+        .nav-button { color: var(--primary); text-decoration: none; padding: 0.8rem 1.5rem; border: 2px solid var(--primary); border-radius: 6px; transition: all 0.3s; }
+        .nav-button:hover { background: var(--primary); color: white; }
+        .philosophy { text-align: center; margin: 3rem 0; padding: 2rem; background: var(--surface); border-radius: 8px; border: 2px solid var(--primary); }
+        footer { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chapter 04: Real-World Applications</h1>
+            <div style="color: var(--text-dim); font-size: 0.9rem;">WIA-CHILD-011 Screen Time Management Standard | Platform Implementations</div>
+        </header>
+
+        <h2>iOS Screen Time</h2>
+
+        <p>
+            Apple's Screen Time, introduced in iOS 12 and available on iPhone, iPad, and Mac, represents one of the most
+            comprehensive platform-native implementations of screen time management. Through Family Sharing, parents can
+            monitor and manage children's device usage with granular controls, real-time reporting, and robust enforcement.
+            WIA-CHILD-011 builds on Screen Time's foundation while adding quality-based metrics and cross-platform aggregation.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>iOS Screen Time</th>
+                    <th>WIA-CHILD-011 Enhancement</th>
+                    <th>Implementation Method</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Activity Tracking</td>
+                    <td>Per-app usage, category summaries, website time</td>
+                    <td>Quality-adjusted time calculation, educational weighting</td>
+                    <td>Screen Time API + quality classification layer</td>
+                </tr>
+                <tr>
+                    <td>App Limits</td>
+                    <td>Category-based or individual app limits</td>
+                    <td>Dynamic limits based on content quality and context</td>
+                    <td>Screen Time API with custom limit calculator</td>
+                </tr>
+                <tr>
+                    <td>Downtime</td>
+                    <td>Scheduled device restrictions with allowed apps</td>
+                    <td>Context-aware exceptions, adaptive scheduling</td>
+                    <td>Native downtime + intelligent exception handler</td>
+                </tr>
+                <tr>
+                    <td>Content & Privacy</td>
+                    <td>Age ratings, explicit content blocking, purchase restrictions</td>
+                    <td>Age-appropriate content recommendations</td>
+                    <td>Native restrictions + content analysis</td>
+                </tr>
+                <tr>
+                    <td>Communication Limits</td>
+                    <td>Contact restrictions during downtime</td>
+                    <td>Context-based communication allowances</td>
+                    <td>Communication Safety API integration</td>
+                </tr>
+                <tr>
+                    <td>Cross-Device Sync</td>
+                    <td>All Apple devices via iCloud</td>
+                    <td>Cross-platform aggregation (iOS + Android + Windows)</td>
+                    <td>Screen Time API + WIA unified dashboard</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>iOS Screen Time Integration</h3>
+
+        <pre><code>import FamilyControls
+import ScreenTime
+
+class IOSScreenTimeIntegration {
+  private let activityCenter = FamilyActivityCenter()
+  private let authorizationCenter = AuthorizationCenter.shared
+
+  async func setupScreenTime(childAppleId: String) throws {
+    // Request Screen Time authorization
+    try await authorizationCenter.requestAuthorization(for: .individual)
+
+    // Configure monitoring
+    let monitor = DeviceActivityMonitor()
+    await monitor.startMonitoring([
+      .screenTime: .daily,
+      .mostUsedApps: .hourly,
+      .notifications: .realTime
+    ])
+
+    // Set up activity reporting
+    let report = DeviceActivityReport(
+      filter: .init(
+        segment: .daily(during: Calendar.current.dateInterval(of: .day, for: Date())!),
+        users: .children
+      )
+    )
+
+    // Extract usage data
+    let activities = try await activityCenter.requestActivities(
+      for: report.filter
+    )
+
+    // Process and classify
+    for activity in activities {
+      let classified = await self.classifyActivity(activity)
+      await self.storeActivity(childAppleId, classified)
+    }
+  }
+
+  async func classifyActivity(_ activity: DeviceActivity) -> ClassifiedActivity {
+    // Map iOS categories to WIA quality scores
+    let category = activity.applicationUsage.category
+    let bundleId = activity.applicationUsage.bundleIdentifier
+
+    let qualityScore = await self.calculateQuality(
+      category: category,
+      bundleId: bundleId,
+      duration: activity.duration,
+      timeOfDay: activity.interval.start
+    )
+
+    return ClassifiedActivity(
+      app: bundleId,
+      appName: activity.applicationUsage.displayName,
+      category: self.mapCategory(category),
+      duration: activity.duration,
+      qualityScore: qualityScore,
+      startTime: activity.interval.start,
+      endTime: activity.interval.end
+    )
+  }
+
+  func mapCategory(_ iosCategory: ActivityCategory) -> WIACategory {
+    switch iosCategory {
+    case .education:
+      return .education(quality: 0.85)
+    case .entertainment:
+      return .entertainment(quality: 0.35)
+    case .social:
+      return .socialMedia(quality: 0.40)
+    case .productivity:
+      return .productivity(quality: 0.70)
+    case .reading:
+      return .reading(quality: 0.75)
+    case .creativity:
+      return .creative(quality: 0.75)
+    case .games:
+      return .gaming(quality: 0.45)
+    default:
+      return .other(quality: 0.40)
+    }
+  }
+
+  async func enforceLimit(childAppleId: String, limit: ScreenTimeLimit) {
+    // Convert WIA limit to iOS Screen Time limit
+    let schedule = DeviceActivitySchedule(
+      intervalStart: DateComponents(hour: 0, minute: 0),
+      intervalEnd: DateComponents(hour: 23, minute: 59),
+      repeats: true
+    )
+
+    // Category-specific limits
+    for categoryLimit in limit.categoryLimits {
+      let categoryToken = self.getCategoryToken(categoryLimit.category)
+
+      let activityLimit = DeviceActivityEvent(
+        applications: categoryToken,
+        threshold: DateComponents(minute: categoryLimit.minutes)
+      )
+
+      try await DeviceActivityCenter().startMonitoring(
+        .daily,
+        during: schedule,
+        events: [.limitReached: activityLimit]
+      )
+    }
+  }
+}</code></pre>
+
+        <h2>Android Digital Wellbeing</h2>
+
+        <p>
+            Google's Digital Wellbeing (Android 9+) and Family Link provide comprehensive parental controls for Android
+            devices. Unlike iOS's unified approach, Android implementations vary by manufacturer (Samsung's Digital Balance,
+            OnePlus Zen Mode), requiring additional abstraction layers for consistent cross-device management.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Android Digital Wellbeing</th>
+                    <th>WIA-CHILD-011 Enhancement</th>
+                    <th>Challenges</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Usage Tracking</td>
+                    <td>Per-app screen time, unlock count, notification count</td>
+                    <td>Quality-weighted aggregation, educational boost</td>
+                    <td>Manufacturer UI variations, permission requirements</td>
+                </tr>
+                <tr>
+                    <td>App Timers</td>
+                    <td>Set daily limits per app, automatic pause when exceeded</td>
+                    <td>Context-aware limits, dynamic adjustments</td>
+                    <td>Easy to override (child can dismiss timer)</td>
+                </tr>
+                <tr>
+                    <td>Focus Mode</td>
+                    <td>Temporarily pause distracting apps</td>
+                    <td>Homework mode, study session optimization</td>
+                    <td>User-initiated, not parent-enforced</td>
+                </tr>
+                <tr>
+                    <td>Bedtime Mode</td>
+                    <td>Grayscale screen, Do Not Disturb during sleep hours</td>
+                    <td>Age-appropriate sleep schedules, gradual wind-down</td>
+                    <td>Effectiveness depends on child compliance</td>
+                </tr>
+                <tr>
+                    <td>Family Link (Parental)</td>
+                    <td>Remote monitoring, app approval, location tracking, limits</td>
+                    <td>Cross-platform unified dashboard</td>
+                    <td>Requires supervised account (under 13) or child consent</td>
+                </tr>
+                <tr>
+                    <td>Device Admin</td>
+                    <td>Strong enforcement via device administrator API</td>
+                    <td>Multi-layer bypass prevention</td>
+                    <td>Technical users can potentially circumvent</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Android Digital Wellbeing Integration</h3>
+
+        <pre><code>import android.app.usage.UsageStats
+import android.app.usage.UsageStatsManager
+import com.google.android.gms.kids.FamilyLink
+
+class AndroidDigitalWellbeingIntegration(private val context: Context) {
+  private val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+  private val familyLinkClient = FamilyLink.getClient(context)
+
+  suspend fun trackDailyUsage(childAccountId: String, date: Date): DailyUsage {
+    // Requires PACKAGE_USAGE_STATS permission
+    val calendar = Calendar.getInstance().apply {
+      time = date
+      set(Calendar.HOUR_OF_DAY, 0)
+      set(Calendar.MINUTE, 0)
+    }
+    val startTime = calendar.timeInMillis
+    val endTime = startTime + (24 * 60 * 60 * 1000)
+
+    // Query usage stats
+    val stats = usageStatsManager.queryUsageStats(
+      UsageStatsManager.INTERVAL_DAILY,
+      startTime,
+      endTime
+    )
+
+    // Reconstruct sessions from event log
+    val events = usageStatsManager.queryEvents(startTime, endTime)
+    val sessions = reconstructSessions(events)
+
+    // Classify each session
+    val classified = sessions.map { session ->
+      classifySession(session, childAccountId)
+    }
+
+    return DailyUsage(
+      date = date,
+      totalTime = classified.sumOf { it.duration },
+      qualityAdjusted = classified.sumOf { it.adjustedDuration },
+      sessions = classified,
+      byCategory = groupByCategory(classified)
+    )
+  }
+
+  private fun reconstructSessions(events: UsageEvents): List<AppSession> {
+    val sessions = mutableListOf<AppSession>()
+    val activeApps = mutableMapOf<String, Long>() // packageName -> startTime
+
+    val event = UsageEvents.Event()
+    while (events.hasNextEvent()) {
+      events.getNextEvent(event)
+
+      when (event.eventType) {
+        UsageEvents.Event.ACTIVITY_RESUMED -> {
+          activeApps[event.packageName] = event.timeStamp
+        }
+        UsageEvents.Event.ACTIVITY_PAUSED -> {
+          val startTime = activeApps.remove(event.packageName)
+          if (startTime != null && event.timeStamp - startTime > 3000) {
+            // Ignore very short sessions (< 3 seconds)
+            sessions.add(AppSession(
+              packageName = event.packageName,
+              startTime = startTime,
+              endTime = event.timeStamp,
+              duration = event.timeStamp - startTime
+            ))
+          }
+        }
+      }
+    }
+
+    return sessions
+  }
+
+  suspend fun enforceLimits(childAccountId: String, limits: ScreenTimeLimits) {
+    // Use Family Link API for enforcement
+    val familyMember = familyLinkClient.getFamilyMember(childAccountId)
+
+    // Configure app-specific limits
+    for (categoryLimit in limits.categoryLimits) {
+      val apps = getAppsInCategory(categoryLimit.category)
+
+      for (app in apps) {
+        familyLinkClient.setAppTimeLimit(
+          familyMember = familyMember,
+          packageName = app,
+          dailyLimitMinutes = categoryLimit.minutes
+        )
+      }
+    }
+
+    // Configure bedtime/downtime
+    familyLinkClient.setDeviceDowntime(
+      familyMember = familyMember,
+      schedule = DowntimeSchedule(
+        bedtime = limits.downtimeSchedule.start,
+        wakeTime = limits.downtimeSchedule.end,
+        daysOfWeek = DayOfWeek.values().toList()
+      )
+    )
+
+    // Monitor compliance
+    startComplianceMonitoring(childAccountId, limits)
+  }
+
+  private suspend fun startComplianceMonitoring(
+    childAccountId: String,
+    limits: ScreenTimeLimits
+  ) {
+    // Real-time monitoring with WorkManager
+    val monitorRequest = PeriodicWorkRequestBuilder<UsageMonitorWorker>(
+      repeatInterval = 15,
+      repeatIntervalTimeUnit = TimeUnit.MINUTES
+    ).setInputData(
+      workDataOf(
+        "childAccountId" to childAccountId,
+        "limits" to limits.toJson()
+      )
+    ).build()
+
+    WorkManager.getInstance(context).enqueue(monitorRequest)
+  }
+}
+
+class UsageMonitorWorker(context: Context, params: WorkerParameters)
+  : CoroutineWorker(context, params) {
+
+  override suspend fun doWork(): Result {
+    val childAccountId = inputData.getString("childAccountId") ?: return Result.failure()
+
+    // Check current usage
+    val currentUsage = trackCurrentUsage(childAccountId)
+    val limits = getCurrentLimits(childAccountId)
+
+    // Approaching limit warnings
+    if (currentUsage.remaining < 15) {
+      sendWarningNotification(childAccountId, currentUsage.remaining)
+    }
+
+    // Enforce limits
+    if (currentUsage.exceeded) {
+      enforceBlockage(childAccountId)
+    }
+
+    return Result.success()
+  }
+}</code></pre>
+
+        <h2>Windows Family Safety</h2>
+
+        <p>
+            Microsoft Family Safety provides screen time management across Windows PCs, Xbox consoles, and Android devices
+            (via mobile app). The service integrates with Microsoft accounts and offers web-based parental dashboards for
+            remote monitoring and management.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Platform</th>
+                    <th>Features</th>
+                    <th>Enforcement Strength</th>
+                    <th>Reporting</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Windows 10/11</td>
+                    <td>App/game limits, web filtering, activity reports, screen time limits</td>
+                    <td>Strong (OS-level account management)</td>
+                    <td>Weekly email reports, real-time dashboard</td>
+                </tr>
+                <tr>
+                    <td>Xbox (Series X/S, One)</td>
+                    <td>Gaming time limits, purchase approval, content restrictions</td>
+                    <td>Very strong (console-enforced)</td>
+                    <td>Gaming activity, screen time, purchases</td>
+                </tr>
+                <tr>
+                    <td>Android (Family Safety App)</td>
+                    <td>Location tracking, driving safety, app usage monitoring</td>
+                    <td>Moderate (app-level, can be uninstalled)</td>
+                    <td>Location history, screen time summary</td>
+                </tr>
+                <tr>
+                    <td>Edge Browser</td>
+                    <td>Web filtering, search safe mode, activity reporting</td>
+                    <td>Moderate (browser-specific, can use alternatives)</td>
+                    <td>Browsing history, blocked attempts</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Windows Family Safety Integration</h3>
+
+        <pre><code>using Microsoft.FamilySafety;
+using Windows.ApplicationModel.UserActivities;
+
+public class WindowsFamilySafetyIntegration {
+  private readonly FamilyServiceClient familyClient;
+  private readonly UserActivityChannel activityChannel;
+
+  public async Task<FamilyActivityReport> GetActivityReport(
+    string childMicrosoftId,
+    DateTime date
+  ) {
+    // Fetch activity from Microsoft Family Safety service
+    var activities = await familyClient.GetActivitiesAsync(
+      userId: childMicrosoftId,
+      startDate: date.Date,
+      endDate: date.Date.AddDays(1)
+    );
+
+    // Categorize activities
+    var categorized = new Dictionary<ActivityCategory, List<Activity>>();
+
+    foreach (var activity in activities) {
+      var category = ClassifyWindowsActivity(activity);
+      if (!categorized.ContainsKey(category)) {
+        categorized[category] = new List<Activity>();
+      }
+      categorized[category].Add(activity);
+    }
+
+    // Generate report
+    return new FamilyActivityReport {
+      ChildId = childMicrosoftId,
+      Date = date,
+      TotalScreenTime = activities.Sum(a => a.Duration),
+      AppUsage = categorized[ActivityCategory.Apps],
+      GameUsage = categorized[ActivityCategory.Games],
+      WebBrowsing = categorized[ActivityCategory.Web],
+      QualityAdjusted = CalculateQualityAdjustedTime(categorized)
+    };
+  }
+
+  public async Task ConfigureLimits(
+    string childMicrosoftId,
+    ScreenTimeLimits limits
+  ) {
+    var familyMember = await familyClient.GetFamilyMemberAsync(childMicrosoftId);
+
+    // Configure screen time limits
+    await familyClient.SetScreenTimeLimitAsync(new ScreenTimeLimit {
+      UserId = childMicrosoftId,
+      WeekdayLimit = TimeSpan.FromMinutes(limits.WeekdayMinutes),
+      WeekendLimit = TimeSpan.FromMinutes(limits.WeekendMinutes),
+      Enforcement = EnforcementLevel.Strict
+    });
+
+    // Configure app/game limits
+    foreach (var categoryLimit in limits.CategoryLimits) {
+      if (categoryLimit.Category == "games") {
+        await familyClient.SetGamingLimitAsync(new GamingLimit {
+          UserId = childMicrosoftId,
+          DailyLimit = TimeSpan.FromMinutes(categoryLimit.Minutes),
+          EnforceOnXbox = true,
+          EnforceOnPC = true
+        });
+      }
+    }
+
+    // Configure downtime
+    await familyClient.SetDowntimeAsync(new DowntimeSchedule {
+      UserId = childMicrosoftId,
+      Weekdays = new TimeRange {
+        Start = TimeSpan.Parse(limits.DowntimeSchedule.Weekday.Start),
+        End = TimeSpan.Parse(limits.DowntimeSchedule.Weekday.End)
+      },
+      Weekends = new TimeRange {
+        Start = TimeSpan.Parse(limits.DowntimeSchedule.Weekend.Start),
+        End = TimeSpan.Parse(limits.DowntimeSchedule.Weekend.End)
+      },
+      AllowedApps = new[] { "Clock", "Calculator", "Phone" }
+    });
+
+    // Set up web filtering
+    await ConfigureWebFiltering(childMicrosoftId, limits.AgeRating);
+  }
+
+  private async Task ConfigureWebFiltering(string userId, int ageRating) {
+    await familyClient.SetWebFilteringAsync(new WebFilter {
+      UserId = userId,
+      BlockAdultContent = true,
+      AllowedSitesOnly = ageRating < 13,
+      BlockedCategories = new[] {
+        "Adult", "Violence", "Weapons", "Drugs", "Gambling"
+      },
+      SafeSearch = SafeSearchMode.Strict,
+      ReportBlockedAttempts = true
+    });
+  }
+}</code></pre>
+
+        <h2>Cross-Platform Comparison</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Capability</th>
+                    <th>iOS Screen Time</th>
+                    <th>Android Digital Wellbeing</th>
+                    <th>Windows Family Safety</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Setup Complexity</td>
+                    <td>Low - built into iOS</td>
+                    <td>Medium - varies by manufacturer</td>
+                    <td>Low - Microsoft account required</td>
+                </tr>
+                <tr>
+                    <td>Enforcement Strength</td>
+                    <td>Very Strong</td>
+                    <td>Moderate to Strong</td>
+                    <td>Strong (Windows/Xbox), Weak (Android app)</td>
+                </tr>
+                <tr>
+                    <td>Real-Time Monitoring</td>
+                    <td>Yes (1-5 min delay)</td>
+                    <td>Yes (immediate with permissions)</td>
+                    <td>Hourly aggregation</td>
+                </tr>
+                <tr>
+                    <td>Quality Classification</td>
+                    <td>Basic (by app category)</td>
+                    <td>Basic (by app category)</td>
+                    <td>Basic (app vs web vs game)</td>
+                </tr>
+                <tr>
+                    <td>Bypass Difficulty</td>
+                    <td>Very High</td>
+                    <td>Medium (factory reset possible)</td>
+                    <td>High (Windows/Xbox), Medium (Android)</td>
+                </tr>
+                <tr>
+                    <td>Multi-Device Sync</td>
+                    <td>Excellent (all Apple devices)</td>
+                    <td>Good (Android devices only)</td>
+                    <td>Good (Windows, Xbox, limited Android)</td>
+                </tr>
+                <tr>
+                    <td>Parent UX</td>
+                    <td>Excellent - native iOS app</td>
+                    <td>Good - Family Link app</td>
+                    <td>Good - web dashboard + mobile app</td>
+                </tr>
+                <tr>
+                    <td>Cost</td>
+                    <td>Free (requires Apple devices)</td>
+                    <td>Free</td>
+                    <td>Free (requires Microsoft account)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>iOS Screen Time offers the most comprehensive native implementation with robust enforcement, real-time
+                tracking, and seamless cross-device sync across all Apple devices via Family Sharing.</li>
+
+                <li>Android Digital Wellbeing provides good functionality but varies by manufacturer, with Family Link
+                offering strong parental controls for supervised accounts (under 13) or with teen consent.</li>
+
+                <li>Windows Family Safety excels for PC and Xbox gaming management with strong OS-level enforcement, but
+                Android integration is weaker (app-based, can be uninstalled).</li>
+
+                <li>WIA-CHILD-011 enhances all platforms by adding quality-based classification, context-aware limits,
+                and cross-platform aggregation for families using mixed device ecosystems.</li>
+
+                <li>Enforcement strength varies: iOS (very strong), Windows/Xbox (strong), Android Family Link (strong for
+                supervised accounts), Android Digital Wellbeing (moderate - easy to override).</li>
+
+                <li>Real-time monitoring capabilities differ: iOS (1-5 min delay), Android (immediate with permissions),
+                Windows (hourly aggregation), affecting responsiveness to limit violations.</li>
+
+                <li>Cross-platform families face fragmentation: a child with iPhone + Windows PC + Nintendo Switch requires
+                coordinating three separate systems, which WIA-CHILD-011 addresses through unified dashboard.</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>Compare iOS Screen Time's enforcement strength versus Android Digital Wellbeing. Why is iOS enforcement
+                rated "very strong" while Android is "moderate to strong"? What specific technical mechanisms account for this difference?</li>
+
+                <li>The iOS integration code maps iOS categories to WIA quality scores (education=0.85, entertainment=0.35).
+                Explain why this categorical approach might be insufficiently granular, and propose improvements using app-specific metadata.</li>
+
+                <li>Android Digital Wellbeing's reconstructSessions() function filters out sessions shorter than 3 seconds.
+                Discuss the trade-offs: what legitimate use cases might be excluded, and what noise is being filtered out?</li>
+
+                <li>Windows Family Safety provides different enforcement levels on different platforms (very strong on Xbox,
+                weak on Android app). Design a strategy for parents to compensate for weak Android enforcement without switching platforms.</li>
+
+                <li>The cross-platform comparison table shows iOS has "Very High" bypass difficulty. Research and describe
+                three methods children actually use to circumvent iOS Screen Time, and propose technical countermeasures.</li>
+
+                <li>A family has: Mom (iPhone), Dad (Android), Child A (iPad + Windows PC), Child B (Android + Xbox). Design
+                the optimal WIA-CHILD-011 deployment architecture, specifying which native platform features to use versus
+                which require custom implementation.</li>
+
+                <li>The chapter mentions Family Link requires "supervised account (under 13) or child consent" for teens.
+                Critically evaluate this policy: does requiring teen consent undermine parental authority, or is it appropriate
+                for teen autonomy development?</li>
+
+                <li>Compare reporting capabilities: iOS (1-5 min delay) versus Windows (hourly aggregation). For a parent
+                concerned about late-night social media use, how do these different reporting frequencies affect their ability
+                to intervene in real-time versus retrospectively?</li>
+            </ol>
+        </div>
+
+        <div class="philosophy">
+            <h3>弘益人間 (Hongik Ingan)</h3>
+            <p><em>"Benefit All Humanity"</em></p>
+            <p style="margin-top: 1rem;">
+                Platform diversity should not create inequality in screen time management. Whether a family can afford all
+                Apple devices or uses a mix of platforms should not determine their access to healthy digital parenting tools.
+            </p>
+            <p style="margin-top: 1rem;">
+                WIA-CHILD-011's cross-platform approach ensures all families benefit from evidence-based screen time management,
+                regardless of which devices they own. By providing standards that work across iOS, Android, Windows, and gaming
+                platforms, we serve all humanity—not just those who can afford a single-vendor ecosystem.
+            </p>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-03.html" class="nav-button">← Previous: Implementation Guide</a>
+            <a href="chapter-05.html" class="nav-button">Next: Compliance & Standards →</a>
+        </div>
+
+        <footer>
+            <p>© 2025 SmileStory Inc. / WIA</p>
+            <p style="margin-top: 0.5rem; color: var(--primary);">弘益人間 (Benefit All Humanity)</p>
+            <p style="margin-top: 0.5rem;">WIA-CHILD-011 Screen Time Management Standard v1.0</p>
+        </footer>
+    </div>
+</body>
+</html>

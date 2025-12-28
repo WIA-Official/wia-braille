@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-EDU-020: Content AI Simulator 🤖</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .simulator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .panel h2 {
+            color: #10b981;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .output {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            min-height: 200px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            color: #10b981;
+            line-height: 1.8;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            color: #10b981;
+        }
+
+        .tab.active {
+            color: #10b981;
+            border-bottom-color: #10b981;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+        }
+
+        .spinner {
+            border: 3px solid rgba(16, 185, 129, 0.2);
+            border-top: 3px solid #10b981;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .slider-container {
+            margin: 1rem 0;
+        }
+
+        .slider {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .slider-value {
+            display: inline-block;
+            margin-left: 1rem;
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        .content-preview {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .content-preview h3 {
+            color: #10b981;
+            margin-bottom: 1rem;
+        }
+
+        .content-preview p {
+            color: #cbd5e1;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 968px) {
+            .simulator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Content AI Simulator</h1>
+            <p style="color: #94a3b8;">Experience intelligent content generation and personalization</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('lesson')">Lesson Generation</button>
+            <button class="tab" onclick="switchTab('problems')">Practice Problems</button>
+            <button class="tab" onclick="switchTab('personalize')">Personalization</button>
+            <button class="tab" onclick="switchTab('translate')">Translation</button>
+        </div>
+
+        <!-- Lesson Generation Tab -->
+        <div id="lesson-tab" class="tab-content active">
+            <div class="simulator-grid">
+                <div class="panel">
+                    <h2>Lesson Configuration</h2>
+
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <select id="lesson-subject">
+                            <option>Mathematics</option>
+                            <option>Science</option>
+                            <option>English Language Arts</option>
+                            <option>Social Studies</option>
+                            <option>Computer Science</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Topic</label>
+                        <input type="text" id="lesson-topic" placeholder="e.g., Quadratic Equations" value="Quadratic Equations">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Grade Level</label>
+                        <select id="lesson-grade">
+                            <option>6th Grade</option>
+                            <option>7th Grade</option>
+                            <option selected>8th Grade</option>
+                            <option>9th Grade</option>
+                            <option>10th Grade</option>
+                            <option>11th Grade</option>
+                            <option>12th Grade</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Learning Objectives</label>
+                        <textarea id="lesson-objectives" placeholder="Enter learning objectives (one per line)">Understand the standard form of quadratic equations
+Solve quadratic equations using factoring
+Apply quadratic equations to real-world problems</textarea>
+                    </div>
+
+                    <div class="slider-container">
+                        <label>Duration (minutes)</label>
+                        <input type="range" class="slider" id="lesson-duration" min="15" max="90" value="45" step="15">
+                        <span class="slider-value" id="duration-value">45</span>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="include-assessment" checked>
+                        <label for="include-assessment">Include Assessment</label>
+                    </div>
+
+                    <button class="btn" onclick="generateLesson()">Generate Lesson</button>
+                </div>
+
+                <div class="panel">
+                    <h2>Generated Lesson</h2>
+                    <div id="lesson-output" class="output">
+Click "Generate Lesson" to create AI-powered educational content...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Practice Problems Tab -->
+        <div id="problems-tab" class="tab-content">
+            <div class="simulator-grid">
+                <div class="panel">
+                    <h2>Problem Configuration</h2>
+
+                    <div class="form-group">
+                        <label>Topic</label>
+                        <input type="text" id="problem-topic" placeholder="e.g., Factoring Polynomials" value="Factoring Polynomials">
+                    </div>
+
+                    <div class="slider-container">
+                        <label>Difficulty (0-1)</label>
+                        <input type="range" class="slider" id="problem-difficulty" min="0" max="100" value="60" step="5">
+                        <span class="slider-value" id="difficulty-value">0.60</span>
+                    </div>
+
+                    <div class="slider-container">
+                        <label>Number of Problems</label>
+                        <input type="range" class="slider" id="problem-count" min="5" max="20" value="10" step="5">
+                        <span class="slider-value" id="count-value">10</span>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="include-hints" checked>
+                        <label for="include-hints">Include Hints</label>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="include-solutions" checked>
+                        <label for="include-solutions">Include Solutions</label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Format</label>
+                        <select id="problem-format">
+                            <option>Multiple Choice</option>
+                            <option selected>Short Answer</option>
+                            <option>Interactive</option>
+                        </select>
+                    </div>
+
+                    <button class="btn" onclick="generateProblems()">Generate Problems</button>
+                </div>
+
+                <div class="panel">
+                    <h2>Generated Problems</h2>
+                    <div id="problems-output" class="output">
+Click "Generate Problems" to create practice exercises...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personalization Tab -->
+        <div id="personalize-tab" class="tab-content">
+            <div class="simulator-grid">
+                <div class="panel">
+                    <h2>Student Profile</h2>
+
+                    <div class="form-group">
+                        <label>Reading Level</label>
+                        <select id="reading-level">
+                            <option>Grade 6</option>
+                            <option selected>Grade 7</option>
+                            <option>Grade 8</option>
+                            <option>Grade 9</option>
+                            <option>Grade 10+</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Learning Style</label>
+                        <select id="learning-style">
+                            <option selected>Visual</option>
+                            <option>Auditory</option>
+                            <option>Kinesthetic</option>
+                            <option>Reading/Writing</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Pace</label>
+                        <select id="pace">
+                            <option>Slow</option>
+                            <option>Medium</option>
+                            <option selected>Accelerated</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Interests (comma-separated)</label>
+                        <input type="text" id="interests" placeholder="e.g., sports, music, technology" value="sports, engineering">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Original Content</label>
+                        <textarea id="original-content">Quadratic equations are mathematical expressions where the highest power is 2. They have many applications in real life.</textarea>
+                    </div>
+
+                    <button class="btn" onclick="personalizeContent()">Personalize Content</button>
+                </div>
+
+                <div class="panel">
+                    <h2>Personalized Content</h2>
+                    <div id="personalize-output" class="output">
+Click "Personalize Content" to adapt the content to student preferences...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Translation Tab -->
+        <div id="translate-tab" class="tab-content">
+            <div class="simulator-grid">
+                <div class="panel">
+                    <h2>Translation Settings</h2>
+
+                    <div class="form-group">
+                        <label>Target Languages</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="lang-es" checked>
+                            <label for="lang-es">Spanish (Español)</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="lang-fr" checked>
+                            <label for="lang-fr">French (Français)</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="lang-zh" checked>
+                            <label for="lang-zh">Chinese (中文)</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="lang-ar">
+                            <label for="lang-ar">Arabic (العربية)</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="lang-ko">
+                            <label for="lang-ko">Korean (한국어)</label>
+                        </div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="cultural-adaptation" checked>
+                        <label for="cultural-adaptation">Cultural Adaptation</label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Content to Translate</label>
+                        <textarea id="translate-content">Welcome to our mathematics course! Today we'll explore quadratic equations and their real-world applications in physics, engineering, and sports.</textarea>
+                    </div>
+
+                    <button class="btn" onclick="translateContent()">Translate Content</button>
+                </div>
+
+                <div class="panel">
+                    <h2>Translated Content</h2>
+                    <div id="translate-output" class="output">
+Click "Translate Content" to see multi-language versions...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        // Update slider values
+        document.getElementById('lesson-duration').addEventListener('input', (e) => {
+            document.getElementById('duration-value').textContent = e.target.value;
+        });
+
+        document.getElementById('problem-difficulty').addEventListener('input', (e) => {
+            document.getElementById('difficulty-value').textContent = (e.target.value / 100).toFixed(2);
+        });
+
+        document.getElementById('problem-count').addEventListener('input', (e) => {
+            document.getElementById('count-value').textContent = e.target.value;
+        });
+
+        // Generate Lesson
+        function generateLesson() {
+            const output = document.getElementById('lesson-output');
+            output.innerHTML = '<div class="loading"><div class="spinner"></div>Generating lesson with AI...</div>';
+
+            setTimeout(() => {
+                const subject = document.getElementById('lesson-subject').value;
+                const topic = document.getElementById('lesson-topic').value;
+                const grade = document.getElementById('lesson-grade').value;
+                const objectives = document.getElementById('lesson-objectives').value;
+                const duration = document.getElementById('lesson-duration').value;
+                const includeAssessment = document.getElementById('include-assessment').checked;
+
+                output.innerHTML = `
+LESSON PLAN: ${topic}
+Subject: ${subject}
+Grade Level: ${grade}
+Duration: ${duration} minutes
+
+弘益人間 (홍익인간) - Benefit All Humanity
+
+===== LEARNING OBJECTIVES =====
+${objectives.split('\n').map((obj, i) => `${i + 1}. ${obj}`).join('\n')}
+
+===== LESSON STRUCTURE =====
+
+1. INTRODUCTION (5 min)
+   - Hook: Real-world application scenario
+   - Prior knowledge activation
+   - Learning goals preview
+
+2. DIRECT INSTRUCTION (15 min)
+   - Core concept explanation
+   - Visual representations and examples
+   - Step-by-step demonstrations
+   - Common misconceptions addressed
+
+3. GUIDED PRACTICE (10 min)
+   - Worked examples with class
+   - Think-pair-share activities
+   - Scaffolded problem solving
+
+4. INDEPENDENT PRACTICE (10 min)
+   - Individual problem sets
+   - Differentiated difficulty levels
+   - Real-world application problems
+
+5. CLOSURE (5 min)
+   - Key concepts review
+   - Exit ticket questions
+   - Preview next lesson
+
+${includeAssessment ? `
+===== FORMATIVE ASSESSMENT =====
+
+Question 1: [Multiple Choice]
+Identify the standard form of a quadratic equation.
+A) y = mx + b
+B) ax² + bx + c = 0 ✓
+C) y = x³
+D) a + b = c
+
+Question 2: [Short Answer]
+Explain how quadratic equations are used in physics.
+
+Question 3: [Problem Solving]
+Solve: x² + 5x + 6 = 0
+Solution: (x + 2)(x + 3) = 0
+x = -2 or x = -3
+` : ''}
+
+===== DIFFERENTIATION STRATEGIES =====
+• Advanced: Extension problems with complex scenarios
+• On-Level: Standard practice with hints
+• Struggling: Additional scaffolding and visual aids
+
+===== MATERIALS NEEDED =====
+• Graphing calculator or online tool
+• Whiteboard/markers
+• Practice worksheets
+• Real-world problem scenarios
+
+Generated by WIA-EDU-020 Content AI Standard
+                `.trim();
+            }, 1500);
+        }
+
+        // Generate Problems
+        function generateProblems() {
+            const output = document.getElementById('problems-output');
+            output.innerHTML = '<div class="loading"><div class="spinner"></div>Generating practice problems...</div>';
+
+            setTimeout(() => {
+                const topic = document.getElementById('problem-topic').value;
+                const difficulty = (document.getElementById('problem-difficulty').value / 100).toFixed(2);
+                const count = document.getElementById('problem-count').value;
+                const includeHints = document.getElementById('include-hints').checked;
+                const includeSolutions = document.getElementById('include-solutions').checked;
+
+                let problems = `PRACTICE PROBLEMS: ${topic}\nDifficulty Level: ${difficulty}\nTotal Problems: ${count}\n\n`;
+
+                for (let i = 1; i <= count; i++) {
+                    problems += `Problem ${i}:\nFactor the expression: x² + ${3 + i}x + ${2 + i}\n`;
+
+                    if (includeHints) {
+                        problems += `💡 Hint: Find two numbers that multiply to ${2 + i} and add to ${3 + i}\n`;
+                    }
+
+                    if (includeSolutions) {
+                        problems += `✓ Solution: (x + ${i + 1})(x + ${i + 1})\n`;
+                    }
+
+                    problems += '\n';
+                }
+
+                output.textContent = problems + '\nGenerated by WIA-EDU-020 Content AI';
+            }, 1000);
+        }
+
+        // Personalize Content
+        function personalizeContent() {
+            const output = document.getElementById('personalize-output');
+            output.innerHTML = '<div class="loading"><div class="spinner"></div>Personalizing content...</div>';
+
+            setTimeout(() => {
+                const readingLevel = document.getElementById('reading-level').value;
+                const learningStyle = document.getElementById('learning-style').value;
+                const pace = document.getElementById('pace').value;
+                const interests = document.getElementById('interests').value;
+
+                output.innerHTML = `
+PERSONALIZED CONTENT
+
+Student Profile:
+• Reading Level: ${readingLevel}
+• Learning Style: ${learningStyle}
+• Pace: ${pace}
+• Interests: ${interests}
+
+===== ADAPTED CONTENT =====
+
+${learningStyle === 'Visual' ? '📊 VISUAL REPRESENTATION:' : ''}
+Quadratic equations are like parabolic curves you see in sports - think
+about the path of a basketball when you shoot it toward the hoop! 🏀
+
+The equation ax² + bx + c = 0 describes this curved motion. Just like
+how engineers design roller coasters or how athletes calculate the
+perfect trajectory for their shots.
+
+${pace === 'Accelerated' ? `
+🚀 ADVANCED APPLICATION:
+In engineering, quadratic equations help design suspension bridges and
+optimize satellite trajectories. The same principles apply when creating
+video game physics or analyzing sports performance data.
+` : ''}
+
+${learningStyle === 'Visual' ? `
+[VISUAL DIAGRAM]
+   ^
+   |     *
+   |   *   *
+   | *       *
+   |____________>
+
+The parabola shows how values change as x increases.
+` : ''}
+
+💡 KEY INSIGHT:
+Whether you're into ${interests.split(',')[0].trim()} or engineering,
+quadratic equations help us model real-world curves and optimize
+performance!
+
+弘益人間 - Content adapted to benefit your unique learning needs
+                `.trim();
+            }, 1200);
+        }
+
+        // Translate Content
+        function translateContent() {
+            const output = document.getElementById('translate-output');
+            output.innerHTML = '<div class="loading"><div class="spinner"></div>Translating content...</div>';
+
+            setTimeout(() => {
+                const content = document.getElementById('translate-content').value;
+                const culturalAdaptation = document.getElementById('cultural-adaptation').checked;
+
+                let translations = 'MULTI-LANGUAGE TRANSLATIONS\n\n';
+
+                if (document.getElementById('lang-es').checked) {
+                    translations += '🇪🇸 SPANISH (Español):\n';
+                    translations += '¡Bienvenidos a nuestro curso de matemáticas! Hoy exploraremos las ecuaciones cuadráticas y sus aplicaciones en el mundo real en física, ingeniería y deportes.\n\n';
+                }
+
+                if (document.getElementById('lang-fr').checked) {
+                    translations += '🇫🇷 FRENCH (Français):\n';
+                    translations += 'Bienvenue à notre cours de mathématiques ! Aujourd\'hui, nous explorerons les équations quadratiques et leurs applications réelles en physique, ingénierie et sports.\n\n';
+                }
+
+                if (document.getElementById('lang-zh').checked) {
+                    translations += '🇨🇳 CHINESE (中文):\n';
+                    translations += '欢迎来到我们的数学课程！今天我们将探索二次方程及其在物理、工程和体育方面的实际应用。\n\n';
+                }
+
+                if (document.getElementById('lang-ar').checked) {
+                    translations += '🇸🇦 ARABIC (العربية):\n';
+                    translations += 'مرحبًا بكم في دورة الرياضيات! اليوم سنستكشف المعادلات التربيعية وتطبيقاتها في العالم الحقيقي في الفيزياء والهندسة والرياضة.\n\n';
+                }
+
+                if (document.getElementById('lang-ko').checked) {
+                    translations += '🇰🇷 KOREAN (한국어):\n';
+                    translations += '수학 과정에 오신 것을 환영합니다! 오늘 우리는 이차 방정식과 물리학, 공학, 스포츠에서의 실제 응용을 탐구할 것입니다.\n\n';
+                }
+
+                if (culturalAdaptation) {
+                    translations += '\n✨ Cultural Adaptation Applied:\n';
+                    translations += '• Regional examples and contexts\n';
+                    translations += '• Culturally appropriate scenarios\n';
+                    translations += '• Local measurement systems\n';
+                    translations += '• Region-specific sports/activities\n';
+                }
+
+                translations += '\n弘益人間 - Making education accessible worldwide';
+
+                output.textContent = translations;
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: Phase 3 - Protocol - WIA-DATA-001</title>
+</head>
+<body>
+
+<p><a href="index.html">📊 WIA-DATA-001 Big Data Standard Ebook</a> | Chapter 6 of 8</p>
+
+<hr>
+
+<h1>Chapter 6: Phase 3 - Protocol Design</h1>
+
+<blockquote>
+<p><strong>Hongik Ingan (弘益人間)</strong></p>
+<p>Robust protocols ensure reliable data movement across distributed systems, forming the backbone of big data infrastructure.</p>
+</blockquote>
+
+<hr>
+
+<h2>6.1 Data Pipeline Architecture</h2>
+
+<h3>6.1.1 Pipeline Stages</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Stage</th>
+            <th>Purpose</th>
+            <th>Key Operations</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Ingestion</td>
+            <td>Data collection from sources</td>
+            <td>Validate, parse, route</td>
+        </tr>
+        <tr>
+            <td>Transformation</td>
+            <td>Data processing and enrichment</td>
+            <td>Map, filter, aggregate, join</td>
+        </tr>
+        <tr>
+            <td>Storage</td>
+            <td>Persist processed data</td>
+            <td>Write, partition, replicate</td>
+        </tr>
+        <tr>
+            <td>Access</td>
+            <td>Query and retrieve data</td>
+            <td>Read, filter, project</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>6.1.2 ETL vs ELT</h3>
+
+<p><strong>Extract-Transform-Load (ETL):</strong></p>
+<ul>
+    <li>Transform before loading into warehouse</li>
+    <li>Better for structured, smaller datasets</li>
+    <li>Protects warehouse from raw data complexity</li>
+</ul>
+
+<p><strong>Extract-Load-Transform (ELT):</strong></p>
+<ul>
+    <li>Load raw data first, transform in warehouse</li>
+    <li>Leverages warehouse processing power</li>
+    <li>Better for big data and ad-hoc queries</li>
+</ul>
+
+<hr>
+
+<h2>6.2 Messaging Protocol</h2>
+
+<h3>6.2.1 Message Structure</h3>
+
+<pre><code>{
+  "header": {
+    "message_id": "msg-12345",
+    "timestamp": 1704067200000,
+    "source": "sensor-42",
+    "schema_version": "1.0"
+  },
+  "payload": {
+    "temperature": 22.5,
+    "humidity": 65.0,
+    "location": "warehouse-A"
+  },
+  "metadata": {
+    "priority": "normal",
+    "ttl": 3600
+  }
+}
+</code></pre>
+
+<h3>6.2.2 Delivery Semantics</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Semantic</th>
+            <th>Guarantee</th>
+            <th>Use Case</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>At-most-once</td>
+            <td>Message may be lost, never duplicated</td>
+            <td>Metrics, logs (lossy acceptable)</td>
+        </tr>
+        <tr>
+            <td>At-least-once</td>
+            <td>Message delivered, may duplicate</td>
+            <td>Event tracking (idempotent processing)</td>
+        </tr>
+        <tr>
+            <td>Exactly-once</td>
+            <td>Message delivered exactly once</td>
+            <td>Financial transactions, critical data</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>6.3 Stream Processing Protocol</h2>
+
+<h3>6.3.1 Windowing Operations</h3>
+
+<p><strong>Tumbling Windows:</strong></p>
+<ul>
+    <li>Fixed-size, non-overlapping time windows</li>
+    <li>Example: Aggregate every 5 minutes</li>
+    <li>Use: Periodic reports, regular summaries</li>
+</ul>
+
+<p><strong>Sliding Windows:</strong></p>
+<ul>
+    <li>Fixed-size, overlapping windows</li>
+    <li>Example: Moving average over last hour</li>
+    <li>Use: Continuous metrics, trend analysis</li>
+</ul>
+
+<p><strong>Session Windows:</strong></p>
+<ul>
+    <li>Variable-size based on activity gaps</li>
+    <li>Example: User sessions with 30min timeout</li>
+    <li>Use: Behavior analysis, engagement tracking</li>
+</ul>
+
+<h3>6.3.2 Watermarks and Late Data</h3>
+
+<pre><code>{
+  "windowing": {
+    "type": "tumbling",
+    "size": "5m",
+    "watermark": {
+      "strategy": "bounded",
+      "max_delay": "1m"
+    },
+    "late_data": {
+      "action": "recompute",
+      "grace_period": "30s"
+    }
+  }
+}
+</code></pre>
+
+<hr>
+
+<h2>6.4 Batch Processing Protocol</h2>
+
+<h3>6.4.1 Job Specification</h3>
+
+<pre><code>{
+  "job": {
+    "name": "daily_aggregation",
+    "type": "batch",
+    "schedule": "0 2 * * *",
+    "input": {
+      "dataset": "raw_events",
+      "partition": "date=2025-01-01"
+    },
+    "transformations": [
+      {"op": "filter", "condition": "status='active'"},
+      {"op": "groupby", "keys": ["user_id"]},
+      {"op": "aggregate", "functions": ["COUNT", "SUM(amount)"]}
+    ],
+    "output": {
+      "dataset": "daily_summary",
+      "format": "parquet",
+      "compression": "snappy"
+    }
+  }
+}
+</code></pre>
+
+<h3>6.4.2 Resource Allocation</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Parameter</th>
+            <th>Description</th>
+            <th>Example Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>executor_memory</td>
+            <td>Memory per executor</td>
+            <td>8GB</td>
+        </tr>
+        <tr>
+            <td>executor_cores</td>
+            <td>CPU cores per executor</td>
+            <td>4</td>
+        </tr>
+        <tr>
+            <td>num_executors</td>
+            <td>Number of parallel executors</td>
+            <td>20</td>
+        </tr>
+        <tr>
+            <td>parallelism</td>
+            <td>Task parallelism level</td>
+            <td>200</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>6.5 Data Transfer Protocol</h2>
+
+<h3>6.5.1 Chunked Transfer</h3>
+
+<p>For large file transfers:</p>
+
+<pre><code>POST /api/v1/transfer/init
+{
+  "file_size": 10737418240,
+  "chunk_size": 10485760,
+  "checksum": "sha256:abc123..."
+}
+
+Response:
+{
+  "transfer_id": "txf-67890",
+  "num_chunks": 1024,
+  "upload_urls": [...]
+}
+</code></pre>
+
+<h3>6.5.2 Resumable Uploads</h3>
+
+<ul>
+    <li>Support for interrupted transfers</li>
+    <li>Chunk-level checksums</li>
+    <li>Retry logic with exponential backoff</li>
+    <li>Concurrent chunk uploads</li>
+</ul>
+
+<hr>
+
+<h2>6.6 State Management</h2>
+
+<h3>6.6.1 Checkpoint Protocol</h3>
+
+<pre><code>{
+  "checkpoint": {
+    "job_id": "job-123",
+    "checkpoint_id": "cp-456",
+    "timestamp": 1704067200000,
+    "offsets": {
+      "topic1-partition0": 1000,
+      "topic1-partition1": 2000
+    },
+    "state": {
+      "counters": {...},
+      "aggregates": {...}
+    }
+  }
+}
+</code></pre>
+
+<h3>6.6.2 Failure Recovery</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Failure Type</th>
+            <th>Recovery Action</th>
+            <th>Data Loss Risk</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Task failure</td>
+            <td>Restart from last checkpoint</td>
+            <td>None (if checkpointed)</td>
+        </tr>
+        <tr>
+            <td>Node failure</td>
+            <td>Reschedule tasks on healthy nodes</td>
+            <td>None (replicated state)</td>
+        </tr>
+        <tr>
+            <td>Network partition</td>
+            <td>Wait for partition to heal</td>
+            <td>None (buffered data)</td>
+        </tr>
+        <tr>
+            <td>Corrupted data</td>
+            <td>Skip or quarantine bad records</td>
+            <td>Minimal (bad records only)</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>6.7 Monitoring and Observability</h2>
+
+<h3>6.7.1 Metrics Protocol</h3>
+
+<pre><code>{
+  "metrics": {
+    "job_id": "job-123",
+    "timestamp": 1704067200000,
+    "throughput": {
+      "records_per_sec": 10000,
+      "bytes_per_sec": 1048576
+    },
+    "latency": {
+      "p50": 50,
+      "p95": 200,
+      "p99": 500
+    },
+    "errors": {
+      "count": 5,
+      "rate": 0.0001
+    }
+  }
+}
+</code></pre>
+
+<h3>6.7.2 Health Checks</h3>
+
+<pre><code>GET /health
+{
+  "status": "healthy",
+  "version": "1.0.0",
+  "uptime": 86400,
+  "components": {
+    "database": "healthy",
+    "kafka": "healthy",
+    "storage": "healthy"
+  }
+}
+</code></pre>
+
+<hr>
+
+<h2>Chapter Summary</h2>
+
+<h3>Key Takeaways:</h3>
+
+<ol>
+    <li>Data pipelines follow a structured flow: ingestion, transformation, storage, access</li>
+    <li>Message delivery semantics (at-most-once, at-least-once, exactly-once) suit different use cases</li>
+    <li>Stream processing uses windowing operations for time-based aggregations</li>
+    <li>Batch processing enables large-scale transformations on historical data</li>
+    <li>Checkpointing and state management ensure fault tolerance</li>
+</ol>
+
+<hr>
+
+<h2>Review Questions</h2>
+
+<ol>
+    <li>What is the difference between ETL and ELT?</li>
+    <li>Explain the three message delivery semantics and when to use each.</li>
+    <li>What are the different types of windowing operations in stream processing?</li>
+    <li>How does the checkpoint protocol enable failure recovery?</li>
+    <li>What metrics should be monitored in a big data pipeline?</li>
+    <li>Why is chunked transfer important for large files?</li>
+</ol>
+
+<hr>
+
+<p><strong>Next:</strong> <a href="chapter-07.html">Chapter 7: Phase 4 - System Integration →</a></p>
+
+<p><a href="index.html">← Back to Table of Contents</a></p>
+
+</body>
+</html>

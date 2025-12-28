@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 7: Best Practices and Patterns | WIA-CORE-010</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: rgba(30, 41, 59, 0.4); padding: 3rem; border-radius: 15px; border: 2px solid #6B7280; }
+        .chapter-header { border-bottom: 3px solid #6B7280; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #6B7280; font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #6B7280; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; color: #6B7280; margin: 2.5rem 0 1.5rem 0; border-left: 4px solid #6B7280; padding-left: 1rem; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; font-size: 1.1rem; }
+        .code-example { background: #0f172a; border: 2px solid #475569; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto; }
+        .code-example pre { color: #94a3b8; font-family: 'Courier New', monospace; font-size: 0.95rem; line-height: 1.6; }
+        ul, ol { margin: 1.5rem 0 1.5rem 2rem; color: #cbd5e1; }
+        li { margin: 0.75rem 0; line-height: 1.6; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #475569; }
+        .nav-button { padding: 1rem 2rem; background: linear-gradient(135deg, #6B7280 0%, #4b5563 100%); border: none; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; }
+        strong { color: #6B7280; }
+        .tip-box { background: rgba(16, 185, 129, 0.1); border: 2px solid #10b981; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 7</div>
+            <h1>Best Practices and Patterns</h1>
+        </div>
+
+        <h2>7.1 Error Handling Principles</h2>
+
+        <ol>
+            <li><strong>Fail Fast, Recover Smart:</strong> Detect errors immediately, but have intelligent recovery</li>
+            <li><strong>Never Swallow Errors:</strong> Always log, always propagate with context</li>
+            <li><strong>Be Specific:</strong> Use precise error codes, not generic catch-alls</li>
+            <li><strong>Think User First:</strong> Error messages should guide users, not confuse them</li>
+            <li><strong>Automate Recovery:</strong> Let recovery strategies handle retries, not manual code</li>
+            <li><strong>Monitor Everything:</strong> Every error is a learning opportunity</li>
+            <li><strong>Test Failure Paths:</strong> Error handling code must be tested as thoroughly as happy paths</li>
+            <li><strong>Document Error Contracts:</strong> APIs must document which errors they throw</li>
+        </ol>
+
+        <h2>7.2 Common Anti-Patterns to Avoid</h2>
+
+        <div class="code-example">
+            <pre>
+// ❌ ANTI-PATTERN: Swallowing errors
+try {
+  await riskyOperation();
+} catch (error) {
+  // Silently ignoring - terrible!
+}
+
+// ✅ CORRECT: Log and handle
+try {
+  await riskyOperation();
+} catch (error) {
+  logger.error('Operation failed', { error, context });
+  throw new WIAError({
+    code: 'WIA-API-INTERNAL-001',
+    message: 'Operation failed',
+    severity: 'ERROR',
+    recovery: 'RETRY_WITH_BACKOFF',
+    context: { operation: 'riskyOperation' },
+    causedBy: error
+  });
+}
+
+// ❌ ANTI-PATTERN: Generic error codes
+throw new Error('Something went wrong'); // Useless!
+
+// ✅ CORRECT: Specific WIA code
+throw new WIAError({
+  code: 'WIA-DB-CONNECTION-001',  // Specific!
+  message: 'Failed to connect to PostgreSQL',
+  severity: 'CRITICAL',
+  recovery: 'RETRY_WITH_BACKOFF'
+});
+
+// ❌ ANTI-PATTERN: Retry without backoff
+for (let i = 0; i < 100; i++) {
+  try {
+    return await api.call();
+  } catch (e) {
+    // Hammering the failing service!
+  }
+}
+
+// ✅ CORRECT: Exponential backoff
+return await retryWithBackoff(
+  () => api.call(),
+  { maxAttempts: 5, baseDelay: 1000 }
+);
+
+// ❌ ANTI-PATTERN: Losing error context
+try {
+  await serviceA.call();
+} catch (error) {
+  throw new Error('ServiceA failed'); // Lost original error!
+}
+
+// ✅ CORRECT: Preserve original error
+try {
+  await serviceA.call();
+} catch (error) {
+  throw new WIAError({
+    code: 'WIA-API-INTERNAL-001',
+    message: 'ServiceA failed',
+    severity: 'ERROR',
+    recovery: 'RETRY_WITH_BACKOFF',
+    causedBy: error  // Preserved!
+  });
+}
+            </pre>
+        </div>
+
+        <h2>7.3 Production-Ready Error Handling</h2>
+
+        <div class="code-example">
+            <pre>
+class ProductionErrorHandler {
+  async handleRequest(req, res) {
+    const correlationId = req.headers['x-correlation-id'] || generateUUID();
+
+    try {
+      const result = await this.processRequest(req, correlationId);
+      res.json(result);
+    } catch (error) {
+      const wiaError = this.toWIAError(error, correlationId);
+
+      // 1. Log with full context
+      logger.error('Request failed', {
+        error: wiaError.toJSON(),
+        request: {
+          method: req.method,
+          path: req.path,
+          query: req.query,
+          userId: req.user?.id
+        }
+      });
+
+      // 2. Track metrics
+      metrics.increment('errors_total', {
+        code: wiaError.code,
+        severity: wiaError.severity
+      });
+
+      // 3. Alert if critical
+      if (wiaError.severity === 'CRITICAL') {
+        await alerting.page({
+          title: `Critical error: ${wiaError.code}`,
+          error: wiaError,
+          runbook: this.getRunbook(wiaError.code)
+        });
+      }
+
+      // 4. Apply recovery strategy
+      if (wiaError.recovery === 'RETRY_WITH_BACKOFF') {
+        // Queue for retry
+        await retryQueue.add(req, { delay: 2000 });
+      }
+
+      // 5. Return user-friendly response
+      res.status(this.toHTTPStatus(wiaError)).json({
+        error: {
+          code: wiaError.code,
+          message: this.toUserMessage(wiaError),
+          correlationId: wiaError.correlationId,
+          // Include recovery hint
+          retryable: wiaError.recovery === 'RETRY_WITH_BACKOFF'
+        }
+      });
+    }
+  }
+}
+            </pre>
+        </div>
+
+        <h2>7.4 Testing Error Handling</h2>
+
+        <div class="code-example">
+            <pre>
+describe('Error Handling', () => {
+  it('should retry on timeout with backoff', async () => {
+    const mockAPI = jest.fn()
+      .mockRejectedValueOnce(new WIAError({
+        code: 'WIA-NET-TIMEOUT-015',
+        message: 'Timeout',
+        severity: 'ERROR',
+        recovery: 'RETRY_WITH_BACKOFF'
+      }))
+      .mockRejectedValueOnce(new WIAError({
+        code: 'WIA-NET-TIMEOUT-015',
+        message: 'Timeout',
+        severity: 'ERROR',
+        recovery: 'RETRY_WITH_BACKOFF'
+      }))
+      .mockResolvedValueOnce({ data: 'success' });
+
+    const result = await retryWithBackoff(mockAPI, { maxAttempts: 3 });
+
+    expect(result).toEqual({ data: 'success' });
+    expect(mockAPI).toHaveBeenCalledTimes(3);
+  });
+
+  it('should use fallback when primary fails', async () => {
+    const primary = jest.fn().mockRejectedValue(new Error('Primary down'));
+    const fallback = jest.fn().mockResolvedValue({ data: 'fallback' });
+
+    const result = await withFallback(primary, fallback);
+
+    expect(result).toEqual({ data: 'fallback' });
+    expect(fallback).toHaveBeenCalled();
+  });
+
+  it('should open circuit breaker after threshold', async () => {
+    const breaker = new CircuitBreaker({ failureThreshold: 3 });
+    const failing = jest.fn().mockRejectedValue(new Error('Failed'));
+
+    // First 3 failures should be attempted
+    for (let i = 0; i < 3; i++) {
+      await expect(breaker.execute(failing)).rejects.toThrow();
+    }
+
+    // Circuit should now be open
+    await expect(breaker.execute(failing)).rejects.toThrow('Circuit breaker is OPEN');
+
+    // Should not have called the 4th time
+    expect(failing).toHaveBeenCalledTimes(3);
+  });
+});
+            </pre>
+        </div>
+
+        <h2>7.5 Monitoring and Observability</h2>
+
+        <div class="tip-box">
+            <h3 style="color: #10b981; margin-bottom: 1rem;">Error Monitoring Dashboard Checklist</h3>
+            <ul style="margin-left: 2rem; color: #cbd5e1;">
+                <li>Error rate by severity (CRITICAL, ERROR, WARNING)</li>
+                <li>Top 10 error codes by frequency</li>
+                <li>Error distribution by service</li>
+                <li>Mean time to resolution (MTTR) by error type</li>
+                <li>Recovery strategy success rates</li>
+                <li>Error trends over time (hourly, daily, weekly)</li>
+                <li>Correlation between errors and deployments</li>
+                <li>User impact metrics (affected users, failed requests)</li>
+            </ul>
+        </div>
+
+        <h2>7.6 Documentation Standards</h2>
+
+        <p>Every API endpoint should document potential errors:</p>
+
+        <div class="code-example">
+            <pre>
+/**
+ * Process user payment
+ *
+ * @param {Object} payment - Payment details
+ * @returns {Promise<PaymentResult>}
+ *
+ * @throws {WIAError} WIA-AUTH-INVALID-001 - Invalid authentication token
+ * @throws {WIAError} WIA-VALIDATE-INVALID-001 - Invalid payment data
+ * @throws {WIAError} WIA-PAYMENT-DECLINED-101 - Payment declined by provider
+ * @throws {WIAError} WIA-DB-TIMEOUT-015 - Database timeout during transaction
+ * @throws {WIAError} WIA-NET-TIMEOUT-015 - Payment provider timeout
+ *
+ * @example
+ * try {
+ *   const result = await processPayment({ amount: 100, currency: 'USD' });
+ * } catch (error) {
+ *   if (error.code === 'WIA-PAYMENT-DECLINED-101') {
+ *     // Handle declined payment
+ *   }
+ * }
+ */
+async function processPayment(payment) {
+  // Implementation
+}
+            </pre>
+        </div>
+
+        <h2>7.7 Incident Response Runbooks</h2>
+
+        <p>Create runbooks for each CRITICAL and common ERROR codes:</p>
+
+        <div class="code-example">
+            <pre>
+# Runbook: WIA-DB-CONNECTION-001
+
+## Severity: CRITICAL
+
+## Description
+Unable to establish connection to primary database.
+
+## Impact
+All write operations will fail. Read operations may fail if read replica is also down.
+
+## Immediate Actions
+1. Check database server status: `pg_isready -h db-primary.example.com`
+2. Check network connectivity: `ping db-primary.example.com`
+3. Check connection pool: `SELECT count(*) FROM pg_stat_activity;`
+4. Check recent deployments (possible config change)
+
+## Recovery Steps
+1. If connection pool exhausted: Restart application servers
+2. If database unresponsive: Failover to read replica
+3. If network issue: Update DNS to point to backup region
+4. If credentials invalid: Rotate database credentials
+
+## Escalation
+If not resolved in 15 minutes:
+1. Page Database SRE team
+2. Notify VP Engineering
+3. Prepare customer communication
+
+## Post-Incident
+1. Update capacity planning
+2. Review connection pool settings
+3. Implement additional monitoring
+4. Document lessons learned
+            </pre>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="06-multi-language-support.html" class="nav-button">← Chapter 6</a>
+            <a href="08-appendix.html" class="nav-button">Chapter 8: Appendix →</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: Event Streaming | WIA-CORE-007</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f1f5f9; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 3rem; border-radius: 15px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #10b981; border-bottom: 3px solid #6B7280; padding-bottom: 1rem; }
+        h2 { font-size: 2rem; margin: 2rem 0 1rem; color: #6B7280; }
+        h3 { font-size: 1.5rem; margin: 1.5rem 0 1rem; color: #10b981; }
+        p { margin: 1rem 0; font-size: 1.1rem; }
+        code { background: #0f172a; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: Monaco, monospace; color: #10b981; }
+        pre { background: #0f172a; padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; border-left: 4px solid #6B7280; }
+        pre code { background: none; padding: 0; }
+        .nav { margin: 2rem 0; display: flex; justify-content: space-between; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #10b981; text-decoration: none; font-weight: 600; padding: 0.5rem 1rem; border: 2px solid #6B7280; border-radius: 5px; transition: all 0.3s; }
+        .nav a:hover { background: #6B7280; color: white; }
+        .highlight { background: #334155; padding: 1.5rem; border-left: 4px solid #10b981; border-radius: 5px; margin: 1.5rem 0; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; font-size: 1.1rem; }
+        .emoji { font-size: 1.5em; margin-right: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">🌊</span>Chapter 6: Event Streaming</h1>
+
+        <h2>6.1 Understanding Streams</h2>
+        <p>Streams represent continuous flows of data. Unlike RPC where you get a single response, streams allow multiple messages over time.</p>
+
+        <h3>6.1.1 Server-to-Client Streaming</h3>
+        <p>The server sends multiple messages in response to a single client request:</p>
+
+        <pre><code>// Client: Subscribe to stream
+const stream = protocol.stream('logs.tail', {
+  service: 'api-server',
+  level: 'error'
+});
+
+for await (const logEntry of stream) {
+  console.log(`[${logEntry.timestamp}] ${logEntry.message}`);
+  displayLog(logEntry);
+}
+
+// Server: Generate stream
+protocol.streamHandler('logs.tail', async function* (params) {
+  const logStream = await logService.subscribe(params);
+
+  for await (const entry of logStream) {
+    if (entry.level === params.level) {
+      yield {
+        timestamp: entry.timestamp,
+        level: entry.level,
+        message: entry.message,
+        metadata: entry.metadata
+      };
+    }
+  }
+});</code></pre>
+
+        <h3>6.1.2 Client-to-Server Streaming</h3>
+        <p>The client sends multiple messages and receives a single response:</p>
+
+        <pre><code>// Client: Upload large dataset
+const uploadStream = protocol.createClientStream('data.upload');
+
+for (const chunk of largeDataset) {
+  await uploadStream.send(chunk);
+}
+
+const result = await uploadStream.complete();
+console.log('Uploaded:', result.totalRecords, 'records');
+
+// Server: Receive and process stream
+protocol.clientStreamHandler('data.upload', async (stream) => {
+  let totalRecords = 0;
+  const batch = [];
+
+  for await (const chunk of stream) {
+    batch.push(chunk);
+
+    if (batch.length >= 1000) {
+      await database.bulkInsert(batch);
+      totalRecords += batch.length;
+      batch.length = 0;
+    }
+  }
+
+  if (batch.length > 0) {
+    await database.bulkInsert(batch);
+    totalRecords += batch.length;
+  }
+
+  return { totalRecords };
+});</code></pre>
+
+        <h3>6.1.3 Bidirectional Streaming</h3>
+        <p>Both client and server can send multiple messages:</p>
+
+        <pre><code>// Client: Real-time chat
+const chatStream = protocol.createBidirectionalStream('chat.connect', {
+  roomId: 'general'
+});
+
+// Send messages
+chatStream.send({
+  type: 'message',
+  content: 'Hello everyone!'
+});
+
+// Receive messages
+chatStream.on('message', (data) => {
+  if (data.type === 'message') {
+    displayMessage(data.user, data.content);
+  } else if (data.type === 'userJoined') {
+    showNotification(`${data.user} joined the chat`);
+  }
+});
+
+// Server: Broadcast to all participants
+protocol.bidirectionalHandler('chat.connect', async (stream, params) => {
+  const room = chatRooms.get(params.roomId);
+  const user = stream.context.user;
+
+  // Add to room
+  room.addParticipant(user, stream);
+
+  // Notify others
+  room.broadcast({
+    type: 'userJoined',
+    user: user.name
+  }, user.id);
+
+  // Handle incoming messages
+  for await (const message of stream) {
+    room.broadcast({
+      type: 'message',
+      user: user.name,
+      content: message.content
+    });
+  }
+
+  // User disconnected
+  room.removeParticipant(user.id);
+  room.broadcast({
+    type: 'userLeft',
+    user: user.name
+  });
+});</code></pre>
+
+        <h2>6.2 Stream Control</h2>
+
+        <h3>6.2.1 Backpressure</h3>
+        <p>Control flow when consumer is slower than producer:</p>
+
+        <pre><code>// Server implements backpressure
+protocol.streamHandler('data.export', async function* (params, context) {
+  const dataStream = database.streamRecords(params.query);
+
+  for await (const record of dataStream) {
+    yield record;
+
+    // Wait for client acknowledgment before sending more
+    await context.waitForAck();
+  }
+});
+
+// Client signals readiness
+const stream = protocol.stream('data.export', { query });
+
+for await (const record of stream) {
+  await processRecord(record); // Slow processing
+  stream.ack(); // Signal ready for next
+}</code></pre>
+
+        <h3>6.2.2 Pause and Resume</h3>
+        <pre><code>const stream = protocol.stream('sensor.data');
+
+// Pause when processing is slow
+stream.pause();
+
+// Resume when ready
+setTimeout(() => {
+  stream.resume();
+}, 5000);
+
+// Or use automatic pause/resume based on buffer size
+const stream = protocol.stream('sensor.data', {
+  highWaterMark: 100, // Pause when buffer reaches 100 items
+  lowWaterMark: 10    // Resume when buffer drains to 10 items
+});</code></pre>
+
+        <h3>6.2.3 Cancellation</h3>
+        <pre><code>// Client cancels stream
+const stream = protocol.stream('longRunningQuery');
+
+setTimeout(() => {
+  stream.cancel('User requested cancellation');
+}, 5000);
+
+// Server handles cancellation
+protocol.streamHandler('longRunningQuery', async function* (params, context) {
+  const results = database.streamResults(params);
+
+  try {
+    for await (const result of results) {
+      if (context.isCancelled) {
+        console.log('Stream cancelled:', context.cancellationReason);
+        break;
+      }
+      yield result;
+    }
+  } finally {
+    // Cleanup resources
+    results.close();
+  }
+});</code></pre>
+
+        <h2>6.3 Stream Patterns</h2>
+
+        <h3>6.3.1 Real-Time Notifications</h3>
+        <pre><code>// Subscribe to notifications
+const notifications = protocol.stream('notifications.subscribe');
+
+for await (const notification of notifications) {
+  switch (notification.type) {
+    case 'order.placed':
+      showOrderNotification(notification.data);
+      break;
+    case 'payment.received':
+      showPaymentNotification(notification.data);
+      break;
+    case 'message.new':
+      showMessageNotification(notification.data);
+      break;
+  }
+}
+
+// Server: Push notifications
+userNotificationStreams.get(userId).send({
+  type: 'order.placed',
+  data: {
+    orderId: order.id,
+    amount: order.total,
+    timestamp: new Date()
+  }
+});</code></pre>
+
+        <h3>6.3.2 Live Data Feed</h3>
+        <pre><code>// Stock price updates
+const priceStream = protocol.stream('market.prices', {
+  symbols: ['AAPL', 'GOOGL', 'MSFT']
+});
+
+for await (const update of priceStream) {
+  updateStockPrice(update.symbol, update.price);
+  updateChart(update.symbol, update.price, update.timestamp);
+}
+
+// Server: Stream live prices
+protocol.streamHandler('market.prices', async function* (params) {
+  const exchange = connectToExchange();
+
+  for (const symbol of params.symbols) {
+    exchange.subscribe(symbol);
+  }
+
+  for await (const tick of exchange.stream()) {
+    if (params.symbols.includes(tick.symbol)) {
+      yield {
+        symbol: tick.symbol,
+        price: tick.price,
+        volume: tick.volume,
+        timestamp: tick.timestamp
+      };
+    }
+  }
+});</code></pre>
+
+        <h3>6.3.3 Progress Tracking</h3>
+        <pre><code>// Track long-running operation
+const progressStream = protocol.stream('export.large.dataset', {
+  format: 'csv',
+  filters: {...}
+});
+
+for await (const progress of progressStream) {
+  if (progress.type === 'progress') {
+    updateProgressBar(progress.percent);
+    showStatus(`Processed ${progress.current} of ${progress.total} records`);
+  } else if (progress.type === 'complete') {
+    downloadFile(progress.downloadUrl);
+  }
+}
+
+// Server: Report progress
+protocol.streamHandler('export.large.dataset', async function* (params) {
+  const query = buildQuery(params.filters);
+  const total = await database.count(query);
+
+  let current = 0;
+
+  for await (const batch of database.streamBatches(query, 1000)) {
+    await exportService.writeBatch(batch, params.format);
+    current += batch.length;
+
+    yield {
+      type: 'progress',
+      current,
+      total,
+      percent: (current / total) * 100
+    };
+  }
+
+  const downloadUrl = await exportService.finalize();
+
+  yield {
+    type: 'complete',
+    downloadUrl
+  };
+});</code></pre>
+
+        <h2>6.4 Stream Transformations</h2>
+
+        <h3>6.4.1 Filtering</h3>
+        <pre><code>// Filter stream on client
+const stream = protocol.stream('events.all')
+  .filter(event => event.severity === 'high')
+  .filter(event => event.category === 'security');
+
+for await (const event of stream) {
+  handleCriticalSecurityEvent(event);
+}</code></pre>
+
+        <h3>6.4.2 Mapping</h3>
+        <pre><code>// Transform stream data
+const stream = protocol.stream('users.all')
+  .map(user => ({
+    id: user.id,
+    displayName: `${user.firstName} ${user.lastName}`,
+    initials: user.firstName[0] + user.lastName[0]
+  }));
+
+for await (const user of stream) {
+  addUserToList(user);
+}</code></pre>
+
+        <h3>6.4.3 Batching</h3>
+        <pre><code>// Batch stream items
+const stream = protocol.stream('sensor.readings')
+  .batch(100) // Batch every 100 items
+  .timeout(5000); // Or every 5 seconds
+
+for await (const batch of stream) {
+  await database.bulkInsert(batch);
+}</code></pre>
+
+        <h3>6.4.4 Aggregation</h3>
+        <pre><code>// Aggregate stream data
+const stream = protocol.stream('transactions')
+  .window(60000) // 1-minute window
+  .reduce((acc, tx) => ({
+    count: acc.count + 1,
+    total: acc.total + tx.amount,
+    average: (acc.total + tx.amount) / (acc.count + 1)
+  }), { count: 0, total: 0, average: 0 });
+
+for await (const stats of stream) {
+  updateDashboard({
+    transactionsPerMinute: stats.count,
+    volumePerMinute: stats.total,
+    averageTransaction: stats.average
+  });
+}</code></pre>
+
+        <h2>6.5 Error Handling in Streams</h2>
+
+        <pre><code>// Handle errors in streams
+const stream = protocol.stream('unreliable.source');
+
+try {
+  for await (const item of stream) {
+    await processItem(item);
+  }
+} catch (error) {
+  if (error.code === 'STREAM_INTERRUPTED') {
+    console.log('Stream was interrupted, attempting recovery...');
+    // Attempt to resume from last known position
+    const resumeStream = protocol.stream('unreliable.source', {
+      resumeFrom: lastProcessedId
+    });
+  } else {
+    console.error('Stream error:', error);
+  }
+}
+
+// Server: Error recovery
+protocol.streamHandler('unreliable.source', async function* (params) {
+  let lastId = params.resumeFrom || 0;
+
+  while (true) {
+    try {
+      const items = await fetchItems({ startId: lastId });
+
+      for (const item of items) {
+        yield item;
+        lastId = item.id;
+      }
+    } catch (error) {
+      console.error('Error fetching items:', error);
+      // Send error to client
+      yield {
+        type: 'error',
+        error: {
+          code: 'FETCH_FAILED',
+          message: error.message
+        }
+      };
+      // Wait before retry
+      await sleep(5000);
+    }
+  }
+});</code></pre>
+
+        <h2>6.6 Stream Metrics and Monitoring</h2>
+
+        <pre><code>// Monitor stream health
+const stream = protocol.stream('data.feed', {
+  metrics: {
+    enabled: true,
+    interval: 10000 // Report every 10 seconds
+  }
+});
+
+stream.on('metrics', (stats) => {
+  console.log({
+    messagesReceived: stats.count,
+    bytesReceived: stats.bytes,
+    messagesPerSecond: stats.rate,
+    averageLatency: stats.latency,
+    errors: stats.errors
+  });
+});
+
+// Server: Track stream health
+protocol.streamHandler('data.feed', async function* (params, context) {
+  const metrics = {
+    sent: 0,
+    errors: 0,
+    startTime: Date.now()
+  };
+
+  try {
+    for await (const item of dataSource) {
+      yield item;
+      metrics.sent++;
+
+      if (metrics.sent % 1000 === 0) {
+        const elapsed = (Date.now() - metrics.startTime) / 1000;
+        console.log({
+          itemsSent: metrics.sent,
+          rate: metrics.sent / elapsed,
+          errors: metrics.errors
+        });
+      }
+    }
+  } catch (error) {
+    metrics.errors++;
+    throw error;
+  }
+});</code></pre>
+
+        <div class="highlight">
+            <h3>Streaming Best Practices</h3>
+            <ul>
+                <li>Implement backpressure to prevent memory issues</li>
+                <li>Always handle stream cancellation and cleanup</li>
+                <li>Use batching for efficiency when processing many items</li>
+                <li>Monitor stream health and performance metrics</li>
+                <li>Implement error recovery and resume capabilities</li>
+                <li>Set appropriate buffer sizes based on your use case</li>
+                <li>Consider stream transformations before processing</li>
+                <li>Use bidirectional streaming for real-time collaboration</li>
+            </ul>
+        </div>
+
+        <div class="nav">
+            <a href="05-rpc-patterns.html">← Previous: RPC Patterns</a>
+            <a href="07-pubsub-messaging.html">Next: Pub/Sub Messaging →</a>
+        </div>
+
+        <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; opacity: 0.7; text-align: center;">
+            <p>&copy; 2025 SmileStory Inc. / WIA | 弘益人間 · Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

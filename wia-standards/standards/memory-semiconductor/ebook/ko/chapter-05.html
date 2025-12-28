@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>제05장: CXL과 차세대 메모리 인터커넥트 - WIA-SEMI-002</title>
+    <style>
+        :root { --bg: #0f172a; --primary: #8B5CF6; --secondary: #1e293b; --text: #e2e8f0; --text-dim: #94a3b8; --accent: #a78bfa; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: var(--primary); }
+        h1 { font-size: 2.5rem; border-bottom: 3px solid var(--primary); padding-bottom: 1rem; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; margin: 2.5rem 0 1rem; }
+        h3 { font-size: 1.5rem; color: var(--accent); margin: 2rem 0 0.75rem; }
+        h4 { font-size: 1.25rem; color: var(--accent); margin: 1.5rem 0 0.5rem; }
+        p { margin: 1rem 0; }
+        .chapter-nav { background: var(--secondary); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; }
+        .chapter-nav a { color: var(--primary); text-decoration: none; padding: 0.5rem 1rem; border: 2px solid var(--primary); border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: var(--secondary); }
+        th, td { padding: 1rem; border-bottom: 1px solid var(--border); text-align: left; }
+        th { background: var(--bg); color: var(--primary); font-weight: bold; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.75rem 0; }
+        .code-block { background: var(--secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+        .code-block code { font-family: 'Courier New', monospace; color: var(--accent); }
+        .info-box { background: var(--secondary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 1.5rem 0; }
+        .summary { background: var(--secondary); border: 2px solid var(--primary); border-radius: 10px; padding: 2rem; margin: 3rem 0; }
+        footer { text-align: center; margin-top: 4rem; padding: 2rem; border-top: 2px solid var(--primary); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-nav">
+            <a href="chapter-04.html">← 이전 장</a>
+            <span style="color: var(--text-dim);">제05장 / 8</span>
+            <a href="chapter-06.html">다음 장 →</a>
+        </div>
+
+        <h1>제05장: CXL과 차세대 메모리 인터커넥트</h1>
+
+        <p>CXL(Compute Express Link)은 CPU와 가속기, 메모리 간의 고속 인터커넥트 표준입니다. 메모리 확장, 풀링, 일관성 유지 기능을 제공하여 차세대 데이터센터의 핵심 기술로 부상하고 있습니다. 이 장에서는 CXL 아키텍처, 메모리 타입, 그리고 실제 응용 사례를 다룹니다.</p>
+
+        <h2>CXL 기본 개념</h2>
+
+        <h3>1. CXL의 필요성</h3>
+        <p>전통적인 서버 아키텍처는 각 CPU 소켓에 메모리가 고정 연결되어 확장성과 활용률에 한계가 있습니다. CXL은 이러한 문제를 해결합니다.</p>
+
+        <div class="info-box">
+            <h4>전통 아키텍처의 한계</h4>
+            <ul>
+                <li><strong>메모리 고립:</strong> 각 CPU 소켓의 메모리를 다른 CPU가 직접 사용 불가</li>
+                <li><strong>불균형 워크로드:</strong> 일부 CPU는 메모리 부족, 다른 CPU는 유휴 메모리</li>
+                <li><strong>확장 제약:</strong> CPU당 메모리 채널 수 제한</li>
+                <li><strong>비용 비효율:</strong> 최대 용량으로 프로비저닝 필요</li>
+            </ul>
+        </div>
+
+        <h3>2. CXL의 주요 기능</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>기능</th>
+                    <th>설명</th>
+                    <th>효과</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>메모리 일관성</strong></td>
+                    <td>CPU와 가속기 간 캐시 일관성 유지</td>
+                    <td>프로그래밍 모델 단순화</td>
+                </tr>
+                <tr>
+                    <td><strong>메모리 확장</strong></td>
+                    <td>CPU 소켓 너머 메모리 접근</td>
+                    <td>용량 확장성</td>
+                </tr>
+                <tr>
+                    <td><strong>메모리 풀링</strong></td>
+                    <td>여러 호스트가 메모리 공유</td>
+                    <td>활용률 향상</td>
+                </tr>
+                <tr>
+                    <td><strong>낮은 레이턴시</strong></td>
+                    <td>PCIe 기반으로 빠른 액세스</td>
+                    <td>성능 유지</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>CXL 프로토콜 스택</h2>
+
+        <h3>1. 3가지 프로토콜</h3>
+        <p>CXL은 PCIe 5.0+ 물리 계층 위에서 세 가지 프로토콜을 정의합니다.</p>
+
+        <div class="info-box">
+            <h4>CXL 프로토콜 계층</h4>
+            <ul>
+                <li><strong>CXL.io:</strong> PCIe 5.0+ 기반 I/O 프로토콜. 디바이스 발견, 설정, 레지스터 액세스</li>
+                <li><strong>CXL.cache:</strong> 디바이스가 호스트 메모리에 액세스할 때 캐시 일관성 유지</li>
+                <li><strong>CXL.mem:</strong> 호스트가 디바이스 메모리에 액세스. 로드/스토어 시맨틱 제공</li>
+            </ul>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>프로토콜</th>
+                    <th>방향</th>
+                    <th>용도</th>
+                    <th>레이턴시</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>CXL.io</strong></td>
+                    <td>양방향</td>
+                    <td>제어, 상태, 인터럽트</td>
+                    <td>높음 (μs)</td>
+                </tr>
+                <tr>
+                    <td><strong>CXL.cache</strong></td>
+                    <td>디바이스→호스트</td>
+                    <td>가속기의 호스트 메모리 액세스</td>
+                    <td>낮음 (100ns)</td>
+                </tr>
+                <tr>
+                    <td><strong>CXL.mem</strong></td>
+                    <td>호스트→디바이스</td>
+                    <td>호스트의 메모리 확장</td>
+                    <td>중간 (200-500ns)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="code-block">
+            <code>
+// CXL 디바이스 타입과 프로토콜 사용<br>
+class CXLDevice {<br>
+&nbsp;&nbsp;constructor(type) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.type = type;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.protocols = this.getProtocols(type);<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;getProtocols(type) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;switch(type) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case 1: // Type 1: 가속기 with cache<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return ['CXL.io', 'CXL.cache'];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case 2: // Type 2: 가속기 with cache & memory<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return ['CXL.io', 'CXL.cache', 'CXL.mem'];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case 3: // Type 3: 메모리 확장 디바이스<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return ['CXL.io', 'CXL.mem'];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return ['CXL.io'];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}<br>
+<br>
+// 예시: CXL 메모리 확장 모듈 (Type 3)<br>
+const memExpander = new CXLDevice(3);<br>
+console.log(memExpander.protocols); // ['CXL.io', 'CXL.mem']
+            </code>
+        </div>
+
+        <h3>2. CXL 세대별 발전</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>CXL 버전</th>
+                    <th>PCIe 기반</th>
+                    <th>대역폭</th>
+                    <th>주요 기능</th>
+                    <th>출시</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>CXL 1.0/1.1</strong></td>
+                    <td>PCIe 5.0</td>
+                    <td>32 GB/s (x16)</td>
+                    <td>기본 프로토콜</td>
+                    <td>2019</td>
+                </tr>
+                <tr>
+                    <td><strong>CXL 2.0</strong></td>
+                    <td>PCIe 5.0</td>
+                    <td>32 GB/s (x16)</td>
+                    <td>메모리 풀링, 스위칭</td>
+                    <td>2020</td>
+                </tr>
+                <tr>
+                    <td><strong>CXL 3.0</strong></td>
+                    <td>PCIe 6.0</td>
+                    <td>64 GB/s (x16)</td>
+                    <td>Fabric, 백프레셔, QoS</td>
+                    <td>2022</td>
+                </tr>
+                <tr>
+                    <td><strong>CXL 3.1</strong></td>
+                    <td>PCIe 6.0</td>
+                    <td>64 GB/s (x16)</td>
+                    <td>향상된 관리, 보안</td>
+                    <td>2023</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>CXL 메모리 타입</h2>
+
+        <h3>1. CXL Type 3 메모리 디바이스</h3>
+        <p>CXL Type 3는 순수 메모리 확장 디바이스로, 가장 널리 채택되고 있습니다.</p>
+
+        <div class="info-box">
+            <h4>Type 3 디바이스 특징</h4>
+            <ul>
+                <li><strong>휘발성:</strong> DRAM 기반 (DDR4/DDR5)</li>
+                <li><strong>비휘발성:</strong> Intel Optane, 3D XPoint</li>
+                <li><strong>하이브리드:</strong> DRAM + NAND 조합</li>
+                <li><strong>용량:</strong> 디바이스당 최대 512GB-1TB</li>
+            </ul>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>메모리 타입</th>
+                    <th>레이턴시</th>
+                    <th>대역폭</th>
+                    <th>용량</th>
+                    <th>주요 용도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>CXL DRAM</strong></td>
+                    <td>200-300 ns</td>
+                    <td>높음</td>
+                    <td>중간</td>
+                    <td>메모리 확장</td>
+                </tr>
+                <tr>
+                    <td><strong>CXL PMem</strong></td>
+                    <td>500-1000 ns</td>
+                    <td>중간</td>
+                    <td>높음</td>
+                    <td>대용량 메모리</td>
+                </tr>
+                <tr>
+                    <td><strong>로컬 DDR</strong></td>
+                    <td>80-100 ns</td>
+                    <td>매우 높음</td>
+                    <td>낮음</td>
+                    <td>핫 데이터</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. CXL 메모리 풀링</h3>
+        <p>CXL 2.0 이상은 메모리 풀링을 지원하여 여러 호스트가 동일한 메모리를 공유할 수 있습니다.</p>
+
+        <div class="code-block">
+            <code>
+// CXL 메모리 풀 관리 예시<br>
+class CXLMemoryPool {<br>
+&nbsp;&nbsp;constructor(totalCapacity, numHosts) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.totalCapacity = totalCapacity; // GB<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.numHosts = numHosts;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.allocations = new Map();<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;allocate(hostId, requestedGB) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const allocated = this.getAllocatedTotal();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const available = this.totalCapacity - allocated;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if (requestedGB <= available) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.allocations.set(hostId, requestedGB);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;console.log(`Host ${hostId}: ${requestedGB}GB 할당`);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return true;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;} else {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;console.log(`할당 실패: ${available}GB만 사용 가능`);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return false;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;getAllocatedTotal() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;let total = 0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for (const [host, size] of this.allocations) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;total += size;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return total;<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;getUtilization() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return (this.getAllocatedTotal() / this.totalCapacity) * 100;<br>
+&nbsp;&nbsp;}<br>
+}<br>
+<br>
+// 예시: 1TB CXL 메모리 풀, 8개 호스트<br>
+const pool = new CXLMemoryPool(1024, 8);<br>
+pool.allocate('host1', 256);<br>
+pool.allocate('host2', 128);<br>
+console.log(`활용률: ${pool.getUtilization().toFixed(1)}%`);
+            </code>
+        </div>
+
+        <h2>CXL 스위칭과 패브릭</h2>
+
+        <h3>1. CXL 스위치</h3>
+        <p>CXL 스위치는 여러 호스트와 메모리 디바이스를 연결하여 유연한 토폴로지를 구성합니다.</p>
+
+        <ul>
+            <li><strong>포트 구성:</strong> 업링크 (호스트), 다운링크 (메모리 디바이스)</li>
+            <li><strong>메모리 인터리빙:</strong> 여러 디바이스에 데이터 분산</li>
+            <li><strong>QoS:</strong> 호스트별 대역폭 및 레이턴시 보장</li>
+            <li><strong>핫플러그:</strong> 동적 메모리 추가/제거</li>
+        </ul>
+
+        <h3>2. CXL 패브릭</h3>
+        <p>CXL 3.0은 멀티 레벨 스위칭과 패브릭을 도입하여 대규모 메모리 풀 구축을 가능하게 합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>토폴로지</th>
+                    <th>스위치 레벨</th>
+                    <th>최대 호스트</th>
+                    <th>최대 메모리</th>
+                    <th>복잡도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Direct Attach</strong></td>
+                    <td>0</td>
+                    <td>1</td>
+                    <td>제한적</td>
+                    <td>낮음</td>
+                </tr>
+                <tr>
+                    <td><strong>Single Switch</strong></td>
+                    <td>1</td>
+                    <td>8-16</td>
+                    <td>수십 TB</td>
+                    <td>중간</td>
+                </tr>
+                <tr>
+                    <td><strong>Multi-Level</strong></td>
+                    <td>2-3</td>
+                    <td>수백</td>
+                    <td>수백 TB</td>
+                    <td>높음</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>CXL 소프트웨어 스택</h2>
+
+        <h3>1. OS 메모리 관리</h3>
+        <p>CXL 메모리는 OS 레벨에서 투명하게 또는 명시적으로 관리될 수 있습니다.</p>
+
+        <div class="info-box">
+            <h4>CXL 메모리 관리 모드</h4>
+            <ul>
+                <li><strong>투명 모드:</strong> OS가 CXL 메모리를 일반 NUMA 노드로 취급. 애플리케이션 수정 불필요</li>
+                <li><strong>명시적 모드:</strong> 애플리케이션이 CXL 메모리를 직접 선택. 성능 최적화 가능</li>
+                <li><strong>하이브리드 모드:</strong> 핫 데이터는 로컬 DRAM, 콜드 데이터는 CXL 메모리</li>
+            </ul>
+        </div>
+
+        <div class="code-block">
+            <code>
+// NUMA 노드 기반 CXL 메모리 할당 (Linux)<br>
+#include &lt;numa.h&gt;<br>
+#include &lt;numaif.h&gt;<br>
+<br>
+void* allocate_on_cxl_node(size_t size, int cxl_node) {<br>
+&nbsp;&nbsp;// 특정 NUMA 노드(CXL)에 메모리 할당<br>
+&nbsp;&nbsp;void* ptr = numa_alloc_onnode(size, cxl_node);<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;if (ptr == NULL) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;printf("CXL 노드 %d에 할당 실패\n", cxl_node);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return NULL;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;// 메모리 정책 설정: 이 노드에 바인딩<br>
+&nbsp;&nbsp;unsigned long nodemask = 1UL << cxl_node;<br>
+&nbsp;&nbsp;mbind(ptr, size, MPOL_BIND, &nodemask, <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sizeof(nodemask) * 8, 0);<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;return ptr;<br>
+}<br>
+<br>
+// 예시: 10GB를 CXL 노드 2에 할당<br>
+void* data = allocate_on_cxl_node(10UL * 1024 * 1024 * 1024, 2);
+            </code>
+        </div>
+
+        <h3>2. 메모리 티어링</h3>
+        <p>Linux 6.0+은 메모리 티어링을 지원하여 로컬 DRAM과 CXL 메모리를 계층화합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>티어</th>
+                    <th>메모리 타입</th>
+                    <th>레이턴시</th>
+                    <th>용도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Tier 0</strong></td>
+                    <td>로컬 DDR</td>
+                    <td>~100 ns</td>
+                    <td>핫 페이지</td>
+                </tr>
+                <tr>
+                    <td><strong>Tier 1</strong></td>
+                    <td>CXL DRAM</td>
+                    <td>~300 ns</td>
+                    <td>웜 페이지</td>
+                </tr>
+                <tr>
+                    <td><strong>Tier 2</strong></td>
+                    <td>CXL PMem</td>
+                    <td>~1 μs</td>
+                    <td>콜드 페이지</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>CXL 응용 사례</h2>
+
+        <h3>1. 클라우드 데이터센터</h3>
+        <p>클라우드 서비스 제공자는 CXL을 통해 메모리 활용률을 극대화하고 비용을 절감합니다.</p>
+
+        <ul>
+            <li><strong>메모리 풀링:</strong> 여러 VM이 공유 메모리 풀 사용, 활용률 30% 향상</li>
+            <li><strong>동적 할당:</strong> 워크로드에 따라 메모리 재분배</li>
+            <li><strong>비용 절감:</strong> 오버프로비저닝 불필요, TCO 20% 감소</li>
+        </ul>
+
+        <h3>2. AI/ML 워크로드</h3>
+        <p>대형 모델 훈련 시 CXL 메모리로 용량 확장 및 체크포인트 저장을 가속화합니다.</p>
+
+        <div class="code-block">
+            <code>
+// PyTorch에서 CXL 메모리 활용<br>
+import torch<br>
+import os<br>
+<br>
+# NUMA 노드 설정 (CXL 메모리)<br>
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'<br>
+cxl_node = 2  # CXL 메모리가 NUMA 노드 2<br>
+<br>
+# 대형 텐서를 CXL 메모리에 배치<br>
+def create_tensor_on_cxl(shape):<br>
+&nbsp;&nbsp;# CPU 텐서 생성 후 CXL 노드로 이동<br>
+&nbsp;&nbsp;tensor = torch.randn(shape, device='cpu')<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;# libnuma를 통해 메모리를 CXL 노드로 마이그레이션<br>
+&nbsp;&nbsp;# (실제로는 ctypes로 mbind 호출 필요)<br>
+&nbsp;&nbsp;migrate_to_cxl_node(tensor, cxl_node)<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;return tensor<br>
+<br>
+# 100억 파라미터 모델의 가중치를 CXL에 저장<br>
+weights = create_tensor_on_cxl((10_000_000_000,))<br>
+print(f"가중치 크기: {weights.element_size() * weights.nelement() / 1e9:.1f} GB")
+            </code>
+        </div>
+
+        <h3>3. 인메모리 데이터베이스</h3>
+        <p>Redis, SAP HANA 등 인메모리 DB는 CXL로 용량을 확장하면서도 성능을 유지합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>시나리오</th>
+                    <th>로컬 DRAM</th>
+                    <th>CXL 메모리</th>
+                    <th>성능 영향</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>핫 데이터 (10%)</td>
+                    <td>512 GB</td>
+                    <td>-</td>
+                    <td>기준</td>
+                </tr>
+                <tr>
+                    <td>웜 데이터 (40%)</td>
+                    <td>-</td>
+                    <td>2 TB</td>
+                    <td>-15%</td>
+                </tr>
+                <tr>
+                    <td>콜드 데이터 (50%)</td>
+                    <td>-</td>
+                    <td>2.5 TB</td>
+                    <td>-30%</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>CXL 성능 고려사항</h2>
+
+        <h3>1. 레이턴시 오버헤드</h3>
+        <p>CXL 메모리는 로컬 DRAM보다 레이턴시가 높으므로, 워크로드 특성에 따라 영향이 다릅니다.</p>
+
+        <div class="info-box">
+            <h4>레이턴시 민감도별 워크로드</h4>
+            <ul>
+                <li><strong>높음:</strong> 랜덤 액세스, 작은 트랜잭션 (5-20% 성능 저하)</li>
+                <li><strong>중간:</strong> 순차 스캔, 중간 배치 (2-10% 성능 저하)</li>
+                <li><strong>낮음:</strong> 대용량 배치, 분석 쿼리 (0-5% 성능 저하)</li>
+            </ul>
+        </div>
+
+        <h3>2. 대역폭 활용</h3>
+        <p>CXL은 PCIe 레인을 공유하므로, 다른 PCIe 디바이스(GPU, NIC)와 대역폭 경합이 발생할 수 있습니다.</p>
+
+        <ul>
+            <li><strong>레인 할당:</strong> CXL 메모리에 충분한 PCIe 레인 할당 (x8 이상 권장)</li>
+            <li><strong>트래픽 분리:</strong> CXL과 GPU를 다른 PCIe 루트 컴플렉스에 배치</li>
+            <li><strong>QoS 설정:</strong> CXL 스위치에서 대역폭 보장 정책 구성</li>
+        </ul>
+
+        <h2>차세대 메모리 기술 전망</h2>
+
+        <h3>1. CXL + HBM 통합</h3>
+        <p>CXL과 HBM을 결합하여 용량과 대역폭을 동시에 극대화하는 솔루션이 개발 중입니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>기술</th>
+                    <th>용량</th>
+                    <th>대역폭</th>
+                    <th>레이턴시</th>
+                    <th>예상 출시</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>CXL + DDR</td>
+                    <td>수 TB</td>
+                    <td>중간</td>
+                    <td>200-500 ns</td>
+                    <td>현재</td>
+                </tr>
+                <tr>
+                    <td>CXL + HBM</td>
+                    <td>수백 GB</td>
+                    <td>TB/s급</td>
+                    <td>100-200 ns</td>
+                    <td>2025-2026</td>
+                </tr>
+                <tr>
+                    <td>CXL + 차세대 메모리</td>
+                    <td>수십 TB</td>
+                    <td>높음</td>
+                    <td>가변</td>
+                    <td>2027+</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. Optical CXL</h3>
+        <p>광 인터커넥트를 사용한 CXL은 거리 제약을 극복하고 데이터센터 레벨 메모리 풀링을 가능하게 합니다.</p>
+
+        <ul>
+            <li><strong>전송 거리:</strong> 구리 케이블 10m → 광섬유 수백 m</li>
+            <li><strong>랙 간 풀링:</strong> 여러 랙에 걸친 메모리 공유</li>
+            <li><strong>대역폭 확장:</strong> 파장 다중화로 수백 Gbps 달성</li>
+        </ul>
+
+        <div class="summary">
+            <h2>요약</h2>
+            <p>CXL은 메모리 확장과 풀링을 위한 차세대 인터커넥트 표준으로, 데이터센터의 메모리 활용률과 확장성을 크게 개선합니다. PCIe 기반으로 낮은 레이턴시를 유지하면서도 유연한 메모리 구성을 가능하게 합니다.</p>
+
+            <h3>핵심 요점</h3>
+            <ul>
+                <li>CXL은 메모리 일관성, 확장, 풀링을 지원하는 개방형 표준</li>
+                <li>Type 3 디바이스로 DRAM, PMem 등 다양한 메모리 활용</li>
+                <li>메모리 티어링과 NUMA로 OS 레벨 투명한 지원</li>
+                <li>클라우드, AI, 데이터베이스에서 비용과 성능 최적화</li>
+                <li>CXL 3.0+로 대규모 패브릭과 광 인터커넥트 지원</li>
+            </ul>
+        </div>
+
+        <div class="chapter-nav">
+            <a href="chapter-04.html">← 이전 장</a>
+            <span style="color: var(--text-dim);">제05장 / 8</span>
+            <a href="chapter-06.html">다음 장 →</a>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / 세계산업인증협회 (WIA)</p>
+            <p>弘益人間 (홍익인간) · 널리 인간을 이롭게 하라</p>
+        </footer>
+    </div>
+</body>
+</html>

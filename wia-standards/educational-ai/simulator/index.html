@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-EDU-005: Educational AI Simulator 🤖</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .simulator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .panel h2 {
+            color: #10b981;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .chat-container {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+
+        .message {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.student {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid #3b82f6;
+        }
+
+        .message.tutor {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 3px solid #10b981;
+        }
+
+        .message.system {
+            background: rgba(156, 163, 175, 0.1);
+            border-left: 3px solid #9ca3af;
+            font-style: italic;
+        }
+
+        .message-header {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .message-content {
+            color: #cbd5e1;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .grading-result {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .score-display {
+            font-size: 3rem;
+            font-weight: 800;
+            text-align: center;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .feedback-section {
+            margin-top: 1rem;
+        }
+
+        .feedback-section h3 {
+            color: #10b981;
+            margin-bottom: 0.5rem;
+        }
+
+        .feedback-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .feedback-section li {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 6px;
+            border-left: 3px solid #10b981;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+            transition: width 0.5s ease;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab.active {
+            color: #10b981;
+            border-bottom-color: #10b981;
+        }
+
+        .tab:hover {
+            color: #10b981;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 1024px) {
+            .simulator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Educational AI Simulator</h1>
+            <p>Experience AI-powered tutoring, automated grading, and personalized learning</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('tutor')">AI Tutor</button>
+            <button class="tab" onclick="switchTab('grading')">Auto Grading</button>
+            <button class="tab" onclick="switchTab('analytics')">Learning Analytics</button>
+        </div>
+
+        <!-- AI Tutor Tab -->
+        <div id="tutor" class="tab-content active">
+            <div class="simulator-grid">
+                <div class="panel">
+                    <h2>Student Configuration</h2>
+                    <div class="form-group">
+                        <label>Student Name</label>
+                        <input type="text" id="studentName" value="Alex Johnson">
+                    </div>
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <select id="subject">
+                            <option value="mathematics">Mathematics</option>
+                            <option value="science">Science</option>
+                            <option value="english">English</option>
+                            <option value="history">History</option>
+                            <option value="programming">Programming</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Grade Level</label>
+                        <select id="gradeLevel">
+                            <option value="elementary">Elementary (K-5)</option>
+                            <option value="middle">Middle School (6-8)</option>
+                            <option value="high" selected>High School (9-12)</option>
+                            <option value="college">College</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Learning Style</label>
+                        <select id="learningStyle">
+                            <option value="visual">Visual</option>
+                            <option value="auditory">Auditory</option>
+                            <option value="kinesthetic">Kinesthetic</option>
+                            <option value="reading">Reading/Writing</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Your Question</label>
+                        <textarea id="question" placeholder="Ask your AI tutor anything...">How do I solve quadratic equations?</textarea>
+                    </div>
+                    <button class="btn" onclick="askTutor()">Ask AI Tutor</button>
+                </div>
+
+                <div class="panel">
+                    <h2>AI Tutor Chat</h2>
+                    <div class="chat-container" id="chatContainer">
+                        <div class="message system">
+                            <div class="message-header">🤖 System</div>
+                            <div class="message-content">AI Tutor initialized. Ready to help with mathematics!</div>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-value" id="questionsAsked">0</div>
+                            <div class="stat-label">Questions</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="hintsGiven">0</div>
+                            <div class="stat-label">Hints Given</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="masteryLevel">65%</div>
+                            <div class="stat-label">Mastery</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auto Grading Tab -->
+        <div id="grading" class="tab-content">
+            <div class="simulator-grid">
+                <div class="panel">
+                    <h2>Assignment Submission</h2>
+                    <div class="form-group">
+                        <label>Assignment Type</label>
+                        <select id="assignmentType">
+                            <option value="essay">Essay</option>
+                            <option value="code">Code</option>
+                            <option value="math">Math Problems</option>
+                            <option value="multiple-choice">Multiple Choice</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Topic</label>
+                        <input type="text" id="topic" value="The Impact of Climate Change">
+                    </div>
+                    <div class="form-group">
+                        <label>Student Submission</label>
+                        <textarea id="submission" rows="10">Climate change is one of the most pressing issues facing our planet today. Rising global temperatures, caused primarily by greenhouse gas emissions, are leading to more frequent extreme weather events, melting polar ice caps, and rising sea levels. These changes threaten ecosystems, human communities, and economies worldwide. Addressing climate change requires immediate action through renewable energy adoption, policy changes, and international cooperation.</textarea>
+                    </div>
+                    <button class="btn" onclick="gradeAssignment()">Grade with AI</button>
+                </div>
+
+                <div class="panel">
+                    <h2>Grading Results</h2>
+                    <div id="gradingResults">
+                        <p style="color: #94a3b8; text-align: center; padding: 2rem;">
+                            Submit an assignment to see AI grading results...
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Learning Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="simulator-grid">
+                <div class="panel">
+                    <h2>Student Progress Dashboard</h2>
+                    <div class="form-group">
+                        <label>Overall Mastery</label>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 73%"></div>
+                        </div>
+                        <p style="color: #10b981; margin-top: 0.5rem;">73% - Good Progress!</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Subject Performance</label>
+                        <div style="margin-top: 1rem;">
+                            <div style="margin-bottom: 1rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span>Mathematics</span>
+                                    <span style="color: #10b981;">85%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 85%"></div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span>Science</span>
+                                    <span style="color: #10b981;">78%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 78%"></div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span>English</span>
+                                    <span style="color: #10b981;">92%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 92%"></div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span>History</span>
+                                    <span style="color: #f59e0b;">58%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 58%; background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-value">247</div>
+                            <div class="stat-label">Hours Learned</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">1,432</div>
+                            <div class="stat-label">Problems Solved</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">94%</div>
+                            <div class="stat-label">Attendance</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>AI Recommendations</h2>
+                    <div class="feedback-section">
+                        <h3>📈 Strengths</h3>
+                        <ul>
+                            <li>Excellent performance in English literature analysis</li>
+                            <li>Strong mathematical problem-solving skills</li>
+                            <li>Consistent engagement with science topics</li>
+                        </ul>
+                    </div>
+                    <div class="feedback-section">
+                        <h3>🎯 Areas for Improvement</h3>
+                        <ul>
+                            <li>History timeline comprehension needs practice</li>
+                            <li>Consider additional review of World War II era</li>
+                            <li>Practice more essay writing for history assignments</li>
+                        </ul>
+                    </div>
+                    <div class="feedback-section">
+                        <h3>💡 Recommended Next Steps</h3>
+                        <ul>
+                            <li>Complete interactive timeline activity for 20th century</li>
+                            <li>Watch recommended documentary series on modern history</li>
+                            <li>Practice with AI tutor: Historical cause and effect analysis</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let questionsCount = 0;
+        let hintsCount = 0;
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function askTutor() {
+            const question = document.getElementById('question').value;
+            const subject = document.getElementById('subject').value;
+            const chatContainer = document.getElementById('chatContainer');
+
+            // Add student question
+            const studentMsg = document.createElement('div');
+            studentMsg.className = 'message student';
+            studentMsg.innerHTML = `
+                <div class="message-header">👤 Student</div>
+                <div class="message-content">${question}</div>
+            `;
+            chatContainer.appendChild(studentMsg);
+
+            // Simulate AI response
+            setTimeout(() => {
+                const responses = {
+                    'How do I solve quadratic equations?': `Great question! Let's learn about quadratic equations step by step:
+
+1. A quadratic equation has the form: ax² + bx + c = 0
+2. There are several methods to solve them:
+   - Factoring
+   - Quadratic formula: x = [-b ± √(b²-4ac)] / 2a
+   - Completing the square
+
+Would you like me to walk through an example? For instance, let's solve: x² + 5x + 6 = 0`,
+                    'default': `I understand you're asking about ${subject}. Let me help you with that!
+
+This is a great topic to explore. Here's my suggestion:
+1. Let's break down the concept into smaller parts
+2. I'll provide examples to illustrate each part
+3. We'll practice together with some problems
+
+Would you like me to explain this concept using ${document.getElementById('learningStyle').value} learning methods?`
+                };
+
+                const tutorMsg = document.createElement('div');
+                tutorMsg.className = 'message tutor';
+                tutorMsg.innerHTML = `
+                    <div class="message-header">🤖 AI Tutor</div>
+                    <div class="message-content">${responses[question] || responses['default']}</div>
+                `;
+                chatContainer.appendChild(tutorMsg);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+
+                // Update stats
+                questionsCount++;
+                hintsCount += Math.floor(Math.random() * 3) + 1;
+                document.getElementById('questionsAsked').textContent = questionsCount;
+                document.getElementById('hintsGiven').textContent = hintsCount;
+
+                const currentMastery = parseInt(document.getElementById('masteryLevel').textContent);
+                const newMastery = Math.min(100, currentMastery + Math.floor(Math.random() * 5) + 1);
+                document.getElementById('masteryLevel').textContent = newMastery + '%';
+            }, 1000);
+
+            document.getElementById('question').value = '';
+        }
+
+        function gradeAssignment() {
+            const assignmentType = document.getElementById('assignmentType').value;
+            const topic = document.getElementById('topic').value;
+            const submission = document.getElementById('submission').value;
+            const resultsDiv = document.getElementById('gradingResults');
+
+            // Simulate AI grading
+            setTimeout(() => {
+                const score = Math.floor(Math.random() * 15) + 85; // 85-100
+
+                resultsDiv.innerHTML = `
+                    <div class="score-display">${score}/100</div>
+                    <div class="grading-result">
+                        <div class="feedback-section">
+                            <h3>Rubric Breakdown</h3>
+                            <ul>
+                                <li>Thesis Statement: 18/20 - Clear and well-articulated</li>
+                                <li>Evidence & Support: 27/30 - Good use of examples, could add more citations</li>
+                                <li>Organization: 19/20 - Excellent logical flow</li>
+                                <li>Grammar & Style: 14/15 - Minor punctuation improvements needed</li>
+                                <li>Creativity & Insight: 14/15 - Thoughtful analysis</li>
+                            </ul>
+                        </div>
+                        <div class="feedback-section">
+                            <h3>Strengths</h3>
+                            <ul>
+                                <li>Strong opening that captures reader attention</li>
+                                <li>Effective use of transition sentences</li>
+                                <li>Clear understanding of the topic's significance</li>
+                            </ul>
+                        </div>
+                        <div class="feedback-section">
+                            <h3>Areas for Improvement</h3>
+                            <ul>
+                                <li>Consider adding more specific scientific data or statistics</li>
+                                <li>Expand on potential solutions with concrete examples</li>
+                                <li>Add a counterargument section to strengthen analysis</li>
+                            </ul>
+                        </div>
+                        <div class="feedback-section">
+                            <h3>AI Suggestions</h3>
+                            <ul>
+                                <li>Review: How to cite scientific sources in APA format</li>
+                                <li>Practice: Writing counterargument paragraphs</li>
+                                <li>Resource: Climate change data visualization tools</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }, 1500);
+        }
+
+        // Enter key support for question input
+        document.getElementById('question').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                askTutor();
+            }
+        });
+    </script>
+</body>
+</html>

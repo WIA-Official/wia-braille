@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIHP Spec Viewer</title>
+    <link rel="icon" href="/favicon.ico">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header h1 .emoji { font-size: 1.5rem; }
+        .header h1 .gradient-text {
+            background: linear-gradient(90deg, #10b981, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header a.back-btn {
+            color: #10b981;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 1px solid #10b981;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        .header a.back-btn:hover { 
+            background: #10b981; 
+            color: #0f172a; 
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        .file-browser {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .tier-section {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #334155;
+        }
+        .tier-section.core { border-color: #ffd700; }
+        .tier-section.tier1 { border-color: #10b981; }
+        .tier-section.tier2 { border-color: #3b82f6; }
+        .tier-section.tier3 { border-color: #8b5cf6; }
+        .tier-section.tier4 { border-color: #f59e0b; }
+        .tier-section.special { border-color: #ec4899; }
+        .tier-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+        }
+        .tier-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .tier-section.core .tier-title { color: #ffd700; }
+        .tier-section.tier1 .tier-title { color: #10b981; }
+        .tier-section.tier2 .tier-title { color: #3b82f6; }
+        .tier-section.tier3 .tier-title { color: #8b5cf6; }
+        .tier-section.tier4 .tier-title { color: #f59e0b; }
+        .tier-section.special .tier-title { color: #ec4899; }
+        .tier-count {
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .tier-section.core .tier-count { background: #ffd700; color: #0f172a; }
+        .tier-section.tier1 .tier-count { background: #10b981; color: white; }
+        .tier-section.tier2 .tier-count { background: #3b82f6; color: white; }
+        .tier-section.tier3 .tier-count { background: #8b5cf6; color: white; }
+        .tier-section.tier4 .tier-count { background: #f59e0b; color: #0f172a; }
+        .tier-section.special .tier-count { background: #ec4899; color: white; }
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .file-list::-webkit-scrollbar { width: 6px; }
+        .file-list::-webkit-scrollbar-track { background: #1e293b; }
+        .file-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .file-link {
+            display: block;
+            padding: 8px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 6px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .file-link:hover {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        .file-link .lang-name {
+            color: #f8fafc;
+            font-weight: 500;
+        }
+        .subsection {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed #334155;
+        }
+        .subsection-title {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+        /* Markdown viewer */
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        .content h1 { 
+            font-size: 2rem; 
+            color: #10b981; 
+            margin: 30px 0 20px; 
+            border-bottom: 1px solid #334155; 
+            padding-bottom: 10px;
+        }
+        .content h2 { 
+            font-size: 1.5rem; 
+            color: #10b981; 
+            margin: 25px 0 15px; 
+            border-bottom: 1px solid #334155; 
+            padding-bottom: 8px;
+        }
+        .content h3 { 
+            font-size: 1.25rem; 
+            color: #94a3b8; 
+            margin: 20px 0 10px;
+        }
+        .content p { margin: 15px 0; }
+        .content ul, .content ol { margin: 15px 0; padding-left: 30px; }
+        .content li { margin: 8px 0; }
+        .content code {
+            background: #1e293b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, monospace;
+            color: #f59e0b;
+        }
+        .content pre {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid #334155;
+        }
+        .content pre code {
+            background: none;
+            padding: 0;
+            color: #f8fafc;
+        }
+        .content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .content th, .content td {
+            border: 1px solid #334155;
+            padding: 12px;
+            text-align: left;
+        }
+        .content th {
+            background: #1e293b;
+            color: #10b981;
+        }
+        .content tr:hover {
+            background: rgba(16, 185, 129, 0.05);
+        }
+        .content blockquote {
+            border-left: 4px solid #10b981;
+            padding-left: 20px;
+            margin: 20px 0;
+            color: #94a3b8;
+        }
+        .content a { color: #10b981; text-decoration: none; }
+        .content a:hover { text-decoration: underline; }
+        .loading { text-align: center; padding: 60px; color: #94a3b8; }
+        .page-title {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .page-title h2 {
+            font-size: 2rem;
+            color: #f8fafc;
+            margin-bottom: 10px;
+        }
+        .page-title p { color: #94a3b8; }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+            .lang-btn { padding: 6px 12px; border: 1px solid #334155; background: transparent; color: #94a3b8; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+        .lang-btn:hover { border-color: #10b981; color: #10b981; }
+        .lang-btn.active { background: #10b981; color: white; border-color: #10b981; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <span class="emoji">🇰🇷</span>
+            <span class="gradient-text" data-en="WIHP Spec Viewer" data-ko="WIHP 스펙 뷰어">WIHP Spec Viewer</span>
+        </h1>
+        <div class="lang-toggle" style="display: flex; gap: 8px;"><button class="lang-btn active" onclick="setLang('en')">EN</button><button class="lang-btn" onclick="setLang('ko')">KO</button></div><a href="/wihp/" class="back-btn" data-en="← Back" data-ko="← 뒤로">← Back</a>
+    </div>
+
+    <div id="browser" class="container">
+        <div class="page-title">
+            <h2 data-en="📖 WIHP Language Mappings" data-ko="📖 WIHP 언어 매핑">📖 WIHP Language Mappings</h2>
+            <p data-en="Universal Hangul Phonetic Standard for 196 World Languages" data-ko="196개 세계 언어를 위한 범용 한글 음성 표준">Universal Hangul Phonetic Standard for 196 World Languages</p>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">196</div>
+                    <div class="stat-label" data-en="Languages" data-ko="언어">Languages</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">4</div>
+                    <div class="stat-label" data-en="Tiers" data-ko="티어">Tiers</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label" data-en="Core Maps" data-ko="코어 맵">Core Maps</div>
+                </div>
+            </div>
+        </div>
+        <div class="file-browser">
+            <!-- Core Mappings -->
+            <div class="tier-section core">
+                <div class="tier-header">
+                    <span class="tier-title" data-en="🎯 Core Mappings" data-ko="🎯 코어 매핑">🎯 Core Mappings</span>
+                    <span class="tier-count">4</span>
+                </div>
+                <div class="file-list">
+                    <a href="?file=wihp/core/WIHP-MAP-CONSONANTS.md" class="file-link"><span class="lang-name">자음 Consonants</span> - IPA Mapping</a>
+                    <a href="?file=wihp/core/WIHP-MAP-VOWELS.md" class="file-link"><span class="lang-name">모음 Vowels</span> - IPA Mapping</a>
+                    <a href="?file=wihp/core/WIHP-MAP-DIACRITICS.md" class="file-link"><span class="lang-name">기호 Diacritics</span> - IPA Mapping</a>
+                    <a href="?file=wihp/core/korean-kor.md" class="file-link"><span class="lang-name">한국어 Korean</span> - Base Language</a>
+                </div>
+            </div>
+            <!-- Tier 1 - Major Languages (20) -->
+            <div class="tier-section tier1">
+                <div class="tier-header">
+                    <span class="tier-title" data-en="🌟 Tier 1 - Major Languages" data-ko="🌟 티어 1 - 주요 언어">🌟 Tier 1 - Major Languages</span>
+                    <span class="tier-count">20</span>
+                </div>
+                <div class="file-list">
+                    <a href="?file=wihp/tier1/arabic-arb.md" class="file-link"><span class="lang-name">Arabic</span> 아랍어</a>
+                    <a href="?file=wihp/tier1/bengali-ben.md" class="file-link"><span class="lang-name">Bengali</span> 벵골어</a>
+                    <a href="?file=wihp/tier1/dutch-nld.md" class="file-link"><span class="lang-name">Dutch</span> 네덜란드어</a>
+                    <a href="?file=wihp/tier1/english-eng.md" class="file-link"><span class="lang-name">English</span> 영어</a>
+                    <a href="?file=wihp/tier1/french-fra.md" class="file-link"><span class="lang-name">French</span> 프랑스어</a>
+                    <a href="?file=wihp/tier1/german-deu.md" class="file-link"><span class="lang-name">German</span> 독일어</a>
+                    <a href="?file=wihp/tier1/greek-ell.md" class="file-link"><span class="lang-name">Greek</span> 그리스어</a>
+                    <a href="?file=wihp/tier1/hindi-hin.md" class="file-link"><span class="lang-name">Hindi</span> 힌디어</a>
+                    <a href="?file=wihp/tier1/indonesian-ind.md" class="file-link"><span class="lang-name">Indonesian</span> 인도네시아어</a>
+                    <a href="?file=wihp/tier1/italian-ita.md" class="file-link"><span class="lang-name">Italian</span> 이탈리아어</a>
+                    <a href="?file=wihp/tier1/japanese-jpn.md" class="file-link"><span class="lang-name">Japanese</span> 일본어</a>
+                    <a href="?file=wihp/tier1/korean-kor.md" class="file-link"><span class="lang-name">Korean</span> 한국어</a>
+                    <a href="?file=wihp/tier1/mandarin-cmn.md" class="file-link"><span class="lang-name">Mandarin</span> 중국어</a>
+                    <a href="?file=wihp/tier1/polish-pol.md" class="file-link"><span class="lang-name">Polish</span> 폴란드어</a>
+                    <a href="?file=wihp/tier1/portuguese-por.md" class="file-link"><span class="lang-name">Portuguese</span> 포르투갈어</a>
+                    <a href="?file=wihp/tier1/russian-rus.md" class="file-link"><span class="lang-name">Russian</span> 러시아어</a>
+                    <a href="?file=wihp/tier1/spanish-spa.md" class="file-link"><span class="lang-name">Spanish</span> 스페인어</a>
+                    <a href="?file=wihp/tier1/thai-tha.md" class="file-link"><span class="lang-name">Thai</span> 태국어</a>
+                    <a href="?file=wihp/tier1/turkish-tur.md" class="file-link"><span class="lang-name">Turkish</span> 터키어</a>
+                    <a href="?file=wihp/tier1/vietnamese-vie.md" class="file-link"><span class="lang-name">Vietnamese</span> 베트남어</a>
+                </div>
+            </div>
+            <!-- Tier 2 - Regional Languages (25) -->
+            <div class="tier-section tier2">
+                <div class="tier-header">
+                    <span class="tier-title" data-en="🌍 Tier 2 - Regional Languages" data-ko="🌍 티어 2 - 지역 언어">🌍 Tier 2 - Regional Languages</span>
+                    <span class="tier-count">25</span>
+                </div>
+                <div class="file-list">
+                    <a href="?file=wihp/tier2/amharic-amh.md" class="file-link"><span class="lang-name">Amharic</span> 암하라어</a>
+                    <a href="?file=wihp/tier2/burmese-mya.md" class="file-link"><span class="lang-name">Burmese</span> 미얀마어</a>
+                    <a href="?file=wihp/tier2/cantonese-yue.md" class="file-link"><span class="lang-name">Cantonese</span> 광동어</a>
+                    <a href="?file=wihp/tier2/gujarati-guj.md" class="file-link"><span class="lang-name">Gujarati</span> 구자라트어</a>
+                    <a href="?file=wihp/tier2/hausa-hau.md" class="file-link"><span class="lang-name">Hausa</span> 하우사어</a>
+                    <a href="?file=wihp/tier2/hebrew-heb.md" class="file-link"><span class="lang-name">Hebrew</span> 히브리어</a>
+                    <a href="?file=wihp/tier2/hungarian-hun.md" class="file-link"><span class="lang-name">Hungarian</span> 헝가리어</a>
+                    <a href="?file=wihp/tier2/igbo-ibo.md" class="file-link"><span class="lang-name">Igbo</span> 이그보어</a>
+                    <a href="?file=wihp/tier2/kannada-kan.md" class="file-link"><span class="lang-name">Kannada</span> 칸나다어</a>
+                    <a href="?file=wihp/tier2/khmer-khm.md" class="file-link"><span class="lang-name">Khmer</span> 크메르어</a>
+                    <a href="?file=wihp/tier2/lao-lao.md" class="file-link"><span class="lang-name">Lao</span> 라오어</a>
+                    <a href="?file=wihp/tier2/malayalam-mal.md" class="file-link"><span class="lang-name">Malayalam</span> 말라얄람어</a>
+                    <a href="?file=wihp/tier2/marathi-mar.md" class="file-link"><span class="lang-name">Marathi</span> 마라티어</a>
+                    <a href="?file=wihp/tier2/nepali-nep.md" class="file-link"><span class="lang-name">Nepali</span> 네팔어</a>
+                    <a href="?file=wihp/tier2/persian-fas.md" class="file-link"><span class="lang-name">Persian</span> 페르시아어</a>
+                    <a href="?file=wihp/tier2/punjabi-pan.md" class="file-link"><span class="lang-name">Punjabi</span> 펀자브어</a>
+                    <a href="?file=wihp/tier2/romanian-ron.md" class="file-link"><span class="lang-name">Romanian</span> 루마니아어</a>
+                    <a href="?file=wihp/tier2/sinhala-sin.md" class="file-link"><span class="lang-name">Sinhala</span> 싱할라어</a>
+                    <a href="?file=wihp/tier2/swahili-swa.md" class="file-link"><span class="lang-name">Swahili</span> 스와힐리어</a>
+                    <a href="?file=wihp/tier2/tagalog-tgl.md" class="file-link"><span class="lang-name">Tagalog</span> 타갈로그어</a>
+                    <a href="?file=wihp/tier2/tamil-tam.md" class="file-link"><span class="lang-name">Tamil</span> 타밀어</a>
+                    <a href="?file=wihp/tier2/telugu-tel.md" class="file-link"><span class="lang-name">Telugu</span> 텔루구어</a>
+                    <a href="?file=wihp/tier2/ukrainian-ukr.md" class="file-link"><span class="lang-name">Ukrainian</span> 우크라이나어</a>
+                    <a href="?file=wihp/tier2/urdu-urd.md" class="file-link"><span class="lang-name">Urdu</span> 우르두어</a>
+                    <a href="?file=wihp/tier2/yoruba-yor.md" class="file-link"><span class="lang-name">Yoruba</span> 요루바어</a>
+                </div>
+            </div>
+            <!-- Tier 3 - Extended Languages (30) -->
+            <div class="tier-section tier3">
+                <div class="tier-header">
+                    <span class="tier-title" data-en="🔮 Tier 3 - Extended Languages" data-ko="🔮 티어 3 - 확장 언어">🔮 Tier 3 - Extended Languages</span>
+                    <span class="tier-count">30</span>
+                </div>
+                <div class="file-list">
+                    <a href="?file=wihp/tier3/armenian-hye.md" class="file-link"><span class="lang-name">Armenian</span> 아르메니아어</a>
+                    <a href="?file=wihp/tier3/assamese-asm.md" class="file-link"><span class="lang-name">Assamese</span> 아삼어</a>
+                    <a href="?file=wihp/tier3/basque-eus.md" class="file-link"><span class="lang-name">Basque</span> 바스크어</a>
+                    <a href="?file=wihp/tier3/catalan-cat.md" class="file-link"><span class="lang-name">Catalan</span> 카탈루냐어</a>
+                    <a href="?file=wihp/tier3/cebuano-ceb.md" class="file-link"><span class="lang-name">Cebuano</span> 세부아노어</a>
+                    <a href="?file=wihp/tier3/georgian-kat.md" class="file-link"><span class="lang-name">Georgian</span> 조지아어</a>
+                    <a href="?file=wihp/tier3/hawaiian-haw.md" class="file-link"><span class="lang-name">Hawaiian</span> 하와이어</a>
+                    <a href="?file=wihp/tier3/icelandic-isl.md" class="file-link"><span class="lang-name">Icelandic</span> 아이슬란드어</a>
+                    <a href="?file=wihp/tier3/irish-gle.md" class="file-link"><span class="lang-name">Irish</span> 아일랜드어</a>
+                    <a href="?file=wihp/tier3/javanese-jav.md" class="file-link"><span class="lang-name">Javanese</span> 자바어</a>
+                    <a href="?file=wihp/tier3/kazakh-kaz.md" class="file-link"><span class="lang-name">Kazakh</span> 카자흐어</a>
+                    <a href="?file=wihp/tier3/kyrgyz-kir.md" class="file-link"><span class="lang-name">Kyrgyz</span> 키르기스어</a>
+                    <a href="?file=wihp/tier3/malay-msa.md" class="file-link"><span class="lang-name">Malay</span> 말레이어</a>
+                    <a href="?file=wihp/tier3/maori-mri.md" class="file-link"><span class="lang-name">Maori</span> 마오리어</a>
+                    <a href="?file=wihp/tier3/mongolian-mon.md" class="file-link"><span class="lang-name">Mongolian</span> 몽골어</a>
+                    <a href="?file=wihp/tier3/odia-ori.md" class="file-link"><span class="lang-name">Odia</span> 오디아어</a>
+                    <a href="?file=wihp/tier3/oromo-orm.md" class="file-link"><span class="lang-name">Oromo</span> 오로모어</a>
+                    <a href="?file=wihp/tier3/pashto-pus.md" class="file-link"><span class="lang-name">Pashto</span> 파슈토어</a>
+                    <a href="?file=wihp/tier3/samoan-smo.md" class="file-link"><span class="lang-name">Samoan</span> 사모아어</a>
+                    <a href="?file=wihp/tier3/shona-sna.md" class="file-link"><span class="lang-name">Shona</span> 쇼나어</a>
+                    <a href="?file=wihp/tier3/sindhi-snd.md" class="file-link"><span class="lang-name">Sindhi</span> 신디어</a>
+                    <a href="?file=wihp/tier3/somali-som.md" class="file-link"><span class="lang-name">Somali</span> 소말리어</a>
+                    <a href="?file=wihp/tier3/sundanese-sun.md" class="file-link"><span class="lang-name">Sundanese</span> 순다어</a>
+                    <a href="?file=wihp/tier3/tajik-tgk.md" class="file-link"><span class="lang-name">Tajik</span> 타지크어</a>
+                    <a href="?file=wihp/tier3/tigrinya-tir.md" class="file-link"><span class="lang-name">Tigrinya</span> 티그리냐어</a>
+                    <a href="?file=wihp/tier3/uzbek-uzb.md" class="file-link"><span class="lang-name">Uzbek</span> 우즈베크어</a>
+                    <a href="?file=wihp/tier3/welsh-cym.md" class="file-link"><span class="lang-name">Welsh</span> 웨일스어</a>
+                    <a href="?file=wihp/tier3/wolof-wol.md" class="file-link"><span class="lang-name">Wolof</span> 월로프어</a>
+                    <a href="?file=wihp/tier3/xhosa-xho.md" class="file-link"><span class="lang-name">Xhosa</span> 코사어</a>
+                    <a href="?file=wihp/tier3/zulu-zul.md" class="file-link"><span class="lang-name">Zulu</span> 줄루어</a>
+                </div>
+            </div>
+            <!-- Tier 4 - Specialized Languages (107) -->
+            <div class="tier-section tier4">
+                <div class="tier-header">
+                    <span class="tier-title" data-en="⚡ Tier 4 - Specialized Languages" data-ko="⚡ 티어 4 - 특수 언어">⚡ Tier 4 - Specialized Languages</span>
+                    <span class="tier-count">107</span>
+                </div>
+                <div class="file-list">
+                    <a href="?file=wihp/tier4/afrikaans-af.md" class="file-link"><span class="lang-name">Afrikaans</span></a>
+                    <a href="?file=wihp/tier4/albanian-sq.md" class="file-link"><span class="lang-name">Albanian</span></a>
+                    <a href="?file=wihp/tier4/aragonese-an.md" class="file-link"><span class="lang-name">Aragonese</span></a>
+                    <a href="?file=wihp/tier4/aromanian-rup.md" class="file-link"><span class="lang-name">Aromanian</span></a>
+                    <a href="?file=wihp/tier4/asturian-ast.md" class="file-link"><span class="lang-name">Asturian</span></a>
+                    <a href="?file=wihp/tier4/aymara-ay.md" class="file-link"><span class="lang-name">Aymara</span></a>
+                    <a href="?file=wihp/tier4/azerbaijani-az.md" class="file-link"><span class="lang-name">Azerbaijani</span></a>
+                    <a href="?file=wihp/tier4/belarusian-be.md" class="file-link"><span class="lang-name">Belarusian</span></a>
+                    <a href="?file=wihp/tier4/bosnian-bs.md" class="file-link"><span class="lang-name">Bosnian</span></a>
+                    <a href="?file=wihp/tier4/breton-br.md" class="file-link"><span class="lang-name">Breton</span></a>
+                    <a href="?file=wihp/tier4/bulgarian-bg.md" class="file-link"><span class="lang-name">Bulgarian</span></a>
+                    <a href="?file=wihp/tier4/cantonese-hongkong-zh-hk.md" class="file-link"><span class="lang-name">Cantonese (HK)</span></a>
+                    <a href="?file=wihp/tier4/central-kurdish-ckb.md" class="file-link"><span class="lang-name">Central Kurdish</span></a>
+                    <a href="?file=wihp/tier4/cherokee-chr.md" class="file-link"><span class="lang-name">Cherokee</span></a>
+                    <a href="?file=wihp/tier4/cornish-kw.md" class="file-link"><span class="lang-name">Cornish</span></a>
+                    <a href="?file=wihp/tier4/corsican-co.md" class="file-link"><span class="lang-name">Corsican</span></a>
+                    <a href="?file=wihp/tier4/croatian-hr.md" class="file-link"><span class="lang-name">Croatian</span></a>
+                    <a href="?file=wihp/tier4/czech-cs.md" class="file-link"><span class="lang-name">Czech</span></a>
+                    <a href="?file=wihp/tier4/danish-da.md" class="file-link"><span class="lang-name">Danish</span></a>
+                    <a href="?file=wihp/tier4/dzongkha-dz.md" class="file-link"><span class="lang-name">Dzongkha</span></a>
+                    <a href="?file=wihp/tier4/emilian-romagnol-eml.md" class="file-link"><span class="lang-name">Emilian-Romagnol</span></a>
+                    <a href="?file=wihp/tier4/esperanto-eo.md" class="file-link"><span class="lang-name">Esperanto</span></a>
+                    <a href="?file=wihp/tier4/estonian-et.md" class="file-link"><span class="lang-name">Estonian</span></a>
+                    <a href="?file=wihp/tier4/extremaduran-ext.md" class="file-link"><span class="lang-name">Extremaduran</span></a>
+                    <a href="?file=wihp/tier4/faroese-fo.md" class="file-link"><span class="lang-name">Faroese</span></a>
+                    <a href="?file=wihp/tier4/finnish-fi.md" class="file-link"><span class="lang-name">Finnish</span></a>
+                    <a href="?file=wihp/tier4/french-canadian-fr-ca.md" class="file-link"><span class="lang-name">French (Canadian)</span></a>
+                    <a href="?file=wihp/tier4/friulian-fur.md" class="file-link"><span class="lang-name">Friulian</span></a>
+                    <a href="?file=wihp/tier4/fula-ff.md" class="file-link"><span class="lang-name">Fula</span></a>
+                    <a href="?file=wihp/tier4/galician-gl.md" class="file-link"><span class="lang-name">Galician</span></a>
+                    <a href="?file=wihp/tier4/gan-gan.md" class="file-link"><span class="lang-name">Gan Chinese</span></a>
+                    <a href="?file=wihp/tier4/guarani-gn.md" class="file-link"><span class="lang-name">Guarani</span></a>
+                    <a href="?file=wihp/tier4/haitian-creole-ht.md" class="file-link"><span class="lang-name">Haitian Creole</span></a>
+                    <a href="?file=wihp/tier4/hakka-hak.md" class="file-link"><span class="lang-name">Hakka</span></a>
+                    <a href="?file=wihp/tier4/hawaiian-haw.md" class="file-link"><span class="lang-name">Hawaiian</span></a>
+                    <a href="?file=wihp/tier4/igbo-ig.md" class="file-link"><span class="lang-name">Igbo (Alt)</span></a>
+                    <a href="?file=wihp/tier4/ingrian-izh.md" class="file-link"><span class="lang-name">Ingrian</span></a>
+                    <a href="?file=wihp/tier4/interlingua-ia.md" class="file-link"><span class="lang-name">Interlingua</span></a>
+                    <a href="?file=wihp/tier4/inuktitut-iu.md" class="file-link"><span class="lang-name">Inuktitut</span></a>
+                    <a href="?file=wihp/tier4/karelian-krl.md" class="file-link"><span class="lang-name">Karelian</span></a>
+                    <a href="?file=wihp/tier4/kashmiri-ks.md" class="file-link"><span class="lang-name">Kashmiri</span></a>
+                    <a href="?file=wihp/tier4/kinyarwanda-rw.md" class="file-link"><span class="lang-name">Kinyarwanda</span></a>
+                    <a href="?file=wihp/tier4/kurdish-ku.md" class="file-link"><span class="lang-name">Kurdish</span></a>
+                    <a href="?file=wihp/tier4/ladino-lad.md" class="file-link"><span class="lang-name">Ladino</span></a>
+                    <a href="?file=wihp/tier4/latvian-lv.md" class="file-link"><span class="lang-name">Latvian</span></a>
+                    <a href="?file=wihp/tier4/ligurian-lij.md" class="file-link"><span class="lang-name">Ligurian</span></a>
+                    <a href="?file=wihp/tier4/lingala-ln.md" class="file-link"><span class="lang-name">Lingala</span></a>
+                    <a href="?file=wihp/tier4/lithuanian-lt.md" class="file-link"><span class="lang-name">Lithuanian</span></a>
+                    <a href="?file=wihp/tier4/livonian-liv.md" class="file-link"><span class="lang-name">Livonian</span></a>
+                    <a href="?file=wihp/tier4/lojban-jbo.md" class="file-link"><span class="lang-name">Lojban</span></a>
+                    <a href="?file=wihp/tier4/lombard-lmo.md" class="file-link"><span class="lang-name">Lombard</span></a>
+                    <a href="?file=wihp/tier4/luxembourgish-lb.md" class="file-link"><span class="lang-name">Luxembourgish</span></a>
+                    <a href="?file=wihp/tier4/macedonian-mk.md" class="file-link"><span class="lang-name">Macedonian</span></a>
+                    <a href="?file=wihp/tier4/malagasy-mg.md" class="file-link"><span class="lang-name">Malagasy</span></a>
+                    <a href="?file=wihp/tier4/maltese-mt.md" class="file-link"><span class="lang-name">Maltese</span></a>
+                    <a href="?file=wihp/tier4/mandarin-taiwan-zh-tw.md" class="file-link"><span class="lang-name">Mandarin (Taiwan)</span></a>
+                    <a href="?file=wihp/tier4/manx-gv.md" class="file-link"><span class="lang-name">Manx</span></a>
+                    <a href="?file=wihp/tier4/mapudungun-arn.md" class="file-link"><span class="lang-name">Mapudungun</span></a>
+                    <a href="?file=wihp/tier4/mindong-cdo.md" class="file-link"><span class="lang-name">Min Dong</span></a>
+                    <a href="?file=wihp/tier4/minnan-nan.md" class="file-link"><span class="lang-name">Min Nan</span></a>
+                    <a href="?file=wihp/tier4/mirandese-mwl.md" class="file-link"><span class="lang-name">Mirandese</span></a>
+                    <a href="?file=wihp/tier4/montenegrin-me.md" class="file-link"><span class="lang-name">Montenegrin</span></a>
+                    <a href="?file=wihp/tier4/nahuatl-nah.md" class="file-link"><span class="lang-name">Nahuatl</span></a>
+                    <a href="?file=wihp/tier4/ndyuka-djk.md" class="file-link"><span class="lang-name">Ndyuka</span></a>
+                    <a href="?file=wihp/tier4/neapolitan-nap.md" class="file-link"><span class="lang-name">Neapolitan</span></a>
+                    <a href="?file=wihp/tier4/norwegian-no.md" class="file-link"><span class="lang-name">Norwegian</span></a>
+                    <a href="?file=wihp/tier4/occitan-oc.md" class="file-link"><span class="lang-name">Occitan</span></a>
+                    <a href="?file=wihp/tier4/oromo-om.md" class="file-link"><span class="lang-name">Oromo (Alt)</span></a>
+                    <a href="?file=wihp/tier4/papiamentu-pap.md" class="file-link"><span class="lang-name">Papiamentu</span></a>
+                    <a href="?file=wihp/tier4/piedmontese-pms.md" class="file-link"><span class="lang-name">Piedmontese</span></a>
+                    <a href="?file=wihp/tier4/portuguese-brazilian-pt-br.md" class="file-link"><span class="lang-name">Portuguese (Brazilian)</span></a>
+                    <a href="?file=wihp/tier4/quechua-qu.md" class="file-link"><span class="lang-name">Quechua</span></a>
+                    <a href="?file=wihp/tier4/romansh-rm.md" class="file-link"><span class="lang-name">Romansh</span></a>
+                    <a href="?file=wihp/tier4/rusyn-rue.md" class="file-link"><span class="lang-name">Rusyn</span></a>
+                    <a href="?file=wihp/tier4/samoan-sm.md" class="file-link"><span class="lang-name">Samoan (Alt)</span></a>
+                    <a href="?file=wihp/tier4/sardinian-sc.md" class="file-link"><span class="lang-name">Sardinian</span></a>
+                    <a href="?file=wihp/tier4/scottish-gaelic-gd.md" class="file-link"><span class="lang-name">Scottish Gaelic</span></a>
+                    <a href="?file=wihp/tier4/serbian-sr.md" class="file-link"><span class="lang-name">Serbian</span></a>
+                    <a href="?file=wihp/tier4/shona-sn.md" class="file-link"><span class="lang-name">Shona (Alt)</span></a>
+                    <a href="?file=wihp/tier4/sicilian-scn.md" class="file-link"><span class="lang-name">Sicilian</span></a>
+                    <a href="?file=wihp/tier4/slovak-sk.md" class="file-link"><span class="lang-name">Slovak</span></a>
+                    <a href="?file=wihp/tier4/slovenian-sl.md" class="file-link"><span class="lang-name">Slovenian</span></a>
+                    <a href="?file=wihp/tier4/somali-so.md" class="file-link"><span class="lang-name">Somali (Alt)</span></a>
+                    <a href="?file=wihp/tier4/spanish-argentine-es-ar.md" class="file-link"><span class="lang-name">Spanish (Argentine)</span></a>
+                    <a href="?file=wihp/tier4/spanish-chilean-es-cl.md" class="file-link"><span class="lang-name">Spanish (Chilean)</span></a>
+                    <a href="?file=wihp/tier4/spanish-colombian-es-co.md" class="file-link"><span class="lang-name">Spanish (Colombian)</span></a>
+                    <a href="?file=wihp/tier4/spanish-mexican-es-mx.md" class="file-link"><span class="lang-name">Spanish (Mexican)</span></a>
+                    <a href="?file=wihp/tier4/spanish-peruvian-es-pe.md" class="file-link"><span class="lang-name">Spanish (Peruvian)</span></a>
+                    <a href="?file=wihp/tier4/sranan-tongo-srn.md" class="file-link"><span class="lang-name">Sranan Tongo</span></a>
+                    <a href="?file=wihp/tier4/swedish-sv.md" class="file-link"><span class="lang-name">Swedish</span></a>
+                    <a href="?file=wihp/tier4/swiss-german-gsw.md" class="file-link"><span class="lang-name">Swiss German</span></a>
+                    <a href="?file=wihp/tier4/tibetan-bo.md" class="file-link"><span class="lang-name">Tibetan</span></a>
+                    <a href="?file=wihp/tier4/tigrinya-ti.md" class="file-link"><span class="lang-name">Tigrinya (Alt)</span></a>
+                    <a href="?file=wihp/tier4/tokipona-tok.md" class="file-link"><span class="lang-name">Toki Pona</span></a>
+                    <a href="?file=wihp/tier4/tongan-to.md" class="file-link"><span class="lang-name">Tongan</span></a>
+                    <a href="?file=wihp/tier4/venetian-vec.md" class="file-link"><span class="lang-name">Venetian</span></a>
+                    <a href="?file=wihp/tier4/volapuk-vo.md" class="file-link"><span class="lang-name">Volapük</span></a>
+                    <a href="?file=wihp/tier4/voro-vro.md" class="file-link"><span class="lang-name">Võro</span></a>
+                    <a href="?file=wihp/tier4/votic-vot.md" class="file-link"><span class="lang-name">Votic</span></a>
+                    <a href="?file=wihp/tier4/walloon-wa.md" class="file-link"><span class="lang-name">Walloon</span></a>
+                    <a href="?file=wihp/tier4/welsh-cy.md" class="file-link"><span class="lang-name">Welsh (Alt)</span></a>
+                    <a href="?file=wihp/tier4/wolof-wo.md" class="file-link"><span class="lang-name">Wolof (Alt)</span></a>
+                    <a href="?file=wihp/tier4/wu-wuu.md" class="file-link"><span class="lang-name">Wu Chinese</span></a>
+                    <a href="?file=wihp/tier4/xhosa-xh.md" class="file-link"><span class="lang-name">Xhosa (Alt)</span></a>
+                    <a href="?file=wihp/tier4/xiang-hsn.md" class="file-link"><span class="lang-name">Xiang Chinese</span></a>
+                    <a href="?file=wihp/tier4/zulu-zu.md" class="file-link"><span class="lang-name">Zulu (Alt)</span></a>
+                </div>
+            </div>
+            <!-- Special Categories -->
+            <div class="tier-section special">
+                <div class="tier-header">
+                    <span class="tier-title" data-en="✨ Special Categories" data-ko="✨ 특수 카테고리">✨ Special Categories</span>
+                    <span class="tier-count">9</span>
+                </div>
+                <div class="file-list">
+                    <div class="subsection">
+                        <div class="subsection-title" data-en="🤟 Sign Languages" data-ko="🤟 수어">🤟 Sign Languages</div>
+                        <a href="?file=wihp/special/sign-languages/asl-american-sign.md" class="file-link"><span class="lang-name">ASL</span> 미국 수어</a>
+                        <a href="?file=wihp/special/sign-languages/jsl-japanese-sign.md" class="file-link"><span class="lang-name">JSL</span> 일본 수어</a>
+                        <a href="?file=wihp/special/sign-languages/ksl-korean-sign.md" class="file-link"><span class="lang-name">KSL</span> 한국 수어</a>
+                    </div>
+                    <div class="subsection">
+                        <div class="subsection-title" data-en="📜 Historical Languages" data-ko="📜 역사적 언어">📜 Historical Languages</div>
+                        <a href="?file=wihp/special/historical/latin-lat.md" class="file-link"><span class="lang-name">Latin</span> 라틴어</a>
+                        <a href="?file=wihp/special/historical/sanskrit-san.md" class="file-link"><span class="lang-name">Sanskrit</span> 산스크리트어</a>
+                        <a href="?file=wihp/special/historical/classical-arabic-arb.md" class="file-link"><span class="lang-name">Classical Arabic</span> 고전 아랍어</a>
+                    </div>
+                    <div class="subsection">
+                        <div class="subsection-title" data-en="⠿ Braille Systems" data-ko="⠿ 점자 시스템">⠿ Braille Systems</div>
+                        <a href="?file=wihp/special/braille/braille-wihp-mapping.md" class="file-link"><span class="lang-name">Braille Mapping</span> 점자 매핑</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="viewer" class="content" style="display: none;">
+        <div class="loading">Loading...</div>
+    </div>
+
+    <footer style="text-align: center; padding: 40px; border-top: 1px solid #334155; margin-top: 40px;">
+        <p style="color: #94a3b8;">弘益人間 (홍익인간) · Benefit All Humanity</p>
+        <p style="color: #64748b; margin-top: 10px; font-size: 0.85rem;">© 2025 WIA Standards · WIHP v1.0</p>
+    </footer>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const file = params.get('file');
+        
+        if (file) {
+            document.getElementById('browser').style.display = 'none';
+            document.getElementById('viewer').style.display = 'block';
+            document.querySelector('footer').style.display = 'none';
+            
+            fetch(file)
+                .then(response => {
+                    if (!response.ok) throw new Error('File not found');
+                    return response.text();
+                })
+                .then(markdown => {
+                    document.getElementById('viewer').innerHTML = marked.parse(markdown);
+                })
+                .catch(error => {
+                    document.getElementById('viewer').innerHTML = `
+                        <div style="text-align: center; padding: 60px;">
+                            <p style="color: #ef4444; font-size: 1.2rem;">❌ ${error.message}</p>
+                            <p style="color: #94a3b8; margin-top: 10px;">File: ${file}</p>
+                            <a href="/wihp/viewer.html" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #10b981; color: white; border-radius: 6px; text-decoration: none;">← Back to Browser</a>
+                        </div>
+                    `;
+                });
+        }
+        // Language toggle
+        function setLang(lang) {
+            localStorage.setItem("wiaLang", lang);
+            document.querySelectorAll(".lang-btn").forEach(btn => btn.classList.remove("active"));
+            event.target.classList.add("active");
+            document.querySelectorAll("[data-en][data-ko]").forEach(el => {
+                el.textContent = el.getAttribute("data-" + lang);
+            });
+        }
+        // Init language on load
+        document.addEventListener("DOMContentLoaded", function() {
+            const savedLang = localStorage.getItem("wiaLang") || "en";
+            if (savedLang === "ko") {
+                document.querySelectorAll(".lang-btn").forEach(btn => btn.classList.remove("active"));
+                document.querySelector(".lang-btn:last-child").classList.add("active");
+                document.querySelectorAll("[data-en][data-ko]").forEach(el => el.textContent = el.getAttribute("data-ko"));
+            }
+        });
+    </script>
+</body>
+</html>

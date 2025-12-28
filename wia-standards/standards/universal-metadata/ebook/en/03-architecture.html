@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: Architecture | Universal Metadata</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            line-height: 1.8;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 3rem;
+        }
+        .chapter-header {
+            border-bottom: 3px solid #6B7280;
+            padding-bottom: 2rem;
+            margin-bottom: 3rem;
+        }
+        .chapter-number { color: #6B7280; font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem; }
+        h1 { font-size: 3rem; color: #ffffff; margin-bottom: 1rem; }
+        h2 {
+            font-size: 2rem;
+            color: #9CA3AF;
+            margin: 2.5rem 0 1.5rem 0;
+            border-left: 5px solid #6B7280;
+            padding-left: 1rem;
+        }
+        h3 { font-size: 1.5rem; color: #6B7280; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; text-align: justify; }
+        .code-block {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            overflow-x: auto;
+        }
+        pre {
+            color: #94a3b8;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .highlight-box {
+            background: rgba(107, 114, 128, 0.1);
+            border-left: 5px solid #6B7280;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 5px;
+        }
+        ul, ol { margin: 1.5rem 0 1.5rem 2rem; color: #cbd5e1; }
+        li { margin-bottom: 0.8rem; }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .nav-link {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        .nav-link:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(107, 114, 128, 0.3); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 3</div>
+            <h1>Architecture and Design Patterns</h1>
+        </div>
+
+        <p>
+            Building robust metadata systems requires careful architectural planning. This chapter
+            explores proven design patterns, storage strategies, indexing approaches, caching mechanisms,
+            and scalability considerations for Universal Metadata implementations.
+        </p>
+
+        <h2>3.1 System Architecture Overview</h2>
+
+        <p>
+            A typical Universal Metadata system consists of several layers, each serving distinct purposes
+            while working together cohesively. The architecture follows the principle of separation of
+            concerns, allowing each component to be optimized, tested, and scaled independently.
+        </p>
+
+        <h3>The Five-Layer Architecture</h3>
+
+        <p>
+            Universal Metadata systems typically implement a five-layer architecture pattern:
+        </p>
+
+        <ul>
+            <li><strong>Presentation Layer:</strong> User interfaces, API endpoints, visualization tools</li>
+            <li><strong>Application Layer:</strong> Business logic, validation, transformation, quality calculation</li>
+            <li><strong>Service Layer:</strong> Metadata operations, search, indexing, versioning</li>
+            <li><strong>Data Access Layer:</strong> Database abstraction, query optimization, caching</li>
+            <li><strong>Storage Layer:</strong> Primary storage, search indices, cache stores, archives</li>
+        </ul>
+
+        <p>
+            This layered approach provides flexibility in technology choices. For example, you might use
+            PostgreSQL for primary storage, Elasticsearch for search indexing, Redis for caching, and
+            S3 for long-term archival—all while maintaining a clean separation of concerns.
+        </p>
+
+        <h2>3.2 Storage Strategies</h2>
+
+        <p>
+            Choosing the right storage strategy depends on your use case, scale, query patterns, and
+            consistency requirements. Universal Metadata supports multiple storage patterns.
+        </p>
+
+        <h3>Relational Database Storage</h3>
+
+        <p>
+            Traditional relational databases (PostgreSQL, MySQL, SQL Server) provide strong consistency,
+            transaction support, and powerful querying capabilities. The core metadata fields map naturally
+            to a relational schema:
+        </p>
+
+        <div class="code-block">
+            <pre>CREATE TABLE metadata_records (
+    id VARCHAR(255) PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    language VARCHAR(10) NOT NULL,
+    domain VARCHAR(100) NOT NULL,
+    content_type VARCHAR(100),
+    created_at TIMESTAMP NOT NULL,
+    modified_at TIMESTAMP NOT NULL,
+    creator VARCHAR(255),
+    version VARCHAR(50),
+
+    -- Quality metrics
+    quality_completeness DECIMAL(3,2),
+    quality_accuracy DECIMAL(3,2),
+    quality_consistency DECIMAL(3,2),
+    quality_timeliness DECIMAL(3,2),
+
+    -- Full metadata as JSON
+    metadata_json JSONB,
+
+    -- Indexes
+    INDEX idx_domain (domain),
+    INDEX idx_language (language),
+    INDEX idx_created (created_at),
+    INDEX idx_quality (quality_completeness, quality_accuracy)
+);
+
+CREATE TABLE metadata_keywords (
+    metadata_id VARCHAR(255) REFERENCES metadata_records(id),
+    keyword VARCHAR(255),
+    PRIMARY KEY (metadata_id, keyword),
+    INDEX idx_keyword (keyword)
+);
+
+CREATE TABLE metadata_relationships (
+    source_id VARCHAR(255) REFERENCES metadata_records(id),
+    target_id VARCHAR(255) REFERENCES metadata_records(id),
+    relationship_type VARCHAR(100),
+    PRIMARY KEY (source_id, target_id, relationship_type)
+);</pre>
+        </div>
+
+        <p>
+            The JSONB column stores the complete metadata document, enabling flexible queries on extension
+            fields while maintaining structured access to core fields. PostgreSQL's JSONB support is
+            particularly powerful for this hybrid approach.
+        </p>
+
+        <h3>Document Database Storage</h3>
+
+        <p>
+            Document databases (MongoDB, CouchDB, DocumentDB) naturally fit metadata's semi-structured
+            nature. They excel at storing varying schemas and provide flexible querying:
+        </p>
+
+        <div class="code-block">
+            <pre>// MongoDB schema example
+{
+  _id: "wia-metadata-12345",
+  id: "https://example.org/resources/12345",
+  standard: "WIA-CORE-008",
+  version: "1.0",
+
+  // Core fields
+  title: "Introduction to Universal Metadata",
+  description: "A comprehensive guide...",
+  language: "en",
+  domain: "technology",
+  contentType: "document",
+
+  // Temporal
+  created: ISODate("2025-01-15T10:30:00Z"),
+  modified: ISODate("2025-01-20T14:45:00Z"),
+
+  // Arrays
+  keywords: ["metadata", "standards", "WIA"],
+  contributors: [
+    {name: "Jane Smith", role: "author"},
+    {name: "John Doe", role: "editor"}
+  ],
+
+  // Quality metrics
+  qualityMetrics: {
+    completeness: 0.95,
+    accuracy: 0.98,
+    consistency: 0.96,
+    timeliness: 1.0
+  },
+
+  // Extension fields
+  "research:methodology": "literature review",
+  "research:citations": 150,
+
+  // Indexes
+  // db.metadata.createIndex({domain: 1, language: 1})
+  // db.metadata.createIndex({keywords: 1})
+  // db.metadata.createIndex({"qualityMetrics.completeness": 1})
+}</pre>
+        </div>
+
+        <h3>Graph Database Storage</h3>
+
+        <p>
+            For metadata systems emphasizing relationships and networks, graph databases (Neo4j, ArangoDB)
+            provide natural modeling and efficient traversal:
+        </p>
+
+        <div class="code-block">
+            <pre>// Neo4j Cypher example
+CREATE (m:Metadata {
+  id: 'wia-12345',
+  title: 'Research Paper',
+  domain: 'science',
+  language: 'en'
+})
+
+CREATE (c:Creator {name: 'Jane Smith'})
+CREATE (c)-[:CREATED]->(m)
+
+CREATE (r:Metadata {id: 'wia-67890', title: 'Related Study'})
+CREATE (m)-[:CITES]->(r)
+CREATE (m)-[:DERIVED_FROM]->(r)
+
+// Query: Find all resources created by Jane Smith
+MATCH (c:Creator {name: 'Jane Smith'})-[:CREATED]->(m:Metadata)
+RETURN m
+
+// Query: Find citation network
+MATCH path = (m:Metadata)-[:CITES*1..3]->(cited)
+WHERE m.id = 'wia-12345'
+RETURN path</pre>
+        </div>
+
+        <h2>3.3 Search and Indexing Architecture</h2>
+
+        <p>
+            Effective discovery requires specialized search indices optimized for different query patterns.
+            Most production systems use dedicated search engines alongside primary storage.
+        </p>
+
+        <h3>Elasticsearch Architecture</h3>
+
+        <p>
+            Elasticsearch is commonly used for Universal Metadata search, providing full-text search,
+            faceted navigation, and aggregations:
+        </p>
+
+        <div class="code-block">
+            <pre>// Elasticsearch index mapping
+PUT /universal-metadata
+{
+  "mappings": {
+    "properties": {
+      "id": {"type": "keyword"},
+      "title": {
+        "type": "text",
+        "fields": {
+          "keyword": {"type": "keyword"},
+          "suggest": {"type": "completion"}
+        }
+      },
+      "description": {"type": "text"},
+      "language": {"type": "keyword"},
+      "domain": {"type": "keyword"},
+      "keywords": {"type": "keyword"},
+      "created": {"type": "date"},
+      "modified": {"type": "date"},
+
+      "qualityMetrics": {
+        "properties": {
+          "completeness": {"type": "float"},
+          "accuracy": {"type": "float"},
+          "consistency": {"type": "float"},
+          "timeliness": {"type": "float"}
+        }
+      },
+
+      // Multilingual support
+      "title_translations": {
+        "properties": {
+          "en": {"type": "text"},
+          "ko": {"type": "text"},
+          "ja": {"type": "text"},
+          "zh": {"type": "text"}
+        }
+      },
+
+      // Full document
+      "metadata": {"type": "object", "enabled": false}
+    }
+  }
+}</pre>
+        </div>
+
+        <h3>Multi-Index Strategy</h3>
+
+        <p>
+            Large-scale systems often use multiple indices optimized for different purposes:
+        </p>
+
+        <ul>
+            <li><strong>Primary Index:</strong> Complete metadata for general search</li>
+            <li><strong>Facet Index:</strong> Optimized for faceted navigation and aggregations</li>
+            <li><strong>Suggestion Index:</strong> Autocomplete and typeahead functionality</li>
+            <li><strong>Archive Index:</strong> Historical versions and deleted records</li>
+            <li><strong>Analytics Index:</strong> Usage patterns and statistics</li>
+        </ul>
+
+        <h2>3.4 Caching Strategies</h2>
+
+        <p>
+            Caching dramatically improves performance for frequently accessed metadata. Universal Metadata
+            systems employ multiple caching layers:
+        </p>
+
+        <h3>Application-Level Cache</h3>
+
+        <p>
+            In-memory caching using Redis or Memcached for hot metadata records:
+        </p>
+
+        <div class="code-block">
+            <pre>// Cache strategy example
+async function getMetadata(id) {
+  // Try cache first
+  const cached = await redis.get(`metadata:${id}`);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  // Cache miss - query database
+  const metadata = await db.query(
+    'SELECT * FROM metadata_records WHERE id = $1',
+    [id]
+  );
+
+  // Store in cache (TTL: 1 hour)
+  await redis.setex(
+    `metadata:${id}`,
+    3600,
+    JSON.stringify(metadata)
+  );
+
+  return metadata;
+}</pre>
+        </div>
+
+        <h3>Query Result Caching</h3>
+
+        <p>
+            Cache common search queries and facet calculations:
+        </p>
+
+        <div class="code-block">
+            <pre>// Hash the query to create cache key
+const queryHash = crypto
+  .createHash('md5')
+  .update(JSON.stringify(query))
+  .digest('hex');
+
+const cacheKey = `search:${queryHash}`;
+const cached = await redis.get(cacheKey);
+
+if (cached) {
+  return JSON.parse(cached);
+}
+
+const results = await searchEngine.search(query);
+await redis.setex(cacheKey, 300, JSON.stringify(results)); // 5 min TTL
+
+return results;</pre>
+        </div>
+
+        <h3>CDN Caching</h3>
+
+        <p>
+            For public metadata accessed via APIs, CDN caching provides global distribution:
+        </p>
+
+        <div class="code-block">
+            <pre>// API response with cache headers
+app.get('/api/metadata/:id', async (req, res) => {
+  const metadata = await getMetadata(req.params.id);
+
+  // Public metadata - cache at CDN for 1 hour
+  res.set({
+    'Cache-Control': 'public, max-age=3600',
+    'ETag': metadata.etag,
+    'Last-Modified': metadata.modified
+  });
+
+  res.json(metadata);
+});</pre>
+        </div>
+
+        <h2>3.5 Scalability Patterns</h2>
+
+        <p>
+            As metadata collections grow, systems must scale horizontally and vertically. Universal
+            Metadata supports several scalability patterns:
+        </p>
+
+        <h3>Horizontal Partitioning (Sharding)</h3>
+
+        <p>
+            Distribute metadata across multiple database instances based on a partition key:
+        </p>
+
+        <div class="code-block">
+            <pre>// Shard by domain
+function getShardForDomain(domain) {
+  const shards = ['shard1', 'shard2', 'shard3', 'shard4'];
+  const hash = hashCode(domain);
+  return shards[hash % shards.length];
+}
+
+// Route query to appropriate shard
+const shard = getShardForDomain(metadata.domain);
+await databases[shard].insert(metadata);</pre>
+        </div>
+
+        <h3>Read Replicas</h3>
+
+        <p>
+            Distribute read load across multiple database replicas:
+        </p>
+
+        <div class="code-block">
+            <pre>// Write to primary
+await primaryDB.insert(metadata);
+
+// Read from replica pool
+const replica = replicaPool.getNextReplica();
+const results = await replica.search(query);</pre>
+        </div>
+
+        <h3>Event-Driven Architecture</h3>
+
+        <p>
+            Use message queues for asynchronous processing and scaling:
+        </p>
+
+        <div class="code-block">
+            <pre>// Publish metadata creation event
+await eventBus.publish('metadata.created', {
+  id: metadata.id,
+  domain: metadata.domain,
+  timestamp: Date.now()
+});
+
+// Multiple consumers process independently
+// - Search indexer updates Elasticsearch
+// - Quality analyzer calculates metrics
+// - Notification service alerts subscribers
+// - Analytics service updates statistics</pre>
+        </div>
+
+        <h2>3.6 Security Architecture</h2>
+
+        <p>
+            Universal Metadata systems must protect sensitive information while enabling appropriate
+            access. Security considerations include:
+        </p>
+
+        <h3>Access Control</h3>
+
+        <p>
+            Implement role-based or attribute-based access control:
+        </p>
+
+        <div class="code-block">
+            <pre>{
+  "id": "wia-12345",
+  "title": "Confidential Research",
+  "access": {
+    "visibility": "private",
+    "permissions": {
+      "read": ["group:researchers", "user:jane@example.com"],
+      "write": ["group:editors"],
+      "admin": ["user:admin@example.com"]
+    },
+    "license": "All rights reserved"
+  }
+}</pre>
+        </div>
+
+        <h3>Encryption</h3>
+
+        <ul>
+            <li><strong>At Rest:</strong> Database encryption, encrypted file storage</li>
+            <li><strong>In Transit:</strong> TLS/SSL for all network communication</li>
+            <li><strong>Application Level:</strong> Field-level encryption for sensitive data</li>
+        </ul>
+
+        <h3>Audit Logging</h3>
+
+        <p>
+            Track all metadata operations for compliance and security:
+        </p>
+
+        <div class="code-block">
+            <pre>await auditLog.record({
+  timestamp: new Date(),
+  user: currentUser.id,
+  action: 'metadata.update',
+  resource: metadata.id,
+  changes: diff(oldMetadata, newMetadata),
+  ipAddress: request.ip,
+  userAgent: request.headers['user-agent']
+});</pre>
+        </div>
+
+        <h2>3.7 Deployment Architectures</h2>
+
+        <p>
+            Universal Metadata systems can be deployed in various configurations depending on requirements:
+        </p>
+
+        <h3>Single-Server Deployment</h3>
+
+        <p>
+            For small collections (< 100K records), a single server with PostgreSQL and Elasticsearch
+            colocated can handle most workloads efficiently.
+        </p>
+
+        <h3>Multi-Tier Deployment</h3>
+
+        <p>
+            Separate application servers, database servers, and search clusters for better resource
+            utilization and scaling.
+        </p>
+
+        <h3>Microservices Architecture</h3>
+
+        <p>
+            Break functionality into independent services:
+        </p>
+
+        <ul>
+            <li>Metadata CRUD Service</li>
+            <li>Search Service</li>
+            <li>Quality Assessment Service</li>
+            <li>Transformation Service</li>
+            <li>Analytics Service</li>
+            <li>API Gateway</li>
+        </ul>
+
+        <h3>Serverless Deployment</h3>
+
+        <p>
+            For event-driven workloads, serverless functions (AWS Lambda, Google Cloud Functions) can
+            process metadata operations on-demand with automatic scaling.
+        </p>
+
+        <h2>Conclusion</h2>
+
+        <p>
+            Architecture decisions have long-lasting impacts on system performance, scalability, and
+            maintainability. By following these proven patterns and understanding the tradeoffs, you
+            can build Universal Metadata systems that scale from small projects to enterprise deployments.
+            In the next chapter, we'll move from architecture to implementation, providing practical
+            code examples and step-by-step guidance.
+        </p>
+
+        <div class="navigation">
+            <a href="02-fundamentals.html" class="nav-link">← Chapter 2</a>
+            <a href="04-implementation.html" class="nav-link">Chapter 4 →</a>
+        </div>
+    </div>
+</body>
+</html>

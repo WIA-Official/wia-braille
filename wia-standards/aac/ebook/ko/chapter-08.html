@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제8장: 구현 가이드 및 인증 - WIA AAC 표준 전자책</title>
+</head>
+<body>
+
+<p><a href="index.html">[AAC] WIA AAC 표준 전자책</a> | 제8장 (총 8장)</p>
+
+<hr>
+
+<h1>[AAC] 제8장: 구현 가이드 및 인증</h1>
+
+<blockquote>
+<p><strong>홍익인간 (弘益人間)</strong></p>
+<p>"사양에서 현실로."</p>
+<p>이 마지막 장은 이해에서 구현까지, WIA AAC 인증으로 마무리됩니다.</p>
+</blockquote>
+
+<hr>
+
+<h2>8.1 구현 로드맵</h2>
+
+<h3>8.1.1 장치 제조업체용</h3>
+
+<pre>
+장치 제조업체 구현 경로:
+
+Phase 1: 기반 (1-4주차)
+  [ ] WIA AAC 사양 검토
+  [ ] 장치 유형에 맞는 신호 형식 스키마 선택
+  [ ] 펌웨어 아키텍처 설계
+  [ ] 전송 프로토콜 선택
+
+Phase 2: 신호 구현 (5-8주차)
+  [ ] 신호 생성 구현
+  [ ] 타임스탬프 동기화 추가
+  [ ] 신뢰도 계산 구현
+  [ ] 장치 식별 추가
+
+Phase 3: 프로토콜 구현 (9-12주차)
+  [ ] 선택한 전송 방식 구현
+  [ ] 명령 처리 추가
+  [ ] 설정 저장소 구현
+  [ ] 보정 지원 추가
+
+Phase 4: 테스트 (13-16주차)
+  [ ] 신호 형식 단위 테스트
+  [ ] 프로토콜 적합성 테스트
+  [ ] 참조 SDK와 통합 테스트
+  [ ] 성능 벤치마킹
+
+Phase 5: 인증 (17-20주차)
+  [ ] 자가 인증 테스트
+  [ ] WIA 인증 제출
+  [ ] 문제 해결
+  [ ] 인증 획득
+</pre>
+
+<h3>8.1.2 소프트웨어 개발자용</h3>
+
+<pre>
+소프트웨어 개발자 구현 경로:
+
+Phase 1: 통합 (1-2주차)
+  [ ] 프로젝트에 WIA AAC SDK 추가
+  [ ] WiaAAC 클라이언트 초기화
+  [ ] 장치 검색 구현
+  [ ] 기본 신호 처리
+
+Phase 2: 사용자 인터페이스 (3-4주차)
+  [ ] 장치 선택 UI
+  [ ] 신호 시각화
+  [ ] 설정 인터페이스
+  [ ] 보정 워크플로우
+
+Phase 3: 애플리케이션 로직 (5-6주차)
+  [ ] 선택 방법 구현
+  [ ] 텍스트 생성/예측
+  [ ] 프로필 관리
+  [ ] 설정 지속성
+
+Phase 4: 출력 통합 (7-8주차)
+  [ ] WIA Talk 통합
+  [ ] ISP 통합 (선택)
+  [ ] Braille 통합 (선택)
+  [ ] 출력 동기화
+
+Phase 5: 테스트 및 완성 (9-10주차)
+  [ ] 사용자 테스트
+  [ ] 성능 최적화
+  [ ] 접근성 검토
+  [ ] 문서화
+</pre>
+
+<hr>
+
+<h2>8.2 빠른 시작 가이드</h2>
+
+<h3>8.2.1 TypeScript/JavaScript</h3>
+
+<pre>
+// 설치
+npm install wia-aac
+
+// 기본 사용법
+import { WiaAAC } from 'wia-aac';
+
+async function main() {
+    // 초기화
+    const aac = new WiaAAC();
+
+    // 장치 검색
+    const devices = await aac.discoverDevices();
+    console.log('발견된 장치:', devices);
+
+    // 첫 번째 시선 추적기에 연결
+    const eyeTracker = devices.find(d =&gt; d.type === 'eye_tracker');
+    if (eyeTracker) {
+        await aac.connect({
+            type: 'eye_tracker',
+            deviceId: eyeTracker.deviceId
+        });
+    }
+
+    // 신호 처리
+    aac.on('signal', (signal) =&gt; {
+        console.log('신호:', signal.type, signal.data);
+    });
+
+    // 텍스트 출력 처리
+    aac.on('text', (text) =&gt; {
+        console.log('사용자 입력:', text);
+    });
+}
+
+main();
+</pre>
+
+<h3>8.2.2 Python</h3>
+
+<pre>
+# 설치
+pip install wia-aac
+
+# 기본 사용법
+import asyncio
+from wia_aac import WiaAAC
+
+async def main():
+    # 초기화
+    aac = WiaAAC()
+
+    # 장치 검색
+    devices = await aac.discover_devices()
+    print(f"{len(devices)}개 장치 발견")
+
+    # 연결
+    await aac.connect(sensor_type="eye_tracker")
+
+    # 신호 처리
+    @aac.on("signal")
+    async def handle_signal(signal):
+        print(f"신호: {signal.type} - {signal.data}")
+
+    @aac.on("text")
+    async def handle_text(text):
+        print(f"사용자 입력: {text}")
+
+    # 계속 실행
+    await aac.run()
+
+asyncio.run(main())
+</pre>
+
+<h3>8.2.3 Rust</h3>
+
+<pre>
+// Cargo.toml
+[dependencies]
+wia-aac = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+
+// main.rs
+use wia_aac::{WiaAAC, SensorType, Signal};
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    // 초기화
+    let aac = WiaAAC::new_default()?;
+
+    // 장치 검색
+    let devices = aac.discover_devices().await?;
+    println!("{}개 장치 발견", devices.len());
+
+    // 연결
+    aac.connect(SensorType::EyeTracker, None).await?;
+
+    // 신호 처리
+    let mut rx = aac.subscribe();
+    while let Some(signal) = rx.recv().await {
+        println!("신호: {:?}", signal);
+    }
+
+    Ok(())
+}
+</pre>
+
+<hr>
+
+<h2>8.3 테스트</h2>
+
+<h3>8.3.1 신호 검증</h3>
+
+<pre>
+import { SignalValidator } from 'wia-aac';
+
+const validator = new SignalValidator();
+
+// 테스트 신호
+const testSignal = {
+    type: 'eye_tracker',
+    version: '1.0.0',
+    timestamp: Date.now(),
+    data: {
+        gaze_x: 0.5,
+        gaze_y: 0.5,
+        fixation: true
+    },
+    confidence: 0.95
+};
+
+// 검증
+const result = validator.validate(testSignal);
+
+if (result.valid) {
+    console.log('[OK] 신호가 유효합니다');
+} else {
+    console.log('[!] 검증 오류:');
+    result.errors.forEach(e =&gt;
+        console.log(`  - ${e.field}: ${e.message}`)
+    );
+}
+</pre>
+
+<h3>8.3.2 성능 벤치마크</h3>
+
+<pre>
+성능 요구사항:
+
+신호 지연 시간:
+  - 시선 추적기: &lt;20ms (중요)
+  - 스위치: &lt;50ms
+  - EMG: &lt;30ms
+  - BCI: &lt;100ms (처리 시간)
+  - 호흡: &lt;50ms
+  - 머리 움직임: &lt;20ms
+
+신호 속도:
+  - 시선 추적기: 60-120 Hz
+  - 스위치: 이벤트 기반
+  - EMG: 250+ Hz
+  - BCI: 128-512 Hz
+  - 호흡: 20-50 Hz
+  - 머리 움직임: 60-120 Hz
+
+벤치마크 명령:
+npx wia-aac-benchmark --device [device-id]
+</pre>
+
+<hr>
+
+<h2>8.4 인증 프로세스</h2>
+
+<h3>8.4.1 인증 수준</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>수준</th>
+            <th>이름</th>
+            <th>요구사항</th>
+            <th>사용 사례</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td><strong>적합</strong></td>
+            <td>신호 형식 테스트 통과</td>
+            <td>기본 상호운용성</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td><strong>인증</strong></td>
+            <td>모든 프로토콜 테스트 통과</td>
+            <td>상업용 제품</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td><strong>인증 플러스</strong></td>
+            <td>성능 + 신뢰성 테스트</td>
+            <td>의료/전문가용</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>8.4.2 인증 단계</h3>
+
+<pre>
+인증 프로세스:
+
+1단계: 자가 평가
+  - 적합성 테스트 스위트 실행
+  - 결과 검토
+  - 문제 수정
+  - 구현 문서화
+
+2단계: 신청서 제출
+  - 신청서 양식 작성
+  - 장치/소프트웨어 샘플 제공
+  - 테스트 결과 제출
+  - 인증 비용 지불
+
+3단계: WIA 검토
+  - 독립 테스트
+  - 결과 검증
+  - 기술 검토
+  - 필요시 피드백
+
+4단계: 인증
+  - 인증서 수령
+  - 인증 디렉토리에 등재
+  - WIA AAC 로고 사용 허가
+  - 연간 갱신 필요
+
+타임라인:
+  - 자가 평가: 1-2주
+  - 신청 검토: 1주
+  - 테스트: 2-3주
+  - 총: 4-6주
+</pre>
+
+<h3>8.4.3 인증 비용</h3>
+
+<pre>
+인증 비용 구조:
+
+수준 1 (적합):
+  - 초기: $500
+  - 연간 갱신: $200
+
+수준 2 (인증):
+  - 초기: $2,000
+  - 연간 갱신: $800
+
+수준 3 (인증 플러스):
+  - 초기: $5,000
+  - 연간 갱신: $2,000
+
+할인:
+  - 오픈소스 프로젝트: 50% 할인
+  - 비영리 단체: 75% 할인
+  - 교육 기관: 75% 할인
+  - 개발도상국: 특별 요금
+
+참고: 사양과 SDK는 무료입니다.
+인증은 선택 사항이지만 권장됩니다.
+</pre>
+
+<hr>
+
+<h2>8.5 모범 사례</h2>
+
+<h3>8.5.1 사용자 경험 가이드라인</h3>
+
+<pre>
+AAC 사용자 경험 모범 사례:
+
+1. 응답성
+   - 즉각적인 시각적 피드백 (&lt;100ms)
+   - 부드러운 애니메이션
+   - 긴 작업에 대한 진행 표시기
+
+2. 설정 가능성
+   - 응시 시간 조정
+   - 감도 제어
+   - 레이아웃 맞춤화
+   - 음성/출력 선택
+
+3. 오류 복구
+   - 우아한 성능 저하
+   - 명확한 오류 메시지
+   - 쉬운 재보정
+   - 실행 취소 기능
+
+4. 접근성
+   - 고대비 옵션
+   - 큰 타겟
+   - 간단한 탐색
+   - 움직임 감소 옵션
+
+5. 개인화
+   - 사용자 선호도 저장
+   - 커스텀 어휘
+   - 예측 텍스트
+   - 자주 사용하는 문구
+</pre>
+
+<hr>
+
+<h2>8.6 리소스 및 지원</h2>
+
+<h3>8.6.1 문서</h3>
+
+<pre>
+공식 리소스:
+
+사양 문서:
+  https://wia.live/standards/aac/spec
+
+API 레퍼런스:
+  https://wia.live/standards/aac/api
+
+SDK 다운로드:
+  https://github.com/WIA-Official/wia-aac-sdk
+
+JSON 스키마:
+  https://wia.live/standards/aac/schemas
+
+예제 코드:
+  https://github.com/WIA-Official/wia-aac-examples
+
+인증 포털:
+  https://wia.live/certifications/aac
+</pre>
+
+<h3>8.6.2 커뮤니티 지원</h3>
+
+<pre>
+커뮤니티 리소스:
+
+GitHub Discussions:
+  https://github.com/WIA-Official/wia-standards/discussions
+
+Stack Overflow 태그:
+  [wia-aac]
+
+Discord 서버:
+  https://discord.gg/wia-standards
+
+이메일 지원:
+  support@wia.live
+  certification@wia.live
+
+교육 프로그램:
+  https://wia.live/training/aac
+</pre>
+
+<hr>
+
+<h2>8.7 결론</h2>
+
+<blockquote>
+<p><strong>홍익인간 (弘益人間)</strong></p>
+<p>"널리 인간을 이롭게 하라"</p>
+<p>WIA AAC 표준은 의사소통이 기본적인 인권이기 때문에 존재합니다. 이 표준을 구현함으로써, 기술 장벽으로 인해 어떤 사람도 자신을 표현할 능력을 거부당하지 않도록 보장하는 글로벌 커뮤니티에 합류하게 됩니다.</p>
+<p>이 미션의 일원이 되어 주셔서 감사합니다.</p>
+</blockquote>
+
+<h3>8.7.1 주요 성과</h3>
+
+<p>이 전자책을 완료함으로써 다음을 배웠습니다:</p>
+
+<ol>
+    <li>[OK] AAC의 중요성과 서비스 대상자</li>
+    <li>[OK] 파편화된 AAC 시장의 현재 과제</li>
+    <li>[OK] WIA AAC 표준 아키텍처와 목표</li>
+    <li>[OK] Phase 1: 모든 센서 유형에 대한 신호 형식 사양</li>
+    <li>[OK] Phase 2: 소프트웨어 개발을 위한 API 인터페이스</li>
+    <li>[OK] Phase 3: 연결을 위한 통신 프로토콜</li>
+    <li>[OK] Phase 4: WIA 생태계와의 통합</li>
+    <li>[OK] 구현 가이드 및 인증 프로세스</li>
+</ol>
+
+<h3>8.7.2 행동 촉구</h3>
+
+<p>이제 여러분의 차례입니다:</p>
+
+<ul>
+    <li><strong>장치 제조업체:</strong> 제품에 WIA AAC 적합성 구현</li>
+    <li><strong>소프트웨어 개발자:</strong> 애플리케이션에 WIA AAC SDK 통합</li>
+    <li><strong>연구자:</strong> 표준의 발전에 기여</li>
+    <li><strong>옹호자:</strong> AAC 커뮤니티에서 상호운용성 촉진</li>
+    <li><strong>사용자:</strong> 공급업체에 WIA AAC 적합성 요구</li>
+</ul>
+
+<hr>
+
+<h2>8.8 장 요약</h2>
+
+<p>[OK] <strong>핵심 내용:</strong></p>
+
+<ol>
+    <li><strong>구현:</strong> 제조업체와 개발자를 위한 명확한 로드맵</li>
+    <li><strong>빠른 시작:</strong> TypeScript, Python, Rust에서 SDK 사용 가능</li>
+    <li><strong>테스트:</strong> 적합성 검증을 위한 포괄적인 테스트 스위트</li>
+    <li><strong>인증:</strong> 명확한 요구사항과 비용이 있는 세 가지 수준</li>
+    <li><strong>모범 사례:</strong> 품질을 위한 UX 및 기술 가이드라인</li>
+    <li><strong>지원:</strong> 문서, 커뮤니티, 교육 리소스</li>
+</ol>
+
+<hr>
+
+<h2>8.9 최종 복습 문제</h2>
+
+<ol>
+    <li>장치 제조업체 구현 경로의 다섯 가지 단계는 무엇입니까?</li>
+    <li>WIA AAC SDK를 사용하여 신호를 어떻게 검증합니까?</li>
+    <li>세 가지 인증 수준과 그 요구사항은 무엇입니까?</li>
+    <li>시선 추적기의 최소 신호 지연 요구사항은 무엇입니까?</li>
+    <li>AAC 애플리케이션을 위한 세 가지 UX 모범 사례를 나열하세요.</li>
+    <li>구현 지원을 위해 어떤 리소스가 제공됩니까?</li>
+</ol>
+
+<hr>
+
+<p><strong>제8장 완료</strong> | 예상 페이지: 14</p>
+
+<p><a href="chapter-07.html">이전: 제7장</a> | <a href="index.html">목차로 돌아가기</a></p>
+
+<hr>
+
+<h2>전자책 완료</h2>
+
+<p><strong>총 장:</strong> 8</p>
+<p><strong>예상 총 페이지:</strong> 112</p>
+
+<hr>
+
+<p><strong>WIA - 세계인증산업협회</strong></p>
+<p>홍익인간 - 널리 인간을 이롭게</p>
+<p><a href="https://wia.live">https://wia.live</a></p>
+
+<hr>
+
+<p><strong>Copyright 2025 SmileStory Inc. / WIA</strong></p>
+<p>MIT 라이선스 - 영원히 무료</p>
+
+</body>
+</html>

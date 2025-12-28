@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제5장: 구현 가이드 - WIA 스트리밍</title>
+    <link rel="icon" href="/favicon.ico">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #0f172a; color: #e2e8f0; line-height: 1.8;">
+
+<nav style="margin-bottom: 30px; padding: 15px; background: #1e293b; border-radius: 8px;">
+    <a href="index.html" style="color: #a855f7; text-decoration: none;">📚 목차</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <span style="color: #64748b;">제5장 / 8장</span>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-04.html" style="color: #a855f7; text-decoration: none;">← 이전</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-06.html" style="color: #a855f7; text-decoration: none;">다음 →</a>
+</nav>
+
+<h1 style="color: #a855f7;">제5장: 구현 가이드</h1>
+
+<blockquote style="background: #1e293b; padding: 20px; border-left: 4px solid #fbbf24; margin: 20px 0;">
+<p style="color: #fbbf24; font-style: italic;">"이론을 실제로 만드는 것, 그것이 진정한 엔지니어링입니다."</p>
+</blockquote>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">5.1 HLS 구현</h2>
+
+<h3 style="color: #a855f7;">5.1.1 FFmpeg로 HLS 생성</h3>
+
+<p>가장 일반적인 HLS 스트림 생성 방법입니다.</p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;"># 단일 품질 HLS</span>
+<span style="color: #94a3b8;">ffmpeg -i input.mp4 \
+  -c:v libx264 -c:a aac \
+  -b:v 2500k -b:a 128k \
+  -hls_time 4 \
+  -hls_playlist_type vod \
+  -hls_segment_filename "segment_%03d.ts" \
+  output.m3u8</span>
+
+<span style="color: #64748b;"># 멀티 품질 HLS (ABR)</span>
+<span style="color: #94a3b8;">ffmpeg -i input.mp4 \
+  -filter_complex \
+  "[0:v]split=3[v1][v2][v3]; \
+   [v1]scale=w=1920:h=1080[v1out]; \
+   [v2]scale=w=1280:h=720[v2out]; \
+   [v3]scale=w=854:h=480[v3out]" \
+  -map "[v1out]" -c:v:0 libx264 -b:v:0 5M \
+  -map "[v2out]" -c:v:1 libx264 -b:v:1 2.5M \
+  -map "[v3out]" -c:v:2 libx264 -b:v:2 1M \
+  -map a:0 -c:a:0 aac -b:a:0 128k \
+  -map a:0 -c:a:1 aac -b:a:1 128k \
+  -map a:0 -c:a:2 aac -b:a:2 128k \
+  -f hls \
+  -hls_time 4 \
+  -hls_playlist_type vod \
+  -master_pl_name master.m3u8 \
+  -var_stream_map "v:0,a:0 v:1,a:1 v:2,a:2" \
+  -hls_segment_filename "v%v/segment_%03d.ts" \
+  v%v/index.m3u8</span>
+</pre>
+
+<h3 style="color: #a855f7;">5.1.2 생성된 HLS 파일 구조</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #a855f7; overflow-x: auto;">
+<span style="color: #fbbf24;">output/</span>
+├── <span style="color: #94a3b8;">master.m3u8</span>          (마스터 플레이리스트)
+├── <span style="color: #fbbf24;">v0/</span>                  (1080p)
+│   ├── <span style="color: #94a3b8;">index.m3u8</span>
+│   ├── <span style="color: #94a3b8;">segment_000.ts</span>
+│   ├── <span style="color: #94a3b8;">segment_001.ts</span>
+│   └── <span style="color: #94a3b8;">...</span>
+├── <span style="color: #fbbf24;">v1/</span>                  (720p)
+│   ├── <span style="color: #94a3b8;">index.m3u8</span>
+│   └── <span style="color: #94a3b8;">...</span>
+└── <span style="color: #fbbf24;">v2/</span>                  (480p)
+    ├── <span style="color: #94a3b8;">index.m3u8</span>
+    └── <span style="color: #94a3b8;">...</span>
+</pre>
+
+<h3 style="color: #a855f7;">5.1.3 hls.js로 재생</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">&lt;!-- HTML --&gt;</span>
+<span style="color: #94a3b8;">&lt;video id="video" controls&gt;&lt;/video&gt;</span>
+<span style="color: #94a3b8;">&lt;script src="https://cdn.jsdelivr.net/npm/hls.js@latest"&gt;&lt;/script&gt;</span>
+
+<span style="color: #64748b;">// JavaScript</span>
+<span style="color: #fbbf24;">const</span> video = document.getElementById(<span style="color: #10b981;">'video'</span>);
+<span style="color: #fbbf24;">const</span> videoSrc = <span style="color: #10b981;">'https://cdn.example.com/master.m3u8'</span>;
+
+<span style="color: #fbbf24;">if</span> (Hls.isSupported()) {
+  <span style="color: #fbbf24;">const</span> hls = <span style="color: #fbbf24;">new</span> Hls({
+    maxMaxBufferLength: <span style="color: #fbbf24;">30</span>,
+    maxBufferSize: <span style="color: #fbbf24;">60</span> * <span style="color: #fbbf24;">1000</span> * <span style="color: #fbbf24;">1000</span>,
+    enableWorker: <span style="color: #fbbf24;">true</span>,
+    lowLatencyMode: <span style="color: #fbbf24;">false</span>
+  });
+
+  hls.loadSource(videoSrc);
+  hls.attachMedia(video);
+
+  hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    console.log(<span style="color: #10b981;">'Ready to play'</span>);
+  });
+
+  hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+    console.log(<span style="color: #10b981;">`Quality changed to ${data.level}`</span>);
+  });
+} <span style="color: #fbbf24;">else if</span> (video.canPlayType(<span style="color: #10b981;">'application/vnd.apple.mpegurl'</span>)) {
+  <span style="color: #64748b;">// Safari 네이티브 지원</span>
+  video.src = videoSrc;
+}
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">5.2 DASH 구현</h2>
+
+<h3 style="color: #a855f7;">5.2.1 Shaka Packager로 DASH 생성</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;"># Shaka Packager 설치</span>
+<span style="color: #94a3b8;">wget https://github.com/shaka-project/shaka-packager/releases/download/v2.6.1/packager-linux-x64
+chmod +x packager-linux-x64</span>
+
+<span style="color: #64748b;"># DASH 패키징</span>
+<span style="color: #94a3b8;">./packager-linux-x64 \
+  input=input.mp4,stream=video,output=video_1080p.mp4 \
+  input=input.mp4,stream=video,output=video_720p.mp4 \
+  input=input.mp4,stream=video,output=video_480p.mp4 \
+  input=input.mp4,stream=audio,output=audio.mp4 \
+  --mpd_output manifest.mpd \
+  --segment_duration 4</span>
+</pre>
+
+<h3 style="color: #a855f7;">5.2.2 dash.js로 재생</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">&lt;!-- HTML --&gt;</span>
+<span style="color: #94a3b8;">&lt;video id="video" controls&gt;&lt;/video&gt;</span>
+<span style="color: #94a3b8;">&lt;script src="https://cdn.dashjs.org/latest/dash.all.min.js"&gt;&lt;/script&gt;</span>
+
+<span style="color: #64748b;">// JavaScript</span>
+<span style="color: #fbbf24;">const</span> video = document.getElementById(<span style="color: #10b981;">'video'</span>);
+<span style="color: #fbbf24;">const</span> player = dashjs.MediaPlayer().create();
+
+player.initialize(video, <span style="color: #10b981;">'https://cdn.example.com/manifest.mpd'</span>, <span style="color: #fbbf24;">false</span>);
+
+player.updateSettings({
+  streaming: {
+    bufferTimeDefault: <span style="color: #fbbf24;">30</span>,
+    abr: {
+      autoSwitchBitrate: {
+        video: <span style="color: #fbbf24;">true</span>
+      }
+    }
+  }
+});
+
+player.on(dashjs.MediaPlayer.events.QUALITY_CHANGE_REQUESTED, (e) => {
+  console.log(<span style="color: #10b981;">`Quality: ${e.newQuality}`</span>);
+});
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">5.3 WebRTC 구현</h2>
+
+<h3 style="color: #a855f7;">5.3.1 간단한 WebRTC 서버 (Node.js)</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">// 설치</span>
+<span style="color: #94a3b8;">npm install mediasoup mediasoup-client socket.io</span>
+
+<span style="color: #64748b;">// server.js</span>
+<span style="color: #fbbf24;">const</span> mediasoup = require(<span style="color: #10b981;">'mediasoup'</span>);
+<span style="color: #fbbf24;">const</span> io = require(<span style="color: #10b981;">'socket.io'</span>)(<span style="color: #fbbf24;">3000</span>);
+
+<span style="color: #fbbf24;">let</span> worker, router;
+
+<span style="color: #fbbf24;">async function</span> createWorker() {
+  worker = <span style="color: #fbbf24;">await</span> mediasoup.createWorker({
+    logLevel: <span style="color: #10b981;">'warn'</span>,
+    rtcMinPort: <span style="color: #fbbf24;">10000</span>,
+    rtcMaxPort: <span style="color: #fbbf24;">10100</span>
+  });
+
+  router = <span style="color: #fbbf24;">await</span> worker.createRouter({
+    mediaCodecs: [
+      {
+        kind: <span style="color: #10b981;">'video'</span>,
+        mimeType: <span style="color: #10b981;">'video/VP8'</span>,
+        clockRate: <span style="color: #fbbf24;">90000</span>
+      },
+      {
+        kind: <span style="color: #10b981;">'audio'</span>,
+        mimeType: <span style="color: #10b981;">'audio/opus'</span>,
+        clockRate: <span style="color: #fbbf24;">48000</span>,
+        channels: <span style="color: #fbbf24;">2</span>
+      }
+    ]
+  });
+}
+
+createWorker();
+
+io.on(<span style="color: #10b981;">'connection'</span>, (socket) => {
+  console.log(<span style="color: #10b981;">'Client connected'</span>);
+
+  socket.on(<span style="color: #10b981;">'getRouterRtpCapabilities'</span>, (callback) => {
+    callback(router.rtpCapabilities);
+  });
+});
+</pre>
+
+<h3 style="color: #a855f7;">5.3.2 WebRTC 클라이언트</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">// client.js</span>
+<span style="color: #fbbf24;">import</span> * <span style="color: #fbbf24;">as</span> mediasoupClient <span style="color: #fbbf24;">from</span> <span style="color: #10b981;">'mediasoup-client'</span>;
+<span style="color: #fbbf24;">import</span> io <span style="color: #fbbf24;">from</span> <span style="color: #10b981;">'socket.io-client'</span>;
+
+<span style="color: #fbbf24;">const</span> socket = io(<span style="color: #10b981;">'http://localhost:3000'</span>);
+<span style="color: #fbbf24;">let</span> device, transport;
+
+<span style="color: #fbbf24;">async function</span> startStreaming() {
+  <span style="color: #64748b;">// Device 생성</span>
+  device = <span style="color: #fbbf24;">new</span> mediasoupClient.Device();
+
+  <span style="color: #64748b;">// Router 정보 가져오기</span>
+  <span style="color: #fbbf24;">const</span> routerRtpCapabilities = <span style="color: #fbbf24;">await</span> <span style="color: #fbbf24;">new</span> Promise((resolve) => {
+    socket.emit(<span style="color: #10b981;">'getRouterRtpCapabilities'</span>, resolve);
+  });
+
+  <span style="color: #fbbf24;">await</span> device.load({ routerRtpCapabilities });
+
+  <span style="color: #64748b;">// 웹캠 스트림 가져오기</span>
+  <span style="color: #fbbf24;">const</span> stream = <span style="color: #fbbf24;">await</span> navigator.mediaDevices.getUserMedia({
+    video: <span style="color: #fbbf24;">true</span>,
+    audio: <span style="color: #fbbf24;">true</span>
+  });
+
+  <span style="color: #64748b;">// Transport 생성 및 전송</span>
+  <span style="color: #fbbf24;">const</span> videoTrack = stream.getVideoTracks()[<span style="color: #fbbf24;">0</span>];
+  <span style="color: #fbbf24;">const</span> audioTrack = stream.getAudioTracks()[<span style="color: #fbbf24;">0</span>];
+
+  console.log(<span style="color: #10b981;">'Streaming started'</span>);
+}
+
+startStreaming();
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">5.4 CDN 통합</h2>
+
+<h3 style="color: #a855f7;">5.4.1 Cloudflare Stream 통합</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">// Node.js 예시</span>
+<span style="color: #fbbf24;">const</span> FormData = require(<span style="color: #10b981;">'form-data'</span>);
+<span style="color: #fbbf24;">const</span> axios = require(<span style="color: #10b981;">'axios'</span>);
+<span style="color: #fbbf24;">const</span> fs = require(<span style="color: #10b981;">'fs'</span>);
+
+<span style="color: #fbbf24;">async function</span> uploadToCloudflare(filePath) {
+  <span style="color: #fbbf24;">const</span> form = <span style="color: #fbbf24;">new</span> FormData();
+  form.append(<span style="color: #10b981;">'file'</span>, fs.createReadStream(filePath));
+
+  <span style="color: #fbbf24;">const</span> response = <span style="color: #fbbf24;">await</span> axios.post(
+    <span style="color: #10b981;">`https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/stream`</span>,
+    form,
+    {
+      headers: {
+        <span style="color: #10b981;">'Authorization'</span>: <span style="color: #10b981;">`Bearer ${API_TOKEN}`</span>,
+        ...form.getHeaders()
+      }
+    }
+  );
+
+  console.log(<span style="color: #10b981;">'Video uploaded:'</span>, response.data.result.uid);
+  <span style="color: #fbbf24;">return</span> response.data.result;
+}
+</pre>
+
+<h3 style="color: #a855f7;">5.4.2 AWS CloudFront 설정</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">설정</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">권장값</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Origin</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">S3 Bucket</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Viewer Protocol Policy</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Redirect HTTP to HTTPS</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Allowed HTTP Methods</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">GET, HEAD, OPTIONS</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Cache Policy</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">CachingOptimized</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>CORS</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Enabled</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">5.5 자동화 파이프라인</h2>
+
+<h3 style="color: #a855f7;">5.5.1 비디오 처리 워크플로우</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #a855f7; overflow-x: auto;">
+<span style="color: #fbbf24;">비디오 업로드 → 처리 파이프라인:</span>
+
+<span style="color: #94a3b8;">1. 업로드</span>
+   📤 S3 버킷에 원본 업로드
+   ⚡ Lambda 트리거
+
+<span style="color: #94a3b8;">2. 메타데이터 추출</span>
+   🔍 FFprobe로 비디오 정보 수집
+   💾 DynamoDB에 저장
+
+<span style="color: #94a3b8;">3. 트랜스코딩</span>
+   🔄 AWS MediaConvert / FFmpeg
+   📦 멀티 품질 생성 (240p ~ 1080p)
+   🎬 HLS + DASH 패키징
+
+<span style="color: #94a3b8;">4. 썸네일 생성</span>
+   📸 키 프레임 추출 (0초, 25%, 50%, 75%, 100%)
+   🖼️ 3가지 크기 (320, 640, 1280)
+
+<span style="color: #94a3b8;">5. CDN 배포</span>
+   🌐 CloudFront에 배포
+   ♻️ 캐시 무효화
+
+<span style="color: #94a3b8;">6. 완료 알림</span>
+   📧 이메일/Webhook 알림
+   ✅ 상태 업데이트 (ready)
+</pre>
+
+<h3 style="color: #a855f7;">5.5.2 Docker를 이용한 인코딩 서버</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;"># Dockerfile</span>
+<span style="color: #94a3b8;">FROM jrottenberg/ffmpeg:4.4-alpine
+
+RUN apk add --no-cache python3 py3-pip
+RUN pip3 install boto3 redis celery
+
+COPY encoder.py /app/
+WORKDIR /app
+
+CMD ["celery", "-A", "encoder", "worker", "--loglevel=info"]</span>
+
+<span style="color: #64748b;"># encoder.py</span>
+<span style="color: #fbbf24;">from</span> celery <span style="color: #fbbf24;">import</span> Celery
+<span style="color: #fbbf24;">import</span> subprocess
+
+app = Celery(<span style="color: #10b981;">'encoder'</span>, broker=<span style="color: #10b981;">'redis://localhost:6379'</span>)
+
+<span style="color: #fbbf24;">@app.task</span>
+<span style="color: #fbbf24;">def</span> encode_video(input_path, output_path):
+    cmd = [
+        <span style="color: #10b981;">'ffmpeg'</span>, <span style="color: #10b981;">'-i'</span>, input_path,
+        <span style="color: #10b981;">'-c:v'</span>, <span style="color: #10b981;">'libx264'</span>, <span style="color: #10b981;">'-b:v'</span>, <span style="color: #10b981;">'2500k'</span>,
+        <span style="color: #10b981;">'-hls_time'</span>, <span style="color: #10b981;">'4'</span>, <span style="color: #10b981;">'-hls_playlist_type'</span>, <span style="color: #10b981;">'vod'</span>,
+        output_path
+    ]
+    subprocess.run(cmd, check=<span style="color: #fbbf24;">True</span>)
+    <span style="color: #fbbf24;">return</span> output_path
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">5.6 품질 모니터링</h2>
+
+<h3 style="color: #a855f7;">5.6.1 QoE 메트릭 수집</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">// 클라이언트 측 QoE 추적</span>
+<span style="color: #fbbf24;">class</span> QoETracker {
+  <span style="color: #fbbf24;">constructor</span>(player) {
+    <span style="color: #fbbf24;">this</span>.player = player;
+    <span style="color: #fbbf24;">this</span>.metrics = {
+      startupTime: <span style="color: #fbbf24;">0</span>,
+      bufferingEvents: [],
+      qualityChanges: [],
+      errors: []
+    };
+    <span style="color: #fbbf24;">this</span>.startTime = Date.now();
+  }
+
+  trackStartup() {
+    <span style="color: #fbbf24;">this</span>.player.on(<span style="color: #10b981;">'playing'</span>, () => {
+      <span style="color: #fbbf24;">this</span>.metrics.startupTime = Date.now() - <span style="color: #fbbf24;">this</span>.startTime;
+      <span style="color: #fbbf24;">this</span>.sendMetric(<span style="color: #10b981;">'startup_time'</span>, <span style="color: #fbbf24;">this</span>.metrics.startupTime);
+    });
+  }
+
+  trackBuffering() {
+    <span style="color: #fbbf24;">let</span> bufferStart;
+    <span style="color: #fbbf24;">this</span>.player.on(<span style="color: #10b981;">'waiting'</span>, () => {
+      bufferStart = Date.now();
+    });
+    <span style="color: #fbbf24;">this</span>.player.on(<span style="color: #10b981;">'playing'</span>, () => {
+      <span style="color: #fbbf24;">if</span> (bufferStart) {
+        <span style="color: #fbbf24;">const</span> duration = Date.now() - bufferStart;
+        <span style="color: #fbbf24;">this</span>.metrics.bufferingEvents.push(duration);
+        <span style="color: #fbbf24;">this</span>.sendMetric(<span style="color: #10b981;">'buffering'</span>, duration);
+      }
+    });
+  }
+
+  sendMetric(type, value) {
+    fetch(<span style="color: #10b981;">'/api/analytics/qoe'</span>, {
+      method: <span style="color: #10b981;">'POST'</span>,
+      headers: { <span style="color: #10b981;">'Content-Type'</span>: <span style="color: #10b981;">'application/json'</span> },
+      body: JSON.stringify({ type, value, timestamp: Date.now() })
+    });
+  }
+}
+</pre>
+
+<h3 style="color: #a855f7;">5.6.2 서버 측 모니터링</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">메트릭</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">도구</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">임계값</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Origin 응답 시간</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">CloudWatch</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">< 100ms</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>CDN 캐시 히트율</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">CloudFront Metrics</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">> 90%</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>4xx 에러율</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Prometheus</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">< 1%</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>5xx 에러율</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Grafana</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">< 0.1%</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">5.7 최적화 기법</h2>
+
+<h3 style="color: #a855f7;">5.7.1 비디오 사전 로딩</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">// 사용자가 비디오 위에 마우스 올렸을 때 사전 로딩</span>
+<span style="color: #fbbf24;">const</span> videoCards = document.querySelectorAll(<span style="color: #10b981;">'.video-card'</span>);
+
+videoCards.forEach(card => {
+  card.addEventListener(<span style="color: #10b981;">'mouseenter'</span>, () => {
+    <span style="color: #fbbf24;">const</span> videoId = card.dataset.videoId;
+    <span style="color: #fbbf24;">const</span> link = document.createElement(<span style="color: #10b981;">'link'</span>);
+    link.rel = <span style="color: #10b981;">'prefetch'</span>;
+    link.href = <span style="color: #10b981;">`https://cdn.example.com/${videoId}/master.m3u8`</span>;
+    document.head.appendChild(link);
+  });
+});
+</pre>
+
+<h3 style="color: #a855f7;">5.7.2 저대역폭 최적화</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #fbbf24; overflow-x: auto;">
+<span style="color: #fbbf24;">네트워크 상태 감지 및 대응:</span>
+
+<span style="color: #64748b;">// Network Information API 사용</span>
+<span style="color: #fbbf24;">if</span> (navigator.connection) {
+  <span style="color: #fbbf24;">const</span> connection = navigator.connection;
+
+  <span style="color: #fbbf24;">if</span> (connection.effectiveType === <span style="color: #10b981;">'slow-2g'</span> || connection.effectiveType === <span style="color: #10b981;">'2g'</span>) {
+    <span style="color: #64748b;">// 240p로 시작</span>
+    player.setStartingQuality(<span style="color: #10b981;">'240p'</span>);
+  } <span style="color: #fbbf24;">else if</span> (connection.effectiveType === <span style="color: #10b981;">'3g'</span>) {
+    <span style="color: #64748b;">// 480p로 시작</span>
+    player.setStartingQuality(<span style="color: #10b981;">'480p'</span>);
+  } <span style="color: #fbbf24;">else</span> {
+    <span style="color: #64748b;">// Auto (최고 품질)</span>
+    player.setStartingQuality(<span style="color: #10b981;">'auto'</span>);
+  }
+
+  <span style="color: #64748b;">// 네트워크 변경 감지</span>
+  connection.addEventListener(<span style="color: #10b981;">'change'</span>, () => {
+    console.log(<span style="color: #10b981;">`Network changed to ${connection.effectiveType}`</span>);
+  });
+}
+</pre>
+
+<h3 style="color: #a855f7;">5.7.3 비디오 압축 최적화</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">콘텐츠 유형</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">인코딩 설정</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>슬라이드 기반 강의</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">낮은 비트레이트, 높은 키프레임 간격</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>화면 녹화</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">중간 비트레이트, tune=animation</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>실험/실습 영상</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">높은 비트레이트, 낮은 키프레임 간격</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">5.8 테스트 및 검증</h2>
+
+<h3 style="color: #a855f7;">5.8.1 자동화된 테스트</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">// Jest를 이용한 플레이어 테스트</span>
+<span style="color: #fbbf24;">import</span> { WIAPlayer } <span style="color: #fbbf24;">from</span> <span style="color: #10b981;">'@wia/player'</span>;
+
+describe(<span style="color: #10b981;">'WIA Player'</span>, () => {
+  <span style="color: #fbbf24;">let</span> player;
+
+  beforeEach(() => {
+    document.body.innerHTML = <span style="color: #10b981;">'&lt;div id="player"&gt;&lt;/div&gt;'</span>;
+    player = <span style="color: #fbbf24;">new</span> WIAPlayer(<span style="color: #10b981;">'player'</span>, {
+      videoId: <span style="color: #10b981;">'test_video'</span>
+    });
+  });
+
+  test(<span style="color: #10b981;">'should load video'</span>, <span style="color: #fbbf24;">async</span> () => {
+    <span style="color: #fbbf24;">await</span> player.load();
+    expect(player.isReady()).toBe(<span style="color: #fbbf24;">true</span>);
+  });
+
+  test(<span style="color: #10b981;">'should play and pause'</span>, () => {
+    player.play();
+    expect(player.isPaused()).toBe(<span style="color: #fbbf24;">false</span>);
+
+    player.pause();
+    expect(player.isPaused()).toBe(<span style="color: #fbbf24;">true</span>);
+  });
+
+  test(<span style="color: #10b981;">'should change quality'</span>, () => {
+    player.setQuality(<span style="color: #10b981;">'720p'</span>);
+    expect(player.getCurrentQuality()).toBe(<span style="color: #10b981;">'720p'</span>);
+  });
+});
+</pre>
+
+<h3 style="color: #a855f7;">5.8.2 성능 벤치마크</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">메트릭</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">목표</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">측정 방법</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Time to First Byte</strong></td>
+        <td style="border: 1px solid #475569; color: #10b981;">< 200ms</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Performance API</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Video Start Time</strong></td>
+        <td style="border: 1px solid #475569; color: #10b981;">< 2s</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">플레이어 이벤트</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Buffering Ratio</strong></td>
+        <td style="border: 1px solid #475569; color: #10b981;">< 0.5%</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">플레이 시간 대비 버퍼링 시간</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">장 요약</h2>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">기술</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">핵심 도구</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>HLS</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">FFmpeg, hls.js</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>DASH</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Shaka Packager, dash.js</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>WebRTC</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">mediasoup, socket.io</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>CDN</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">CloudFront, Cloudflare</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>모니터링</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Prometheus, Grafana</td>
+    </tr>
+</table>
+
+<nav style="margin-top: 30px; padding: 15px; background: #1e293b; border-radius: 8px; display: flex; justify-content: space-between;">
+    <a href="chapter-04.html" style="color: #a855f7; text-decoration: none;">← 제4장: API 명세</a>
+    <a href="chapter-06.html" style="color: #a855f7; text-decoration: none;">제6장: 보안 및 프라이버시 →</a>
+</nav>
+
+<p style="text-align: center; color: #fbbf24; margin-top: 40px;">弘益人間 · 널리 인간을 이롭게 하라</p>
+<p style="text-align: center; color: #64748b;">© 2025 WIA - 세계지능연합</p>
+
+</body>
+</html>

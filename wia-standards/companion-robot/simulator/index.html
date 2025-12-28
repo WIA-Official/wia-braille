@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA Companion Robot - Interactive Simulator</title>
+    <style>
+        :root {
+            --primary: #8B5CF6;
+            --primary-dark: #7C3AED;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .lang-selector {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .lang-selector:hover { border-color: var(--primary); }
+        .lang-selector:focus { outline: none; border-color: var(--primary); }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 40px 0;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, var(--primary), #A78BFA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 24px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .tab:hover { border-color: var(--primary); }
+
+        /* Panel */
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid var(--border);
+        }
+        .panel.active { display: block; }
+        .panel h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn-outline:hover { border-color: var(--primary); }
+
+        /* Robot Profile Card */
+        .robot-card {
+            background: linear-gradient(135deg, #2d1b69, #0f172a);
+            border-radius: 16px;
+            padding: 30px;
+            border: 2px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+        }
+        .robot-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent);
+        }
+        .robot-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--bg);
+            border: 3px solid var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin: 0 auto 20px;
+        }
+        .robot-info {
+            text-align: center;
+        }
+        .robot-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .robot-type {
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+        .personality-traits {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .trait-badge {
+            background: rgba(139, 92, 246, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(139, 92, 246, 0.4);
+        }
+
+        /* Chat Interface */
+        .chat-container {
+            background: var(--bg);
+            border-radius: 12px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        .message.user {
+            flex-direction: row-reverse;
+        }
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .message.user .message-avatar {
+            background: var(--secondary);
+        }
+        .message-content {
+            background: var(--bg-card);
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 70%;
+        }
+        .message.user .message-content {
+            background: var(--primary);
+        }
+        .chat-input-area {
+            padding: 15px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input {
+            flex: 1;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            background: var(--bg);
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s;
+        }
+
+        /* Activity Log */
+        .activity-log {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .activity-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            align-items: start;
+        }
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(139, 92, 246, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .activity-content {
+            flex: 1;
+        }
+        .activity-title {
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .activity-time {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Settings */
+        .setting-group {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+        .setting-header {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        /* CTA */
+        .cta-section {
+            margin-top: 50px;
+            padding: 40px;
+            background: linear-gradient(135deg, var(--bg-card), var(--bg));
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .cta-section h2 { margin-bottom: 15px; }
+        .cta-section p { color: var(--text-muted); margin-bottom: 25px; }
+        .cta-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .price-tag {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--secondary);
+            margin: 15px 0;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 50px;
+            padding: 30px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+        }
+        footer a { color: var(--primary); text-decoration: none; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.8rem; }
+            .tabs { justify-content: center; }
+            header { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🤗 WIA Companion Robot</div>
+            <div class="header-controls">
+                <select class="lang-selector" id="languageSelect" onchange="setLanguage(this.value)">
+                    <option value="en">🇬🇧 English</option>
+                    <option value="ko">🇰🇷 한국어 (Korean)</option>
+                    <option value="zh">🇨🇳 中文 (Chinese)</option>
+                    <option value="ja">🇯🇵 日本語 (Japanese)</option>
+                    <option value="es">🇪🇸 Español (Spanish)</option>
+                    <option value="fr">🇫🇷 Français (French)</option>
+                    <option value="de">🇩🇪 Deutsch (German)</option>
+                    <option value="it">🇮🇹 Italiano (Italian)</option>
+                    <option value="pt">🇵🇹 Português (Portuguese)</option>
+                    <option value="ru">🇷🇺 Русский (Russian)</option>
+                    <option value="ar">🇸🇦 العربية (Arabic)</option>
+                    <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
+                    <option value="bn">🇧🇩 বাংলা (Bengali)</option>
+                    <option value="vi">🇻🇳 Tiếng Việt (Vietnamese)</option>
+                    <option value="th">🇹🇭 ไทย (Thai)</option>
+                    <option value="tr">🇹🇷 Türkçe (Turkish)</option>
+                    <option value="pl">🇵🇱 Polski (Polish)</option>
+                    <option value="nl">🇳🇱 Nederlands (Dutch)</option>
+                    <option value="sv">🇸🇪 Svenska (Swedish)</option>
+                    <option value="no">🇳🇴 Norsk (Norwegian)</option>
+                    <option value="da">🇩🇰 Dansk (Danish)</option>
+                    <option value="fi">🇫🇮 Suomi (Finnish)</option>
+                    <option value="el">🇬🇷 Ελληνικά (Greek)</option>
+                    <option value="he">🇮🇱 עברית (Hebrew)</option>
+                    <option value="id">🇮🇩 Bahasa Indonesia</option>
+                    <option value="ms">🇲🇾 Bahasa Melayu</option>
+                    <option value="fa">🇮🇷 فارسی (Persian)</option>
+                    <option value="uk">🇺🇦 Українська (Ukrainian)</option>
+                    <option value="ro">🇷🇴 Română (Romanian)</option>
+                    <option value="cs">🇨🇿 Čeština (Czech)</option>
+                    <option value="hu">🇭🇺 Magyar (Hungarian)</option>
+                    <option value="sk">🇸🇰 Slovenčina (Slovak)</option>
+                    <option value="bg">🇧🇬 Български (Bulgarian)</option>
+                    <option value="hr">🇭🇷 Hrvatski (Croatian)</option>
+                    <option value="sr">🇷🇸 Српски (Serbian)</option>
+                    <option value="sl">🇸🇮 Slovenščina (Slovenian)</option>
+                    <option value="lt">🇱🇹 Lietuvių (Lithuanian)</option>
+                    <option value="lv">🇱🇻 Latviešu (Latvian)</option>
+                    <option value="et">🇪🇪 Eesti (Estonian)</option>
+                    <option value="ka">🇬🇪 ქართული (Georgian)</option>
+                    <option value="hy">🇦🇲 Հայերեն (Armenian)</option>
+                    <option value="az">🇦🇿 Azərbaycan (Azerbaijani)</option>
+                    <option value="kk">🇰🇿 Қазақ (Kazakh)</option>
+                    <option value="uz">🇺🇿 O'zbek (Uzbek)</option>
+                    <option value="mn">🇲🇳 Монгол (Mongolian)</option>
+                    <option value="ne">🇳🇵 नेपाली (Nepali)</option>
+                    <option value="si">🇱🇰 සිංහල (Sinhala)</option>
+                    <option value="km">🇰🇭 ខ្មែរ (Khmer)</option>
+                    <option value="lo">🇱🇦 ລາວ (Lao)</option>
+                    <option value="my">🇲🇲 မြန်မာ (Burmese)</option>
+                    <option value="am">🇪🇹 አማርኛ (Amharic)</option>
+                    <option value="sw">🇰🇪 Kiswahili (Swahili)</option>
+                    <option value="zu">🇿🇦 isiZulu (Zulu)</option>
+                    <option value="xh">🇿🇦 isiXhosa (Xhosa)</option>
+                    <option value="af">🇿🇦 Afrikaans</option>
+                    <option value="sq">🇦🇱 Shqip (Albanian)</option>
+                    <option value="mk">🇲🇰 Македонски (Macedonian)</option>
+                    <option value="is">🇮🇸 Íslenska (Icelandic)</option>
+                    <option value="ga">🇮🇪 Gaeilge (Irish)</option>
+                    <option value="cy">🏴󠁧󠁢󠁷󠁬󠁳󠁿 Cymraeg (Welsh)</option>
+                    <option value="eu">🏴 Euskara (Basque)</option>
+                    <option value="ca">🏴 Català (Catalan)</option>
+                    <option value="gl">🏴 Galego (Galician)</option>
+                    <option value="mt">🇲🇹 Malti (Maltese)</option>
+                    <option value="lb">🇱🇺 Lëtzebuergesch (Luxembourgish)</option>
+                    <option value="ur">🇵🇰 اردو (Urdu)</option>
+                    <option value="pa">🇮🇳 ਪੰਜਾਬੀ (Punjabi)</option>
+                    <option value="ta">🇮🇳 தமிழ் (Tamil)</option>
+                    <option value="te">🇮🇳 తెలుగు (Telugu)</option>
+                    <option value="ml">🇮🇳 മലയാളം (Malayalam)</option>
+                    <option value="kn">🇮🇳 ಕನ್ನಡ (Kannada)</option>
+                    <option value="mr">🇮🇳 मराठी (Marathi)</option>
+                    <option value="gu">🇮🇳 ગુજરાતી (Gujarati)</option>
+                    <option value="or">🇮🇳 ଓଡ଼ିଆ (Odia)</option>
+                    <option value="as">🇮🇳 অসমীয়া (Assamese)</option>
+                    <option value="tl">🇵🇭 Tagalog (Filipino)</option>
+                    <option value="jv">🇮🇩 Basa Jawa (Javanese)</option>
+                    <option value="su">🇮🇩 Basa Sunda (Sundanese)</option>
+                    <option value="ceb">🇵🇭 Cebuano</option>
+                    <option value="haw">🏝️ ʻŌlelo Hawaiʻi (Hawaiian)</option>
+                    <option value="mi">🇳🇿 Te Reo Māori (Maori)</option>
+                    <option value="sm">🇼🇸 Gagana Samoa (Samoan)</option>
+                    <option value="to">🇹🇴 Lea Fakatonga (Tongan)</option>
+                    <option value="mg">🇲🇬 Malagasy</option>
+                    <option value="ny">🇲🇼 Chichewa</option>
+                    <option value="sn">🇿🇼 chiShona (Shona)</option>
+                    <option value="st">🇱🇸 Sesotho (Southern Sotho)</option>
+                    <option value="so">🇸🇴 Soomaali (Somali)</option>
+                    <option value="ha">🇳🇬 Hausa</option>
+                    <option value="ig">🇳🇬 Igbo</option>
+                    <option value="yo">🇳🇬 Yorùbá (Yoruba)</option>
+                    <option value="ht">🇭🇹 Kreyòl Ayisyen (Haitian Creole)</option>
+                    <option value="la">🏛️ Latina (Latin)</option>
+                    <option value="eo">🌍 Esperanto</option>
+                    <option value="yi">✡️ ייִדיש (Yiddish)</option>
+                    <option value="ku">🏴 Kurdî (Kurdish)</option>
+                    <option value="ps">🇦🇫 پښتو (Pashto)</option>
+                    <option value="sd">🇵🇰 سنڌي (Sindhi)</option>
+                    <option value="ug">🇨🇳 ئۇيغۇرچە (Uyghur)</option>
+                    <option value="bo">🇨🇳 བོད་ཡིག (Tibetan)</option>
+                </select>
+            </div>
+        </header>
+
+        <section class="hero">
+            <h1 id="heroTitle">Companion Robot Simulator</h1>
+            <p id="heroDesc">Interactive demo of WIA-ROB-013 standard</p>
+        </section>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showPanel('configure')" id="tab1">⚙️ Configure Robot</button>
+            <button class="tab" onclick="showPanel('interact')" id="tab2">💬 Interact</button>
+            <button class="tab" onclick="showPanel('monitor')" id="tab3">📊 Monitor</button>
+            <button class="tab" onclick="showPanel('activities')" id="tab4">📅 Activities</button>
+            <button class="tab" onclick="showPanel('settings')" id="tab5">🔧 Settings</button>
+        </div>
+
+        <!-- Configure Panel -->
+        <div id="configure" class="panel active">
+            <h2 id="configTitle">Configure Your Companion Robot</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label id="nameLabel">Robot Name</label>
+                    <input type="text" id="robotName" placeholder="Buddy">
+                </div>
+                <div class="form-group">
+                    <label id="personalityLabel">Personality Type</label>
+                    <select id="personalityType">
+                        <option value="friendly">😊 Friendly & Supportive</option>
+                        <option value="professional">🎓 Professional & Informative</option>
+                        <option value="playful">🎉 Playful & Energetic</option>
+                        <option value="calm">😌 Calm & Meditative</option>
+                        <option value="motivational">💪 Motivational & Inspiring</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label id="voiceLabel">Voice Type</label>
+                    <select id="voiceType">
+                        <option value="neutral">Neutral</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="child">Child-like</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label id="ageLabel">Interaction Age Range</label>
+                    <select id="ageRange">
+                        <option value="child">Child (5-12)</option>
+                        <option value="teen">Teen (13-17)</option>
+                        <option value="adult">Adult (18-64)</option>
+                        <option value="senior">Senior (65+)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label id="purposeLabel">Primary Purpose</label>
+                <select id="primaryPurpose">
+                    <option value="companion">Emotional Support & Companionship</option>
+                    <option value="education">Education & Learning</option>
+                    <option value="health">Health & Wellness Monitoring</option>
+                    <option value="entertainment">Entertainment & Games</option>
+                    <option value="assistance">Daily Life Assistance</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label id="interestsLabel">Interests & Topics (comma separated)</label>
+                <textarea id="interests" rows="3" placeholder="music, sports, science, cooking, travel"></textarea>
+            </div>
+
+            <button class="btn btn-primary" onclick="createRobot()" id="createBtn">🤖 Create Robot</button>
+        </div>
+
+        <!-- Interact Panel -->
+        <div id="interact" class="panel">
+            <h2 id="interactTitle">Interact with Your Companion</h2>
+
+            <div class="robot-card" style="margin-bottom: 30px;">
+                <div class="robot-avatar" id="robotAvatar">🤖</div>
+                <div class="robot-info">
+                    <div class="robot-name" id="displayName">Robot Buddy</div>
+                    <div class="robot-type" id="displayPersonality">Friendly & Supportive</div>
+                    <div class="personality-traits">
+                        <span class="trait-badge">Empathetic</span>
+                        <span class="trait-badge">Patient</span>
+                        <span class="trait-badge">Helpful</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            <p id="welcomeMsg">Hello! I'm your companion robot. How can I help you today?</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" class="form-group input chat-input" id="chatInput" placeholder="Type your message...">
+                    <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitor Panel -->
+        <div id="monitor" class="panel">
+            <h2 id="monitorTitle">Companion Performance Monitor</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="interactionCount">247</div>
+                    <div class="stat-label" id="interactionsLabel">Total Interactions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">4.8★</div>
+                    <div class="stat-label" id="satisfactionLabel">User Satisfaction</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">98%</div>
+                    <div class="stat-label" id="upLabel">Uptime</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">12d</div>
+                    <div class="stat-label" id="activeLabel">Days Active</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3 style="margin-bottom: 15px;" id="skillsTitle">Learning Progress</h3>
+
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span id="convLabel">Conversation Skills</span>
+                        <span>85%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 85%;"></div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span id="emotionLabel">Emotion Recognition</span>
+                        <span>92%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 92%;"></div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span id="personLabel">Personalization</span>
+                        <span>78%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 78%;"></div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span id="contextLabel">Context Understanding</span>
+                        <span>88%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 88%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activities Panel -->
+        <div id="activities" class="panel">
+            <h2 id="activitiesTitle">Recent Activities</h2>
+
+            <div class="activity-log">
+                <div class="activity-item">
+                    <div class="activity-icon">💬</div>
+                    <div class="activity-content">
+                        <div class="activity-title" id="act1">Conversation about daily routine</div>
+                        <div class="activity-time">2 hours ago</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">🎮</div>
+                    <div class="activity-content">
+                        <div class="activity-title" id="act2">Played word association game</div>
+                        <div class="activity-time">5 hours ago</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">😊</div>
+                    <div class="activity-content">
+                        <div class="activity-title" id="act3">Mood check-in and support session</div>
+                        <div class="activity-time">8 hours ago</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">📚</div>
+                    <div class="activity-content">
+                        <div class="activity-title" id="act4">Shared interesting facts about space</div>
+                        <div class="activity-time">Yesterday</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">🎵</div>
+                    <div class="activity-content">
+                        <div class="activity-title" id="act5">Music recommendation session</div>
+                        <div class="activity-time">Yesterday</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">💪</div>
+                    <div class="activity-content">
+                        <div class="activity-title" id="act6">Morning motivation and goal setting</div>
+                        <div class="activity-time">2 days ago</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">🧘</div>
+                    <div class="activity-content">
+                        <div class="activity-title" id="act7">Guided meditation session</div>
+                        <div class="activity-time">2 days ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settings" class="panel">
+            <h2 id="settingsTitle">Robot Settings</h2>
+
+            <div class="setting-group">
+                <div class="setting-header" id="privacyHeader">Privacy & Security</div>
+                <div class="setting-row">
+                    <span id="dataLabel">Data Collection</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span id="voiceRecLabel">Voice Recording</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span id="encryptLabel">End-to-End Encryption</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-header" id="behaviorHeader">Behavior Settings</div>
+                <div class="setting-row">
+                    <span id="proactiveLabel">Proactive Interactions</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span id="learningLabel">Adaptive Learning</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span id="notifLabel">Notifications</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-header" id="safetyHeader">Safety Features</div>
+                <div class="setting-row">
+                    <span id="contentLabel">Content Filtering</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span id="emergencyLabel">Emergency Contact Alert</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span id="childLabel">Child Safety Mode</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn btn-outline" onclick="resetSettings()" id="resetBtn">Reset to Defaults</button>
+        </div>
+
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <h2 id="ctaTitle">Master the WIA Companion Robot Standard</h2>
+            <p id="ctaDesc">Get the official ebook with complete specifications, implementation guides, and certification preparation materials.</p>
+
+            <div class="price-tag">$99 USD</div>
+
+            <div class="cta-buttons">
+                <a href="../ebook/en/" class="btn btn-primary" id="ebookBtn">📚 Get the Ebook</a>
+                <a href="https://cert.wiastandards.com" target="_blank" class="btn btn-secondary" id="certBtn">🏆 Get Certified</a>
+            </div>
+        </section>
+
+        <footer>
+            <p>WIA - World Certification Industry Association</p>
+            <p id="footerPhil">Philosophy: 弘益人間 (Hongik Ingan) - Benefit All Humanity</p>
+            <p style="margin-top: 10px;">
+                <a href="https://github.com/WIA-Official/wia-standards" target="_blank">GitHub</a> |
+                <a href="https://wiastandards.com" target="_blank">WIA Standards</a> |
+                <a href="../README.md">Documentation</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+        let robotData = null;
+        let messageCount = 0;
+
+        const translations = {
+            en: {
+                heroTitle: 'Companion Robot Simulator',
+                heroDesc: 'Interactive demo of WIA-ROB-013 standard',
+                tab1: '⚙️ Configure Robot',
+                tab2: '💬 Interact',
+                tab3: '📊 Monitor',
+                tab4: '📅 Activities',
+                tab5: '🔧 Settings',
+                configTitle: 'Configure Your Companion Robot',
+                nameLabel: 'Robot Name',
+                personalityLabel: 'Personality Type',
+                voiceLabel: 'Voice Type',
+                ageLabel: 'Interaction Age Range',
+                purposeLabel: 'Primary Purpose',
+                interestsLabel: 'Interests & Topics (comma separated)',
+                createBtn: '🤖 Create Robot',
+                interactTitle: 'Interact with Your Companion',
+                welcomeMsg: 'Hello! I\'m your companion robot. How can I help you today?',
+                sendBtn: 'Send',
+                monitorTitle: 'Companion Performance Monitor',
+                interactionsLabel: 'Total Interactions',
+                satisfactionLabel: 'User Satisfaction',
+                upLabel: 'Uptime',
+                activeLabel: 'Days Active',
+                skillsTitle: 'Learning Progress',
+                convLabel: 'Conversation Skills',
+                emotionLabel: 'Emotion Recognition',
+                personLabel: 'Personalization',
+                contextLabel: 'Context Understanding',
+                activitiesTitle: 'Recent Activities',
+                act1: 'Conversation about daily routine',
+                act2: 'Played word association game',
+                act3: 'Mood check-in and support session',
+                act4: 'Shared interesting facts about space',
+                act5: 'Music recommendation session',
+                act6: 'Morning motivation and goal setting',
+                act7: 'Guided meditation session',
+                settingsTitle: 'Robot Settings',
+                privacyHeader: 'Privacy & Security',
+                dataLabel: 'Data Collection',
+                voiceRecLabel: 'Voice Recording',
+                encryptLabel: 'End-to-End Encryption',
+                behaviorHeader: 'Behavior Settings',
+                proactiveLabel: 'Proactive Interactions',
+                learningLabel: 'Adaptive Learning',
+                notifLabel: 'Notifications',
+                safetyHeader: 'Safety Features',
+                contentLabel: 'Content Filtering',
+                emergencyLabel: 'Emergency Contact Alert',
+                childLabel: 'Child Safety Mode',
+                resetBtn: 'Reset to Defaults',
+                ctaTitle: 'Master the WIA Companion Robot Standard',
+                ctaDesc: 'Get the official ebook with complete specifications, implementation guides, and certification preparation materials.',
+                ebookBtn: '📚 Get the Ebook',
+                certBtn: '🏆 Get Certified',
+                footerPhil: 'Philosophy: 弘益人間 (Hongik Ingan) - Benefit All Humanity'
+            },
+            ko: {
+                heroTitle: '반려 로봇 시뮬레이터',
+                heroDesc: 'WIA-ROB-013 표준 인터랙티브 데모',
+                tab1: '⚙️ 로봇 설정',
+                tab2: '💬 상호작용',
+                tab3: '📊 모니터링',
+                tab4: '📅 활동',
+                tab5: '🔧 설정',
+                configTitle: '반려 로봇 구성하기',
+                nameLabel: '로봇 이름',
+                personalityLabel: '성격 유형',
+                voiceLabel: '음성 유형',
+                ageLabel: '상호작용 연령대',
+                purposeLabel: '주요 목적',
+                interestsLabel: '관심사 및 주제 (쉼표로 구분)',
+                createBtn: '🤖 로봇 생성',
+                interactTitle: '반려 로봇과 대화하기',
+                welcomeMsg: '안녕하세요! 저는 당신의 반려 로봇입니다. 오늘 어떻게 도와드릴까요?',
+                sendBtn: '전송',
+                monitorTitle: '반려 로봇 성능 모니터',
+                interactionsLabel: '총 상호작용',
+                satisfactionLabel: '사용자 만족도',
+                upLabel: '가동 시간',
+                activeLabel: '활성 일수',
+                skillsTitle: '학습 진행도',
+                convLabel: '대화 기술',
+                emotionLabel: '감정 인식',
+                personLabel: '개인화',
+                contextLabel: '맥락 이해',
+                activitiesTitle: '최근 활동',
+                act1: '일상 루틴에 대한 대화',
+                act2: '단어 연상 게임',
+                act3: '기분 체크인 및 지원 세션',
+                act4: '우주에 대한 흥미로운 사실 공유',
+                act5: '음악 추천 세션',
+                act6: '아침 동기부여 및 목표 설정',
+                act7: '가이드 명상 세션',
+                settingsTitle: '로봇 설정',
+                privacyHeader: '개인정보 및 보안',
+                dataLabel: '데이터 수집',
+                voiceRecLabel: '음성 녹음',
+                encryptLabel: '종단간 암호화',
+                behaviorHeader: '행동 설정',
+                proactiveLabel: '능동적 상호작용',
+                learningLabel: '적응형 학습',
+                notifLabel: '알림',
+                safetyHeader: '안전 기능',
+                contentLabel: '콘텐츠 필터링',
+                emergencyLabel: '긴급 연락처 알림',
+                childLabel: '어린이 안전 모드',
+                resetBtn: '기본값으로 재설정',
+                ctaTitle: 'WIA 반려 로봇 표준 마스터하기',
+                ctaDesc: '완전한 사양, 구현 가이드 및 인증 준비 자료가 포함된 공식 전자책을 받으세요.',
+                ebookBtn: '📚 전자책 구매',
+                certBtn: '🏆 인증 받기',
+                footerPhil: '철학: 弘益人間 (홍익인간) - 널리 인간을 이롭게 하라'
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang] || translations.en;
+
+            Object.keys(t).forEach(key => {
+                const el = document.getElementById(key);
+                if (el) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = t[key];
+                    } else {
+                        el.textContent = t[key];
+                    }
+                }
+            });
+        }
+
+        function showPanel(panelId) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(panelId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function createRobot() {
+            const name = document.getElementById('robotName').value || 'Buddy';
+            const personality = document.getElementById('personalityType').value;
+            const voice = document.getElementById('voiceType').value;
+            const age = document.getElementById('ageRange').value;
+            const purpose = document.getElementById('primaryPurpose').value;
+            const interests = document.getElementById('interests').value;
+
+            robotData = { name, personality, voice, age, purpose, interests };
+
+            document.getElementById('displayName').textContent = name;
+            document.getElementById('displayPersonality').textContent =
+                document.getElementById('personalityType').selectedOptions[0].text;
+
+            alert(currentLang === 'ko' ? '로봇이 성공적으로 생성되었습니다!' : 'Robot created successfully!');
+
+            showPanel('interact');
+            document.querySelectorAll('.tab')[1].classList.add('active');
+            document.querySelectorAll('.tab')[0].classList.remove('active');
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            const chatMessages = document.getElementById('chatMessages');
+
+            // User message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message user';
+            userMsg.innerHTML = `
+                <div class="message-avatar">👤</div>
+                <div class="message-content"><p>${message}</p></div>
+            `;
+            chatMessages.appendChild(userMsg);
+
+            input.value = '';
+            messageCount++;
+
+            // Robot response
+            setTimeout(() => {
+                const responses = currentLang === 'ko' ? [
+                    '그것은 정말 흥미롭네요! 더 자세히 말씀해 주시겠어요?',
+                    '이해했습니다. 제가 어떻게 도와드릴 수 있을까요?',
+                    '좋은 생각이에요! 함께 더 알아볼까요?',
+                    '그렇군요. 그것에 대해 어떻게 생각하시나요?'
+                ] : [
+                    'That\'s really interesting! Can you tell me more about that?',
+                    'I understand. How can I help you with that?',
+                    'That\'s a great idea! Shall we explore that together?',
+                    'I see. How do you feel about that?'
+                ];
+
+                const botMsg = document.createElement('div');
+                botMsg.className = 'message';
+                botMsg.innerHTML = `
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content"><p>${responses[Math.floor(Math.random() * responses.length)]}</p></div>
+                `;
+                chatMessages.appendChild(botMsg);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                // Update interaction count
+                document.getElementById('interactionCount').textContent = 247 + messageCount;
+            }, 1000);
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function resetSettings() {
+            alert(currentLang === 'ko' ? '설정이 기본값으로 재설정되었습니다.' : 'Settings have been reset to defaults.');
+        }
+
+        // Allow Enter key to send message
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                chatInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        sendMessage();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

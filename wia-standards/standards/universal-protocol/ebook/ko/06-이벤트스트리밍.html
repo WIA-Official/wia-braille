@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>제6장: 이벤트스트리밍 | WIA-CORE-007</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#f1f5f9;line-height:1.8;padding:2rem}.container{max-width:900px;margin:0 auto;background:#1e293b;padding:3rem;border-radius:15px;box-shadow:0 20px 60px rgba(0,0,0,.3)}h1{font-size:2.5rem;margin-bottom:1rem;color:#10b981;border-bottom:3px solid #6B7280;padding-bottom:1rem}h2{font-size:2rem;margin:2rem 0 1rem;color:#6B7280}h3{font-size:1.5rem;margin:1.5rem 0 1rem;color:#10b981}p{margin:1rem 0;font-size:1.1rem}code{background:#0f172a;padding:.2rem .5rem;border-radius:3px;font-family:Monaco,monospace;color:#10b981}pre{background:#0f172a;padding:1.5rem;border-radius:8px;overflow-x:auto;margin:1rem 0;border-left:4px solid #6B7280}pre code{background:none;padding:0}.nav{margin:2rem 0;display:flex;justify-content:space-between;padding-top:2rem;border-top:2px solid #334155}.nav a{color:#10b981;text-decoration:none;font-weight:600;padding:.5rem 1rem;border:2px solid #6B7280;border-radius:5px;transition:all .3s}.nav a:hover{background:#6B7280;color:white}.highlight{background:#334155;padding:1.5rem;border-left:4px solid #10b981;border-radius:5px;margin:1.5rem 0}ul,ol{margin:1rem 0 1rem 2rem}li{margin:.5rem 0;font-size:1.1rem}table{width:100%;border-collapse:collapse;margin:1.5rem 0}th,td{padding:1rem;text-align:left;border:1px solid #334155}th{background:#0f172a;color:#10b981}td{background:#1e293b}.emoji{font-size:1.5em;margin-right:.5rem}</style>
+</head>
+<body>
+<div class="container">
+<h1><span class="emoji">📖</span>제6장: 이벤트스트리밍</h1>
+
+<h2>6.1 개요</h2>
+<p>이 장에서는 범용 프로토콜의 이벤트스트리밍 기능에 대해 자세히 살펴봅니다. 실무에서 바로 활용할 수 있는 구체적인 예제와 패턴을 제공합니다.</p>
+
+<h2>6.2 핵심 개념</h2>
+<p>이벤트스트리밍은(는) 범용 프로토콜의 중요한 구성 요소입니다. 올바르게 이해하고 활용하면 애플리케이션의 성능과 확장성을 크게 향상시킬 수 있습니다.</p>
+
+<h3>6.2.1 기본 사용법</h3>
+<pre><code>// 이벤트스트리밍 기본 예제
+import { UniversalProtocol } from '@wia/universal-protocol';
+
+const protocol = new UniversalProtocol({
+  transport: new WebSocketTransport({
+    url: 'wss://api.example.com'
+  }),
+  encoding: 'json'
+});
+
+// 기본 사용
+const result = await protocol.call('method.name', {
+  param1: 'value1',
+  param2: 'value2'
+});
+
+console.log('결과:', result);</code></pre>
+
+<h3>6.2.2 고급 패턴</h3>
+<p>실제 프로덕션 환경에서는 더 복잡한 시나리오를 처리해야 합니다. 다음은 몇 가지 고급 패턴입니다:</p>
+
+<pre><code>// 고급 사용 예제
+protocol.use(async (context, next) => {
+  // 미들웨어 로직
+  console.log('요청 시작:', context.method);
+  
+  const startTime = Date.now();
+  await next();
+  
+  const duration = Date.now() - startTime;
+  console.log('요청 완료:', duration + 'ms');
+});
+
+// 타입 안전 호출
+interface RequestType {
+  userId: string;
+  action: string;
+}
+
+interface ResponseType {
+  success: boolean;
+  data: any;
+}
+
+const result = await protocol.call<RequestType, ResponseType>(
+  'secure.endpoint',
+  {
+    userId: 'user123',
+    action: 'getData'
+  }
+);
+
+if (result.success) {
+  console.log('데이터:', result.data);
+}</code></pre>
+
+<h2>6.3 실전 활용</h2>
+
+<h3>6.3.1 웹 애플리케이션</h3>
+<p>웹 애플리케이션에서 이벤트스트리밍을(를) 활용하는 방법:</p>
+
+<pre><code>// 웹 앱 통합
+class WebApplication {
+  private protocol: UniversalProtocol;
+
+  async initialize() {
+    this.protocol = new UniversalProtocol({
+      transport: new WebSocketTransport({
+        url: 'wss://api.example.com/ws'
+      })
+    });
+
+    await this.protocol.connect();
+    this.setupHandlers();
+  }
+
+  setupHandlers() {
+    // 실시간 업데이트 구독
+    this.protocol.subscribe('notifications', (data) => {
+      this.showNotification(data);
+    });
+
+    // 이벤트 리스너 등록
+    this.protocol.on('connected', () => {
+      console.log('서버 연결됨');
+    });
+
+    this.protocol.on('disconnected', () => {
+      console.log('서버 연결 끊김');
+      this.showOfflineMessage();
+    });
+  }
+
+  async fetchUserData(userId: string) {
+    return await this.protocol.call('users.getData', {
+      userId: userId
+    });
+  }
+}
+
+const app = new WebApplication();
+await app.initialize();</code></pre>
+
+<h3>6.3.2 모바일 애플리케이션</h3>
+<p>모바일 환경에서의 최적화 전략:</p>
+
+<pre><code>// 모바일 최적화
+const protocol = new UniversalProtocol({
+  transport: new WebSocketTransport({
+    url: 'wss://mobile-api.example.com',
+    compression: true, // 대역폭 절약
+    reconnect: {
+      enabled: true,
+      maxAttempts: 5,
+      backoff: 'exponential'
+    }
+  }),
+  encoding: 'messagepack', // 작은 페이로드
+  offlineQueue: {
+    enabled: true,
+    maxSize: 100
+  }
+});
+
+// 오프라인 지원
+protocol.on('offline', () => {
+  // 로컬 캐시 사용
+  useLocalCache();
+});
+
+protocol.on('online', () => {
+  // 대기 중인 작업 동기화
+  syncPendingOperations();
+});</code></pre>
+
+<h2>6.4 성능 최적화</h2>
+
+<h3>6.4.1 캐싱 전략</h3>
+<p>효율적인 캐싱으로 성능을 향상시킵니다:</p>
+
+<pre><code>// 멀티 레벨 캐싱
+class CacheManager {
+  private l1Cache = new Map();
+  private l2Cache = redis;
+
+  async get(key: string) {
+    // L1 캐시 확인
+    if (this.l1Cache.has(key)) {
+      return this.l1Cache.get(key);
+    }
+
+    // L2 캐시 확인
+    const value = await this.l2Cache.get(key);
+    if (value) {
+      this.l1Cache.set(key, value);
+      return value;
+    }
+
+    return null;
+  }
+
+  async set(key: string, value: any, ttl: number) {
+    this.l1Cache.set(key, value);
+    await this.l2Cache.setex(key, ttl, JSON.stringify(value));
+  }
+}
+
+const cache = new CacheManager();
+
+protocol.use(async (context, next) => {
+  const cacheKey = `${context.method}:${JSON.stringify(context.params)}`;
+  
+  const cached = await cache.get(cacheKey);
+  if (cached) {
+    context.response = cached;
+    return;
+  }
+
+  await next();
+
+  if (context.response) {
+    await cache.set(cacheKey, context.response, 300);
+  }
+});</code></pre>
+
+<h3>6.4.2 배치 처리</h3>
+<p>여러 요청을 배치로 처리하여 효율성을 높입니다:</p>
+
+<pre><code>// 자동 배치 처리
+class BatchProcessor {
+  private queue: Array<any> = [];
+  private timeout: NodeJS.Timeout | null = null;
+
+  async add(method: string, params: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.queue.push({ method, params, resolve, reject });
+      
+      if (!this.timeout) {
+        this.timeout = setTimeout(() => this.flush(), 50);
+      }
+
+      if (this.queue.length >= 100) {
+        this.flush();
+      }
+    });
+  }
+
+  async flush() {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
+
+    const batch = this.queue.splice(0);
+    if (batch.length === 0) return;
+
+    try {
+      const results = await protocol.batch(
+        batch.map(item => ({
+          method: item.method,
+          params: item.params
+        }))
+      );
+
+      batch.forEach((item, index) => {
+        item.resolve(results[index]);
+      });
+    } catch (error) {
+      batch.forEach(item => {
+        item.reject(error);
+      });
+    }
+  }
+}
+
+const batcher = new BatchProcessor();
+
+// 사용
+const [user1, user2, user3] = await Promise.all([
+  batcher.add('users.get', { id: '1' }),
+  batcher.add('users.get', { id: '2' }),
+  batcher.add('users.get', { id: '3' })
+]);</code></pre>
+
+<h2>6.5 보안</h2>
+
+<h3>6.5.1 인증 및 권한 부여</h3>
+<pre><code>// JWT 인증
+protocol.use(async (context, next) => {
+  const token = context.metadata.authorization?.replace('Bearer ', '');
+  
+  if (!token) {
+    throw new UnauthorizedError('토큰이 없습니다');
+  }
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    context.user = payload;
+  } catch (error) {
+    throw new UnauthorizedError('유효하지 않은 토큰');
+  }
+
+  await next();
+});
+
+// 권한 확인
+function requireRole(role: string) {
+  return async (context: any, next: Function) => {
+    if (!context.user?.roles?.includes(role)) {
+      throw new ForbiddenError('권한이 부족합니다');
+    }
+    await next();
+  };
+}
+
+protocol.handle('admin.deleteUser',
+  requireRole('admin'),
+  async (params) => {
+    await database.users.delete(params.userId);
+    return { success: true };
+  }
+);</code></pre>
+
+<h3>6.5.2 입력 검증</h3>
+<pre><code>// Zod를 사용한 입력 검증
+import { z } from 'zod';
+
+const createUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(2).max(100),
+  password: z.string().min(8),
+  age: z.number().int().min(18).optional()
+});
+
+protocol.handle('users.create', async (params) => {
+  // 입력 검증
+  const validated = createUserSchema.parse(params);
+  
+  // 사용자 생성
+  const user = await database.users.create(validated);
+  
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name
+  };
+});</code></pre>
+
+<h2>6.6 모니터링 및 로깅</h2>
+
+<h3>6.6.1 구조화된 로깅</h3>
+<pre><code>// 구조화된 로깅
+const logger = {
+  log(level: string, message: string, context: any) {
+    console.log(JSON.stringify({
+      level,
+      message,
+      timestamp: new Date().toISOString(),
+      ...context
+    }));
+  }
+};
+
+protocol.use(async (context, next) => {
+  const traceId = generateTraceId();
+  
+  logger.log('info', '요청 시작', {
+    traceId,
+    method: context.method,
+    userId: context.user?.id
+  });
+
+  const startTime = Date.now();
+
+  try {
+    await next();
+    
+    logger.log('info', '요청 완료', {
+      traceId,
+      method: context.method,
+      duration: Date.now() - startTime
+    });
+  } catch (error) {
+    logger.log('error', '요청 실패', {
+      traceId,
+      method: context.method,
+      error: error.message
+    });
+    throw error;
+  }
+});</code></pre>
+
+<h3>6.6.2 메트릭 수집</h3>
+<pre><code>// Prometheus 메트릭
+const metrics = {
+  requestCounter: new Counter({
+    name: 'protocol_requests_total',
+    help: '총 요청 수',
+    labelNames: ['method', 'status']
+  }),
+  
+  requestDuration: new Histogram({
+    name: 'protocol_request_duration_ms',
+    help: '요청 처리 시간',
+    labelNames: ['method']
+  })
+};
+
+protocol.use(async (context, next) => {
+  const startTime = Date.now();
+  
+  try {
+    await next();
+    
+    metrics.requestCounter.inc({
+      method: context.method,
+      status: 'success'
+    });
+    
+    metrics.requestDuration.observe(
+      { method: context.method },
+      Date.now() - startTime
+    );
+  } catch (error) {
+    metrics.requestCounter.inc({
+      method: context.method,
+      status: 'error'
+    });
+    throw error;
+  }
+});</code></pre>
+
+<h2>6.7 테스트</h2>
+
+<h3>6.7.1 단위 테스트</h3>
+<pre><code>// Jest를 사용한 단위 테스트
+import { MockTransport } from '@wia/universal-protocol/testing';
+
+describe('사용자 서비스', () => {
+  let protocol: UniversalProtocol;
+  let mockTransport: MockTransport;
+
+  beforeEach(() => {
+    mockTransport = new MockTransport();
+    protocol = new UniversalProtocol({
+      transport: mockTransport
+    });
+  });
+
+  it('사용자 프로필을 가져와야 함', async () => {
+    mockTransport.mockResponse('users.getProfile', {
+      userId: '123',
+      name: '홍길동',
+      email: 'hong@example.com'
+    });
+
+    const profile = await protocol.call('users.getProfile', {
+      id: '123'
+    });
+
+    expect(profile.name).toBe('홍길동');
+  });
+
+  it('오류를 올바르게 처리해야 함', async () => {
+    mockTransport.mockError('users.getProfile', {
+      code: 'USER_NOT_FOUND',
+      message: '사용자를 찾을 수 없습니다'
+    });
+
+    await expect(
+      protocol.call('users.getProfile', { id: '999' })
+    ).rejects.toThrow('사용자를 찾을 수 없습니다');
+  });
+});</code></pre>
+
+<h3>6.7.2 통합 테스트</h3>
+<pre><code>// 실제 프로토콜을 사용한 통합 테스트
+describe('통합 테스트', () => {
+  let protocol: UniversalProtocol;
+
+  beforeAll(async () => {
+    protocol = new UniversalProtocol({
+      transport: new WebSocketTransport({
+        url: 'ws://localhost:3000'
+      })
+    });
+    await protocol.connect();
+  });
+
+  afterAll(async () => {
+    await protocol.disconnect();
+  });
+
+  it('실제 요청을 처리해야 함', async () => {
+    const result = await protocol.call('health.check');
+    expect(result.status).toBe('healthy');
+  });
+
+  it('스트리밍을 처리해야 함', async () => {
+    const events = [];
+    const stream = protocol.stream('events.subscribe');
+
+    for await (const event of stream) {
+      events.push(event);
+      if (events.length >= 10) break;
+    }
+
+    expect(events.length).toBe(10);
+  });
+});</code></pre>
+
+<h2>6.8 모범 사례</h2>
+
+<div class="highlight">
+<h3>핵심 모범 사례</h3>
+<ul>
+<li>항상 타임아웃을 설정하여 무기한 대기 방지</li>
+<li>재시도 로직을 구현하여 일시적 실패 처리</li>
+<li>캐싱을 적극 활용하여 성능 향상</li>
+<li>구조화된 로깅으로 디버깅 용이성 확보</li>
+<li>메트릭을 수집하여 성능 모니터링</li>
+<li>입력 검증으로 보안 강화</li>
+<li>오류를 명확하게 분류하고 처리</li>
+<li>테스트 커버리지 100% 목표</li>
+<li>문서화를 철저히 유지</li>
+<li>프로덕션 배포 전 부하 테스트 수행</li>
+</ul>
+</div>
+
+<h2>6.9 결론</h2>
+<p>이벤트스트리밍은(는) 범용 프로토콜의 핵심 기능입니다. 이 장에서 다룬 패턴과 모범 사례를 따르면 강력하고 확장 가능한 애플리케이션을 구축할 수 있습니다.</p>
+
+<p>다음 장에서는 더 고급 주제를 다룰 예정입니다. 계속해서 학습하고 실험하면서 범용 프로토콜의 강력한 기능을 최대한 활용하십시오.</p>
+
+<div class="nav">
+<a href="05-*.html">← 이전 장</a>
+<a href="07-Pub-Sub메시징">다음 장 →</a>
+</div>
+
+<footer style="margin-top:3rem;padding-top:2rem;border-top:2px solid #334155;opacity:0.7;text-align:center;">
+<p>&copy; 2025 SmileStory Inc. / WIA</p>
+<p>弘益人間 (홍익인간) · 널리 인간을 이롭게 하라</p>
+</footer>
+</div>
+</body>
+</html>

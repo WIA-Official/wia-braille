@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Sensor Simulator - WIA Standard</title>
+    <style>
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .lang-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .lang-selector label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .lang-selector select {
+            background: var(--bg-card);
+            color: var(--text);
+            border: 2px solid var(--border);
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+        .lang-selector select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .lang-switch {
+            display: flex;
+            gap: 5px;
+            background: var(--bg-card);
+            padding: 4px;
+            border-radius: 6px;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .lang-btn:hover:not(.active) {
+            background: var(--border);
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            border-color: var(--primary);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .panel h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .panel h3 {
+            color: var(--text);
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-group textarea {
+            font-family: 'Courier New', monospace;
+            min-height: 200px;
+            resize: vertical;
+        }
+
+        .btn-center {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            border-color: var(--primary);
+        }
+
+        .output {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .sensor-card {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .sensor-card:hover {
+            border-color: var(--primary);
+        }
+
+        .sensor-value {
+            font-size: 2rem;
+            color: var(--primary);
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .sensor-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .qr-display {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .qr-placeholder {
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: var(--bg);
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            border-top: 2px solid var(--border);
+            margin-top: 40px;
+        }
+
+        .philosophy {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        footer p {
+            color: var(--text-muted);
+            margin: 5px 0;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.6rem;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .tabs {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .tab {
+                text-align: center;
+            }
+
+            .panel {
+                padding: 20px;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .qr-placeholder {
+                width: 250px;
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 data-en="📡 Environmental Sensor Simulator" data-ko="📡 환경 센서 시뮬레이터">📡 Environmental Sensor Simulator</h1>
+            <p data-en="Experience the WIA Environmental Sensor Standard in action" data-ko="WIA 환경 센서 표준을 실제로 체험하세요">Experience the WIA Environmental Sensor Standard in action</p>
+        </div>
+
+        <div class="controls">
+            <div class="lang-selector">
+                <label data-en="Programming Language:" data-ko="프로그래밍 언어:">Programming Language:</label>
+                <select id="progLang">
+                    <option value="javascript">JavaScript</option>
+                    <option value="python">Python</option>
+                    <option value="java">Java</option>
+                    <option value="csharp">C#</option>
+                    <option value="go">Go</option>
+                    <option value="rust">Rust</option>
+                    <option value="cpp">C++</option>
+                    <option value="ruby">Ruby</option>
+                    <option value="php">PHP</option>
+                    <option value="swift">Swift</option>
+                    <option value="kotlin">Kotlin</option>
+                    <option value="typescript">TypeScript</option>
+                    <option value="scala">Scala</option>
+                    <option value="dart">Dart</option>
+                    <option value="r">R</option>
+                    <option value="matlab">MATLAB</option>
+                    <option value="julia">Julia</option>
+                    <option value="perl">Perl</option>
+                    <option value="haskell">Haskell</option>
+                    <option value="elixir">Elixir</option>
+                    <option value="clojure">Clojure</option>
+                    <option value="fortran">Fortran</option>
+                    <option value="cobol">COBOL</option>
+                    <option value="lua">Lua</option>
+                    <option value="groovy">Groovy</option>
+                    <option value="assembly">Assembly</option>
+                    <option value="vhdl">VHDL</option>
+                    <option value="verilog">Verilog</option>
+                    <option value="solidity">Solidity</option>
+                    <option value="bash">Bash</option>
+                    <option value="powershell">PowerShell</option>
+                    <option value="sql">SQL</option>
+                    <option value="plsql">PL/SQL</option>
+                    <option value="tsql">T-SQL</option>
+                    <option value="graphql">GraphQL</option>
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                    <option value="xml">XML</option>
+                    <option value="json">JSON</option>
+                    <option value="yaml">YAML</option>
+                    <option value="markdown">Markdown</option>
+                    <option value="latex">LaTeX</option>
+                    <option value="lisp">Lisp</option>
+                    <option value="scheme">Scheme</option>
+                    <option value="erlang">Erlang</option>
+                    <option value="ocaml">OCaml</option>
+                    <option value="fsharp">F#</option>
+                    <option value="ada">Ada</option>
+                    <option value="pascal">Pascal</option>
+                    <option value="delphi">Delphi</option>
+                    <option value="prolog">Prolog</option>
+                    <option value="smalltalk">Smalltalk</option>
+                    <option value="tcl">Tcl</option>
+                    <option value="awk">AWK</option>
+                    <option value="sed">sed</option>
+                    <option value="makefile">Makefile</option>
+                    <option value="dockerfile">Dockerfile</option>
+                    <option value="terraform">Terraform</option>
+                    <option value="ansible">Ansible</option>
+                    <option value="puppet">Puppet</option>
+                    <option value="chef">Chef</option>
+                    <option value="saltstack">SaltStack</option>
+                    <option value="vagrant">Vagrant</option>
+                    <option value="jenkins">Jenkins</option>
+                    <option value="circleci">CircleCI</option>
+                    <option value="gitlab">GitLab CI</option>
+                    <option value="github">GitHub Actions</option>
+                    <option value="travis">Travis CI</option>
+                    <option value="bamboo">Bamboo</option>
+                    <option value="teamcity">TeamCity</option>
+                    <option value="maven">Maven</option>
+                    <option value="gradle">Gradle</option>
+                    <option value="npm">npm</option>
+                    <option value="yarn">Yarn</option>
+                    <option value="pip">pip</option>
+                    <option value="cargo">Cargo</option>
+                    <option value="composer">Composer</option>
+                    <option value="nuget">NuGet</option>
+                    <option value="helm">Helm</option>
+                    <option value="kubernetes">Kubernetes</option>
+                    <option value="openshift">OpenShift</option>
+                    <option value="rancher">Rancher</option>
+                    <option value="nomad">Nomad</option>
+                    <option value="consul">Consul</option>
+                    <option value="vault">Vault</option>
+                    <option value="prometheus">Prometheus</option>
+                    <option value="grafana">Grafana</option>
+                    <option value="elasticsearch">Elasticsearch</option>
+                    <option value="logstash">Logstash</option>
+                    <option value="kibana">Kibana</option>
+                    <option value="splunk">Splunk</option>
+                    <option value="datadog">Datadog</option>
+                    <option value="newrelic">New Relic</option>
+                    <option value="appdynamics">AppDynamics</option>
+                    <option value="dynatrace">Dynatrace</option>
+                    <option value="pagerduty">PagerDuty</option>
+                    <option value="opsgenie">Opsgenie</option>
+                    <option value="victorops">VictorOps</option>
+                    <option value="slack">Slack API</option>
+                    <option value="discord">Discord API</option>
+                    <option value="telegram">Telegram Bot</option>
+                    <option value="whatsapp">WhatsApp API</option>
+                </select>
+            </div>
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('ko')">KO</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showPanel(0)" data-en="📊 Data Format" data-ko="📊 데이터 형식">📊 Data Format</div>
+            <div class="tab" onclick="showPanel(1)" data-en="🔢 Algorithms" data-ko="🔢 알고리즘">🔢 Algorithms</div>
+            <div class="tab" onclick="showPanel(2)" data-en="📡 Protocol" data-ko="📡 프로토콜">📡 Protocol</div>
+            <div class="tab" onclick="showPanel(3)" data-en="🔗 Integration" data-ko="🔗 통합">🔗 Integration</div>
+            <div class="tab" onclick="showPanel(4)" data-en="📱 QR & VC" data-ko="📱 QR & VC">📱 QR & VC</div>
+        </div>
+
+        <!-- Panel 0: Data Format -->
+        <div class="panel active" id="panel-0">
+            <h2 data-en="Sensor Data Format" data-ko="센서 데이터 형식">Sensor Data Format</h2>
+            <p data-en="Configure and generate environmental sensor data in standard WIA format." data-ko="표준 WIA 형식으로 환경 센서 데이터를 구성하고 생성합니다.">Configure and generate environmental sensor data in standard WIA format.</p>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label data-en="Sensor Type" data-ko="센서 유형">Sensor Type</label>
+                    <select id="sensorType">
+                        <option value="temperature">Temperature</option>
+                        <option value="humidity">Humidity</option>
+                        <option value="air_quality">Air Quality</option>
+                        <option value="water_quality">Water Quality</option>
+                        <option value="soil">Soil Moisture</option>
+                        <option value="noise">Noise Level</option>
+                        <option value="radiation">Radiation</option>
+                        <option value="pressure">Atmospheric Pressure</option>
+                        <option value="light">Light Intensity</option>
+                        <option value="uv">UV Index</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-en="Device ID" data-ko="장치 ID">Device ID</label>
+                    <input type="text" id="deviceId" value="SENSOR-ENV-001" />
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="generateSensorData()">
+                    <span data-en="Generate Sample Data" data-ko="샘플 데이터 생성">Generate Sample Data</span>
+                </button>
+            </div>
+
+            <div class="output" id="dataOutput"></div>
+        </div>
+
+        <!-- Panel 1: Algorithms -->
+        <div class="panel" id="panel-1">
+            <h2 data-en="Data Processing Algorithms" data-ko="데이터 처리 알고리즘">Data Processing Algorithms</h2>
+            <p data-en="Apply algorithms for calibration, filtering, and anomaly detection." data-ko="보정, 필터링 및 이상 감지를 위한 알고리즘을 적용합니다.">Apply algorithms for calibration, filtering, and anomaly detection.</p>
+
+            <h3 data-en="Live Sensor Readings" data-ko="실시간 센서 측정값">Live Sensor Readings</h3>
+            <div class="grid-2" id="sensorReadings">
+                <div class="sensor-card">
+                    <div class="sensor-label" data-en="Temperature" data-ko="온도">Temperature</div>
+                    <div class="sensor-value" id="tempValue">23.5°C</div>
+                </div>
+                <div class="sensor-card">
+                    <div class="sensor-label" data-en="Humidity" data-ko="습도">Humidity</div>
+                    <div class="sensor-value" id="humidValue">65%</div>
+                </div>
+                <div class="sensor-card">
+                    <div class="sensor-label" data-en="PM2.5" data-ko="미세먼지">PM2.5</div>
+                    <div class="sensor-value" id="pm25Value">15 μg/m³</div>
+                </div>
+                <div class="sensor-card">
+                    <div class="sensor-label" data-en="CO2" data-ko="이산화탄소">CO2</div>
+                    <div class="sensor-value" id="co2Value">420 ppm</div>
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="startMonitoring()">
+                    <span data-en="Start Real-time Monitoring" data-ko="실시간 모니터링 시작">Start Real-time Monitoring</span>
+                </button>
+                <button class="btn btn-secondary" onclick="stopMonitoring()">
+                    <span data-en="Stop" data-ko="중지">Stop</span>
+                </button>
+            </div>
+
+            <h3 data-en="Algorithm Output" data-ko="알고리즘 출력">Algorithm Output</h3>
+            <div class="output" id="algoOutput"></div>
+        </div>
+
+        <!-- Panel 2: Protocol -->
+        <div class="panel" id="panel-2">
+            <h2 data-en="Communication Protocol" data-ko="통신 프로토콜">Communication Protocol</h2>
+            <p data-en="Configure MQTT, CoAP, or LoRaWAN protocols for sensor communication." data-ko="센서 통신을 위한 MQTT, CoAP 또는 LoRaWAN 프로토콜을 구성합니다.">Configure MQTT, CoAP, or LoRaWAN protocols for sensor communication.</p>
+
+            <div class="form-group">
+                <label data-en="Protocol Type" data-ko="프로토콜 유형">Protocol Type</label>
+                <select id="protocolType">
+                    <option value="mqtt">MQTT (Message Queue Telemetry Transport)</option>
+                    <option value="coap">CoAP (Constrained Application Protocol)</option>
+                    <option value="lorawan">LoRaWAN (Long Range Wide Area Network)</option>
+                    <option value="http">HTTP/HTTPS</option>
+                    <option value="websocket">WebSocket</option>
+                </select>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label data-en="Broker/Server Address" data-ko="브로커/서버 주소">Broker/Server Address</label>
+                    <input type="text" id="brokerAddr" value="mqtt.wia-env.io:1883" />
+                </div>
+                <div class="form-group">
+                    <label data-en="Topic/Endpoint" data-ko="토픽/엔드포인트">Topic/Endpoint</label>
+                    <input type="text" id="topic" value="sensors/env/data" />
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="generateProtocolCode()">
+                    <span data-en="Generate Protocol Code" data-ko="프로토콜 코드 생성">Generate Protocol Code</span>
+                </button>
+            </div>
+
+            <div class="output" id="protocolOutput"></div>
+        </div>
+
+        <!-- Panel 3: Integration -->
+        <div class="panel" id="panel-3">
+            <h2 data-en="Cloud Platform Integration" data-ko="클라우드 플랫폼 통합">Cloud Platform Integration</h2>
+            <p data-en="Integrate with AWS IoT, Azure IoT Hub, Google Cloud IoT, or custom platforms." data-ko="AWS IoT, Azure IoT Hub, Google Cloud IoT 또는 사용자 정의 플랫폼과 통합합니다.">Integrate with AWS IoT, Azure IoT Hub, Google Cloud IoT, or custom platforms.</p>
+
+            <div class="form-group">
+                <label data-en="Cloud Platform" data-ko="클라우드 플랫폼">Cloud Platform</label>
+                <select id="cloudPlatform">
+                    <option value="aws">AWS IoT Core</option>
+                    <option value="azure">Azure IoT Hub</option>
+                    <option value="gcp">Google Cloud IoT</option>
+                    <option value="ibm">IBM Watson IoT</option>
+                    <option value="alibaba">Alibaba Cloud IoT</option>
+                    <option value="custom">Custom Platform</option>
+                </select>
+            </div>
+
+            <h3 data-en="Integration Configuration" data-ko="통합 구성">Integration Configuration</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th data-en="Parameter" data-ko="매개변수">Parameter</th>
+                        <th data-en="Value" data-ko="값">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Endpoint</td>
+                        <td>https://iot.aws.amazon.com</td>
+                    </tr>
+                    <tr>
+                        <td>Authentication</td>
+                        <td>X.509 Certificate</td>
+                    </tr>
+                    <tr>
+                        <td>Data Format</td>
+                        <td>JSON (WIA Standard)</td>
+                    </tr>
+                    <tr>
+                        <td>Encryption</td>
+                        <td>TLS 1.3</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="btn-center">
+                <button class="btn" onclick="generateIntegrationCode()">
+                    <span data-en="Generate Integration Code" data-ko="통합 코드 생성">Generate Integration Code</span>
+                </button>
+            </div>
+
+            <div class="output" id="integrationOutput"></div>
+        </div>
+
+        <!-- Panel 4: QR & VC -->
+        <div class="panel" id="panel-4">
+            <h2 data-en="QR Code & Verifiable Credentials" data-ko="QR 코드 및 검증 가능 자격증명">QR Code & Verifiable Credentials</h2>
+            <p data-en="Generate QR codes for sensor data sharing and verifiable credentials for data authenticity." data-ko="센서 데이터 공유를 위한 QR 코드와 데이터 진위성을 위한 검증 가능 자격증명을 생성합니다.">Generate QR codes for sensor data sharing and verifiable credentials for data authenticity.</p>
+
+            <div class="qr-display">
+                <h3 data-en="Sensor Data QR Code" data-ko="센서 데이터 QR 코드">Sensor Data QR Code</h3>
+                <div class="qr-placeholder" id="qrCode">
+                    <span data-en="QR Code Here" data-ko="QR 코드">QR Code Here</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Verifiable Credential (JSON-LD)" data-ko="검증 가능 자격증명 (JSON-LD)">Verifiable Credential (JSON-LD)</label>
+                <textarea id="vcOutput" readonly></textarea>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="generateQRandVC()">
+                    <span data-en="Generate QR & VC" data-ko="QR 및 VC 생성">Generate QR & VC</span>
+                </button>
+            </div>
+        </div>
+
+        <footer>
+            <p class="philosophy" data-en="弘益人間 · Benefit All Humanity" data-ko="弘益人間 · 널리 인간을 이롭게 하라">弘益人間 · Benefit All Humanity</p>
+            <p>WIA - World Certification Industry Association</p>
+            <p>© 2025 MIT License</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentLang = localStorage.getItem('wiaLang') || 'en';
+        let monitoringInterval = null;
+
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('wiaLang', lang);
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute('data-' + lang);
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+        }
+
+        function showPanel(index) {
+            document.querySelectorAll('.panel').forEach((panel, i) => {
+                panel.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+        }
+
+        function generateSensorData() {
+            const sensorType = document.getElementById('sensorType').value;
+            const deviceId = document.getElementById('deviceId').value;
+            const progLang = document.getElementById('progLang').value;
+
+            const data = {
+                "version": "1.0.0",
+                "standard": "WIA-ENE-027",
+                "deviceId": deviceId,
+                "timestamp": new Date().toISOString(),
+                "sensorType": sensorType,
+                "readings": {
+                    "value": Math.random() * 100,
+                    "unit": getUnit(sensorType),
+                    "accuracy": 0.1,
+                    "calibrated": true
+                },
+                "location": {
+                    "latitude": 37.5665,
+                    "longitude": 126.9780,
+                    "altitude": 100
+                },
+                "metadata": {
+                    "firmware": "v2.3.1",
+                    "battery": 85,
+                    "signalStrength": -65
+                }
+            };
+
+            document.getElementById('dataOutput').textContent = formatCode(data, progLang);
+        }
+
+        function getUnit(sensorType) {
+            const units = {
+                'temperature': '°C',
+                'humidity': '%',
+                'air_quality': 'AQI',
+                'water_quality': 'pH',
+                'soil': '%',
+                'noise': 'dB',
+                'radiation': 'μSv/h',
+                'pressure': 'hPa',
+                'light': 'lux',
+                'uv': 'index'
+            };
+            return units[sensorType] || 'unit';
+        }
+
+        function formatCode(data, lang) {
+            const json = JSON.stringify(data, null, 2);
+            if (lang === 'python') {
+                return `# Python Code\nimport json\n\nsensor_data = ${json}\n\nprint(json.dumps(sensor_data, indent=2))`;
+            } else if (lang === 'java') {
+                return `// Java Code\nString jsonData = "${json.replace(/\n/g, '\\n').replace(/"/g, '\\"')}";\nSystem.out.println(jsonData);`;
+            } else {
+                return `// JavaScript Code\nconst sensorData = ${json};\n\nconsole.log(JSON.stringify(sensorData, null, 2));`;
+            }
+        }
+
+        function startMonitoring() {
+            if (monitoringInterval) return;
+
+            let output = currentLang === 'ko' ? '실시간 모니터링 시작...\n\n' : 'Starting real-time monitoring...\n\n';
+            document.getElementById('algoOutput').textContent = output;
+
+            monitoringInterval = setInterval(() => {
+                const temp = (20 + Math.random() * 10).toFixed(1);
+                const humid = (50 + Math.random() * 30).toFixed(0);
+                const pm25 = (10 + Math.random() * 30).toFixed(0);
+                const co2 = (400 + Math.random() * 100).toFixed(0);
+
+                document.getElementById('tempValue').textContent = temp + '°C';
+                document.getElementById('humidValue').textContent = humid + '%';
+                document.getElementById('pm25Value').textContent = pm25 + ' μg/m³';
+                document.getElementById('co2Value').textContent = co2 + ' ppm';
+
+                output += `[${new Date().toLocaleTimeString()}] Temp: ${temp}°C, Humid: ${humid}%, PM2.5: ${pm25}, CO2: ${co2}\n`;
+                document.getElementById('algoOutput').textContent = output;
+                document.getElementById('algoOutput').scrollTop = document.getElementById('algoOutput').scrollHeight;
+            }, 2000);
+        }
+
+        function stopMonitoring() {
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+                const msg = currentLang === 'ko' ? '\n모니터링 중지됨.' : '\nMonitoring stopped.';
+                document.getElementById('algoOutput').textContent += msg;
+            }
+        }
+
+        function generateProtocolCode() {
+            const protocol = document.getElementById('protocolType').value;
+            const broker = document.getElementById('brokerAddr').value;
+            const topic = document.getElementById('topic').value;
+            const progLang = document.getElementById('progLang').value;
+
+            let code = '';
+            if (progLang === 'python') {
+                code = `# Python MQTT Client\nimport paho.mqtt.client as mqtt\nimport json\n\ndef on_connect(client, userdata, flags, rc):\n    print("Connected with result code " + str(rc))\n    client.subscribe("${topic}")\n\ndef on_message(client, userdata, msg):\n    data = json.loads(msg.payload)\n    print(f"Received: {data}")\n\nclient = mqtt.Client()\nclient.on_connect = on_connect\nclient.on_message = on_message\nclient.connect("${broker.split(':')[0]}", ${broker.split(':')[1] || 1883}, 60)\nclient.loop_forever()`;
+            } else {
+                code = `// JavaScript MQTT Client\nconst mqtt = require('mqtt');\n\nconst client = mqtt.connect('mqtt://${broker}');\n\nclient.on('connect', () => {\n    console.log('Connected to broker');\n    client.subscribe('${topic}');\n});\n\nclient.on('message', (topic, message) => {\n    const data = JSON.parse(message.toString());\n    console.log('Received:', data);\n});`;
+            }
+
+            document.getElementById('protocolOutput').textContent = code;
+        }
+
+        function generateIntegrationCode() {
+            const platform = document.getElementById('cloudPlatform').value;
+            const progLang = document.getElementById('progLang').value;
+
+            let code = '';
+            if (progLang === 'python') {
+                code = `# Python AWS IoT Integration\nimport boto3\nimport json\n\niot_client = boto3.client('iot-data', region_name='us-east-1')\n\ndef publish_sensor_data(sensor_data):\n    response = iot_client.publish(\n        topic='sensors/env/data',\n        qos=1,\n        payload=json.dumps(sensor_data)\n    )\n    return response\n\nsensor_data = {\n    "deviceId": "SENSOR-ENV-001",\n    "temperature": 23.5,\n    "humidity": 65\n}\n\nresult = publish_sensor_data(sensor_data)\nprint(f"Published: {result}")`;
+            } else {
+                code = `// JavaScript AWS IoT Integration\nconst AWS = require('aws-sdk');\nconst iotData = new AWS.IotData({endpoint: 'your-endpoint.iot.us-east-1.amazonaws.com'});\n\nfunction publishSensorData(sensorData) {\n    const params = {\n        topic: 'sensors/env/data',\n        payload: JSON.stringify(sensorData),\n        qos: 1\n    };\n    \n    return iotData.publish(params).promise();\n}\n\nconst sensorData = {\n    deviceId: 'SENSOR-ENV-001',\n    temperature: 23.5,\n    humidity: 65\n};\n\npublishSensorData(sensorData)\n    .then(result => console.log('Published:', result))\n    .catch(err => console.error('Error:', err));`;
+            }
+
+            document.getElementById('integrationOutput').textContent = code;
+        }
+
+        function generateQRandVC() {
+            const vc = {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://wiastandards.com/credentials/v1"
+                ],
+                "type": ["VerifiableCredential", "EnvironmentalSensorCredential"],
+                "issuer": "did:wia:env-sensor-registry",
+                "issuanceDate": new Date().toISOString(),
+                "credentialSubject": {
+                    "id": "did:wia:sensor:SENSOR-ENV-001",
+                    "deviceId": "SENSOR-ENV-001",
+                    "sensorType": "multi-environmental",
+                    "measurements": {
+                        "temperature": 23.5,
+                        "humidity": 65,
+                        "pm25": 15,
+                        "co2": 420
+                    },
+                    "location": {
+                        "lat": 37.5665,
+                        "lon": 126.9780
+                    },
+                    "timestamp": new Date().toISOString()
+                },
+                "proof": {
+                    "type": "Ed25519Signature2020",
+                    "created": new Date().toISOString(),
+                    "verificationMethod": "did:wia:env-sensor-registry#key-1",
+                    "proofPurpose": "assertionMethod",
+                    "proofValue": "z58DAdFfa9SkqZMVPxAQpic7ndSayn1PzZs6ZjWp1CktyGesjuTSwRdoWhAfGFCF5bppETSTojQCrfFPP2oumHKtz"
+                }
+            };
+
+            document.getElementById('vcOutput').value = JSON.stringify(vc, null, 2);
+            document.getElementById('qrCode').innerHTML = '📱<br><small>QR Code:<br>SENSOR-ENV-001</small>';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setLang(currentLang);
+        });
+    </script>
+</body>
+</html>

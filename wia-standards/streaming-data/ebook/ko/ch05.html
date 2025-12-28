@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>제5장: 이벤트 소싱 및 CQRS - WIA-DATA-013</title>
+    <style>
+        body{font-family:'Malgun Gothic',sans-serif;line-height:1.8;max-width:1000px;margin:0 auto;padding:40px 20px;background:#0f172a;color:#e2e8f0}
+        h1,h2,h3{color:#10B981;margin-top:40px}
+        h1{font-size:2.5em;border-bottom:3px solid #10B981;padding-bottom:15px}
+        h2{font-size:2em;border-bottom:2px solid #334155;padding-bottom:10px}
+        code{background:#1e293b;padding:2px 6px;border-radius:4px;color:#10B981;font-family:'Courier New',monospace}
+        pre{background:#1e293b;border-left:4px solid #10B981;padding:20px;border-radius:8px;overflow-x:auto}
+        table{width:100%;border-collapse:collapse;margin:20px 0;background:#1e293b}
+        th,td{padding:12px;text-align:left;border:1px solid #334155}
+        th{background:#10B981;color:#0f172a;font-weight:bold}
+        .highlight{background:rgba(16,185,129,0.1);border-left:4px solid #10B981;padding:15px;margin:20px 0;border-radius:8px}
+        ul,ol{margin:15px 0;padding-left:30px}
+        li{margin:10px 0}
+    </style>
+</head>
+<body>
+<h1>제5장: 이벤트 소싱 및 CQRS</h1>
+
+<h2>개요</h2>
+<p>이벤트 소싱(Event Sourcing)과 CQRS(Command Query Responsibility Segregation)는 현대적인 스트리밍 애플리케이션 설계의 핵심 패턴입니다. 이 장에서는 이벤트 스토어 구축, 명령과 쿼리 분리, 프로젝션 관리, 실전 구현 패턴을 다룹니다.</p>
+
+<h2>이벤트 소싱</h2>
+<p>이벤트 소싱은 애플리케이션의 모든 상태 변경을 이벤트 시퀀스로 저장하는 패턴입니다. 현재 상태만 저장하는 전통적인 CRUD 방식과 달리, 모든 변경 이력을 유지합니다.</p>
+
+<h3>전통적 CRUD vs 이벤트 소싱 비교</h3>
+<table>
+<tr><th>측면</th><th>전통적 CRUD</th><th>이벤트 소싱</th></tr>
+<tr><td>저장 대상</td><td>현재 상태</td><td>모든 이벤트 (변경 이력)</td></tr>
+<tr><td>데이터 수정</td><td>UPDATE/DELETE</td><td>새 이벤트 추가 (Append-only)</td></tr>
+<tr><td>감사 추적</td><td>별도 구현 필요</td><td>기본 제공</td></tr>
+<tr><td>시점 복원</td><td>어려움</td><td>쉬움 (이벤트 재생)</td></tr>
+<tr><td>디버깅</td><td>어려움</td><td>전체 이력 조회 가능</td></tr>
+<tr><td>복잡도</td><td>낮음</td><td>높음</td></tr>
+<tr><td>저장 공간</td><td>적음</td><td>많음</td></tr>
+<tr><td>적합 사례</td><td>단순 애플리케이션</td><td>금융, 전자상거래, 블록체인</td></tr>
+</table>
+
+<h3>이벤트 소싱 아키텍처</h3>
+<pre><code>// 이벤트 소싱 흐름
+1. 명령 수신
+   Command: CreateOrderCommand
+   └─→ 검증 및 처리
+
+2. 이벤트 생성
+   Event: OrderCreatedEvent
+   └─→ 이벤트 스토어에 저장 (Append-only)
+
+3. 이벤트 발행
+   Kafka/EventStore
+   └─→ 다른 서비스/프로젝션에 전파
+
+4. 상태 재구성
+   Event Stream: [OrderCreated, ItemAdded, OrderPaid]
+   └─→ 이벤트 재생으로 현재 상태 계산
+
+// 예시: 주문 상태 재구성
+초기 상태: Order {}
+
+Event 1: OrderCreatedEvent
+  → Order {id: "123", status: "CREATED", items: []}
+
+Event 2: ItemAddedEvent {itemId: "A", quantity: 2}
+  → Order {id: "123", status: "CREATED", items: [{A, 2}]}
+
+Event 3: OrderPaidEvent
+  → Order {id: "123", status: "PAID", items: [{A, 2}]}
+
+최종 상태: Order {id: "123", status: "PAID", items: [{A, 2}]}
+</code></pre>
+
+<h3>이벤트 스토어 구현</h3>
+<pre><code>// 이벤트 정의
+public abstract class Event {
+    private final String aggregateId;
+    private final long version;
+    private final Instant timestamp;
+    private final String eventType;
+
+    // getters...
+}
+
+public class OrderCreatedEvent extends Event {
+    private final String customerId;
+    private final List<OrderItem> items;
+    // getters...
+}
+
+public class ItemAddedEvent extends Event {
+    private final String itemId;
+    private final int quantity;
+    // getters...
+}
+
+// 애그리게이트 (도메인 모델)
+public class Order {
+    private String orderId;
+    private String customerId;
+    private List<OrderItem> items = new ArrayList<>();
+    private OrderStatus status;
+    private long version = 0;
+
+    // 명령 처리 (비즈니스 로직)
+    public List<Event> createOrder(String customerId, List<OrderItem> items) {
+        if (this.orderId != null) {
+            throw new IllegalStateException("Order already created");
+        }
+
+        return List.of(new OrderCreatedEvent(
+            UUID.randomUUID().toString(),
+            version + 1,
+            Instant.now(),
+            customerId,
+            items
+        ));
+    }
+
+    public List<Event> addItem(String itemId, int quantity) {
+        if (this.status != OrderStatus.CREATED) {
+            throw new IllegalStateException("Cannot add items to " + status + " order");
+        }
+
+        return List.of(new ItemAddedEvent(
+            this.orderId,
+            version + 1,
+            Instant.now(),
+            itemId,
+            quantity
+        ));
+    }
+
+    // 이벤트 적용 (상태 재구성)
+    public void apply(Event event) {
+        if (event instanceof OrderCreatedEvent) {
+            OrderCreatedEvent e = (OrderCreatedEvent) event;
+            this.orderId = e.getAggregateId();
+            this.customerId = e.getCustomerId();
+            this.items = new ArrayList<>(e.getItems());
+            this.status = OrderStatus.CREATED;
+            this.version = e.getVersion();
+        } else if (event instanceof ItemAddedEvent) {
+            ItemAddedEvent e = (ItemAddedEvent) event;
+            this.items.add(new OrderItem(e.getItemId(), e.getQuantity()));
+            this.version = e.getVersion();
+        }
+        // ... 다른 이벤트 처리
+    }
+}
+
+// 이벤트 스토어 인터페이스
+public interface EventStore {
+    void saveEvents(String aggregateId, List<Event> events, long expectedVersion);
+    List<Event> getEvents(String aggregateId);
+    List<Event> getEventsAfter(String aggregateId, long version);
+}
+
+// Kafka 기반 이벤트 스토어 구현
+public class KafkaEventStore implements EventStore {
+    private final KafkaProducer<String, Event> producer;
+    private final KafkaConsumer<String, Event> consumer;
+    private final String topic;
+
+    @Override
+    public void saveEvents(String aggregateId, List<Event> events, long expectedVersion) {
+        // 낙관적 동시성 제어
+        List<Event> existingEvents = getEvents(aggregateId);
+        if (!existingEvents.isEmpty() &&
+            existingEvents.get(existingEvents.size() - 1).getVersion() != expectedVersion) {
+            throw new ConcurrencyException("Version mismatch");
+        }
+
+        // 이벤트 저장 (Kafka에 발행)
+        for (Event event : events) {
+            ProducerRecord<String, Event> record =
+                new ProducerRecord<>(topic, aggregateId, event);
+            producer.send(record).get(); // 동기 전송 (안정성)
+        }
+    }
+
+    @Override
+    public List<Event> getEvents(String aggregateId) {
+        List<Event> events = new ArrayList<>();
+
+        // Kafka 파티션에서 모든 이벤트 읽기
+        consumer.assign(Collections.singletonList(
+            new TopicPartition(topic, getPartition(aggregateId))));
+        consumer.seekToBeginning(consumer.assignment());
+
+        while (true) {
+            ConsumerRecords<String, Event> records =
+                consumer.poll(Duration.ofMillis(100));
+            if (records.isEmpty()) break;
+
+            for (ConsumerRecord<String, Event> record : records) {
+                if (record.key().equals(aggregateId)) {
+                    events.add(record.value());
+                }
+            }
+        }
+
+        return events;
+    }
+}
+
+// 저장소 (Repository)
+public class OrderRepository {
+    private final EventStore eventStore;
+
+    public void save(Order order) {
+        List<Event> uncommittedEvents = order.getUncommittedEvents();
+        eventStore.saveEvents(
+            order.getOrderId(),
+            uncommittedEvents,
+            order.getVersion() - uncommittedEvents.size()
+        );
+        order.markEventsAsCommitted();
+    }
+
+    public Order getById(String orderId) {
+        List<Event> events = eventStore.getEvents(orderId);
+        if (events.isEmpty()) {
+            return null;
+        }
+
+        Order order = new Order();
+        events.forEach(order::apply);
+        return order;
+    }
+}
+</code></pre>
+
+<h2>CQRS 패턴</h2>
+<p>CQRS는 명령(Command)과 쿼리(Query)의 책임을 분리하는 패턴으로, 읽기와 쓰기에 최적화된 별도의 모델을 사용합니다.</p>
+
+<h3>CQRS 아키텍처</h3>
+<pre><code>// CQRS 전체 아키텍처
+┌──────────────────────────────────────────────────────┐
+│                   클라이언트                          │
+└──────────────────────────────────────────────────────┘
+         │                                  │
+         │ 명령 (변경)                      │ 쿼리 (조회)
+         ↓                                  ↓
+┌──────────────────┐              ┌──────────────────┐
+│  명령 측 (쓰기)   │              │  쿼리 측 (읽기)   │
+│                  │              │                  │
+│  Command Handler │              │  Query Handler   │
+│        ↓         │              │        ↓         │
+│   도메인 모델     │              │    읽기 모델      │
+│        ↓         │              │   (프로젝션)      │
+│  이벤트 스토어    │              │        ↓         │
+│   (Kafka)        │─── 이벤트 ──→│  읽기 DB         │
+│                  │    발행      │ (PostgreSQL,     │
+│                  │              │  Elasticsearch)  │
+└──────────────────┘              └──────────────────┘
+
+// 특징:
+// - 명령 측: 비즈니스 로직, 정규화된 데이터
+// - 쿼리 측: 빠른 읽기, 비정규화된 데이터
+// - 이벤트로 동기화
+</code></pre>
+
+<h3>명령 처리 구현</h3>
+<pre><code>// 명령 정의
+public abstract class Command {
+    private final String commandId = UUID.randomUUID().toString();
+    private final Instant timestamp = Instant.now();
+    // getters...
+}
+
+public class CreateOrderCommand extends Command {
+    private final String customerId;
+    private final List<OrderItem> items;
+    // getters...
+}
+
+public class AddItemCommand extends Command {
+    private final String orderId;
+    private final String itemId;
+    private final int quantity;
+    // getters...
+}
+
+// 명령 핸들러
+@Service
+public class OrderCommandHandler {
+
+    @Autowired
+    private OrderRepository repository;
+
+    @Autowired
+    private EventBus eventBus;
+
+    @Transactional
+    public String handle(CreateOrderCommand command) {
+        // 1. 애그리게이트 생성
+        Order order = new Order();
+
+        // 2. 비즈니스 로직 실행 (이벤트 생성)
+        List<Event> events = order.createOrder(
+            command.getCustomerId(),
+            command.getItems()
+        );
+
+        // 3. 이벤트 저장
+        repository.save(order);
+
+        // 4. 이벤트 발행 (비동기)
+        events.forEach(eventBus::publish);
+
+        return order.getOrderId();
+    }
+
+    @Transactional
+    public void handle(AddItemCommand command) {
+        // 1. 애그리게이트 로드 (이벤트 재생)
+        Order order = repository.getById(command.getOrderId());
+        if (order == null) {
+            throw new NotFoundException("Order not found");
+        }
+
+        // 2. 비즈니스 로직 실행
+        List<Event> events = order.addItem(
+            command.getItemId(),
+            command.getQuantity()
+        );
+
+        // 3. 이벤트 저장 및 발행
+        repository.save(order);
+        events.forEach(eventBus::publish);
+    }
+}
+
+// 명령 게이트웨이 (REST API)
+@RestController
+@RequestMapping("/api/orders")
+public class OrderCommandController {
+
+    @Autowired
+    private OrderCommandHandler commandHandler;
+
+    @PostMapping
+    public ResponseEntity<String> createOrder(@RequestBody CreateOrderRequest request) {
+        CreateOrderCommand command = new CreateOrderCommand(
+            request.getCustomerId(),
+            request.getItems()
+        );
+
+        String orderId = commandHandler.handle(command);
+
+        return ResponseEntity.ok(orderId);
+    }
+
+    @PostMapping("/{orderId}/items")
+    public ResponseEntity<Void> addItem(
+            @PathVariable String orderId,
+            @RequestBody AddItemRequest request) {
+
+        AddItemCommand command = new AddItemCommand(
+            orderId,
+            request.getItemId(),
+            request.getQuantity()
+        );
+
+        commandHandler.handle(command);
+
+        return ResponseEntity.accepted().build();
+    }
+}
+</code></pre>
+
+<h2>프로젝션 (읽기 모델)</h2>
+<p>프로젝션은 이벤트 스트림을 소비하여 쿼리에 최적화된 읽기 모델을 구축합니다.</p>
+
+<pre><code>// 읽기 모델 (비정규화)
+@Entity
+@Table(name = "order_view")
+public class OrderView {
+    @Id
+    private String orderId;
+    private String customerId;
+    private String customerName; // 조인 없이 조회
+    private int totalItems;
+    private double totalAmount;
+    private String status;
+    private Instant createdAt;
+    private Instant updatedAt;
+    // getters, setters...
+}
+
+// 프로젝션 이벤트 핸들러
+@Service
+public class OrderViewProjection {
+
+    @Autowired
+    private OrderViewRepository viewRepository;
+
+    @Autowired
+    private CustomerService customerService; // 외부 데이터
+
+    @EventHandler
+    public void on(OrderCreatedEvent event) {
+        // 고객 정보 조회 (비정규화)
+        Customer customer = customerService.getById(event.getCustomerId());
+
+        // 읽기 모델 생성
+        OrderView view = new OrderView();
+        view.setOrderId(event.getAggregateId());
+        view.setCustomerId(event.getCustomerId());
+        view.setCustomerName(customer.getName()); // 비정규화
+        view.setTotalItems(event.getItems().size());
+        view.setTotalAmount(calculateTotal(event.getItems()));
+        view.setStatus("CREATED");
+        view.setCreatedAt(event.getTimestamp());
+        view.setUpdatedAt(event.getTimestamp());
+
+        viewRepository.save(view);
+    }
+
+    @EventHandler
+    public void on(ItemAddedEvent event) {
+        OrderView view = viewRepository.findById(event.getAggregateId())
+            .orElseThrow();
+
+        view.setTotalItems(view.getTotalItems() + 1);
+        view.setTotalAmount(view.getTotalAmount() +
+            calculateItemPrice(event.getItemId(), event.getQuantity()));
+        view.setUpdatedAt(event.getTimestamp());
+
+        viewRepository.save(view);
+    }
+
+    @EventHandler
+    public void on(OrderPaidEvent event) {
+        OrderView view = viewRepository.findById(event.getAggregateId())
+            .orElseThrow();
+
+        view.setStatus("PAID");
+        view.setUpdatedAt(event.getTimestamp());
+
+        viewRepository.save(view);
+    }
+}
+
+// Kafka Streams 기반 프로젝션
+public class OrderViewStreamProcessor {
+    public static void main(String[] args) {
+        StreamsBuilder builder = new StreamsBuilder();
+
+        // 이벤트 스트림 읽기
+        KStream<String, Event> events = builder.stream("order-events");
+
+        // 프로젝션 계산
+        KTable<String, OrderView> orderViews = events
+            .groupByKey()
+            .aggregate(
+                OrderView::new,
+                (orderId, event, view) -> {
+                    if (event instanceof OrderCreatedEvent) {
+                        OrderCreatedEvent e = (OrderCreatedEvent) event;
+                        view.setOrderId(orderId);
+                        view.setCustomerId(e.getCustomerId());
+                        // ... 초기화
+                    } else if (event instanceof ItemAddedEvent) {
+                        ItemAddedEvent e = (ItemAddedEvent) event;
+                        view.setTotalItems(view.getTotalItems() + 1);
+                        // ... 업데이트
+                    }
+                    return view;
+                },
+                Materialized.as("order-views-store")
+            );
+
+        // 프로젝션을 DB에 저장
+        orderViews.toStream().to("order-views-sink");
+
+        KafkaStreams streams = new KafkaStreams(builder.build(), props);
+        streams.start();
+    }
+}
+
+// 쿼리 서비스
+@RestController
+@RequestMapping("/api/query/orders")
+public class OrderQueryController {
+
+    @Autowired
+    private OrderViewRepository viewRepository;
+
+    @GetMapping("/{orderId}")
+    public OrderView getOrder(@PathVariable String orderId) {
+        return viewRepository.findById(orderId)
+            .orElseThrow(() -> new NotFoundException("Order not found"));
+    }
+
+    @GetMapping
+    public List<OrderView> getOrders(
+            @RequestParam(required = false) String customerId,
+            @RequestParam(required = false) String status,
+            @PageableDefault Pageable pageable) {
+
+        if (customerId != null && status != null) {
+            return viewRepository.findByCustomerIdAndStatus(
+                customerId, status, pageable);
+        } else if (customerId != null) {
+            return viewRepository.findByCustomerId(customerId, pageable);
+        } else if (status != null) {
+            return viewRepository.findByStatus(status, pageable);
+        } else {
+            return viewRepository.findAll(pageable).getContent();
+        }
+    }
+}
+</code></pre>
+
+<h2>스냅샷 패턴</h2>
+<p>이벤트가 많을 경우 매번 재생하는 것은 비효율적입니다. 스냅샷을 사용하여 성능을 최적화합니다.</p>
+
+<table>
+<tr><th>패턴</th><th>설명</th><th>장점</th><th>단점</th></tr>
+<tr><td>정기 스냅샷</td><td>N개 이벤트마다 저장</td><td>일정한 성능</td><td>저장 공간 증가</td></tr>
+<tr><td>시간 기반</td><td>일정 시간마다 저장</td><td>최신 상태 보장</td><td>불규칙한 간격</td></tr>
+<tr><td>온디맨드</td><td>요청 시 생성</td><td>공간 효율적</td><td>느린 첫 조회</td></tr>
+</table>
+
+<pre><code>// 스냅샷 구현
+public class Snapshot {
+    private final String aggregateId;
+    private final long version;
+    private final Instant timestamp;
+    private final Object state;
+    // getters...
+}
+
+public class SnapshotStore {
+    private final Map<String, Snapshot> snapshots = new ConcurrentHashMap<>();
+
+    public void save(String aggregateId, Object state, long version) {
+        snapshots.put(aggregateId, new Snapshot(
+            aggregateId,
+            version,
+            Instant.now(),
+            state
+        ));
+    }
+
+    public Optional<Snapshot> get(String aggregateId) {
+        return Optional.ofNullable(snapshots.get(aggregateId));
+    }
+}
+
+// 스냅샷을 사용한 로드
+public Order getById(String orderId) {
+    Order order = new Order();
+
+    // 1. 최신 스냅샷 로드
+    Optional<Snapshot> snapshot = snapshotStore.get(orderId);
+    long startVersion = 0;
+
+    if (snapshot.isPresent()) {
+        order = (Order) snapshot.get().getState();
+        startVersion = snapshot.get().getVersion();
+    }
+
+    // 2. 스냅샷 이후 이벤트만 재생
+    List<Event> events = eventStore.getEventsAfter(orderId, startVersion);
+    events.forEach(order::apply);
+
+    // 3. 새 스냅샷 생성 (100개 이벤트마다)
+    if (events.size() >= 100) {
+        snapshotStore.save(orderId, order, order.getVersion());
+    }
+
+    return order;
+}
+</code></pre>
+
+<h2>실전 고려사항</h2>
+
+<h3>이벤트 버전 관리</h3>
+<pre><code>// 이벤트 스키마 진화
+// V1: 초기 버전
+public class OrderCreatedEventV1 extends Event {
+    private String customerId;
+    private List<String> itemIds;
+}
+
+// V2: 수량 추가
+public class OrderCreatedEventV2 extends Event {
+    private String customerId;
+    private List<OrderItem> items; // {itemId, quantity}
+}
+
+// 업캐스터 (이전 버전 → 최신 버전)
+public class OrderCreatedEventUpcaster {
+    public OrderCreatedEventV2 upcast(OrderCreatedEventV1 v1) {
+        List<OrderItem> items = v1.getItemIds().stream()
+            .map(id -> new OrderItem(id, 1)) // 기본 수량 1
+            .collect(Collectors.toList());
+
+        return new OrderCreatedEventV2(
+            v1.getAggregateId(),
+            v1.getVersion(),
+            v1.getTimestamp(),
+            v1.getCustomerId(),
+            items
+        );
+    }
+}
+</code></pre>
+
+<h3>결과적 일관성 처리</h3>
+<div class="highlight">
+<p><strong>문제:</strong> 명령 처리 후 즉시 조회하면 읽기 모델에 반영되지 않을 수 있습니다.</p>
+
+<p><strong>해결책:</strong></p>
+<ul>
+<li><strong>클라이언트 폴링:</strong> 일정 시간 후 재조회</li>
+<li><strong>버전 번호:</strong> 명령 응답에 버전 포함, 읽기 시 확인</li>
+<li><strong>알림:</strong> WebSocket/SSE로 업데이트 알림</li>
+<li><strong>낙관적 UI:</strong> 즉시 UI 업데이트 후 서버 확인</li>
+</ul>
+</div>
+
+<h2>요약</h2>
+<p>이벤트 소싱과 CQRS는 복잡한 도메인 로직, 감사 추적, 확장 가능한 읽기 모델이 필요한 시스템에 적합합니다. 이벤트 스토어는 모든 변경 이력을 유지하며, CQRS는 읽기와 쓰기를 분리하여 각각 최적화합니다. 프로젝션을 통해 다양한 쿼리 요구사항을 충족할 수 있습니다.</p>
+
+<h2>복습 문제</h2>
+<ol>
+<li>이벤트 소싱의 핵심 원칙과 전통적인 CRUD 방식과의 차이점을 설명하세요.</li>
+<li>CQRS 패턴에서 명령 측과 쿼리 측을 분리하는 이유와 이점을 논의하세요.</li>
+<li>프로젝션의 역할과 구현 방법을 설명하고, 여러 프로젝션을 유지하는 이점을 논의하세요.</li>
+<li>스냅샷 패턴이 필요한 이유와 구현 전략을 설명하세요.</li>
+<li>이벤트 스키마 진화와 버전 관리 전략을 논의하세요.</li>
+</ol>
+
+<p style="text-align:center;margin-top:50px;color:#64748b">
+© 2025 SmileStory Inc. / WIA · 弘益人間 (홍익인간) · Benefit All Humanity
+</p>
+</body>
+</html>

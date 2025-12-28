@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 6: Guardrail Systems - WIA-AI-010</title>
+    <style>* { margin: 0; padding: 0; box-sizing: border-box; } body { font-family: Georgia, serif; background: #1a1a1a; color: #e0e0e0; line-height: 1.8; } .container { max-width: 800px; margin: 0 auto; padding: 3rem 2rem; } .header { background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 3rem 2rem; margin: -3rem -2rem 3rem -2rem; border-radius: 0 0 12px 12px; } .chapter-number { color: rgba(255,255,255,0.8); font-size: 1.2rem; margin-bottom: 0.5rem; } h1 { color: white; font-size: 2.5rem; margin-bottom: 1rem; } .chapter-intro { color: rgba(255,255,255,0.9); font-size: 1.2rem; font-style: italic; } h2 { color: #10B981; font-size: 2rem; margin: 3rem 0 1.5rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #10B981; } h3 { color: #10B981; font-size: 1.5rem; margin: 2rem 0 1rem 0; } p { margin-bottom: 1.5rem; font-size: 1.1rem; } .highlight { background: #2a2a2a; padding: 1.5rem; border-left: 4px solid #10B981; border-radius: 8px; margin: 2rem 0; } .code-block { background: #0f172a; padding: 1.5rem; border-radius: 8px; font-family: 'Courier New', monospace; overflow-x: auto; margin: 1.5rem 0; border: 1px solid #10B981; font-size: 0.95rem; line-height: 1.5; } ul, ol { margin: 1.5rem 0 1.5rem 2rem; } li { margin-bottom: 0.8rem; font-size: 1.1rem; } .summary { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 2rem; border-radius: 12px; margin: 3rem 0; } .summary h3 { color: white; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 1rem; margin-bottom: 1rem; } .review { background: #2a2a2a; padding: 2rem; border-radius: 12px; margin: 3rem 0; } .review h3 { color: #10B981; } .review-question { background: #1a1a1a; padding: 1rem; border-radius: 8px; margin: 1rem 0; } .nav-links { display: flex; justify-content: space-between; margin: 3rem 0; gap: 1rem; } .nav-link { background: #2a2a2a; color: #10B981; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; transition: all 0.3s; flex: 1; text-align: center; } .nav-link:hover { background: #10B981; color: white; transform: translateY(-3px); } .philosophy { text-align: center; padding: 2rem; margin: 3rem 0; font-size: 1.5rem; color: #10B981; } strong { color: #10B981; } table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: #2a2a2a; } th, td { padding: 1rem; border: 1px solid #444; text-align: left; } th { background: #10B981; color: white; font-weight: bold; } </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="chapter-number">Chapter 6</div>
+            <h1>Guardrail Systems</h1>
+            <div class="chapter-intro">Real-time safety enforcement through automated guardrails</div>
+        </div>
+
+        <h2>What Are Guardrails?</h2>
+        <p>Guardrails are automated safety mechanisms that enforce behavioral boundaries on AI systems in real-time. They act as programmatic constraints preventing harmful outputs, dangerous actions, and policy violations before they reach users. Unlike post-hoc filtering, guardrails operate as active components of the AI system's decision-making process.</p>
+
+        <p>Effective guardrails balance safety with utility, blocking genuinely harmful behaviors while preserving the AI's ability to be helpful, creative, and responsive to legitimate user needs.</p>
+
+        <h2>Types of Guardrails</h2>
+
+        <h3>1. Input Guardrails</h3>
+        <p>Validate and sanitize user inputs before processing. Detect prompt injections, malicious content, or out-of-scope requests. Normalize inputs to prevent evasion through encoding or obfuscation.</p>
+
+        <div class="code-block">
+// Input guardrail implementation
+class InputGuardrail {
+    async validate(userInput, context) {
+        const checks = {
+            promptInjection: await this.detectInjection(userInput),
+            maliciousContent: await this.scanContent(userInput),
+            scopeViolation: await this.checkScope(userInput, context),
+            rateLimits: await this.checkRateLimit(context.userId),
+            inputSanitization: this.sanitize(userInput)
+        };
+
+        if (checks.promptInjection.detected) {
+            return {
+                allowed: false,
+                reason: "Potential prompt injection detected",
+                confidence: checks.promptInjection.confidence
+            };
+        }
+
+        return { allowed: true, sanitizedInput: checks.inputSanitization };
+    }
+}
+        </div>
+
+        <h3>2. Output Guardrails</h3>
+        <p>Filter AI outputs before delivery to users. Apply content policies, PII redaction, toxicity filters, and factual verification. Final defense layer ensuring no harmful content escapes.</p>
+
+        <h3>3. Behavioral Guardrails</h3>
+        <p>Constrain AI actions and capabilities. Prevent file system access, network requests, code execution, or other dangerous operations outside intended functionality.</p>
+
+        <h3>4. Context Guardrails</h3>
+        <p>Enforce context-appropriate behaviors. Adjust safety thresholds based on user age, application domain, regulatory requirements, or conversation history.</p>
+
+        <h3>5. Resource Guardrails</h3>
+        <p>Prevent resource exhaustion through rate limiting, token caps, compute budgets, and timeout enforcement. Protect against denial-of-service and cost exploitation.</p>
+
+        <h3>6. Data Guardrails</h3>
+        <p>Control data access and prevent leakage. Enforce data retention policies, access controls, and privacy protections. Redact sensitive information in logs and outputs.</p>
+
+        <h3>7. Alignment Guardrails</h3>
+        <p>Maintain alignment with core values and principles. Detect specification gaming, goal hijacking, or drift from intended behaviors. Escalate to human review when uncertain.</p>
+
+        <h3>8. Compliance Guardrails</h3>
+        <p>Enforce regulatory requirements, industry standards, and legal obligations. Maintain audit trails, consent management, and jurisdictional restrictions.</p>
+
+        <h2>Guardrail Architecture</h2>
+
+        <div class="code-block">
+// Multi-layer guardrail system architecture
+class GuardrailSystem {
+    constructor(config) {
+        this.layers = {
+            preprocessing: new PreprocessingLayer(config.input),
+            inputValidation: new InputGuardrails(config.input),
+            modelWrapper: new ModelWrapper(config.model),
+            outputFiltering: new OutputGuardrails(config.output),
+            postprocessing: new PostprocessingLayer(config.output),
+            monitoring: new MonitoringLayer(config.monitoring)
+        };
+
+        this.circuit Breaker = new CircuitBreaker(config.failsafe);
+        this.auditLog = new AuditLogger(config.logging);
+    }
+
+    async process(request) {
+        const startTime = Date.now();
+
+        try {
+            // Layer 1: Preprocessing
+            const preprocessed = await this.layers.preprocessing
+                .transform(request.input);
+
+            // Layer 2: Input validation
+            const inputCheck = await this.layers.inputValidation
+                .validate(preprocessed, request.context);
+
+            if (!inputCheck.allowed) {
+                return this.buildResponse('BLOCKED_INPUT', inputCheck);
+            }
+
+            // Layer 3: Model invocation with wrapper
+            const modelOutput = await this.circuitBreaker.execute(
+                () => this.layers.modelWrapper.generate(
+                    inputCheck.sanitizedInput,
+                    request.context
+                )
+            );
+
+            // Layer 4: Output filtering
+            const outputCheck = await this.layers.outputFiltering
+                .validate(modelOutput, request.context);
+
+            if (!outputCheck.allowed) {
+                return this.buildResponse('BLOCKED_OUTPUT', outputCheck);
+            }
+
+            // Layer 5: Postprocessing
+            const final = await this.layers.postprocessing
+                .transform(outputCheck.sanitized);
+
+            // Layer 6: Monitoring
+            await this.layers.monitoring.record({
+                request,
+                response: final,
+                duration: Date.now() - startTime,
+                guardrailDecisions: { inputCheck, outputCheck }
+            });
+
+            return this.buildResponse('SUCCESS', final);
+
+        } catch (error) {
+            await this.handleError(error, request);
+            return this.buildResponse('ERROR', error);
+        }
+    }
+}
+        </div>
+
+        <h2>Implementing Effective Guardrails</h2>
+
+        <h3>Design Principles</h3>
+        <ul>
+            <li><strong>Fail-Safe Defaults:</strong> When uncertain, default to blocking rather than allowing</li>
+            <li><strong>Defense in Depth:</strong> Multiple independent layers of protection</li>
+            <li><strong>Least Privilege:</strong> Grant minimum necessary capabilities</li>
+            <li><strong>Separation of Concerns:</strong> Each guardrail has single, clear responsibility</li>
+            <li><strong>Composability:</strong> Guardrails can be combined and configured flexibly</li>
+            <li><strong>Observability:</strong> All decisions logged and monitored</li>
+            <li><strong>Graceful Degradation:</strong> System remains safe even when components fail</li>
+            <li><strong>User Feedback:</strong> Explain decisions when requests are blocked</li>
+        </ul>
+
+        <h3>Performance Optimization</h3>
+        <p>Guardrails must operate in real-time without unacceptable latency. Optimization strategies include caching, parallel execution, early exits, and tiered checking.</p>
+
+        <div class="code-block">
+// Optimized guardrail execution
+class OptimizedGuardrails {
+    async fastPath(input) {
+        // Quick deterministic checks first (< 1ms)
+        if (await this.blocklist.contains(input)) {
+            return { allowed: false, reason: "Blocklist match" };
+        }
+
+        // Pattern matching (< 5ms)
+        if (await this.patterns.matches(input)) {
+            return { allowed: false, reason: "Pattern violation" };
+        }
+
+        // If fast checks pass, proceed to slower ML checks
+        return null; // Continue to slow path
+    }
+
+    async slowPath(input) {
+        // Parallel execution of independent ML checks
+        const results = await Promise.all([
+            this.toxicityModel.score(input),
+            this.piiDetector.scan(input),
+            this.intentClassifier.classify(input)
+        ]);
+
+        return this.aggregateResults(results);
+    }
+
+    async check(input) {
+        // Try fast path first
+        const fastResult = await this.fastPath(input);
+        if (fastResult !== null) {
+            return fastResult;
+        }
+
+        // Fall back to slow path only when necessary
+        return await this.slowPath(input);
+    }
+}
+        </div>
+
+        <h2>Common Guardrail Patterns</h2>
+
+        <h3>Allowlist Pattern</h3>
+        <p>Define explicitly permitted behaviors and block everything else. Conservative but very safe. Suitable for high-risk domains with well-defined use cases.</p>
+
+        <h3>Blocklist Pattern</h3>
+        <p>Define forbidden behaviors and allow everything else. More permissive but requires comprehensive threat modeling. Suitable for general-purpose applications.</p>
+
+        <h3>Threshold Pattern</h3>
+        <p>Allow behaviors below risk threshold, block above, and escalate borderline cases to human review. Balances automation with human judgment.</p>
+
+        <h3>Circuit Breaker Pattern</h3>
+        <p>Monitor for repeated safety violations and temporarily disable capabilities when abuse detected. Prevents sustained attacks.</p>
+
+        <div class="highlight">
+            <strong>Circuit Breaker States:</strong>
+            <ul>
+                <li><strong>Closed (Normal):</strong> All requests processed normally</li>
+                <li><strong>Open (Blocking):</strong> Fast-fail all requests after threshold exceeded</li>
+                <li><strong>Half-Open (Testing):</strong> Allow limited requests to test if issue resolved</li>
+            </ul>
+        </div>
+
+        <h3>Escalation Pattern</h3>
+        <p>Route complex or high-stakes decisions to human reviewers. Automated guardrails handle clear cases; humans handle ambiguity.</p>
+
+        <h2>Guardrail Configuration</h2>
+
+        <h3>Strict Mode</h3>
+        <p>Maximum safety, minimum risk tolerance. Used for children's applications, regulated industries, or high-stakes decisions. Higher false positive rate acceptable.</p>
+
+        <table>
+            <tr>
+                <th>Guardrail</th>
+                <th>Strict Mode</th>
+                <th>Balanced Mode</th>
+                <th>Permissive Mode</th>
+            </tr>
+            <tr>
+                <td>Toxicity Threshold</td>
+                <td>0.3</td>
+                <td>0.6</td>
+                <td>0.8</td>
+            </tr>
+            <tr>
+                <td>PII Detection</td>
+                <td>Redact all</td>
+                <td>Redact sensitive</td>
+                <td>Warn only</td>
+            </tr>
+            <tr>
+                <td>Prompt Injection</td>
+                <td>Block suspicious</td>
+                <td>Block obvious</td>
+                <td>Log only</td>
+            </tr>
+            <tr>
+                <td>Rate Limits</td>
+                <td>100/hour</td>
+                <td>1000/hour</td>
+                <td>10000/hour</td>
+            </tr>
+        </table>
+
+        <h2>Dynamic Guardrails</h2>
+        <p>Static rules insufficient for evolving threats. Dynamic guardrails adapt based on context, user history, threat intelligence, and learned patterns.</p>
+
+        <div class="code-block">
+// Dynamic guardrail adaptation
+class AdaptiveGuardrail {
+    constructor() {
+        this.baselineThreshold = 0.7;
+        this.userReputationSystem = new ReputationSystem();
+        this.threatIntel = new ThreatIntelligence();
+    }
+
+    async computeThreshold(user, context) {
+        let threshold = this.baselineThreshold;
+
+        // Adjust based on user reputation
+        const reputation = await this.userReputationSystem.get(user.id);
+        if (reputation > 0.9) {
+            threshold += 0.1; // More permissive for trusted users
+        } else if (reputation < 0.3) {
+            threshold -= 0.2; // Stricter for problematic users
+        }
+
+        // Adjust based on threat level
+        const threatLevel = await this.threatIntel.getCurrentLevel();
+        threshold -= threatLevel * 0.3; // Stricter during attacks
+
+        // Adjust based on context
+        if (context.domain === 'children') {
+            threshold = 0.3; // Always strict for children
+        }
+
+        return Math.max(0.1, Math.min(0.9, threshold));
+    }
+}
+        </div>
+
+        <h2>Testing Guardrails</h2>
+
+        <h3>Unit Testing</h3>
+        <p>Test each guardrail independently with known good and bad inputs. Verify correct classification, appropriate thresholds, and edge case handling.</p>
+
+        <h3>Integration Testing</h3>
+        <p>Test complete guardrail pipeline with realistic scenarios. Verify guardrails work together correctly without conflicts or gaps.</p>
+
+        <h3>Red Team Testing</h3>
+        <p>Attempt to bypass guardrails using adversarial techniques. Discover evasion strategies and strengthen defenses.</p>
+
+        <h3>Performance Testing</h3>
+        <p>Measure latency, throughput, and resource usage. Ensure guardrails meet production requirements.</p>
+
+        <h3>Regression Testing</h3>
+        <p>Maintain test suite of previous bypass attempts. Ensure updates don't reintroduce old vulnerabilities.</p>
+
+        <h2>Monitoring and Maintenance</h2>
+
+        <h3>Real-Time Dashboards</h3>
+        <ul>
+            <li>Request volume and block rates by guardrail</li>
+            <li>Latency percentiles and performance trends</li>
+            <li>False positive/negative rates</li>
+            <li>Top blocked categories and reasons</li>
+            <li>Anomaly detection for unusual patterns</li>
+        </ul>
+
+        <h3>Continuous Improvement</h3>
+        <ol>
+            <li>Collect feedback on blocked requests from users and reviewers</li>
+            <li>Analyze false positives to identify overly strict rules</li>
+            <li>Analyze false negatives to identify gaps in coverage</li>
+            <li>Update guardrail parameters and models based on findings</li>
+            <li>Deploy updates gradually with canary testing</li>
+            <li>Monitor impact and iterate</li>
+        </ol>
+
+        <h2>Common Pitfalls</h2>
+
+        <ul>
+            <li><strong>Over-Blocking:</strong> Too strict guardrails frustrate legitimate users</li>
+            <li><strong>Under-Blocking:</strong> Too permissive guardrails allow harmful content</li>
+            <li><strong>Single Point of Failure:</strong> Relying on one guardrail instead of defense in depth</li>
+            <li><strong>Performance Bottlenecks:</strong> Slow guardrails degrade user experience</li>
+            <li><strong>Insufficient Logging:</strong> Can't debug or improve without detailed logs</li>
+            <li><strong>Static Rules:</strong> Failing to adapt to evolving threats</li>
+            <li><strong>Poor User Feedback:</strong> Blocking without explanation frustrates users</li>
+            <li><strong>Inadequate Testing:</strong> Deploying untested guardrails causes issues</li>
+        </ul>
+
+        <div class="philosophy">
+            弘益人間<br>
+            <span style="font-size: 1rem; color: #94a3b8;">
+                Guardrails protect all users while preserving AI's ability to help
+            </span>
+        </div>
+
+        <div class="summary">
+            <h3>Chapter Summary</h3>
+            <ul>
+                <li>Guardrails enforce behavioral boundaries on AI systems in real-time</li>
+                <li>Eight types: input, output, behavioral, context, resource, data, alignment, compliance</li>
+                <li>Multi-layer architecture provides defense in depth</li>
+                <li>Design principles include fail-safe defaults, composability, and observability</li>
+                <li>Common patterns: allowlist, blocklist, threshold, circuit breaker, escalation</li>
+                <li>Configuration modes (strict/balanced/permissive) adjust risk tolerance</li>
+                <li>Dynamic guardrails adapt to context, reputation, and threat intelligence</li>
+                <li>Continuous testing, monitoring, and improvement essential for effectiveness</li>
+            </ul>
+        </div>
+
+        <div class="review">
+            <h3>Review Questions</h3>
+            <div class="review-question"><strong>1.</strong> What distinguishes guardrails from post-hoc content filtering?</div>
+            <div class="review-question"><strong>2.</strong> Describe the eight types of guardrails in WIA-AI-010.</div>
+            <div class="review-question"><strong>3.</strong> Why is the fail-safe default principle important?</div>
+            <div class="review-question"><strong>4.</strong> Explain the circuit breaker pattern and its three states.</div>
+            <div class="review-question"><strong>5.</strong> How do dynamic guardrails differ from static rules?</div>
+            <div class="review-question"><strong>6.</strong> What are the trade-offs between strict and permissive modes?</div>
+            <div class="review-question"><strong>7.</strong> Why is performance optimization critical for guardrails?</div>
+            <div class="review-question"><strong>8.</strong> What are common pitfalls in guardrail implementation?</div>
+        </div>
+
+        <div class="nav-links">
+            <a href="chapter-05.html" class="nav-link">← Previous: Red Team Operations</a>
+            <a href="chapter-07.html" class="nav-link">Next: Safety Benchmarks →</a>
+        </div>
+    </div>
+</body>
+</html>

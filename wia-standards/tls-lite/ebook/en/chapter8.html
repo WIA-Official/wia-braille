@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 8: Implementation & Testing - WIA TLS-Lite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #e0e0e0; line-height: 1.8; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: rgba(236, 72, 153, 0.1); border-bottom: 3px solid #EC4899; padding: 30px 0; margin-bottom: 40px; }
+        h1 { color: #EC4899; font-size: 2.5em; margin-bottom: 10px; text-shadow: 0 0 20px rgba(236, 72, 153, 0.5); }
+        h2 { color: #EC4899; font-size: 2em; margin: 40px 0 20px 0; border-left: 5px solid #EC4899; padding-left: 15px; }
+        h3 { color: #EC4899; font-size: 1.5em; margin: 30px 0 15px 0; }
+        .breadcrumb { color: #808080; margin-bottom: 20px; }
+        .breadcrumb a { color: #EC4899; text-decoration: none; }
+        .content-section { background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 30px; margin-bottom: 30px; border: 1px solid rgba(236, 72, 153, 0.2); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(0, 0, 0, 0.3); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(236, 72, 153, 0.2); }
+        th { background: rgba(236, 72, 153, 0.3); color: #EC4899; font-weight: bold; }
+        tr:hover { background: rgba(236, 72, 153, 0.1); }
+        code { background: rgba(0, 0, 0, 0.5); padding: 2px 6px; border-radius: 4px; color: #EC4899; font-family: 'Courier New', monospace; }
+        pre { background: rgba(0, 0, 0, 0.5); border-left: 4px solid #EC4899; padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; }
+        pre code { background: none; padding: 0; color: #e0e0e0; }
+        .api-endpoint { background: rgba(236, 72, 153, 0.1); border-left: 4px solid #EC4899; padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .api-endpoint .method { display: inline-block; background: #EC4899; color: #fff; padding: 5px 15px; border-radius: 5px; font-weight: bold; margin-right: 10px; }
+        .certification-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin: 20px 0; }
+        .cert-item { background: rgba(236, 72, 153, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(236, 72, 153, 0.3); }
+        .cert-item h4 { color: #EC4899; margin-bottom: 8px; }
+        .navigation { display: flex; justify-content: space-between; margin: 40px 0; gap: 20px; }
+        .nav-button { background: rgba(236, 72, 153, 0.2); color: #EC4899; padding: 15px 30px; border-radius: 8px; text-decoration: none; border: 2px solid #EC4899; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-button:hover { background: #EC4899; color: #fff; transform: translateY(-2px); }
+        footer { text-align: center; padding: 30px 0; margin-top: 60px; border-top: 2px solid rgba(236, 72, 153, 0.3); color: #808080; }
+        footer .korean-text { color: #EC4899; font-size: 1.3em; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="breadcrumb"><a href="index.html">Home</a> / Chapter 8</div>
+            <h1>Chapter 8: Implementation & Testing</h1>
+        </header>
+
+        <div class="content-section">
+            <h2>Practical Implementation Guidelines</h2>
+            <p>This final chapter provides comprehensive guidance for implementing and testing WIA TLS-Lite compliant systems. It covers implementation best practices, testing methodologies, certification requirements, and real-world deployment considerations for IoT devices.</p>
+            <p>Successful TLS-Lite implementation requires careful attention to security, performance, and resource constraints. This chapter provides the tools and knowledge needed to build robust, certifiable IoT security solutions.</p>
+        </div>
+
+        <div class="content-section">
+            <h2>Implementation Guidelines</h2>
+            <h3>Table 1: Implementation Checklist by Device Class</h3>
+            <table>
+                <thead>
+                    <tr><th>Component</th><th>Class 1</th><th>Class 2</th><th>Class 3</th><th>Priority</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>ChaCha20-Poly1305</td><td>Required</td><td>Required</td><td>Required</td><td>Critical</td></tr>
+                    <tr><td>AES-128-CCM</td><td>Optional</td><td>Required</td><td>Required</td><td>High</td></tr>
+                    <tr><td>X25519 ECDH</td><td>No</td><td>Required</td><td>Required</td><td>High</td></tr>
+                    <tr><td>ECDSA P-256</td><td>No</td><td>Required</td><td>Required</td><td>High</td></tr>
+                    <tr><td>PSK Mode</td><td>Required</td><td>Required</td><td>Required</td><td>Critical</td></tr>
+                    <tr><td>Session Resumption</td><td>Optional</td><td>Required</td><td>Required</td><td>Medium</td></tr>
+                    <tr><td>0-RTT Early Data</td><td>No</td><td>Optional</td><td>Required</td><td>Low</td></tr>
+                    <tr><td>DTLS Support</td><td>Optional</td><td>Required</td><td>Required</td><td>Medium</td></tr>
+                    <tr><td>Certificate Compression</td><td>No</td><td>Required</td><td>Required</td><td>Medium</td></tr>
+                    <tr><td>Raw Public Key</td><td>Required</td><td>Required</td><td>Optional</td><td>High</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Table 2: Testing Requirements Matrix</h3>
+            <table>
+                <thead>
+                    <tr><th>Test Category</th><th>Test Count</th><th>Coverage</th><th>Automated</th><th>Required For</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Unit Tests</td><td>200+</td><td>95%</td><td>Yes</td><td>All profiles</td></tr>
+                    <tr><td>Integration Tests</td><td>50+</td><td>Core flows</td><td>Yes</td><td>All profiles</td></tr>
+                    <tr><td>Interoperability</td><td>20+</td><td>Key scenarios</td><td>Partial</td><td>Certification</td></tr>
+                    <tr><td>Security Tests</td><td>30+</td><td>Attack vectors</td><td>Yes</td><td>Certification</td></tr>
+                    <tr><td>Performance Tests</td><td>15+</td><td>Benchmarks</td><td>Yes</td><td>All profiles</td></tr>
+                    <tr><td>Stress Tests</td><td>10+</td><td>Edge cases</td><td>Yes</td><td>Production</td></tr>
+                    <tr><td>Compliance Tests</td><td>100+</td><td>Spec conformance</td><td>Yes</td><td>Certification</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="content-section">
+            <h2>Implementation Examples</h2>
+
+            <h3>Code Example 1: Complete TLS-Lite Client Implementation</h3>
+            <pre><code>/**
+ * Complete TLS-Lite client implementation example
+ * Demonstrates full handshake and data transfer
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+#include "tls_lite.h"
+
+typedef struct {
+    int socket_fd;
+    tls_context_t *tls_ctx;
+    uint8_t rx_buffer[2048];
+    size_t rx_used;
+} tls_client_t;
+
+/**
+ * Initialize TLS-Lite client
+ */
+int tls_client_init(tls_client_t *client, const char *server_addr,
+                   uint16_t port) {
+    // Initialize networking
+    client->socket_fd = socket_create(AF_INET6, SOCK_STREAM, 0);
+    if (client->socket_fd < 0) {
+        return -1;
+    }
+
+    // Connect to server
+    if (socket_connect(client->socket_fd, server_addr, port) != 0) {
+        socket_close(client->socket_fd);
+        return -2;
+    }
+
+    // Create TLS context
+    client->tls_ctx = tls_context_create();
+    if (!client->tls_ctx) {
+        socket_close(client->socket_fd);
+        return -3;
+    }
+
+    // Configure TLS-Lite profile
+    device_capabilities_t caps;
+    get_device_capabilities(&caps);
+
+    tls_lite_profile_t profile = determine_tls_profile(&caps);
+    tls_set_profile(client->tls_ctx, profile);
+
+    // Set cipher suites
+    uint16_t cipher_suites[] = {
+        TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+        TLS_PSK_WITH_CHACHA20_POLY1305_SHA256,
+        TLS_ECDHE_ECDSA_WITH_AES_128_CCM
+    };
+    tls_set_cipher_suites(client->tls_ctx, cipher_suites, 3);
+
+    // Set server name for SNI
+    tls_set_server_name(client->tls_ctx, server_addr);
+
+    return 0;
+}
+
+/**
+ * Perform TLS handshake
+ */
+int tls_client_handshake(tls_client_t *client) {
+    int result;
+
+    // Start handshake
+    result = tls_handshake_start(client->tls_ctx);
+    if (result != 0) {
+        return -1;
+    }
+
+    // Handshake loop
+    while (tls_handshake_in_progress(client->tls_ctx)) {
+        // Check if we need to send data
+        uint8_t tx_buffer[2048];
+        size_t tx_len;
+
+        result = tls_get_outgoing_data(client->tls_ctx, tx_buffer, &tx_len);
+        if (result == 0 && tx_len > 0) {
+            if (socket_send(client->socket_fd, tx_buffer, tx_len) != tx_len) {
+                return -2;
+            }
+        }
+
+        // Check if we need to receive data
+        if (tls_needs_incoming_data(client->tls_ctx)) {
+            uint8_t rx_data[1024];
+            ssize_t rx_len = socket_recv(client->socket_fd, rx_data, 1024);
+
+            if (rx_len <= 0) {
+                return -3;
+            }
+
+            result = tls_process_incoming_data(client->tls_ctx,
+                                               rx_data, rx_len);
+            if (result < 0) {
+                return -4;
+            }
+        }
+
+        // Process handshake state machine
+        result = tls_handshake_process(client->tls_ctx);
+        if (result < 0) {
+            return -5;
+        }
+    }
+
+    return 0;  // Handshake complete
+}
+
+/**
+ * Send application data
+ */
+int tls_client_send(tls_client_t *client, const uint8_t *data,
+                   size_t data_len) {
+    uint8_t encrypted[2048];
+    size_t encrypted_len;
+
+    int result = tls_encrypt(client->tls_ctx, data, data_len,
+                            encrypted, &encrypted_len);
+    if (result != 0) {
+        return -1;
+    }
+
+    if (socket_send(client->socket_fd, encrypted, encrypted_len) != encrypted_len) {
+        return -2;
+    }
+
+    return data_len;
+}
+
+/**
+ * Receive application data
+ */
+int tls_client_recv(tls_client_t *client, uint8_t *data, size_t max_len) {
+    uint8_t encrypted[2048];
+    ssize_t encrypted_len = socket_recv(client->socket_fd, encrypted, 2048);
+
+    if (encrypted_len <= 0) {
+        return encrypted_len;
+    }
+
+    size_t decrypted_len;
+    int result = tls_decrypt(client->tls_ctx, encrypted, encrypted_len,
+                            data, &decrypted_len);
+    if (result != 0) {
+        return -1;
+    }
+
+    return decrypted_len;
+}
+
+/**
+ * Close TLS connection
+ */
+void tls_client_close(tls_client_t *client) {
+    if (client->tls_ctx) {
+        tls_send_close_notify(client->tls_ctx);
+        tls_context_destroy(client->tls_ctx);
+        client->tls_ctx = NULL;
+    }
+
+    if (client->socket_fd >= 0) {
+        socket_close(client->socket_fd);
+        client->socket_fd = -1;
+    }
+}
+</code></pre>
+
+            <h3>Code Example 2: Automated Test Framework</h3>
+            <pre><code>/**
+ * Automated test framework for TLS-Lite compliance
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;stdio.h&gt;
+
+#define MAX_TESTS 500
+
+typedef enum {
+    TEST_PASS,
+    TEST_FAIL,
+    TEST_SKIP
+} test_result_t;
+
+typedef struct {
+    const char *name;
+    test_result_t (*test_func)(void);
+    const char *category;
+    bool required;
+} test_case_t;
+
+typedef struct {
+    size_t total_tests;
+    size_t passed;
+    size_t failed;
+    size_t skipped;
+} test_statistics_t;
+
+static test_case_t g_test_cases[MAX_TESTS];
+static size_t g_test_count = 0;
+static test_statistics_t g_stats = {0};
+
+/**
+ * Register test case
+ */
+void register_test(const char *name, test_result_t (*func)(void),
+                  const char *category, bool required) {
+    if (g_test_count >= MAX_TESTS) return;
+
+    g_test_cases[g_test_count].name = name;
+    g_test_cases[g_test_count].test_func = func;
+    g_test_cases[g_test_count].category = category;
+    g_test_cases[g_test_count].required = required;
+    g_test_count++;
+}
+
+/**
+ * Run all tests
+ */
+int run_all_tests(void) {
+    printf("Running TLS-Lite Compliance Tests\n");
+    printf("==================================\n\n");
+
+    for (size_t i = 0; i < g_test_count; i++) {
+        test_case_t *test = &g_test_cases[i];
+
+        printf("[%03zu/%03zu] %s: ", i + 1, g_test_count, test->name);
+        fflush(stdout);
+
+        test_result_t result = test->test_func();
+
+        g_stats.total_tests++;
+
+        switch (result) {
+            case TEST_PASS:
+                printf("PASS\n");
+                g_stats.passed++;
+                break;
+            case TEST_FAIL:
+                printf("FAIL%s\n", test->required ? " (REQUIRED)" : "");
+                g_stats.failed++;
+                break;
+            case TEST_SKIP:
+                printf("SKIP\n");
+                g_stats.skipped++;
+                break;
+        }
+    }
+
+    printf("\n==================================\n");
+    printf("Test Results:\n");
+    printf("  Total:   %zu\n", g_stats.total_tests);
+    printf("  Passed:  %zu\n", g_stats.passed);
+    printf("  Failed:  %zu\n", g_stats.failed);
+    printf("  Skipped: %zu\n", g_stats.skipped);
+    printf("==================================\n");
+
+    return (g_stats.failed == 0) ? 0 : -1;
+}
+
+/**
+ * Example cryptographic test
+ */
+test_result_t test_chacha20_encrypt(void) {
+    uint8_t key[32] = {0x00, 0x01, 0x02, /* ... */};
+    uint8_t nonce[12] = {0x00, 0x00, 0x00, /* ... */};
+    uint8_t plaintext[64];
+    uint8_t ciphertext[64];
+    uint8_t expected[64] = {/* known answer */};
+
+    memset(plaintext, 0x55, 64);
+
+    chacha20_ctx_t ctx;
+    chacha20_init(&ctx, key, nonce, 1);
+    chacha20_encrypt(&ctx, plaintext, 64, ciphertext);
+
+    if (memcmp(ciphertext, expected, 64) == 0) {
+        return TEST_PASS;
+    }
+
+    return TEST_FAIL;
+}
+
+/**
+ * Example handshake test
+ */
+test_result_t test_psk_handshake(void) {
+    tls_context_t *client = tls_context_create();
+    tls_context_t *server = tls_context_create();
+
+    // Configure PSK
+    uint8_t psk[32];
+    csprng_generate(psk, 32);
+
+    tls_set_psk(client, "client_identity", 15, psk);
+    tls_set_psk(server, "client_identity", 15, psk);
+
+    // Perform handshake
+    int result = tls_test_handshake(client, server);
+
+    tls_context_destroy(client);
+    tls_context_destroy(server);
+
+    return (result == 0) ? TEST_PASS : TEST_FAIL;
+}
+
+/**
+ * Main test registration
+ */
+void register_all_tests(void) {
+    // Cryptographic tests
+    register_test("ChaCha20 Encryption", test_chacha20_encrypt,
+                 "crypto", true);
+    register_test("Poly1305 MAC", test_poly1305_mac, "crypto", true);
+    register_test("X25519 ECDH", test_x25519_ecdh, "crypto", true);
+
+    // Protocol tests
+    register_test("PSK Handshake", test_psk_handshake, "protocol", true);
+    register_test("ECDHE Handshake", test_ecdhe_handshake, "protocol", true);
+    register_test("Session Resumption", test_session_resumption,
+                 "protocol", true);
+
+    // Security tests
+    register_test("Replay Detection", test_replay_detection,
+                 "security", true);
+    register_test("Invalid MAC Rejection", test_invalid_mac,
+                 "security", true);
+
+    // Performance tests
+    register_test("Handshake Latency", test_handshake_latency,
+                 "performance", false);
+}
+</code></pre>
+
+            <h3>Code Example 3: Performance Benchmarking</h3>
+            <pre><code>/**
+ * Performance benchmarking for TLS-Lite implementation
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;stdio.h&gt;
+
+typedef struct {
+    const char *name;
+    uint32_t iterations;
+    uint64_t total_cycles;
+    uint64_t total_time_us;
+    size_t bytes_processed;
+} benchmark_t;
+
+/**
+ * Run benchmark
+ */
+void benchmark_run(const char *name, void (*func)(void),
+                  uint32_t iterations) {
+    benchmark_t bench;
+    bench.name = name;
+    bench.iterations = iterations;
+
+    uint64_t start_cycles = get_cycle_count();
+    uint64_t start_time = get_time_us();
+
+    for (uint32_t i = 0; i < iterations; i++) {
+        func();
+    }
+
+    bench.total_cycles = get_cycle_count() - start_cycles;
+    bench.total_time_us = get_time_us() - start_time;
+
+    printf("%-40s: %8.2f ops/sec, %8.2f us/op, %8lu cycles/op\n",
+           bench.name,
+           (iterations * 1000000.0) / bench.total_time_us,
+           (double)bench.total_time_us / iterations,
+           (unsigned long)(bench.total_cycles / iterations));
+}
+
+/**
+ * Benchmark ChaCha20 encryption
+ */
+void bench_chacha20(void) {
+    uint8_t key[32], nonce[12], data[1024], output[1024];
+    chacha20_ctx_t ctx;
+
+    csprng_generate(key, 32);
+    csprng_generate(nonce, 12);
+    csprng_generate(data, 1024);
+
+    chacha20_init(&ctx, key, nonce, 1);
+    chacha20_encrypt(&ctx, data, 1024, output);
+}
+
+/**
+ * Run all benchmarks
+ */
+void run_benchmarks(void) {
+    printf("\nTLS-Lite Performance Benchmarks\n");
+    printf("================================\n\n");
+
+    benchmark_run("ChaCha20 Encryption (1KB)", bench_chacha20, 1000);
+    benchmark_run("Poly1305 MAC (1KB)", bench_poly1305, 1000);
+    benchmark_run("AES-128-CCM Encrypt (1KB)", bench_aes_ccm, 1000);
+    benchmark_run("X25519 Key Exchange", bench_x25519, 100);
+    benchmark_run("ECDSA P-256 Sign", bench_ecdsa_sign, 100);
+    benchmark_run("ECDSA P-256 Verify", bench_ecdsa_verify, 100);
+    benchmark_run("SHA-256 Hash (1KB)", bench_sha256, 1000);
+    benchmark_run("HKDF Derive (32B)", bench_hkdf, 1000);
+    benchmark_run("Full PSK Handshake", bench_psk_handshake, 50);
+    benchmark_run("Full ECDHE Handshake", bench_ecdhe_handshake, 20);
+    benchmark_run("Session Resumption", bench_session_resume, 50);
+}
+</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>Testing and Certification APIs</h2>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/test/run</code><p>Execute compliance test suite</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/test/results</code><p>Retrieve test execution results</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/benchmark/run</code><p>Run performance benchmarks</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/benchmark/results</code><p>Get benchmark results and metrics</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/cert/validate</code><p>Validate implementation against certification requirements</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/cert/status</code><p>Get certification compliance status</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/interop/test</code><p>Run interoperability tests</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/coverage/report</code><p>Generate code coverage report</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/fuzzing/start</code><p>Start fuzzing test campaign</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/security/audit</code><p>Run security audit and vulnerability scan</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/stress/test</code><p>Execute stress and load tests</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/report/generate</code><p>Generate comprehensive test report</p></div>
+        </div>
+
+        <div class="content-section">
+            <h2>Implementation Configuration Schema</h2>
+            <pre><code>{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TLS-Lite Implementation Configuration",
+  "type": "object",
+  "properties": {
+    "implementation": {
+      "type": "object",
+      "properties": {
+        "vendor": { "type": "string" },
+        "version": { "type": "string" },
+        "device_class": { "type": "integer", "minimum": 1, "maximum": 3 }
+      }
+    },
+    "testing": {
+      "type": "object",
+      "properties": {
+        "unit_tests_enabled": { "type": "boolean", "default": true },
+        "integration_tests_enabled": { "type": "boolean", "default": true },
+        "compliance_tests_enabled": { "type": "boolean", "default": true },
+        "performance_benchmarks": { "type": "boolean", "default": true }
+      }
+    },
+    "certification": {
+      "type": "object",
+      "properties": {
+        "target_profile": { "type": "string", "enum": ["minimal", "standard", "enhanced"] },
+        "required_tests": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>Final Certification Requirements</h2>
+            <div class="certification-list">
+                <div class="cert-item"><h4>IMPL-001: Code Quality</h4><p>Clean, maintainable code following standards</p></div>
+                <div class="cert-item"><h4>IMPL-002: Documentation</h4><p>Complete API and implementation documentation</p></div>
+                <div class="cert-item"><h4>IMPL-003: Unit Test Coverage</h4><p>Minimum 95% code coverage with unit tests</p></div>
+                <div class="cert-item"><h4>IMPL-004: Integration Tests</h4><p>Comprehensive integration test suite</p></div>
+                <div class="cert-item"><h4>IMPL-005: Security Audit</h4><p>Pass third-party security audit</p></div>
+                <div class="cert-item"><h4>IMPL-006: Performance Benchmarks</h4><p>Meet performance requirements for device class</p></div>
+                <div class="cert-item"><h4>IMPL-007: Interoperability</h4><p>Successful interop testing with reference implementations</p></div>
+                <div class="cert-item"><h4>IMPL-008: Memory Safety</h4><p>No buffer overflows, use-after-free, or leaks</p></div>
+                <div class="cert-item"><h4>IMPL-009: Fuzzing Tests</h4><p>Pass 48-hour fuzzing campaign</p></div>
+                <div class="cert-item"><h4>IMPL-010: Compliance Tests</h4><p>100% pass rate on compliance test suite</p></div>
+                <div class="cert-item"><h4>IMPL-011: Timing Attack Resistance</h4><p>Constant-time cryptographic operations</p></div>
+                <div class="cert-item"><h4>IMPL-012: Side-Channel Tests</h4><p>Basic side-channel resistance validation</p></div>
+                <div class="cert-item"><h4>IMPL-013: Error Handling</h4><p>Robust error handling without leaks</p></div>
+                <div class="cert-item"><h4>IMPL-014: Resource Management</h4><p>Proper resource allocation and cleanup</p></div>
+                <div class="cert-item"><h4>IMPL-015: Build System</h4><p>Reproducible builds with security flags</p></div>
+                <div class="cert-item"><h4>IMPL-016: Static Analysis</h4><p>Pass static analysis without warnings</p></div>
+                <div class="cert-item"><h4>IMPL-017: Dynamic Analysis</h4><p>Pass dynamic analysis tools (valgrind, sanitizers)</p></div>
+                <div class="cert-item"><h4>IMPL-018: Deployment Guide</h4><p>Comprehensive deployment documentation</p></div>
+                <div class="cert-item"><h4>IMPL-019: Known Vectors</h4><p>Pass all NIST and RFC test vectors</p></div>
+                <div class="cert-item"><h4>IMPL-020: Certification Report</h4><p>Complete certification test report</p></div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter7.html" class="nav-button">← Session Management</a>
+            <a href="index.html" class="nav-button">Back to Home →</a>
+        </div>
+
+        <footer>
+            <div class="korean-text">弘益人間</div>
+            <p>Benefit All Mankind</p>
+            <p>&copy; 2025 WIA (Wireless IoT Alliance). All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Chapter 8: Digital Twin & Advanced Topics - WIA-IND-027</title>
+<style>:root{--bg:#0f172a;--surface:#1e293b;--primary:#8B5CF6;--text:#f1f5f9;--text-dim:#94a3b8;--border:#334155}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.8;padding:20px}.container{max-width:900px;margin:0 auto;background:var(--surface);padding:40px;border-radius:10px;box-shadow:0 4px 6px rgba(0,0,0,0.3)}h1{color:var(--primary);font-size:2.5em;margin-bottom:20px;border-bottom:3px solid var(--primary);padding-bottom:15px}h2{color:var(--primary);font-size:1.8em;margin-top:40px;margin-bottom:20px}h3{color:var(--primary);font-size:1.4em;margin-top:30px;margin-bottom:15px}p{margin-bottom:15px;color:var(--text-dim)}.highlight{background:rgba(139,92,246,0.2);padding:20px;border-left:4px solid var(--primary);margin:20px 0;border-radius:5px}table{width:100%;border-collapse:collapse;margin:25px 0;background:var(--bg)}th,td{padding:15px;text-align:left;border:1px solid var(--border)}th{background:var(--primary);color:var(--text);font-weight:600}tr:hover{background:rgba(139,92,246,0.1)}code{background:var(--bg);padding:2px 8px;border-radius:4px;font-family:'Courier New',monospace;color:var(--primary)}pre{background:var(--bg);padding:20px;border-radius:8px;overflow-x:auto;margin:20px 0;border:1px solid var(--border)}pre code{padding:0;background:transparent}.key-takeaways{background:rgba(139,92,246,0.1);padding:25px;border-radius:8px;margin:30px 0}.key-takeaways h3{margin-top:0}.key-takeaways ul{margin-left:20px}.key-takeaways li{margin:10px 0;color:var(--text-dim)}.review-questions{background:var(--bg);padding:25px;border-radius:8px;margin:30px 0;border:2px solid var(--primary)}.review-questions h3{margin-top:0}.review-questions ol{margin-left:20px}.review-questions li{margin:15px 0;color:var(--text-dim)}.navigation{display:flex;justify-content:space-between;margin-top:40px;padding-top:20px;border-top:2px solid var(--border)}.nav-button{background:var(--primary);color:var(--text);padding:12px 24px;text-decoration:none;border-radius:6px;transition:background 0.3s}.nav-button:hover{background:#7C3AED}.diagram{background:var(--bg);padding:20px;border-radius:8px;margin:20px 0;font-family:monospace;overflow-x:auto;border:1px solid var(--border)}ul{margin-left:20px;margin-bottom:15px}li{margin:8px 0;color:var(--text-dim)}</style></head><body><div class="container">
+<h1>Chapter 8: Digital Twin & Advanced Topics</h1>
+<div class="highlight"><strong>WIA-IND-027 Standard</strong><br>弘益人間 (Benefit All Humanity) - Exploring cutting-edge IIoT technologies and future directions</div>
+
+<h2>8.1 Digital Twin Technology</h2>
+<p>A Digital Twin is a virtual representation of a physical asset that synchronizes with real-time sensor data, enabling simulation, prediction, and optimization. The concept originated at NASA for spacecraft monitoring and has become essential for Industry 4.0 manufacturing.</p>
+
+<h3>8.1.1 Digital Twin Architecture</h3>
+<table><thead><tr><th>Layer</th><th>Components</th><th>Technologies</th><th>Update Frequency</th></tr></thead><tbody>
+<tr><td>Physical Asset</td><td>Sensors, actuators, PLCs</td><td>OPC-UA, Modbus, IoT devices</td><td>1Hz - 10kHz</td></tr>
+<tr><td>Communication</td><td>Edge gateways, data pipelines</td><td>MQTT, Kafka, Azure IoT Hub</td><td>Real-time streaming</td></tr>
+<tr><td>Digital Model</td><td>3D geometry, physics simulation</td><td>CAD, FEA, CFD, Simulink</td><td>On-demand</td></tr>
+<tr><td>Analytics</td><td>ML models, optimization algorithms</td><td>TensorFlow, PyTorch, MATLAB</td><td>Minutes - hours</td></tr>
+<tr><td>Visualization</td><td>3D rendering, dashboards</td><td>Unity, Unreal, Three.js, Grafana</td><td>5-60 seconds</td></tr>
+</tbody></table>
+
+<h3>8.1.2 Digital Twin Implementation</h3>
+<pre><code>// TypeScript Digital Twin for Industrial Motor
+interface MotorState {
+  temperature: number;     // °C
+  vibration: number;       // mm/s RMS
+  current: number;         // Amperes
+  speed: number;           // RPM
+  power: number;           // kW
+  operatingHours: number;  // Total runtime
+  timestamp: Date;
+}
+
+interface MotorModel {
+  thermalCapacity: number;          // J/°C
+  thermalResistance: number;        // °C/W
+  nominalSpeed: number;             // RPM
+  nominalPower: number;             // kW
+  bearingLifeL10: number;           // hours (10% failure rate)
+  windingResistanceOhms: number;    // Ω
+}
+
+class DigitalTwinMotor {
+  private physicalState: MotorState;
+  private model: MotorModel;
+  private predictedRUL: number = 0;  // Remaining Useful Life (hours)
+
+  constructor(motorId: string, model: MotorModel) {
+    this.model = model;
+    this.subscribeToSensors(motorId);
+  }
+
+  private subscribeToSensors(motorId: string) {
+    // Real-time sensor data synchronization
+    mqttClient.subscribe(`factory/motors/${motorId}/telemetry`);
+
+    mqttClient.on('message', (topic, message) => {
+      if (topic.includes(motorId)) {
+        const data = JSON.parse(message.toString());
+        this.physicalState = {
+          temperature: data.temperature,
+          vibration: data.vibration,
+          current: data.current,
+          speed: data.speed,
+          power: data.power,
+          operatingHours: data.operatingHours,
+          timestamp: new Date(data.timestamp)
+        };
+
+        this.runSimulation();
+      }
+    });
+  }
+
+  private runSimulation() {
+    // Physics-based thermal model
+    const thermalLoad = this.physicalState.power * 1000; // Convert kW to W
+    const ambientTemp = 25; // °C
+
+    const steadyStateTemp = ambientTemp + 
+      (thermalLoad * this.model.thermalResistance);
+
+    const tempDeviation = Math.abs(
+      this.physicalState.temperature - steadyStateTemp
+    );
+
+    if (tempDeviation > 10) {
+      console.log(`ALERT: Thermal anomaly detected. Expected ${steadyStateTemp}°C, actual ${this.physicalState.temperature}°C`);
+    }
+
+    // Bearing life prediction (ISO 281)
+    const bearingLoad = this.calculateBearingLoad();
+    const speedRatio = this.physicalState.speed / this.model.nominalSpeed;
+
+    const bearingLifeActual = this.model.bearingLifeL10 * 
+      Math.pow(bearingLoad, -3) *  // Load factor
+      Math.pow(speedRatio, -1);     // Speed factor
+
+    const hoursRemaining = bearingLifeActual - this.physicalState.operatingHours;
+
+    this.predictedRUL = hoursRemaining;
+
+    if (hoursRemaining < 168) {  // 7 days
+      this.raiseMaintenanceAlert(hoursRemaining);
+    }
+
+    // Winding insulation degradation (Arrhenius equation)
+    const insulationLife = this.predictInsulationLife();
+
+    // Combine predictions
+    const combinedRUL = Math.min(hoursRemaining, insulationLife);
+
+    console.log(`Digital Twin Update: RUL=${combinedRUL.toFixed(0)}h, Temp=${this.physicalState.temperature}°C, Vibration=${this.physicalState.vibration}mm/s`);
+  }
+
+  private calculateBearingLoad(): number {
+    // Simplified bearing load calculation
+    const radialLoad = this.physicalState.power / this.physicalState.speed * 9.55; // N
+    return radialLoad;
+  }
+
+  private predictInsulationLife(): number {
+    // Arrhenius equation for insulation aging
+    const baseTemp = 150; // °C (Class F insulation)
+    const activationEnergy = 1.1; // eV
+
+    const lifeFactor = Math.exp(
+      (activationEnergy / 8.617e-5) * 
+      (1 / (baseTemp + 273) - 1 / (this.physicalState.temperature + 273))
+    );
+
+    const baseLife = 20000; // hours at rated temperature
+    return baseLife * lifeFactor;
+  }
+
+  private raiseMaintenanceAlert(hoursRemaining: number) {
+    const alert = {
+      type: 'predictive_maintenance',
+      severity: hoursRemaining < 48 ? 'critical' : 'warning',
+      message: `Bearing failure predicted in ${hoursRemaining.toFixed(0)} hours (${(hoursRemaining/24).toFixed(1)} days)`,
+      recommendedAction: 'Schedule bearing replacement',
+      estimatedDowntime: 4, // hours
+      spareParts: ['Bearing 6308', 'Seal Kit', 'Grease'],
+      cost: 1500 // USD
+    };
+
+    notificationService.send(alert);
+  }
+
+  // Optimization: What-if scenarios
+  async optimizeOperatingPoint(targetOutput: number) {
+    // Simulate different speed/load combinations
+    const scenarios = [];
+
+    for (let speed = 1000; speed <= 3000; speed += 100) {
+      const power = this.calculatePowerAt(speed, targetOutput);
+      const efficiency = this.calculateEfficiencyAt(speed, power);
+      const temperature = this.predictTemperatureAt(power);
+      const bearingLife = this.predictBearingLifeAt(speed, power);
+
+      scenarios.push({
+        speed,
+        power,
+        efficiency,
+        temperature,
+        bearingLife,
+        costPerHour: power * 0.12 // $/kWh
+      });
+    }
+
+    // Find optimal (highest efficiency, longest life)
+    const optimal = scenarios.reduce((best, current) => {
+      const score = current.efficiency * 0.7 + 
+                    (current.bearingLife / 10000) * 0.3;
+      const bestScore = best.efficiency * 0.7 + 
+                        (best.bearingLife / 10000) * 0.3;
+
+      return score > bestScore ? current : best;
+    });
+
+    console.log('Optimal operating point:', optimal);
+    return optimal;
+  }
+
+  private calculatePowerAt(speed: number, output: number): number {
+    // Simplified power calculation
+    return output * speed / this.model.nominalSpeed;
+  }
+
+  private calculateEfficiencyAt(speed: number, power: number): number {
+    const nominalEfficiency = 0.92;
+    const loadFactor = power / this.model.nominalPower;
+
+    // Efficiency curve (peaks at 75-100% load)
+    return nominalEfficiency * (0.7 + 0.3 * Math.min(loadFactor, 1));
+  }
+
+  private predictTemperatureAt(power: number): number {
+    return 25 + (power * 1000 * this.model.thermalResistance);
+  }
+
+  private predictBearingLifeAt(speed: number, power: number): number {
+    const load = power / speed * 9.55;
+    const speedRatio = speed / this.model.nominalSpeed;
+
+    return this.model.bearingLifeL10 * 
+           Math.pow(load, -3) * 
+           Math.pow(speedRatio, -1);
+  }
+}
+
+// Usage
+const motorTwin = new DigitalTwinMotor('motor-001', {
+  thermalCapacity: 5000,      // J/°C
+  thermalResistance: 0.05,    // °C/W
+  nominalSpeed: 1800,         // RPM
+  nominalPower: 15,           // kW
+  bearingLifeL10: 40000,      // hours
+  windingResistanceOhms: 0.5  // Ω
+});
+
+// Runs continuously, synchronized with physical asset
+// Outputs: RUL predictions, thermal alerts, optimization recommendations</code></pre>
+
+<h2>8.2 MES/ERP Integration</h2>
+
+<h3>8.2.1 ISA-95 Integration Model</h3>
+<p>ISA-95 defines the interface between business (ERP) and manufacturing (MES) systems:</p>
+
+<table><thead><tr><th>Level</th><th>System</th><th>Data Flow</th><th>Frequency</th></tr></thead><tbody>
+<tr><td>Level 4: Business</td><td>ERP (SAP, Oracle)</td><td>Production orders, BOMs, inventory</td><td>Hours - days</td></tr>
+<tr><td>Level 3: MES</td><td>Manufacturing execution</td><td>Work orders, quality data, OEE</td><td>Minutes - hours</td></tr>
+<tr><td>Level 2: Control</td><td>SCADA, PLC</td><td>Process variables, alarms, status</td><td>Seconds - minutes</td></tr>
+</tbody></table>
+
+<pre><code>// Production Order Synchronization
+async function syncProductionOrder(orderId: string) {
+  // 1. Fetch order from ERP
+  const erpOrder = await erpAPI.get(`/orders/${orderId}`);
+
+  console.log(`ERP Order: ${erpOrder.productCode}, Qty: ${erpOrder.quantity}`);
+
+  // 2. Create work order in MES
+  const mesOrder = await mesAPI.createWorkOrder({
+    erpOrderId: orderId,
+    productCode: erpOrder.productCode,
+    quantity: erpOrder.quantity,
+    dueDate: erpOrder.dueDate,
+    priority: erpOrder.priority,
+    bomId: erpOrder.billOfMaterialsId,
+    routingId: erpOrder.routingId
+  });
+
+  // 3. Calculate required materials
+  const bom = await mesAPI.getBOM(erpOrder.billOfMaterialsId);
+  const materials = bom.items.map(item => ({
+    materialId: item.id,
+    required: item.quantity * erpOrder.quantity,
+    available: item.inventoryLevel,
+    shortage: Math.max(0, item.quantity * erpOrder.quantity - item.inventoryLevel)
+  }));
+
+  // 4. Check material availability
+  const shortages = materials.filter(m => m.shortage > 0);
+  if (shortages.length > 0) {
+    console.log('Material shortages:', shortages);
+    // Create purchase requisitions in ERP
+    for (const shortage of shortages) {
+      await erpAPI.createPurchaseReq({
+        materialId: shortage.materialId,
+        quantity: shortage.shortage,
+        requiredBy: erpOrder.dueDate
+      });
+    }
+  }
+
+  // 5. Schedule production
+  const routing = await mesAPI.getRouting(erpOrder.routingId);
+  const schedule = await mesAPI.schedule({
+    workOrderId: mesOrder.id,
+    operations: routing.operations,
+    startDate: calculateStartDate(erpOrder.dueDate, routing.totalDuration)
+  });
+
+  console.log(`Scheduled on line ${schedule.lineId}, start: ${schedule.startTime}`);
+
+  // 6. Sync back to ERP
+  await erpAPI.updateOrder(orderId, {
+    mesWorkOrderId: mesOrder.id,
+    scheduledStartDate: schedule.startTime,
+    assignedLine: schedule.lineId
+  });
+
+  return { mesOrder, schedule };
+}
+
+// Bi-directional sync: MES → ERP (production data)
+async function reportProductionToERP(workOrderId: string) {
+  const mesData = await mesAPI.getProductionData(workOrderId);
+
+  await erpAPI.reportProduction({
+    orderId: mesData.erpOrderId,
+    quantityProduced: mesData.goodCount,
+    quantityRejected: mesData.rejectCount,
+    actualStartTime: mesData.startTime,
+    actualEndTime: mesData.endTime,
+    laborHours: mesData.laborHours,
+    materialConsumed: mesData.materialsUsed,
+    oee: mesData.oee,
+    downtime: mesData.downtimeMinutes,
+    qualityIssues: mesData.defects
+  });
+
+  console.log(`Reported ${mesData.goodCount} units to ERP`);
+}</code></pre>
+
+<h2>8.3 Predictive Maintenance</h2>
+
+<h3>8.3.1 Failure Modes and Prediction</h3>
+<table><thead><tr><th>Failure Mode</th><th>Leading Indicators</th><th>Detection Method</th><th>Prediction Horizon</th></tr></thead><tbody>
+<tr><td>Bearing failure</td><td>Vibration increase, temperature rise</td><td>FFT analysis, envelope detection</td><td>2-8 weeks</td></tr>
+<tr><td>Belt wear</td><td>Noise, vibration harmonics</td><td>Acoustic monitoring, tension sensors</td><td>1-4 weeks</td></tr>
+<tr><td>Motor winding failure</td><td>Temperature, insulation resistance</td><td>Thermal imaging, megger test</td><td>4-12 weeks</td></tr>
+<tr><td>Pump cavitation</td><td>Pressure fluctuation, noise</td><td>Pressure sensors, acoustic</td><td>Days - weeks</td></tr>
+</tbody></table>
+
+<h2>8.4 Future Trends</h2>
+
+<h3>8.4.1 5G in Manufacturing</h3>
+<p>5G networks enable ultra-reliable low-latency communication (URLLC) for time-critical industrial applications:</p>
+
+<table><thead><tr><th>Capability</th><th>4G/WiFi</th><th>5G</th><th>Impact</th></tr></thead><tbody>
+<tr><td>Latency</td><td>20-50ms</td><td>&lt;1ms</td><td>Wireless motion control, AR/VR</td></tr>
+<tr><td>Reliability</td><td>99%</td><td>99.9999%</td><td>Safety-critical applications</td></tr>
+<tr><td>Device Density</td><td>2K devices/km²</td><td>1M devices/km²</td><td>Massive sensor deployments</td></tr>
+<tr><td>Bandwidth</td><td>100 Mbps</td><td>10 Gbps</td><td>Real-time video, digital twin sync</td></tr>
+</tbody></table>
+
+<h3>8.4.2 Edge AI and AutoML</h3>
+<p>Automated machine learning enables non-experts to develop predictive models:</p>
+
+<ul>
+<li><strong>AutoML Platforms:</strong> Google Cloud AutoML, Azure AutoML, H2O.ai automatically select features, algorithms, and hyperparameters</li>
+<li><strong>Federated Learning:</strong> Train ML models across distributed edge devices without centralizing data, preserving privacy</li>
+<li><strong>Tiny ML:</strong> Deploy neural networks on microcontrollers (TensorFlow Lite Micro, Edge Impulse) for &lt;1mW inference</li>
+<li><strong>Continual Learning:</strong> Models adapt to changing conditions (concept drift) without full retraining</li>
+</ul>
+
+<h3>8.4.3 Blockchain for Supply Chain</h3>
+<p>Distributed ledger technology ensures traceability and provenance:</p>
+
+<ul>
+<li><strong>Immutable Records:</strong> Product genealogy, quality tests, certifications recorded on-chain</li>
+<li><strong>Smart Contracts:</strong> Automated compliance verification, payments triggered by IoT events</li>
+<li><strong>Platforms:</strong> Hyperledger Fabric, Ethereum, IBM Food Trust, VeChain</li>
+<li><strong>Use Cases:</strong> Pharmaceutical serialization, automotive recalls, food safety</li>
+</ul>
+
+<div class="key-takeaways"><h3>Key Takeaways</h3><ul>
+<li><strong>Digital Twin:</strong> Virtual asset synchronized with real-time sensors (1Hz-10kHz), enables physics simulation, RUL prediction, what-if optimization</li>
+<li><strong>Digital Twin Layers:</strong> Physical asset → Communication (MQTT/Kafka) → Digital model (CAD/FEA) → Analytics (ML) → Visualization (Unity/Grafana)</li>
+<li><strong>Predictive Maintenance:</strong> Bearing failure (2-8 weeks via FFT), motor winding (4-12 weeks via thermal), pump cavitation (days via pressure/acoustic)</li>
+<li><strong>MES/ERP Integration:</strong> ISA-95 model, bi-directional sync (ERP→MES: orders/BOM, MES→ERP: production/quality/OEE), minutes-hours frequency</li>
+<li><strong>5G Manufacturing:</strong> &lt;1ms latency (vs 20-50ms WiFi), 99.9999% reliability, 1M devices/km², 10 Gbps bandwidth enables wireless motion control</li>
+<li><strong>Future Technologies:</strong> Edge AI/AutoML (automated model development), Federated Learning (privacy-preserving), TinyML (&lt;1mW inference), Blockchain (traceability)</li>
+</ul></div>
+
+<div class="review-questions"><h3>Review Questions</h3><ol>
+<li><strong>Digital Twin Design:</strong> Design digital twin for CNC machine. Which sensors (5+)? What physics models? How to predict tool wear (RUL)?</li>
+<li><strong>RUL Calculation:</strong> Bearing L10 life: 40,000h. Current load 120% of rated, speed 110%. Calculate remaining life after 10,000h operation (ISO 281 formula).</li>
+<li><strong>MES/ERP Sync:</strong> ERP order for 1000 units, due in 5 days. MES calculates 6-day production time. How to resolve? Update ERP or expedite production?</li>
+<li><strong>5G vs WiFi:</strong> Robotic welding requires &lt;5ms latency, 99.99% reliability. Can WiFi 6 (20ms, 99% reliability) meet requirements? Why use 5G?</li>
+<li><strong>Predictive Model:</strong> Train bearing failure model. What features (10+)? Training data requirements? How to handle class imbalance (failures rare)?</li>
+<li><strong>Edge AI Deployment:</strong> Deploy TensorFlow Lite model to Raspberry Pi edge gateway. Model size 50MB, Pi has 1GB RAM. Optimization strategies?</li>
+<li><strong>Blockchain Traceability:</strong> Automotive recall requires tracing parts. Design blockchain schema (blocks, transactions, smart contracts) for supply chain.</li>
+<li><strong>What-if Analysis:</strong> Digital twin shows optimal motor speed 1650 RPM (95% efficiency). Current: 1800 RPM (92% efficiency). Calculate annual savings (24/7 operation, 15kW motor, $0.12/kWh).</li>
+</ol></div>
+
+<div class="navigation">
+<a href="chapter-07.html" class="nav-button">← Previous Chapter</a>
+<a href="index.html" class="nav-button">📚 Contents</a>
+</div></div></body></html>

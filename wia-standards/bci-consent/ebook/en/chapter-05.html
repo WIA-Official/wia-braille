@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Phase 2: Verification API - WIA BCI Consent Protocol</title>
+</head>
+<body>
+    <h1>Chapter 5: Phase 2: Verification API</h1>
+
+    <blockquote>
+        <p><strong>弘益人間 (Hongik Ingan)</strong></p>
+        <p>"Benefit All Humanity"</p>
+        <p><em>Technical excellence in service of human dignity and cognitive liberty.</em></p>
+    </blockquote>
+
+    <h2>5.1 Core API Endpoints</h2>
+
+            <h3>5.1.1 Request Consent</h3>
+            <pre>POST /api/v1/consent/request
+Content-Type: application/json
+
+{
+  "subjectId": "SUB-2025-001",
+  "consentType": "initial",
+  "deviceType": "non_invasive",
+  "purpose": "Communication assistance",
+  "permissions": {
+    "dataCollection": true,
+    "dataStorage": true
+  },
+  "jurisdiction": "US"
+}
+
+Response 201 Created:
+{
+  "consentId": "CST-20251225-001",
+  "status": "pending_signature",
+  "expiresAt": "2026-12-25T10:30:00Z"
+}</pre>
+            
+            <h3>5.1.2 Verify Consent</h3>
+            <pre>POST /api/v1/consent/verify
+Content-Type: application/json
+
+{
+  "consentId": "CST-20251225-001",
+  "requiredPermissions": ["dataCollection", "realTimeProcessing"]
+}
+
+Response 200 OK:
+{
+  "valid": true,
+  "permissions": {
+    "dataCollection": true,
+    "realTimeProcessing": true
+  },
+  "expiresAt": "2026-12-25T10:30:00Z",
+  "capacityScore": 95
+}</pre>
+            
+
+    <h2>5.2 Capacity Assessment</h2>
+
+            <p>The capacity assessment API evaluates whether an individual has sufficient cognitive capacity to provide informed consent...</p>
+            <pre>POST /api/v1/capacity/assess
+{
+  "subjectId": "SUB-2025-001",
+  "cognitiveScore": 85,
+  "understandingLevel": 8,
+  "decisionAbility": 9,
+  "method": "MoCA"
+}
+
+Response:
+{
+  "capacityScore": 92,
+  "sufficient": true,
+  "recommendation": "Full capacity confirmed",
+  "assessmentId": "CAP-20251225-001"
+}</pre>
+            
+
+
+    <h2>5.3 Emergency Override API</h2>
+    <p>In life-threatening situations, the emergency override API allows bypassing normal consent requirements with proper authorization and documentation...</p>
+    
+    <h3>5.3.1 Trigger Emergency Override</h3>
+    <pre>POST /api/v1/emergency/override
+Authorization: Bearer {medical_professional_token}
+
+{
+  "subjectId": "SUB-2025-001",
+  "reason": "medical_emergency",
+  "situation": "Patient experiencing severe seizure, immediate BCI intervention required",
+  "authorizingPhysician": "Dr. James Wilson, MD",
+  "license": "CA-MED-123456",
+  "duration": 24  // hours
+}
+
+Response 200 OK:
+{
+  "overrideId": "EMG-20251225-001",
+  "status": "active",
+  "expiresAt": "2025-12-26T10:30:00Z",
+  "reviewRequired": true,
+  "ethicsBoardNotified": true
+}</pre>
+
+    <h3>5.3.2 Emergency Override Types</h3>
+    <table border="1">
+        <tr><th>Reason</th><th>Max Duration</th><th>Required Authorization</th></tr>
+        <tr><td>medical_emergency</td><td>24 hours</td><td>Licensed physician</td></tr>
+        <tr><td>seizure_detection</td><td>12 hours</td><td>Neurologist or ER physician</td></tr>
+        <tr><td>system_malfunction</td><td>6 hours</td><td>Medical device engineer + physician</td></tr>
+        <tr><td>immediate_danger</td><td>24 hours</td><td>Any physician</td></tr>
+    </table>
+
+    <h2>5.4 Audit Trail Management</h2>
+    <p>Every consent operation is logged for accountability and compliance...</p>
+    
+    <h3>5.4.1 Retrieve Audit Log</h3>
+    <pre>GET /api/v1/consent/{id}/audit
+
+Response 200 OK:
+{
+  "consentId": "CST-20251225-001",
+  "events": [
+    {
+      "timestamp": "2025-12-25T10:30:00Z",
+      "action": "consent_created",
+      "actor": "system",
+      "details": "Initial consent record created"
+    },
+    {
+      "timestamp": "2025-12-25T11:45:00Z",
+      "action": "consent_verified",
+      "actor": "BCI_DEVICE_001",
+      "details": "Consent verified before data collection"
+    },
+    {
+      "timestamp": "2025-12-26T09:00:00Z",
+      "action": "consent_accessed",
+      "actor": "researcher@example.com",
+      "details": "Consent record viewed",
+      "ipAddress": "192.0.2.1"
+    }
+  ]
+}</pre>
+
+    <h2>5.5 SDK Examples</h2>
+    <h3>5.5.1 Python SDK</h3>
+    <pre>from wia_bci_consent import ConsentClient
+
+client = ConsentClient(api_key="your_key")
+
+# Request consent
+consent = client.request_consent(
+    subject_id="SUB-2025-001",
+    consent_type="initial",
+    device_type="non_invasive",
+    permissions={"dataCollection": True, "dataStorage": True}
+)
+
+# Verify before operation
+if client.verify_consent(consent.id, ["dataCollection"]):
+    # Proceed with BCI operation
+    pass</pre>
+
+    <h3>5.5.2 JavaScript SDK</h3>
+    <pre>import { ConsentClient } from '@wia/bci-consent';
+
+const client = new ConsentClient({ apiKey: 'your_key' });
+
+// Request consent
+const consent = await client.requestConsent({
+  subjectId: 'SUB-2025-001',
+  consentType: 'initial',
+  permissions: { dataCollection: true }
+});
+
+// Verify
+const valid = await client.verifyConsent(consent.id, ['dataCollection']);
+if (valid) {
+  // Proceed
+}</pre>
+
+    <blockquote>
+        <p><strong>弘益人間 (Hongik Ingan)</strong></p>
+        <p>"Benefit All Humanity"</p>
+    </blockquote>
+
+</body>
+</html>
+
+    <h2>5.6 Rate Limiting and Security</h2>
+    <p>The API includes comprehensive security measures to protect consent data and prevent abuse...</p>
+    
+    <h3>5.6.1 Authentication Methods</h3>
+    <table border="1">
+        <tr><th>Method</th><th>Use Case</th><th>Security Level</th></tr>
+        <tr><td>API Key</td><td>Server-to-server</td><td>Medium</td></tr>
+        <tr><td>OAuth 2.0</td><td>User-facing applications</td><td>High</td></tr>
+        <tr><td>JWT Tokens</td><td>Mobile/web apps</td><td>High</td></tr>
+        <tr><td>mTLS</td><td>High-security medical devices</td><td>Very High</td></tr>
+    </table>
+    
+    <h3>5.6.2 Rate Limiting</h3>
+    <pre>HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1640462400
+
+{
+  "error": "rate_limit_exceeded",
+  "message": "API rate limit exceeded. Limit: 1000 req/hour",
+  "retryAfter": 3600
+}</pre>
+
+    <h3>5.6.3 IP Whitelisting</h3>
+    <p>For medical-grade implementations, restrict API access to specific IP addresses or ranges...</p>
+    
+    <h2>5.7 Error Handling</h2>
+    <p>Comprehensive error responses help developers integrate the API correctly...</p>
+    
+    <h3>5.7.1 Standard Error Format</h3>
+    <pre>{
+  "error": {
+    "code": "CONSENT_EXPIRED",
+    "message": "The consent record has expired",
+    "details": {
+      "consentId": "CST-20241225-001",
+      "expiredAt": "2025-12-25T00:00:00Z",
+      "currentTime": "2025-12-26T10:00:00Z"
+    },
+    "suggestion": "Request consent renewal from the subject"
+  }
+}</pre>
+
+    <h3>5.7.2 Error Codes</h3>
+    <table border="1">
+        <tr><th>Code</th><th>HTTP Status</th><th>Description</th></tr>
+        <tr><td>CONSENT_NOT_FOUND</td><td>404</td><td>Consent ID does not exist</td></tr>
+        <tr><td>CONSENT_EXPIRED</td><td>403</td><td>Consent has passed expiration date</td></tr>
+        <tr><td>CONSENT_REVOKED</td><td>403</td><td>Consent was revoked by subject</td></tr>
+        <tr><td>INSUFFICIENT_CAPACITY</td><td>422</td><td>Subject lacks capacity to consent</td></tr>
+        <tr><td>PERMISSION_DENIED</td><td>403</td><td>Required permission not granted</td></tr>
+        <tr><td>INVALID_SIGNATURE</td><td>422</td><td>Cryptographic signature verification failed</td></tr>
+        <tr><td>UNAUTHORIZED</td><td>401</td><td>Invalid or missing authentication</td></tr>
+        <tr><td>RATE_LIMIT_EXCEEDED</td><td>429</td><td>Too many requests</td></tr>
+    </table>
+
+    <h2>5.8 Webhook Integration</h2>
+    <p>Subscribe to events for real-time notifications about consent status changes...</p>
+    
+    <h3>5.8.1 Webhook Configuration</h3>
+    <pre>POST /api/v1/webhooks
+{
+  "url": "https://your-app.example.com/webhooks/consent",
+  "events": ["consent.granted", "consent.revoked", "consent.expired"],
+  "secret": "webhook_secret_key_for_verification"
+}</pre>
+
+    <h3>5.8.2 Webhook Events</h3>
+    <pre>// consent.granted event
+POST https://your-app.example.com/webhooks/consent
+X-WIA-Event: consent.granted
+X-WIA-Signature: sha256=abc123...
+
+{
+  "event": "consent.granted",
+  "timestamp": "2025-12-25T10:30:00Z",
+  "data": {
+    "consentId": "CST-20251225-001",
+    "subjectId": "SUB-2025-001",
+    "consentType": "initial",
+    "permissions": ["dataCollection", "dataStorage"]
+  }
+}
+
+// consent.revoked event
+POST https://your-app.example.com/webhooks/consent
+X-WIA-Event: consent.revoked
+X-WIA-Signature: sha256=def456...
+
+{
+  "event": "consent.revoked",
+  "timestamp": "2025-12-26T15:00:00Z",
+  "data": {
+    "consentId": "CST-20251225-001",
+    "subjectId": "SUB-2025-001",
+    "reason": "User request",
+    "effectiveDate": "2025-12-26T15:00:00Z"
+  }
+}</pre>
+
+    <h3>5.8.3 Webhook Security</h3>
+    <p>Verify webhook authenticity using HMAC signatures:</p>
+    <pre>function verifyWebhookSignature(payload, signature, secret) {
+    const expectedSignature = 'sha256=' + 
+        crypto.createHmac('sha256', secret)
+              .update(payload)
+              .digest('hex');
+    
+    return crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature)
+    );
+}</pre>
+
+    <h2>5.9 Batch Operations</h2>
+    <p>For processing multiple consent operations efficiently...</p>
+    
+    <h3>5.9.1 Batch Verification</h3>
+    <pre>POST /api/v1/consent/batch/verify
+{
+  "requests": [
+    {
+      "consentId": "CST-001",
+      "requiredPermissions": ["dataCollection"]
+    },
+    {
+      "consentId": "CST-002",
+      "requiredPermissions": ["research", "aiTraining"]
+    }
+  ]
+}
+
+Response:
+{
+  "results": [
+    {
+      "consentId": "CST-001",
+      "valid": true,
+      "permissions": {"dataCollection": true}
+    },
+    {
+      "consentId": "CST-002",
+      "valid": false,
+      "error": "PERMISSION_DENIED",
+      "message": "aiTraining permission not granted"
+    }
+  ]
+}</pre>
+
+    <h2>5.10 Performance Optimization</h2>
+    <p>Best practices for optimal API performance...</p>
+    
+    <h3>5.10.1 Caching Strategies</h3>
+    <ul>
+        <li>Cache consent verification results (TTL: 5 minutes)</li>
+        <li>Invalidate cache on consent modification or revocation</li>
+        <li>Use ETags for conditional requests</li>
+        <li>Implement client-side caching with proper invalidation</li>
+    </ul>
+
+    <h3>5.10.2 Connection Pooling</h3>
+    <pre>// Example: Node.js connection pooling
+const pool = new Pool({
+    host: 'api.wia-bci-consent.com',
+    port: 443,
+    maxConnections: 100,
+    keepAlive: true
+});
+
+// Reuse connections for multiple requests
+const response = await pool.request('/api/v1/consent/verify', {...});</pre>
+
+    <h3>5.10.3 Compression</h3>
+    <p>All API responses support gzip and br (Brotli) compression:</p>
+    <pre>GET /api/v1/consent/CST-001
+Accept-Encoding: gzip, br
+
+HTTP/1.1 200 OK
+Content-Encoding: gzip
+Content-Length: 342
+...</pre>
+
+</body>
+</html>
+
+    <h2>5.11 Multi-Language Support</h2>
+    <p>The API supports consent management in multiple languages for global deployment...</p>
+    
+    <h3>5.11.1 Language Selection</h3>
+    <pre>POST /api/v1/consent/request
+Accept-Language: ko-KR
+
+{
+  "subjectId": "SUB-2025-042",
+  "consentType": "initial",
+  "language": "ko-KR"
+}
+
+Response 201 Created:
+{
+  "consentId": "CST-20251225-042",
+  "language": "ko-KR",
+  "status": "pending_signature",
+  "consentDocument": "https://api.../consent-documents/ko-KR/CST-20251225-042.pdf"
+}</pre>
+
+    <h3>5.11.2 Supported Languages</h3>
+    <table border="1">
+        <tr><th>Language</th><th>Code</th><th>Coverage</th></tr>
+        <tr><td>English</td><td>en-US, en-GB</td><td>Full</td></tr>
+        <tr><td>Korean</td><td>ko-KR</td><td>Full</td></tr>
+        <tr><td>Spanish</td><td>es-ES, es-MX</td><td>Full</td></tr>
+        <tr><td>French</td><td>fr-FR</td><td>Full</td></tr>
+        <tr><td>German</td><td>de-DE</td><td>Full</td></tr>
+        <tr><td>Japanese</td><td>ja-JP</td><td>Full</td></tr>
+        <tr><td>Chinese</td><td>zh-CN, zh-TW</td><td>Full</td></tr>
+        <tr><td>Portuguese</td><td>pt-BR, pt-PT</td><td>Full</td></tr>
+        <tr><td>Italian</td><td>it-IT</td><td>Partial</td></tr>
+        <tr><td>Dutch</td><td>nl-NL</td><td>Partial</td></tr>
+    </table>
+
+    <h2>5.12 Testing and Validation</h2>
+    <p>Comprehensive testing ensures API reliability and compliance...</p>
+    
+    <h3>5.12.1 Unit Testing</h3>
+    <pre>describe('ConsentAPI', () => {
+    test('should create consent record', async () => {
+        const request = {
+            subjectId: 'TEST-001',
+            consentType: 'initial',
+            permissions: { dataCollection: true }
+        };
+        
+        const response = await api.requestConsent(request);
+        
+        expect(response.status).toBe(201);
+        expect(response.data.consentId).toMatch(/^CST-/);
+        expect(response.data.status).toBe('pending_signature');
+    });
+    
+    test('should reject expired consent', async () => {
+        const expiredConsent = createExpiredConsent();
+        
+        await expect(
+            api.verifyConsent(expiredConsent.id, ['dataCollection'])
+        ).rejects.toThrow('CONSENT_EXPIRED');
+    });
+});</pre>
+
+    <h3>5.12.2 Integration Testing</h3>
+    <pre>describe('End-to-End Consent Flow', () => {
+    test('complete consent lifecycle', async () => {
+        // 1. Request consent
+        const consent = await api.requestConsent({...});
+        expect(consent.status).toBe('pending_signature');
+        
+        // 2. Sign consent
+        const signed = await api.signConsent(consent.id, signature);
+        expect(signed.status).toBe('active');
+        
+        // 3. Verify consent
+        const valid = await api.verifyConsent(consent.id, ['dataCollection']);
+        expect(valid).toBe(true);
+        
+        // 4. Modify consent
+        const modified = await api.modifyConsent(consent.id, {...});
+        expect(modified.version).toBe(2);
+        
+        // 5. Revoke consent
+        const revoked = await api.revokeConsent(consent.id);
+        expect(revoked.status).toBe('revoked');
+        
+        // 6. Verify revoked consent fails
+        await expect(
+            api.verifyConsent(consent.id, ['dataCollection'])
+        ).rejects.toThrow('CONSENT_REVOKED');
+    });
+});</pre>
+
+    <h3>5.12.3 Performance Testing</h3>
+    <pre>// Load testing with k6
+import http from 'k6/http';
+import { check } from 'k6';
+
+export let options = {
+    stages: [
+        { duration: '1m', target: 100 },  // Ramp up
+        { duration: '5m', target: 100 },  // Stay at 100 users
+        { duration: '1m', target: 0 },    // Ramp down
+    ],
+    thresholds: {
+        http_req_duration: ['p(95)<500'], // 95% requests < 500ms
+        http_req_failed: ['rate<0.01'],   // Error rate < 1%
+    },
+};
+
+export default function() {
+    let response = http.post('https://api.../consent/verify', JSON.stringify({
+        consentId: 'CST-TEST-001',
+        requiredPermissions: ['dataCollection']
+    }), {
+        headers: { 'Content-Type': 'application/json' },
+    });
+    
+    check(response, {
+        'status is 200': (r) => r.status === 200,
+        'response time < 500ms': (r) => r.timings.duration < 500,
+    });
+}</pre>
+
+</body>
+</html>

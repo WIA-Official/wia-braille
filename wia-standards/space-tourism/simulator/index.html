@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-SPACE-014 Simulator | Space Tourism</title>
+    <style>
+        :root { --primary: #06B6D4; --bg: #0f172a; --bg-card: #1e293b; --text: #f8fafc; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+        .header { background: var(--bg-card); padding: 20px; border-bottom: 2px solid var(--primary); }
+        .header h1 { color: var(--primary); text-align: center; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .tabs { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+        .tab { background: var(--bg-card); padding: 12px 24px; border-radius: 6px 6px 0 0; cursor: pointer; border: 1px solid var(--border); }
+        .tab.active { background: var(--primary); color: var(--bg); }
+        .tab-content { display: none; background: var(--bg-card); padding: 30px; border-radius: 8px; }
+        .tab-content.active { display: block; }
+        .card { background: rgba(6, 182, 212, 0.1); border: 1px solid var(--primary); border-radius: 8px; padding: 20px; margin: 15px 0; }
+        .json-viewer { background: #1a1a2e; padding: 15px; border-radius: 4px; font-family: monospace; overflow-x: auto; }
+        button { background: var(--primary); color: var(--bg); border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; margin: 10px 5px; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--border); }
+        th { background: rgba(6, 182, 212, 0.2); color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="header"><h1>🎫 WIA-SPACE-014 Space Tourism Simulator</h1></div>
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">📊 Data Format</div>
+            <div class="tab" onclick="switchTab(1)">🔢 Algorithms</div>
+            <div class="tab" onclick="switchTab(2)">📡 Protocol</div>
+            <div class="tab" onclick="switchTab(3)">🔗 Integration</div>
+            <div class="tab" onclick="switchTab(4)">🧪 Test</div>
+        </div>
+
+        <div class="tab-content active" id="tab0">
+            <div class="card">
+                <h2>Space Tourism Booking Schema</h2>
+                <div class="json-viewer"><pre>{
+  "booking": {
+    "id": "ST-2025-001",
+    "tourist": {
+      "name": "John Doe",
+      "age": 45,
+      "medical_clearance": true
+    },
+    "flight": {
+      "type": "SUBORBITAL",
+      "operator": "Virgin Galactic",
+      "date": "2025-06-15",
+      "duration_hours": 2.5,
+      "altitude_km": 86
+    },
+    "training": {
+      "duration_days": 3,
+      "completed": true,
+      "g_force_tolerance": 6.0
+    },
+    "cost_usd": 450000
+  }
+}</pre></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab1">
+            <div class="card">
+                <h2>Flight Cost Calculator</h2>
+                <label>Flight Type:</label>
+                <select id="flightType">
+                    <option value="suborbital">Suborbital (80-110 km)</option>
+                    <option value="orbital">Orbital (400+ km)</option>
+                    <option value="station">Space Station Visit</option>
+                </select>
+                <label>Duration (days):</label>
+                <input type="number" id="duration" value="1" min="1">
+                <button onclick="calculateCost()">Calculate Cost</button>
+                <div id="costResult"></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab2">
+            <div class="card">
+                <h2>Space Tourism API</h2>
+                <div class="json-viewer"><pre>GET /api/v1/tourism/bookings
+Response: { "bookings": [...], "available_seats": 12 }</pre></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab3">
+            <div class="card">
+                <h2>Tourism Systems</h2>
+                <table>
+                    <tr><th>Operator</th><th>Status</th></tr>
+                    <tr><td>Virgin Galactic</td><td>✅ Flying</td></tr>
+                    <tr><td>Blue Origin</td><td>✅ Flying</td></tr>
+                    <tr><td>SpaceX</td><td>✅ Active</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab4">
+            <div class="card">
+                <h2>Booking Confirmation QR</h2>
+                <button onclick="generateQR()">Generate QR Code</button>
+                <div id="qrcode" style="text-align: center; margin: 20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        function switchTab(i) {
+            document.querySelectorAll('.tab').forEach((t, idx) => t.classList.toggle('active', idx === i));
+            document.querySelectorAll('.tab-content').forEach((t, idx) => t.classList.toggle('active', idx === i));
+        }
+        function calculateCost() {
+            const type = document.getElementById('flightType').value;
+            const duration = parseInt(document.getElementById('duration').value);
+            const baseCosts = { suborbital: 250000, orbital: 50000000, station: 55000000 };
+            const baseCost = baseCosts[type];
+            const totalCost = baseCost + (duration > 1 ? (duration - 1) * baseCost * 0.2 : 0);
+            document.getElementById('costResult').innerHTML = `
+                <div style="background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 6px; margin-top: 15px;">
+                    <h3>Flight Cost</h3>
+                    <p>Type: ${type.toUpperCase()}</p>
+                    <p>Duration: ${duration} day(s)</p>
+                    <p>Total Cost: $${totalCost.toLocaleString()} USD</p>
+                </div>
+            `;
+        }
+        function generateQR() {
+            const data = JSON.stringify({ standard: 'WIA-SPACE-014', booking: 'ST-2025-001', type: 'suborbital', timestamp: new Date().toISOString() });
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById('qrcode'), { text: data, width: 200, height: 200, colorDark: '#06B6D4' });
+        }
+    </script>
+</body>
+</html>

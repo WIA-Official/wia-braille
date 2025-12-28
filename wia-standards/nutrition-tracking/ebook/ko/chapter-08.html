@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>제8장: 구현 및 통합 가이드 - WIA-MED-022</title>
+</head>
+<body>
+<p><a href="index.html">목차</a></p>
+
+<h1>제8장: 구현 및 통합 가이드</h1>
+
+<blockquote>
+"홍익인간: 표준화된 기술로 모두가 접근 가능한 영양 관리를 실현합니다."
+</blockquote>
+
+<hr>
+
+<h2>8.1 시스템 아키텍처</h2>
+
+<pre>
+전체 시스템 구조
+===============
+
+┌─────────────────────────────────────────────┐
+│                  클라이언트                  │
+├─────────────────────────────────────────────┤
+│  iOS App  │  Android App  │  Web App       │
+│  Swift    │  Kotlin       │  React         │
+└─────────────────────────────────────────────┘
+            │
+            ▼
+┌─────────────────────────────────────────────┐
+│              API Gateway (HTTPS)            │
+│            Load Balancer                    │
+└─────────────────────────────────────────────┘
+            │
+  ┌─────────┼─────────────┬───────────┐
+  │         │             │           │
+  ▼         ▼             ▼           ▼
+┌──────┐ ┌──────┐  ┌─────────┐  ┌────────┐
+│ 인증  │ │ 영양  │  │ AI 분석 │  │ 알림   │
+│ 서비스│ │ 서비스│  │ 서비스  │  │ 서비스 │
+└──────┘ └──────┘  └─────────┘  └────────┘
+  │         │             │           │
+  └─────────┼─────────────┴───────────┘
+            │
+            ▼
+┌─────────────────────────────────────────────┐
+│                 데이터베이스                 │
+├─────────────────────────────────────────────┤
+│  PostgreSQL  │  MongoDB   │  Redis Cache   │
+│  (관계형)     │  (문서)     │  (캐시)        │
+└─────────────────────────────────────────────┘
+
+
+마이크로서비스 아키텍처
+======================
+
+인증 서비스 (Auth Service)
+-------------------------
+  역할:
+    • 사용자 로그인/회원가입
+    • JWT 토큰 발급
+    • OAuth 2.0 (소셜 로그인)
+    • 권한 관리
+
+  기술 스택:
+    • Node.js + Express
+    • JWT
+    • bcrypt (비밀번호 해시)
+
+  API:
+    POST /auth/register
+    POST /auth/login
+    POST /auth/refresh
+    POST /auth/logout
+
+
+영양 서비스 (Nutrition Service)
+-------------------------------
+  역할:
+    • 식사 기록 CRUD
+    • 영양소 계산
+    • 식품 DB 조회
+    • 레시피 관리
+
+  기술 스택:
+    • Python + FastAPI
+    • PostgreSQL
+    • Redis (캐시)
+
+  API:
+    GET  /foods/search?q={query}
+    GET  /foods/{foodId}
+    POST /meals
+    GET  /meals/{date}
+    GET  /nutrition/summary
+
+
+AI 분석 서비스 (AI Service)
+---------------------------
+  역할:
+    • 식사 사진 인식
+    • 음식 분류
+    • 분량 추정
+    • 바코드 스캔
+
+  기술 스택:
+    • Python + TensorFlow/PyTorch
+    • GPU 서버
+    • Docker
+
+  API:
+    POST /ai/analyze-image
+    POST /ai/barcode-scan
+    GET  /ai/models/version
+
+
+추천 서비스 (Recommendation Service)
+-----------------------------------
+  역할:
+    • 개인 맞춤 식단 생성
+    • 레시피 추천
+    • 영양 목표 제안
+    • 패턴 분석
+
+  기술 스택:
+    • Python + scikit-learn
+    • TensorFlow (추천 모델)
+
+  API:
+    GET  /recommendations/meals
+    GET  /recommendations/recipes
+    POST /goals/generate
+
+
+알림 서비스 (Notification Service)
+----------------------------------
+  역할:
+    • 푸시 알림
+    • 이메일 알림
+    • 식사 시간 리마인더
+
+  기술 스택:
+    • Node.js
+    • Firebase Cloud Messaging
+    • SendGrid (이메일)
+
+  API:
+    POST /notifications/send
+    POST /notifications/schedule
+
+
+데이터 레이어
+============
+
+PostgreSQL (관계형 DB)
+----------------------
+  용도:
+    • 사용자 정보
+    • 식사 기록
+    • 식품 데이터베이스
+    • 레시피
+
+  스키마 예시:
+    users
+    foods
+    nutrition_facts
+    meals
+    meal_items
+    recipes
+
+
+MongoDB (NoSQL)
+--------------
+  용도:
+    • AI 분석 결과
+    • 이미지 메타데이터
+    • 로그
+    • 사용자 활동
+
+  컬렉션:
+    image_analyses
+    user_activities
+    logs
+
+
+Redis (캐시)
+-----------
+  용도:
+    • 세션 관리
+    • 자주 조회되는 식품
+    • API 응답 캐싱
+    • 실시간 데이터
+
+  키-값:
+    food:123 → {식품 정보}
+    user:456:session → {세션}
+    daily:456:2025-01-15 → {일일 요약}
+</pre>
+
+<hr>
+
+<h2>8.2 API 통합 방법</h2>
+
+<pre>
+RESTful API 사용법
+=================
+
+인증
+----
+  1. 로그인:
+     POST https://api.nutrition-tracker.com/auth/login
+     Content-Type: application/json
+
+     {
+       "email": "user@example.com",
+       "password": "securePass123"
+     }
+
+     응답:
+     {
+       "accessToken": "eyJhbGc...",
+       "refreshToken": "eyJhbGc...",
+       "expiresIn": 3600,
+       "user": {
+         "id": "user123",
+         "email": "user@example.com",
+         "name": "홍길동"
+       }
+     }
+
+  2. 이후 요청에 토큰 포함:
+     Authorization: Bearer eyJhbGc...
+
+
+식품 검색
+--------
+  GET /foods/search?q=닭가슴살&limit=10
+  Authorization: Bearer {token}
+
+  응답:
+  {
+    "total": 45,
+    "results": [
+      {
+        "id": "food001",
+        "name": "닭가슴살 (삶은 것)",
+        "serving_size": 100,
+        "calories": 165,
+        "protein": 31,
+        "carbs": 0,
+        "fat": 3.6,
+        "verified": true
+      },
+      ...
+    ]
+  }
+
+
+식사 기록
+--------
+  POST /meals
+  Authorization: Bearer {token}
+  Content-Type: application/json
+
+  {
+    "datetime": "2025-01-15T12:30:00Z",
+    "meal_type": "lunch",
+    "items": [
+      {
+        "food_id": "food001",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "food_id": "food045",
+        "quantity": 150,
+        "unit": "g"
+      }
+    ],
+    "notes": "회사 구내식당",
+    "photo_url": "https://..."
+  }
+
+  응답:
+  {
+    "meal_id": "meal789",
+    "created_at": "2025-01-15T12:30:00Z",
+    "nutrition_summary": {
+      "calories": 450,
+      "protein": 62,
+      "carbs": 55,
+      "fat": 8
+    }
+  }
+
+
+AI 이미지 분석
+-------------
+  POST /ai/analyze-image
+  Authorization: Bearer {token}
+  Content-Type: multipart/form-data
+
+  image: (binary)
+  meal_type: "lunch"
+
+  응답:
+  {
+    "analysis_id": "ai12345",
+    "detected_foods": [
+      {
+        "food_id": "food001",
+        "name": "닭가슴살 구이",
+        "confidence": 0.92,
+        "quantity": 180,
+        "unit": "g",
+        "bounding_box": {
+          "x": 120, "y": 80,
+          "width": 200, "height": 150
+        }
+      },
+      {
+        "food_id": "food045",
+        "name": "현미밥",
+        "confidence": 0.88,
+        "quantity": 210,
+        "unit": "g"
+      }
+    ],
+    "total_nutrition": {
+      "calories": 480,
+      "protein": 58,
+      "carbs": 52,
+      "fat": 7
+    }
+  }
+
+
+일일 요약 조회
+------------
+  GET /nutrition/summary?date=2025-01-15
+  Authorization: Bearer {token}
+
+  응답:
+  {
+    "date": "2025-01-15",
+    "goals": {
+      "calories": 2100,
+      "protein": 150,
+      "carbs": 200,
+      "fat": 70
+    },
+    "consumed": {
+      "calories": 1850,
+      "protein": 142,
+      "carbs": 185,
+      "fat": 62
+    },
+    "remaining": {
+      "calories": 250,
+      "protein": 8,
+      "carbs": 15,
+      "fat": 8
+    },
+    "meals": [
+      {
+        "meal_id": "meal001",
+        "meal_type": "breakfast",
+        "time": "07:30",
+        "calories": 450
+      },
+      ...
+    ]
+  }
+
+
+에러 처리
+========
+
+HTTP 상태 코드:
+  200 OK                 - 성공
+  201 Created            - 생성 성공
+  400 Bad Request        - 잘못된 요청
+  401 Unauthorized       - 인증 필요
+  403 Forbidden          - 권한 없음
+  404 Not Found          - 리소스 없음
+  429 Too Many Requests  - 요청 제한 초과
+  500 Internal Error     - 서버 오류
+
+에러 응답 형식:
+  {
+    "error": {
+      "code": "INVALID_INPUT",
+      "message": "Quantity must be a positive number",
+      "details": {
+        "field": "quantity",
+        "value": -10
+      }
+    }
+  }
+
+
+Rate Limiting
+============
+
+제한:
+  • 일반 사용자: 1,000 요청/시간
+  • 프리미엄: 10,000 요청/시간
+  • AI 분석: 100 요청/시간
+
+헤더:
+  X-RateLimit-Limit: 1000
+  X-RateLimit-Remaining: 850
+  X-RateLimit-Reset: 1642248000
+
+  초과 시:
+  429 Too Many Requests
+  Retry-After: 3600
+</pre>
+
+<hr>
+
+<h2>8.3 데이터 보안 및 프라이버시</h2>
+
+<pre>
+데이터 암호화
+============
+
+전송 중 암호화 (In-Transit)
+--------------------------
+  • TLS 1.3
+  • HTTPS 전용
+  • Certificate Pinning (모바일)
+
+  설정:
+    - 모든 API: https://
+    - HTTP 리다이렉트 → HTTPS
+    - HSTS 헤더 사용
+
+
+저장 암호화 (At-Rest)
+--------------------
+  데이터베이스:
+    • AES-256 암호화
+    • 투명 데이터 암호화 (TDE)
+
+  민감 정보:
+    • 비밀번호: bcrypt (salt rounds: 12)
+    • 개인정보: 필드 수준 암호화
+    • 사진: S3 암호화 저장
+
+  예시 (비밀번호):
+    입력: "myPassword123"
+    → bcrypt
+    → "$2b$12$KIXxPzFH..."
+
+
+개인정보 보호
+============
+
+최소 수집 원칙:
+  필수:
+    • 이메일
+    • 비밀번호
+    • 기본 신체 정보 (목표 계산용)
+
+  선택:
+    • 이름
+    • 사진
+    • 위치 (레스토랑 추천용)
+
+데이터 익명화:
+  분석 목적:
+    user_id → hash(user_id)
+    이메일 → 제거
+    사진 → 메타데이터만
+
+GDPR/PIPA 준수:
+  • 사용자 동의 (opt-in)
+  • 데이터 이동권
+  • 삭제 요청 (Right to be forgotten)
+  • 개인정보 처리방침
+
+
+접근 제어
+========
+
+RBAC (역할 기반):
+  관리자 (Admin):
+    • 모든 데이터 접근
+    • 사용자 관리
+    • 시스템 설정
+
+  영양사 (Nutritionist):
+    • 할당된 사용자 데이터
+    • 식단 계획 작성
+    • 리포트 생성
+
+  일반 사용자 (User):
+    • 자신의 데이터만
+    • 커뮤니티 공유 데이터
+
+
+감사 로그 (Audit Log)
+--------------------
+  기록 대상:
+    • 로그인/로그아웃
+    • 데이터 수정
+    • 삭제 요청
+    • 관리자 작업
+
+  형식:
+    {
+      "timestamp": "2025-01-15T10:30:00Z",
+      "user_id": "user123",
+      "action": "DELETE_MEAL",
+      "resource_id": "meal456",
+      "ip_address": "192.168.1.1",
+      "user_agent": "iOS/16.0"
+    }
+
+  보관 기간: 2년
+
+
+백업 및 재해 복구
+================
+
+자동 백업:
+  • 일일 전체 백업
+  • 시간별 증분 백업
+  • 지역 간 복제 (다중 리전)
+
+백업 암호화:
+  • AES-256
+  • 백업 전송 시 암호화
+  • 복호화 키 별도 관리
+
+재해 복구 계획:
+  RTO (복구 시간 목표): 4시간
+  RPO (복구 시점 목표): 1시간
+
+  절차:
+    1. 장애 감지 (자동 모니터링)
+    2. 백업 리전으로 Failover
+    3. DNS 업데이트
+    4. 서비스 복구 확인
+</pre>
+
+<hr>
+
+<h2>8.4 모바일 애플리케이션 구현</h2>
+
+<pre>
+iOS 앱 (Swift + SwiftUI)
+=======================
+
+프로젝트 구조:
+  NutritionTracker/
+  ├── Models/
+  │   ├── Food.swift
+  │   ├── Meal.swift
+  │   ├── User.swift
+  │   └── Nutrition.swift
+  ├── Views/
+  │   ├── HomeView.swift
+  │   ├── MealLogView.swift
+  │   ├── FoodSearchView.swift
+  │   └── AnalyticsView.swift
+  ├── ViewModels/
+  │   ├── HomeViewModel.swift
+  │   └── MealViewModel.swift
+  ├── Services/
+  │   ├── APIService.swift
+  │   ├── CameraService.swift
+  │   └── HealthKitService.swift
+  └── Utilities/
+      ├── Constants.swift
+      └── Extensions.swift
+
+
+핵심 기능 구현:
+
+1. 바코드 스캔:
+   import AVFoundation
+
+   class BarcodeScannerViewModel: ObservableObject {
+       let session = AVCaptureSession()
+
+       func startScanning() {
+           guard let device = AVCaptureDevice
+               .default(for: .video) else { return }
+
+           let input = try? AVCaptureDeviceInput(
+               device: device)
+           session.addInput(input!)
+
+           let output = AVCaptureMetadataOutput()
+           session.addOutput(output)
+
+           output.metadataObjectTypes = [
+               .ean13, .qr
+           ]
+           output.setMetadataObjectsDelegate(
+               self, queue: .main)
+
+           session.startRunning()
+       }
+   }
+
+
+2. 카메라 촬영:
+   import SwiftUI
+
+   struct CameraView: UIViewControllerRepresentable {
+       @Binding var image: UIImage?
+
+       func makeUIViewController(context: Context)
+           -> UIImagePickerController {
+           let picker = UIImagePickerController()
+           picker.sourceType = .camera
+           picker.delegate = context.coordinator
+           return picker
+       }
+
+       func updateUIViewController(
+           _ uiViewController: UIImagePickerController,
+           context: Context) {}
+
+       func makeCoordinator() -> Coordinator {
+           Coordinator(self)
+       }
+   }
+
+
+3. HealthKit 연동:
+   import HealthKit
+
+   class HealthKitManager {
+       let healthStore = HKHealthStore()
+
+       func requestAuthorization() {
+           let types: Set = [
+               HKObjectType.quantityType(
+                   forIdentifier: .dietaryEnergyConsumed)!,
+               HKObjectType.quantityType(
+                   forIdentifier: .dietaryProtein)!
+           ]
+
+           healthStore.requestAuthorization(
+               toShare: types,
+               read: types
+           ) { success, error in
+               // Handle
+           }
+       }
+
+       func saveNutrition(
+           calories: Double,
+           protein: Double,
+           date: Date
+       ) {
+           let calorieType = HKQuantityType
+               .quantityType(
+                   forIdentifier: .dietaryEnergyConsumed)!
+           let calorieQuantity = HKQuantity(
+               unit: .kilocalorie(),
+               doubleValue: calories)
+
+           let calorieSample = HKQuantitySample(
+               type: calorieType,
+               quantity: calorieQuantity,
+               start: date,
+               end: date
+           )
+
+           healthStore.save(calorieSample) { _, _ in
+               // Handle
+           }
+       }
+   }
+
+
+Android 앱 (Kotlin + Jetpack Compose)
+====================================
+
+프로젝트 구조:
+  app/src/main/java/com/nutrition/
+  ├── data/
+  │   ├── model/
+  │   ├── repository/
+  │   └── api/
+  ├── ui/
+  │   ├── home/
+  │   ├── meal/
+  │   └── search/
+  ├── viewmodel/
+  └── util/
+
+
+핵심 기능 구현:
+
+1. 바코드 스캔 (ML Kit):
+   import com.google.mlkit.vision.barcode.BarcodeScanning
+
+   class BarcodeScannerActivity : AppCompatActivity() {
+       private val scanner = BarcodeScanning.getClient()
+
+       fun processImage(image: InputImage) {
+           scanner.process(image)
+               .addOnSuccessListener { barcodes ->
+                   for (barcode in barcodes) {
+                       val rawValue = barcode.rawValue
+                       // Search food by barcode
+                   }
+               }
+       }
+   }
+
+
+2. Google Fit 연동:
+   import com.google.android.gms.fitness.Fitness
+
+   class FitnessManager(private val context: Context) {
+       fun saveNutrition(
+           calories: Float,
+           protein: Float,
+           timestamp: Long
+       ) {
+           val dataSource = DataSource.Builder()
+               .setAppPackageName(context)
+               .setDataType(DataType.TYPE_NUTRITION)
+               .setType(DataSource.TYPE_RAW)
+               .build()
+
+           val caloriePoint = DataPoint.builder(dataSource)
+               .setTimestamp(timestamp, TimeUnit.MILLISECONDS)
+               .setField(Field.FIELD_NUTRIENTS,
+                   calories)
+               .build()
+
+           Fitness.getHistoryClient(context, account)
+               .insertData(
+                   DataSet.builder(dataSource)
+                       .add(caloriePoint)
+                       .build()
+               )
+       }
+   }
+
+
+오프라인 지원
+============
+
+로컬 데이터베이스:
+  iOS: CoreData / Realm
+  Android: Room
+
+동기화 전략:
+  1. 오프라인 시 로컬 저장
+  2. 온라인 복구 시 자동 동기화
+  3. 충돌 해결 (최신 우선)
+
+  예시:
+    [오프라인] 식사 기록
+    → 로컬 DB에 저장 (pending)
+
+    [온라인 복구]
+    → API로 전송
+    → 성공 시 pending 제거
+    → 실패 시 재시도 큐에 추가
+</pre>
+
+<hr>
+
+<h2>8.5 웨어러블 기기 연동</h2>
+
+<pre>
+Apple Watch
+===========
+
+기능:
+  • 빠른 식사 기록 (음성)
+  • 물 섭취 추적
+  • 칼로리 소비 (ActivityKit)
+  • 목표 진행률 확인
+
+구현 (WatchKit):
+  import WatchKit
+
+  class MealLogController: WKInterfaceController {
+      @IBAction func logWater() {
+          let quantity = 250 // mL
+
+          // Send to iPhone
+          WCSession.default.sendMessage(
+              ["action": "logWater",
+               "quantity": quantity],
+              replyHandler: nil
+          )
+
+          // Show confirmation
+          presentAlert(
+              withTitle: "기록 완료",
+              message: "물 250mL",
+              preferredStyle: .alert,
+              actions: [
+                  WKAlertAction(
+                      title: "확인",
+                      style: .default) {}
+              ]
+          )
+      }
+  }
+
+
+Fitbit
+======
+
+Fitbit Web API 연동:
+  https://api.fitbit.com/1/user/-/foods/log.json
+
+  권한:
+    • nutrition
+    • weight
+
+  데이터 동기화:
+    Fitbit → 우리 앱
+    • 소비 칼로리
+    • 체중
+    • 수면
+    • 활동
+
+  우리 앱 → Fitbit
+    • 섭취 칼로리
+    • 수분
+    • 영양소
+
+
+Garmin
+======
+
+Garmin Health API:
+  • 활동 데이터
+  • 심박수
+  • 수면
+  • 스트레스
+
+통합:
+  Garmin 소비 칼로리
+  → TDEE 자동 조정
+  → 식사 계획 업데이트
+
+
+Samsung Health
+=============
+
+Samsung Health SDK:
+  implementation 'com.samsung.android:
+      health-data:1.5.0'
+
+데이터 타입:
+  • com.samsung.health.nutrition
+  • com.samsung.health.exercise
+  • com.samsung.health.sleep
+
+양방향 동기화:
+  섭취 영양 → Samsung Health
+  활동 데이터 ← Samsung Health
+</pre>
+
+<hr>
+
+<h2>8.6 의료 시스템 통합</h2>
+
+<pre>
+FHIR (Fast Healthcare Interoperability Resources)
+================================================
+
+표준 준수:
+  FHIR R4
+
+리소스 매핑:
+  NutritionOrder:
+    • 식단 처방
+    • 영양사 권장 사항
+
+  Observation:
+    • 체중
+    • BMI
+    • 혈압
+    • 혈당
+
+  Patient:
+    • 환자 기본 정보
+    • 알레르기
+    • 질환
+
+
+예시 (NutritionOrder):
+  {
+    "resourceType": "NutritionOrder",
+    "id": "nutrition-001",
+    "status": "active",
+    "patient": {
+      "reference": "Patient/123"
+    },
+    "dateTime": "2025-01-15T10:00:00Z",
+    "orderer": {
+      "reference": "Practitioner/456",
+      "display": "김영양 영양사"
+    },
+    "oralDiet": {
+      "type": [{
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "386261000",
+          "display": "Diabetic diet"
+        }]
+      }],
+      "nutrient": [{
+        "modifier": {
+          "coding": [{
+            "system": "http://snomed.info/sct",
+            "code": "2331003",
+            "display": "Carbohydrate"
+          }]
+        },
+        "amount": {
+          "value": 200,
+          "unit": "g",
+          "system": "http://unitsofmeasure.org",
+          "code": "g"
+        }
+      }]
+    }
+  }
+
+
+EMR (전자의무기록) 연동
+======================
+
+HL7 v2 메시지:
+  ADT^A01 - 환자 등록
+  ORM^O01 - 영양 처방
+  ORU^R01 - 검사 결과
+
+  예시:
+    MSH|^~\&|NutritionApp|Hospital|
+        EMR|Hospital|20250115100000||
+        ORM^O01|MSG001|P|2.5
+    PID|1||123456||홍^길동||
+        19900101|M
+    ORC|NW|ORD001||||||
+        20250115100000
+    OBR|1|ORD001||DIET^당뇨식
+
+
+연구 데이터 제공
+==============
+
+익명화된 집계 데이터:
+  • 영양소 섭취 패턴
+  • 식습관 추세
+  • 질병별 식이 효과
+
+연구 동의:
+  • 사용자 opt-in
+  • 투명한 설명
+  • 언제든 철회 가능
+
+데이터 형식:
+  {
+    "study_id": "diabetes-nutrition-2025",
+    "participant_id": "hash(user_id)",
+    "age_group": "30-39",
+    "gender": "M",
+    "condition": "Type 2 Diabetes",
+    "data": {
+      "avg_carbs": 185,
+      "avg_protein": 95,
+      "avg_fat": 65,
+      "hba1c_change": -0.8
+    }
+  }
+
+
+국가 건강 데이터 연계
+===================
+
+한국 보건복지부:
+  • 국민영양조사 데이터
+  • 식품영양성분 DB
+
+미국 CDC:
+  • NHANES 데이터
+  • 영양 지침
+
+WHO:
+  • 국제 영양 권장량
+  • 글로벌 건강 지표
+</pre>
+
+<hr>
+
+<h2>장 요약</h2>
+
+<ul>
+<li>[OK] 마이크로서비스 아키텍처로 확장 가능한 시스템 설계</li>
+<li>[OK] RESTful API로 다양한 클라이언트 통합 지원</li>
+<li>[OK] 암호화 및 접근 제어로 데이터 보안 강화</li>
+<li>[OK] iOS/Android 네이티브 앱 및 웨어러블 기기 연동</li>
+<li>[OK] FHIR 표준 기반 의료 시스템 통합</li>
+</ul>
+
+<hr>
+
+<h2>전자책 마무리</h2>
+
+<p>축하합니다! WIA-MED-022 영양 추적 표준의 모든 내용을 학습하셨습니다.</p>
+
+<p>이제 다음을 할 수 있습니다:</p>
+<ul>
+<li>📊 정확한 칼로리 및 영양소 추적 시스템 구축</li>
+<li>🗄️ 포괄적인 식품 데이터베이스 통합</li>
+<li>📷 바코드 스캔 및 AI 사진 인식 구현</li>
+<li>💡 개인 맞춤형 영양 권장 시스템 개발</li>
+<li>⚠️ 알레르기 및 의학적 조건 관리</li>
+<li>🏥 의료 시스템과의 안전한 통합</li>
+</ul>
+
+<p><strong>다음 단계:</strong></p>
+<ol>
+<li><a href="../../spec/">사양 문서</a> 검토</li>
+<li>GitHub에서 <a href="https://github.com/WIA-Official/wia-standards">표준 저장소</a> 확인</li>
+<li>커뮤니티에 참여하여 경험 공유</li>
+<li><a href="https://cert.wiastandards.com">WIA 인증</a> 획득</li>
+</ol>
+
+<p><em>弘益人間 · Benefit All Humanity</em></p>
+
+<hr>
+
+<p><a href="index.html">목차로 돌아가기</a></p>
+
+</body>
+</html>

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제5장: Phase 2 - 구현 | WIA-MESH_NETWORK</title>
+    <style>
+        :root { --bg: #0f172a; --bg-secondary: #1e293b; --bg-tertiary: #334155; --primary: #8B5CF6; --text: #f1f5f9; --text-secondary: #cbd5e1; --border: #475569; --success: #10b981; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-secondary); padding: 3rem; border-radius: 10px; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: var(--bg-tertiary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--primary); font-weight: bold; }
+        tr:hover { background: var(--bg-tertiary); }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: var(--bg); text-decoration: none; border-radius: 5px; transition: all 0.3s ease; }
+        .btn:hover { background: var(--success); transform: translateY(-2px); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', monospace; color: var(--success); }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+        .stat-card { background: var(--bg); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid var(--border); }
+        .stat-number { font-size: 2rem; color: var(--primary); font-weight: bold; }
+        .stat-label { color: var(--text-secondary); margin-top: 0.5rem; }
+        pre { background: var(--bg); padding: 1.5rem; border-radius: 5px; overflow-x: auto; margin: 1rem 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">제5장</p>
+        <h1>Phase 2: 라우팅 구현</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            멀티홉 라우팅 프로토콜을 구현하고 자가치유 메커니즘을 추가합니다.
+        </p>
+
+        <h2>Phase 2 개요</h2>
+        <p>
+            Phase 2에서는 메시 네트워크의 핵심인 라우팅 기능을 구현합니다. 노드 간의 직접 통신을 넘어 멀티홉 경로를 통한 데이터 전달, 동적 경로 탐색과 유지, 장애 발생 시 자동 복구를 구현합니다. AODV(Ad-hoc On-Demand Distance Vector) 프로토콜을 기반으로 WIA 표준에 맞는 라우팅 시스템을 구축합니다.
+        </p>
+
+        <div class="highlight-box">
+            <h3>Phase 2 목표</h3>
+            <ul>
+                <li>AODV 라우팅 프로토콜 구현</li>
+                <li>라우팅 테이블 관리 시스템 개발</li>
+                <li>경로 탐색 및 유지 메커니즘 구현</li>
+                <li>자가치유(Self-Healing) 기능 추가</li>
+                <li>멀티홉 통신 테스트 및 검증</li>
+                <li>경로 최적화 및 성능 튜닝</li>
+            </ul>
+        </div>
+
+        <h2>AODV 프로토콜 이해</h2>
+        <p>
+            AODV는 리액티브 라우팅 프로토콜로, 필요할 때만 경로를 탐색합니다. 이는 저트래픽 환경에서 오버헤드를 최소화하면서도 동적 토폴로지에 잘 적응합니다.
+        </p>
+
+        <h3>AODV의 핵심 메커니즘</h3>
+        <table>
+            <thead>
+                <tr><th>메커니즘</th><th>목적</th><th>메시지 타입</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>경로 탐색</strong></td>
+                    <td>목적지까지 경로 발견</td>
+                    <td>RREQ (Route Request)</td>
+                </tr>
+                <tr>
+                    <td><strong>경로 응답</strong></td>
+                    <td>발견된 경로 알림</td>
+                    <td>RREP (Route Reply)</td>
+                </tr>
+                <tr>
+                    <td><strong>경로 오류</strong></td>
+                    <td>링크 단절 알림</td>
+                    <td>RERR (Route Error)</td>
+                </tr>
+                <tr>
+                    <td><strong>경로 유지</strong></td>
+                    <td>경로 유효성 확인</td>
+                    <td>HELLO 메시지</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>라우팅 테이블 구조</h2>
+        <p>
+            각 노드는 라우팅 테이블을 유지하여 알려진 목적지로의 경로 정보를 저장합니다. 테이블 항목은 목적지, 다음 홉, 홉 수, 시퀀스 번호, 수명 등의 정보를 포함합니다.
+        </p>
+
+        <pre><code>// 라우팅 테이블 항목 구조
+struct RouteEntry {
+    uint16_t dest_addr;        // 목적지 주소
+    uint16_t next_hop;         // 다음 홉 주소
+    uint8_t  hop_count;        // 홉 수
+    uint32_t dest_seq;         // 목적지 시퀀스 번호
+    uint32_t lifetime;         // 경로 유효 시간
+    uint8_t  flags;            // 상태 플래그
+    int8_t   rssi;             // 링크 신호 강도
+    time_t   last_used;        // 마지막 사용 시간
+};
+
+// 라우팅 테이블
+#define MAX_ROUTES 100
+struct RouteTable {
+    RouteEntry routes[MAX_ROUTES];
+    uint16_t num_routes;
+    pthread_mutex_t lock;
+};</code></pre>
+
+        <h3>라우팅 테이블 관리 함수</h3>
+        <div class="info-box">
+            <p><strong>경로 추가/업데이트:</strong> 새로운 경로 정보를 테이블에 추가하거나 기존 경로를 더 좋은 정보로 갱신합니다.</p>
+            <p><strong>경로 조회:</strong> 특정 목적지로의 경로를 빠르게 찾습니다. 해시 테이블 사용으로 O(1) 검색 가능합니다.</p>
+            <p><strong>경로 삭제:</strong> 만료되거나 유효하지 않은 경로를 제거합니다. 주기적인 정리 작업으로 메모리 효율 유지합니다.</p>
+            <p><strong>경로 정리:</strong> 수명이 다한 경로를 자동으로 삭제하는 백그라운드 작업을 실행합니다.</p>
+        </div>
+
+        <h2>경로 탐색 프로세스</h2>
+        <p>
+            데이터를 전송하려는 노드가 목적지까지의 경로를 모를 때 경로 탐색을 시작합니다. RREQ 메시지를 브로드캐스트하여 전체 네트워크에 경로를 요청합니다.
+        </p>
+
+        <h3>RREQ 메시지 구조</h3>
+        <pre><code>struct RREQ {
+    uint8_t  type;             // 메시지 타입 (RREQ)
+    uint8_t  flags;            // 플래그 비트
+    uint8_t  hop_count;        // 현재 홉 수
+    uint32_t rreq_id;          // 요청 고유 ID
+    uint16_t dest_addr;        // 목적지 주소
+    uint32_t dest_seq;         // 목적지 시퀀스 번호
+    uint16_t orig_addr;        // 발신자 주소
+    uint32_t orig_seq;         // 발신자 시퀀스 번호
+};</code></pre>
+
+        <h3>RREQ 처리 알고리즘</h3>
+        <ol>
+            <li><strong>RREQ 수신:</strong> 노드가 RREQ를 받으면 중복 확인을 수행합니다.</li>
+            <li><strong>역방향 경로 생성:</strong> 발신자로의 경로를 라우팅 테이블에 추가합니다.</li>
+            <li><strong>목적지 확인:</strong> 자신이 목적지이거나 유효한 경로를 가지고 있으면 RREP를 전송합니다.</li>
+            <li><strong>RREQ 전파:</strong> 그렇지 않으면 홉 카운트를 증가시켜 RREQ를 재브로드캐스트합니다.</li>
+            <li><strong>TTL 확인:</strong> 홉 카운트가 최대값에 도달하면 RREQ를 폐기합니다.</li>
+        </ol>
+
+        <h2>경로 응답 프로세스</h2>
+        <p>
+            목적지 노드 또는 유효한 경로를 가진 중간 노드가 RREP 메시지를 생성하여 발신자에게 유니캐스트로 전송합니다.
+        </p>
+
+        <pre><code>// RREP 전송 함수
+void send_rrep(uint16_t dest, uint16_t orig, uint32_t dest_seq, uint8_t hop_count) {
+    RREP rrep;
+    rrep.type = MSG_RREP;
+    rrep.hop_count = hop_count;
+    rrep.dest_addr = dest;
+    rrep.dest_seq = dest_seq;
+    rrep.orig_addr = orig;
+    rrep.lifetime = ROUTE_LIFETIME;
+
+    // 발신자로의 경로 조회
+    RouteEntry* route = lookup_route(orig);
+    if (route) {
+        // 다음 홉으로 RREP 전송
+        unicast(route->next_hop, &rrep, sizeof(rrep));
+    }
+}</code></pre>
+
+        <h3>RREP 전파</h3>
+        <p>
+            RREP를 수신한 중간 노드는 목적지로의 순방향 경로를 생성하고, RREP를 발신자 방향으로 계속 전달합니다. 이 과정에서 경로상의 모든 노드가 양방향 경로 정보를 얻게 됩니다.
+        </p>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-number">3초</div>
+                <div class="stat-label">RREQ 타임아웃</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">5분</div>
+                <div class="stat-label">경로 수명</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">32</div>
+                <div class="stat-label">최대 홉 수</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">3회</div>
+                <div class="stat-label">RREQ 재시도</div>
+            </div>
+        </div>
+
+        <h2>경로 유지 메커니즘</h2>
+        <p>
+            설정된 경로가 계속 유효한지 확인하고, 링크 단절을 감지하여 대응합니다. HELLO 메시지와 MAC 계층 피드백을 활용합니다.
+        </p>
+
+        <h3>HELLO 메시지</h3>
+        <p>
+            각 노드는 주기적으로 HELLO 메시지를 브로드캐스트하여 이웃에게 자신의 활성 상태를 알립니다. 일정 시간 동안 HELLO 메시지를 받지 못하면 해당 이웃으로의 링크가 끊어진 것으로 판단합니다.
+        </p>
+
+        <div class="highlight-box">
+            <p><strong>HELLO 간격:</strong> 1초마다 전송 (네트워크 부하에 따라 조정 가능)</p>
+            <p><strong>타임아웃:</strong> 3번 연속 HELLO 미수신 시 링크 단절로 판단</p>
+            <p><strong>링크 품질 모니터링:</strong> RSSI와 패킷 수신률(PRR)을 추적하여 링크 품질 평가</p>
+        </div>
+
+        <h2>경로 오류 처리</h2>
+        <p>
+            링크 단절이 감지되면 RERR 메시지를 생성하여 영향받는 모든 노드에게 알립니다. 이를 통해 무효화된 경로를 사용하는 시도를 방지합니다.
+        </p>
+
+        <pre><code>// 링크 단절 처리
+void handle_link_failure(uint16_t next_hop) {
+    // 영향받는 경로 찾기
+    RouteEntry* affected[MAX_ROUTES];
+    int count = find_affected_routes(next_hop, affected);
+
+    if (count > 0) {
+        // RERR 메시지 생성
+        RERR rerr;
+        rerr.type = MSG_RERR;
+        rerr.dest_count = count;
+
+        for (int i = 0; i < count; i++) {
+            rerr.unreachable[i].addr = affected[i]->dest_addr;
+            rerr.unreachable[i].seq = affected[i]->dest_seq;
+
+            // 경로 무효화
+            invalidate_route(affected[i]);
+        }
+
+        // 상위 노드들에게 RERR 전송
+        send_rerr_to_precursors(&rerr);
+    }
+}</code></pre>
+
+        <h2>자가치유 메커니즘</h2>
+        <p>
+            메시 네트워크의 핵심 장점인 자가치유 능력을 구현합니다. 노드 장애나 링크 단절 시 자동으로 대체 경로를 찾아 통신을 복구합니다.
+        </p>
+
+        <h3>자가치유 전략</h3>
+        <table>
+            <thead>
+                <tr><th>전략</th><th>방법</th><th>장점</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>로컬 복구</strong></td>
+                    <td>단절 지점 주변 노드가 대체 경로 탐색</td>
+                    <td>빠른 복구, 낮은 오버헤드</td>
+                </tr>
+                <tr>
+                    <td><strong>백업 경로</strong></td>
+                    <td>미리 대체 경로를 유지</td>
+                    <td>즉시 전환, 패킷 손실 최소</td>
+                </tr>
+                <tr>
+                    <td><strong>멀티패스</strong></td>
+                    <td>여러 경로로 동시 전송</td>
+                    <td>높은 신뢰성, 부하 분산</td>
+                </tr>
+                <tr>
+                    <td><strong>프로액티브 감지</strong></td>
+                    <td>링크 품질 저하 조기 감지</td>
+                    <td>예방적 대응, 안정성 향상</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>로컬 복구 구현</h3>
+        <p>
+            링크 단절을 감지한 노드가 직접 대체 경로를 찾습니다. 발신자에게 알리지 않고 로컬에서 문제를 해결하여 지연을 최소화합니다.
+        </p>
+
+        <div class="info-box">
+            <ol>
+                <li>링크 단절 감지 시 로컬 RREQ 시작 (제한된 TTL)</li>
+                <li>짧은 시간 내에 대체 경로 발견 시 즉시 적용</li>
+                <li>실패 시 상위 노드로 RERR 전송하여 글로벌 재탐색</li>
+                <li>데이터 패킷을 버퍼링하여 경로 복구 후 전송 재개</li>
+            </ol>
+        </div>
+
+        <h2>경로 최적화</h2>
+        <p>
+            단순히 홉 수만 고려하지 않고 다양한 메트릭을 활용하여 최적의 경로를 선택합니다.
+        </p>
+
+        <h3>복합 메트릭</h3>
+        <pre><code>// 경로 품질 계산
+float calculate_route_quality(RouteEntry* route) {
+    float quality = 0.0;
+
+    // 홉 수 (낮을수록 좋음)
+    quality += (1.0 / (route->hop_count + 1)) * 0.3;
+
+    // 링크 품질 (RSSI, 높을수록 좋음)
+    quality += normalize_rssi(route->rssi) * 0.3;
+
+    // 경로 안정성 (수명, 길수록 좋음)
+    quality += (route->lifetime / MAX_LIFETIME) * 0.2;
+
+    // 부하 (낮을수록 좋음)
+    quality += (1.0 - route->load) * 0.2;
+
+    return quality;
+}</code></pre>
+
+        <h2>성능 최적화</h2>
+        <p>
+            라우팅 성능을 향상시키기 위한 다양한 최적화 기법을 적용합니다.
+        </p>
+
+        <div class="highlight-box">
+            <h3>최적화 기법</h3>
+            <ul>
+                <li><strong>경로 캐싱:</strong> 최근 사용한 경로를 캐시에 저장하여 재탐색 빈도 감소</li>
+                <li><strong>점진적 RREQ:</strong> TTL을 점진적으로 증가시켜 불필요한 플러딩 방지</li>
+                <li><strong>경로 축약:</strong> 중간 노드가 더 짧은 경로를 알면 RREP에 반영</li>
+                <li><strong>선택적 HELLO:</strong> 활성 경로에 있는 노드만 HELLO 전송</li>
+                <li><strong>부하 인식 라우팅:</strong> 혼잡한 노드를 우회하는 경로 선택</li>
+            </ul>
+        </div>
+
+        <h2>멀티홉 통신 테스트</h2>
+        <p>
+            라우팅 구현을 검증하기 위한 포괄적인 테스트 시나리오를 수행합니다.
+        </p>
+
+        <h3>테스트 시나리오</h3>
+        <table>
+            <thead>
+                <tr><th>테스트</th><th>목적</th><th>성공 기준</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>2-홉 통신</td>
+                    <td>기본 멀티홉 검증</td>
+                    <td>95% 이상 전달률</td>
+                </tr>
+                <tr>
+                    <td>다중 홉 (5+)</td>
+                    <td>장거리 통신 테스트</td>
+                    <td>90% 이상 전달률</td>
+                </tr>
+                <tr>
+                    <td>동시 플로우</td>
+                    <td>다중 경로 처리</td>
+                    <td>간섭 없이 동작</td>
+                </tr>
+                <tr>
+                    <td>노드 제거</td>
+                    <td>자가치유 검증</td>
+                    <td>10초 내 복구</td>
+                </tr>
+                <tr>
+                    <td>경로 변경</td>
+                    <td>동적 적응 테스트</td>
+                    <td>최적 경로 선택</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>디버깅 및 모니터링</h2>
+        <p>
+            라우팅 동작을 관찰하고 문제를 진단하기 위한 도구와 로깅을 구현합니다.
+        </p>
+
+        <pre><code>// 라우팅 이벤트 로깅
+void log_routing_event(const char* event, RouteEntry* route) {
+    printf("[ROUTING] %s: dest=%04x next_hop=%04x hops=%d seq=%u\n",
+           event, route->dest_addr, route->next_hop,
+           route->hop_count, route->dest_seq);
+
+    // 파일에도 기록
+    write_to_log_file(event, route);
+}
+
+// 라우팅 테이블 덤프
+void dump_routing_table() {
+    printf("=== Routing Table ===\n");
+    printf("Dest\tNext Hop\tHops\tSeq\tLifetime\n");
+    for (int i = 0; i < route_table.num_routes; i++) {
+        RouteEntry* r = &route_table.routes[i];
+        printf("%04x\t%04x\t%d\t%u\t%u\n",
+               r->dest_addr, r->next_hop, r->hop_count,
+               r->dest_seq, r->lifetime);
+    }
+}</code></pre>
+
+        <h2>Phase 2 체크리스트</h2>
+        <div class="info-box">
+            <h3>완료 확인 항목</h3>
+            <ul>
+                <li>✓ AODV 라우팅 프로토콜 구현 완료</li>
+                <li>✓ 라우팅 테이블 관리 시스템 동작 확인</li>
+                <li>✓ 경로 탐색(RREQ/RREP) 정상 작동</li>
+                <li>✓ 경로 오류(RERR) 처리 검증</li>
+                <li>✓ 자가치유 메커니즘 테스트 통과</li>
+                <li>✓ 5홉 이상 멀티홉 통신 성공</li>
+                <li>✓ 성능 최적화 적용 및 측정</li>
+                <li>✓ 디버깅 도구 및 로깅 구현</li>
+            </ul>
+        </div>
+
+        <h2>요약</h2>
+        <p>
+            Phase 2에서는 AODV 라우팅 프로토콜을 구현하여 메시 네트워크의 멀티홉 통신 기능을 완성했습니다. 경로 탐색, 유지, 오류 처리, 자가치유 메커니즘을 모두 구현하고 테스트했습니다. 이제 네트워크는 동적으로 변하는 토폴로지에 적응하고 장애를 자동으로 복구할 수 있습니다.
+        </p>
+        <p>
+            다음 Phase 3에서는 외부 시스템과의 통합, 게이트웨이 기능, 클라우드 연동 등을 구현하겠습니다.
+        </p>
+
+        <div class="nav-buttons">
+            <a href="chapter-04.html" class="btn">← 이전</a>
+            <a href="index.html" class="btn">목차</a>
+            <a href="chapter-06.html" class="btn">다음 →</a>
+        </div>
+    </div>
+</body>
+</html>

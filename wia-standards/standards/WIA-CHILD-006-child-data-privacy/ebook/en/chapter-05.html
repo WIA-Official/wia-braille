@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 05: Privacy-First Architecture | WIA-CHILD-006</title>
+    <style>
+        :root {--bg:#0f172a;--surface:#1e293b;--primary:#F59E0B;--primary-dark:#ea580c;--text:#f1f5f9;--text-dim:#94a3b8;--border:#334155;--success:#22c55e;--warning:#eab308;--code-bg:#1e293b}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;background:var(--bg);color:var(--text);line-height:1.8;padding:2rem}
+        .container{max-width:1000px;margin:0 auto}
+        nav{background:var(--surface);padding:1rem 2rem;border-radius:8px;margin-bottom:2rem;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border)}
+        nav a{color:var(--primary);text-decoration:none;padding:0.5rem 1rem;border-radius:4px;transition:all 0.3s}
+        nav a:hover{background:var(--primary);color:var(--bg)}
+        .chapter-header{text-align:center;padding:3rem 0;border-bottom:2px solid var(--primary);margin-bottom:3rem}
+        .chapter-number{color:var(--primary);font-size:1rem;font-weight:600;letter-spacing:2px;margin-bottom:1rem}
+        h1{font-size:2.5rem;color:var(--text);margin-bottom:1rem}
+        h2{color:var(--primary);font-size:1.8rem;margin:2.5rem 0 1.5rem 0;padding-bottom:0.5rem;border-bottom:2px solid var(--border)}
+        h3{color:var(--primary);font-size:1.3rem;margin:2rem 0 1rem 0}
+        p{margin-bottom:1.5rem;color:var(--text-dim)}
+        .section{margin-bottom:3rem}
+        table{width:100%;border-collapse:collapse;margin:2rem 0;background:var(--surface);border-radius:8px;overflow:hidden}
+        th{background:var(--primary);color:var(--bg);padding:1rem;text-align:left;font-weight:600}
+        td{padding:1rem;border-bottom:1px solid var(--border)}
+        tr:last-child td{border-bottom:none}
+        tr:hover{background:rgba(249,115,22,0.1)}
+        .code-block{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1.5rem 0;overflow-x:auto;font-family:'Courier New',monospace;font-size:0.9rem}
+        .code-block code{color:#e2e8f0}
+        .key-takeaways{background:linear-gradient(135deg,rgba(249,115,22,0.1),rgba(234,88,12,0.05));border-left:4px solid var(--primary);padding:2rem;margin:2rem 0;border-radius:0 8px 8px 0}
+        .key-takeaways h3{margin-top:0}
+        .key-takeaways ul{margin-top:1rem}
+        .key-takeaways li{margin:0.75rem 0;color:var(--text)}
+        .review-questions{background:var(--surface);padding:2rem;border-radius:8px;margin:2rem 0;border:1px solid var(--border)}
+        .review-questions h3{margin-top:0;color:var(--primary)}
+        .review-questions ol{margin-top:1rem;padding-left:1.5rem}
+        .review-questions li{margin:1rem 0;color:var(--text-dim)}
+        .philosophy-section{background:linear-gradient(135deg,rgba(249,115,22,0.2),rgba(234,88,12,0.1));padding:3rem;border-radius:12px;text-align:center;margin:3rem 0;border:2px solid var(--primary)}
+        .philosophy-section h2{font-size:2rem;border:none;margin:0 0 1rem 0;letter-spacing:2px}
+        .philosophy-section p{font-size:1.1rem;color:var(--text)}
+        .warning-box{background:rgba(234,179,8,0.1);border-left:4px solid var(--warning);padding:1.5rem;margin:1.5rem 0;border-radius:0 8px 8px 0}
+        .success-box{background:rgba(34,197,94,0.1);border-left:4px solid var(--success);padding:1.5rem;margin:1.5rem 0;border-radius:0 8px 8px 0}
+        ul,ol{margin:1rem 0 1rem 2rem;color:var(--text-dim)}
+        li{margin:0.5rem 0}
+        footer{margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);text-align:center;color:var(--text-dim)}
+        .highlight{color:var(--primary);font-weight:600}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <a href="chapter-04.html">← Previous Chapter</a>
+            <span style="color: var(--text-dim);">Chapter 05 of 08</span>
+            <a href="chapter-06.html">Next Chapter →</a>
+        </nav>
+
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 05</div>
+            <h1>Privacy-First Architecture</h1>
+        </div>
+
+        <div class="section">
+            <h2>Designing Systems with Privacy at the Core</h2>
+            <p><span class="highlight">Privacy-first architecture</span> means building privacy protections into the fundamental design of systems rather than adding them as afterthoughts. For child-facing services, this approach is not optional - it's a regulatory requirement under COPPA, GDPR, and the UK Age Appropriate Design Code, which mandate "privacy by design and by default."</p>
+
+            <p>Privacy-first architecture recognizes that retrofitting privacy into existing systems is expensive, error-prone, and often inadequate. Instead, privacy considerations shape every architectural decision from data storage and encryption to API design and third-party integrations. The WIA-CHILD-006 standard provides comprehensive architectural patterns for building privacy into the foundation of child-facing systems.</p>
+
+            <p>The benefits of privacy-first architecture extend beyond compliance. Systems designed with privacy at the core are more secure, easier to audit, less vulnerable to breaches, and inspire greater trust from parents. They also reduce long-term technical debt by avoiding costly privacy retrofits as regulations evolve and threats emerge.</p>
+
+            <div class="warning-box">
+                <h3 style="color: var(--warning); margin-top: 0;">Cost of Privacy Retrofits</h3>
+                <ul>
+                    <li><strong>Technical Debt:</strong> Adding encryption, access controls, and audit logging to existing systems requires extensive refactoring</li>
+                    <li><strong>Service Disruption:</strong> Privacy retrofits often require downtime, data migration, and user impact</li>
+                    <li><strong>Incomplete Protection:</strong> Bolted-on privacy measures often have gaps that sophisticated attackers can exploit</li>
+                    <li><strong>Ongoing Maintenance:</strong> Retrofitted systems require constant vigilance to maintain privacy as features evolve</li>
+                    <li><strong>Regulatory Risk:</strong> Privacy deficiencies in existing systems create compliance vulnerabilities until remediated</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Privacy-First Architectural Principles</h2>
+            <p>The WIA-CHILD-006 framework implements seven core architectural principles that ensure privacy protection throughout system design:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Principle</th>
+                        <th>Description</th>
+                        <th>Implementation Pattern</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>1. Data Minimization by Default</strong></td>
+                        <td>Collect minimum necessary data; avoid speculative collection</td>
+                        <td>Schema validation rejecting unnecessary fields, optional data clearly marked</td>
+                        <td>User profile requires age range, not exact birthdate; optional preferences stored separately</td>
+                    </tr>
+                    <tr>
+                        <td><strong>2. Encryption Everywhere</strong></td>
+                        <td>Encrypt all child data at rest and in transit with no exceptions</td>
+                        <td>AES-256-GCM encryption at rest, TLS 1.3 in transit, encrypted backups</td>
+                        <td>Database encryption, file storage encryption, encrypted API communications</td>
+                    </tr>
+                    <tr>
+                        <td><strong>3. Least Privilege Access</strong></td>
+                        <td>Grant minimum access necessary for job function</td>
+                        <td>Role-based access control (RBAC), attribute-based access control (ABAC)</td>
+                        <td>Customer service reps can view limited profile data, cannot access full history</td>
+                    </tr>
+                    <tr>
+                        <td><strong>4. Audit Everything</strong></td>
+                        <td>Log all data access, modifications, deletions for compliance evidence</td>
+                        <td>Immutable audit logs, centralized logging, log retention policies</td>
+                        <td>Every data access recorded with timestamp, user, purpose, and IP address</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5. Pseudonymization Where Possible</strong></td>
+                        <td>Replace identifiable information with pseudonyms to reduce re-identification risk</td>
+                        <td>Hash-based pseudonyms, token-based identifiers, reversible only with keys</td>
+                        <td>Internal analytics use pseudonymous IDs, not real names or emails</td>
+                    </tr>
+                    <tr>
+                        <td><strong>6. Privacy-Protective Defaults</strong></td>
+                        <td>Default settings maximize privacy; enhanced data collection requires opt-in</td>
+                        <td>Minimal data collection in default tier, optional features request additional consent</td>
+                        <td>Default profile is private; social features require explicit parental approval</td>
+                    </tr>
+                    <tr>
+                        <td><strong>7. Resilient Deletion</strong></td>
+                        <td>Data deletion is complete, verifiable, and propagated to all systems</td>
+                        <td>Cascade deletion, third-party deletion requests, verification certificates</td>
+                        <td>Account deletion triggers deletion across all systems, backups, and third parties</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Implementing End-to-End Encryption</h2>
+            <p>Encryption is the foundation of privacy-first architecture. The WIA-CHILD-006 framework requires encryption at multiple layers:</p>
+
+            <div class="code-block">
+<code>import { EncryptionManager, KeyManagement } from '@wia/WIA-CHILD-006-child-data-privacy';
+
+class PrivacyFirstEncryption {
+  constructor() {
+    this.encryption = new EncryptionManager({
+      algorithm: 'AES-256-GCM',
+      keyRotationPeriod: '90days',
+      keyDerivation: 'PBKDF2',
+      iterations: 100000
+    });
+
+    this.keyManager = new KeyManagement({
+      provider: 'AWS-KMS',  // Or Azure Key Vault, Google Cloud KMS
+      keyHierarchy: true,   // Use key encryption keys (KEK)
+      autoRotation: true,
+      auditLogging: true
+    });
+  }
+
+  // Encrypt sensitive child data before storage
+  async encryptChildData(childId, data) {
+    try {
+      // Get encryption key for this child (unique per child)
+      const dataKey = await this.keyManager.getDataKey({
+        childId: childId,
+        purpose: 'data-encryption',
+        createIfNotExists: true
+      });
+
+      // Encrypt data with authenticated encryption
+      const encrypted = await this.encryption.encrypt({
+        plaintext: JSON.stringify(data),
+        key: dataKey,
+        associatedData: {
+          childId: childId,
+          timestamp: new Date().toISOString(),
+          dataType: 'child-profile'
+        }
+      });
+
+      return {
+        ciphertext: encrypted.ciphertext,
+        iv: encrypted.iv,
+        authTag: encrypted.authTag,
+        keyId: dataKey.id,
+        encryptedAt: new Date().toISOString()
+      };
+
+    } catch (error) {
+      console.error('Encryption failed:', error);
+      throw new EncryptionError('Failed to encrypt child data', error);
+    }
+  }
+
+  // Decrypt data for authorized access
+  async decryptChildData(childId, encryptedData, requestContext) {
+    // Verify authorization before decryption
+    const authorized = await this.verifyAccess({
+      childId: childId,
+      requestor: requestContext.userId,
+      purpose: requestContext.purpose,
+      ipAddress: requestContext.ipAddress
+    });
+
+    if (!authorized.permitted) {
+      throw new AccessDeniedError(`Access denied: ${authorized.reason}`);
+    }
+
+    // Retrieve encryption key
+    const dataKey = await this.keyManager.getDataKey({
+      keyId: encryptedData.keyId,
+      childId: childId
+    });
+
+    // Decrypt with authentication verification
+    const decrypted = await this.encryption.decrypt({
+      ciphertext: encryptedData.ciphertext,
+      iv: encryptedData.iv,
+      authTag: encryptedData.authTag,
+      key: dataKey,
+      associatedData: {
+        childId: childId,
+        dataType: 'child-profile'
+      }
+    });
+
+    // Audit log the access
+    await this.logDataAccess({
+      childId: childId,
+      accessedBy: requestContext.userId,
+      purpose: requestContext.purpose,
+      timestamp: new Date().toISOString(),
+      ipAddress: requestContext.ipAddress,
+      dataAccessed: 'child-profile'
+    });
+
+    return JSON.parse(decrypted.plaintext);
+  }
+
+  // Implement key rotation for enhanced security
+  async rotateEncryptionKeys() {
+    const keys = await this.keyManager.listKeys({
+      status: 'active',
+      olderThan: '90days'
+    });
+
+    for (const oldKey of keys) {
+      // Generate new key
+      const newKey = await this.keyManager.createKey({
+        algorithm: 'AES-256-GCM',
+        purpose: 'data-encryption'
+      });
+
+      // Re-encrypt all data encrypted with old key
+      await this.reEncryptData({
+        oldKeyId: oldKey.id,
+        newKeyId: newKey.id,
+        batchSize: 1000  // Re-encrypt in batches
+      });
+
+      // Archive old key (don't delete - needed for audit logs)
+      await this.keyManager.archiveKey({
+        keyId: oldKey.id,
+        retainForAudit: true,
+        retentionPeriod: '7years'
+      });
+    }
+  }
+
+  // Secure key derivation for password-based encryption
+  async deriveKeyFromPassword(password, salt) {
+    return await this.encryption.deriveKey({
+      password: password,
+      salt: salt,
+      algorithm: 'PBKDF2-SHA256',
+      iterations: 100000,
+      keyLength: 256
+    });
+  }
+
+  // Field-level encryption for highly sensitive data
+  async encryptField(fieldName, fieldValue, childId) {
+    const fieldKey = await this.keyManager.getFieldKey({
+      childId: childId,
+      fieldName: fieldName,
+      createIfNotExists: true
+    });
+
+    return await this.encryption.encrypt({
+      plaintext: fieldValue,
+      key: fieldKey,
+      associatedData: {
+        childId: childId,
+        fieldName: fieldName
+      }
+    });
+  }
+}</code>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Role-Based Access Control (RBAC) for Child Data</h2>
+            <p>Implementing least-privilege access ensures that users and systems can only access data necessary for their specific functions:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Permitted Data Access</th>
+                        <th>Restrictions</th>
+                        <th>Use Cases</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Parent</strong></td>
+                        <td>Full access to their child's data, including activity logs, preferences, and shared content</td>
+                        <td>Cannot access other children's data; requires authentication</td>
+                        <td>Review child activity, modify settings, delete account</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Child User</strong></td>
+                        <td>Own profile data, own content, public profiles (if feature enabled)</td>
+                        <td>Cannot access other users' private data; age-appropriate content filtering</td>
+                        <td>Use service features, create content, interact with age-appropriate content</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Customer Support</strong></td>
+                        <td>Limited profile data (username, age range), support ticket history</td>
+                        <td>Cannot access full activity history, cannot modify data without authorization</td>
+                        <td>Respond to support requests, troubleshoot technical issues</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Content Moderator</strong></td>
+                        <td>Flagged content, user-generated content, moderation history</td>
+                        <td>Cannot access private messages, cannot see personal identifiers beyond pseudonyms</td>
+                        <td>Review and moderate user-generated content for policy violations</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data Analyst</strong></td>
+                        <td>Aggregated, anonymized usage statistics</td>
+                        <td>Cannot access individual user data, cannot de-anonymize datasets</td>
+                        <td>Generate reports, analyze usage patterns, improve service</td>
+                    </tr>
+                    <tr>
+                        <td><strong>System Administrator</strong></td>
+                        <td>Infrastructure logs, system health metrics</td>
+                        <td>Cannot access child data except in break-glass emergencies with audit logging</td>
+                        <td>Maintain infrastructure, troubleshoot system issues, ensure uptime</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Compliance Officer</strong></td>
+                        <td>Consent records, audit logs, compliance reports</td>
+                        <td>Cannot access child personal data; focuses on metadata and compliance evidence</td>
+                        <td>Verify compliance, respond to regulatory inquiries, audit data practices</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="code-block">
+<code>import { AccessControl, Permission } from '@wia/WIA-CHILD-006-child-data-privacy';
+
+class ChildDataAccessControl {
+  constructor() {
+    this.accessControl = new AccessControl({
+      defaultDeny: true,  // Deny all access unless explicitly permitted
+      auditAllAccess: true,
+      breakGlassSupport: true  // Emergency access with enhanced logging
+    });
+  }
+
+  // Define role-based permissions
+  async setupRoles() {
+    // Parent role
+    await this.accessControl.defineRole({
+      name: 'parent',
+      permissions: [
+        Permission.READ_CHILD_PROFILE,
+        Permission.READ_CHILD_ACTIVITY,
+        Permission.MODIFY_CHILD_SETTINGS,
+        Permission.DELETE_CHILD_DATA,
+        Permission.EXPORT_CHILD_DATA,
+        Permission.MODIFY_CONSENT,
+        Permission.VIEW_THIRD_PARTY_SHARING
+      ],
+      conditions: {
+        verifiedParent: true,
+        onlyOwnChildren: true
+      }
+    });
+
+    // Customer Support role
+    await this.accessControl.defineRole({
+      name: 'customer-support',
+      permissions: [
+        Permission.READ_LIMITED_PROFILE,
+        Permission.READ_SUPPORT_TICKETS,
+        Permission.CREATE_SUPPORT_NOTES
+      ],
+      restrictions: {
+        cannotModifyData: true,
+        cannotAccessActivityHistory: true,
+        requiresTicketContext: true
+      }
+    });
+
+    // Data Analyst role
+    await this.accessControl.defineRole({
+      name: 'data-analyst',
+      permissions: [
+        Permission.READ_ANONYMIZED_DATA,
+        Permission.GENERATE_REPORTS
+      ],
+      restrictions: {
+        cannotAccessPersonalData: true,
+        onlyAggregatedData: true,
+        minimumKAnonymity: 5
+      }
+    });
+  }
+
+  // Check access before data operation
+  async checkAccess(userId, dataOperation) {
+    const user = await this.getUserWithRoles(userId);
+
+    const decision = await this.accessControl.evaluate({
+      user: user,
+      resource: dataOperation.resource,
+      action: dataOperation.action,
+      context: {
+        ipAddress: dataOperation.ipAddress,
+        timestamp: new Date().toISOString(),
+        purpose: dataOperation.purpose
+      }
+    });
+
+    if (!decision.permitted) {
+      // Log denial
+      await this.accessControl.logDenial({
+        userId: userId,
+        resource: dataOperation.resource,
+        action: dataOperation.action,
+        reason: decision.reason,
+        timestamp: new Date().toISOString()
+      });
+
+      throw new AccessDeniedError(decision.reason);
+    }
+
+    // Log approval
+    await this.accessControl.logAccess({
+      userId: userId,
+      resource: dataOperation.resource,
+      action: dataOperation.action,
+      permitted: true,
+      timestamp: new Date().toISOString()
+    });
+
+    return decision;
+  }
+
+  // Break-glass emergency access (rare, heavily audited)
+  async emergencyAccess(adminUserId, childId, justification) {
+    // Verify admin credentials
+    const admin = await this.verifyAdmin(adminUserId);
+
+    if (!admin.breakGlassAuthorized) {
+      throw new AccessDeniedError('User not authorized for emergency access');
+    }
+
+    // Create emergency access session
+    const session = await this.accessControl.createEmergencySession({
+      adminId: adminUserId,
+      childId: childId,
+      justification: justification,
+      expiresIn: '1hour',
+      requiresApproval: true,  // Require secondary approval
+      notifyCompliance: true   // Alert compliance team
+    });
+
+    // Enhanced audit logging
+    await this.accessControl.logEmergencyAccess({
+      sessionId: session.id,
+      adminId: adminUserId,
+      childId: childId,
+      justification: justification,
+      timestamp: new Date().toISOString(),
+      approvers: [],  // Will be populated as approvals received
+      allDataAccessed: []  // Will be populated as data accessed
+    });
+
+    return session;
+  }
+}</code>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Comprehensive Audit Logging</h2>
+            <p>Audit logs provide evidence of compliance and enable detection of privacy violations. The WIA-CHILD-006 framework requires comprehensive, immutable logging:</p>
+
+            <div class="success-box">
+                <h3 style="color: var(--success); margin-top: 0;">Audit Logging Best Practices</h3>
+                <ol>
+                    <li><strong>Log All Data Access:</strong> Every read, write, delete operation on child data with timestamp, user, purpose, and IP address</li>
+                    <li><strong>Immutable Storage:</strong> Audit logs cannot be modified or deleted; use append-only storage or blockchain</li>
+                    <li><strong>Centralized Collection:</strong> Aggregate logs from all systems into centralized secure storage</li>
+                    <li><strong>Real-Time Monitoring:</strong> Alert on suspicious patterns (mass data access, unusual times, unauthorized attempts)</li>
+                    <li><strong>Long-Term Retention:</strong> Retain audit logs for 7 years minimum to support compliance investigations</li>
+                    <li><strong>Regular Review:</strong> Automated and manual review of logs to detect policy violations</li>
+                    <li><strong>Privacy-Protective:</strong> Logs should not contain unnecessary child data; use pseudonymous identifiers</li>
+                    <li><strong>Compliance Evidence:</strong> Logs must be readily available for FTC audits and investigations</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li><strong>Privacy-first architecture builds privacy into system design</strong> from the start, avoiding costly retrofits and creating more secure, trustworthy systems.</li>
+                <li><strong>Seven core principles guide implementation:</strong> data minimization, encryption everywhere, least privilege, audit everything, pseudonymization, privacy-protective defaults, resilient deletion.</li>
+                <li><strong>Encryption is mandatory at multiple layers</strong> including data at rest (AES-256), data in transit (TLS 1.3), and field-level encryption for sensitive data.</li>
+                <li><strong>Role-based access control limits data exposure</strong> ensuring users and systems access only minimum necessary data for their specific functions.</li>
+                <li><strong>Comprehensive audit logging provides compliance evidence</strong> with immutable logs of all data access, modifications, and deletions retained for 7+ years.</li>
+                <li><strong>Privacy-protective defaults maximize protection</strong> requiring explicit opt-in to increase data collection rather than opt-out to reduce it.</li>
+                <li><strong>Key management is critical for encryption security</strong> with regular key rotation (90 days), hierarchical key structure, and secure key storage (HSM/KMS).</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>What is privacy-first architecture, and how does it differ from adding privacy features to existing systems? What are the benefits of each approach?</li>
+                <li>Explain the seven core architectural principles of the WIA-CHILD-006 framework. How do they work together to ensure comprehensive privacy protection?</li>
+                <li>Why is encryption required at multiple layers (rest, transit, field-level)? What are the tradeoffs between security and performance?</li>
+                <li>Design a role-based access control system for a social learning platform. What roles would you define, and what data access would each role have?</li>
+                <li>What should be logged in a comprehensive audit logging system for child data? How should logs be stored and protected?</li>
+                <li>Explain the concept of "break-glass" emergency access. When should it be used, and what safeguards are necessary?</li>
+                <li>How should encryption keys be managed to ensure both security and availability? What is the purpose of key rotation, and how often should it occur?</li>
+                <li>What are the compliance implications of insufficient audit logging? How can comprehensive logs protect organizations during FTC investigations?</li>
+            </ol>
+        </div>
+
+        <div class="philosophy-section">
+            <h2>弘益人間</h2>
+            <p><em>Benefit All Humanity</em></p>
+            <p style="margin-top: 1rem;">Privacy-first architecture is an expression of values made concrete in code. Every architectural decision - from encryption algorithms to access control policies - reflects our commitment to protecting children in the digital spaces we create. When we design systems with privacy at the core, we demonstrate that child protection is not a feature to be added later, but a fundamental value that shapes everything we build.</p>
+            <p style="margin-top: 1rem;">The question is not "How can we add privacy to this system?" but "How should we design this system to maximize privacy from the start?" This shift in perspective creates digital environments truly worthy of the children who inhabit them.</p>
+        </div>
+
+        <nav style="margin-top: 3rem;">
+            <a href="chapter-04.html">← Previous Chapter</a>
+            <span style="color: var(--text-dim);">Chapter 05 of 08</span>
+            <a href="chapter-06.html">Next Chapter →</a>
+        </nav>
+
+        <footer>
+            <p><strong>WIA-CHILD-006: Child Data Privacy v1.0</strong></p>
+            <p>Chapter 05: Privacy-First Architecture</p>
+            <p style="margin-top: 1rem;">© 2025 SmileStory Inc. / WIA</p>
+            <p style="margin-top: 0.5rem;">弘益人間 - Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

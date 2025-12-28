@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>제02장: SRAM과 캐시 메모리 시스템 - WIA-SEMI-002</title>
+    <style>
+        :root { --bg: #0f172a; --primary: #8B5CF6; --secondary: #1e293b; --text: #e2e8f0; --text-dim: #94a3b8; --accent: #a78bfa; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: var(--primary); }
+        h1 { font-size: 2.5rem; border-bottom: 3px solid var(--primary); padding-bottom: 1rem; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; margin: 2.5rem 0 1rem; }
+        h3 { font-size: 1.5rem; color: var(--accent); margin: 2rem 0 0.75rem; }
+        h4 { font-size: 1.25rem; color: var(--accent); margin: 1.5rem 0 0.5rem; }
+        p { margin: 1rem 0; }
+        .chapter-nav { background: var(--secondary); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; }
+        .chapter-nav a { color: var(--primary); text-decoration: none; padding: 0.5rem 1rem; border: 2px solid var(--primary); border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: var(--secondary); }
+        th, td { padding: 1rem; border-bottom: 1px solid var(--border); text-align: left; }
+        th { background: var(--bg); color: var(--primary); font-weight: bold; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.75rem 0; }
+        .code-block { background: var(--secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+        .code-block code { font-family: 'Courier New', monospace; color: var(--accent); }
+        .info-box { background: var(--secondary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 1.5rem 0; }
+        .summary { background: var(--secondary); border: 2px solid var(--primary); border-radius: 10px; padding: 2rem; margin: 3rem 0; }
+        footer { text-align: center; margin-top: 4rem; padding: 2rem; border-top: 2px solid var(--primary); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-nav">
+            <a href="chapter-01.html">← 이전 장</a>
+            <span style="color: var(--text-dim);">제02장 / 8</span>
+            <a href="chapter-03.html">다음 장 →</a>
+        </div>
+
+        <h1>제02장: SRAM과 캐시 메모리 시스템</h1>
+
+        <p>SRAM(Static Random Access Memory)은 고속 메모리로, 주로 CPU 캐시에 사용됩니다. 리프레시가 필요 없어 DRAM보다 빠르지만, 셀 크기가 커서 용량 대비 비용이 높습니다. 이 장에서는 SRAM의 구조, 캐시 메모리 아키텍처, 그리고 성능 최적화 기법을 다룹니다.</p>
+
+        <h2>SRAM 기본 구조</h2>
+
+        <h3>1. 6T SRAM 셀</h3>
+        <p>가장 일반적인 SRAM 셀은 6개의 트랜지스터(6T)로 구성됩니다. 두 개의 교차 결합된 인버터가 비트를 저장하고, 두 개의 접근 트랜지스터가 읽기/쓰기를 제어합니다.</p>
+
+        <div class="info-box">
+            <h4>6T SRAM 셀 구성 요소</h4>
+            <ul>
+                <li><strong>M1, M2 (풀업 트랜지스터):</strong> PMOS 트랜지스터로 구성된 첫 번째 인버터의 로드</li>
+                <li><strong>M3, M4 (풀다운 트랜지스터):</strong> NMOS 트랜지스터로 구성된 드라이버</li>
+                <li><strong>M5, M6 (접근 트랜지스터):</strong> 워드 라인에 의해 제어되는 NMOS 스위치</li>
+                <li><strong>비트 라인 쌍(BL, BLB):</strong> 차동 신호로 노이즈 내성 향상</li>
+            </ul>
+        </div>
+
+        <h3>2. SRAM vs DRAM 비교</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>특성</th>
+                    <th>SRAM</th>
+                    <th>DRAM</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>셀 구조</strong></td>
+                    <td>6 트랜지스터</td>
+                    <td>1 트랜지스터 + 1 캐패시터</td>
+                </tr>
+                <tr>
+                    <td><strong>액세스 시간</strong></td>
+                    <td>1-10 ns</td>
+                    <td>10-100 ns</td>
+                </tr>
+                <tr>
+                    <td><strong>리프레시</strong></td>
+                    <td>불필요</td>
+                    <td>필수 (64ms 주기)</td>
+                </tr>
+                <tr>
+                    <td><strong>전력 소비</strong></td>
+                    <td>높음 (대기 시)</td>
+                    <td>중간 (리프레시 포함)</td>
+                </tr>
+                <tr>
+                    <td><strong>셀 크기</strong></td>
+                    <td>큼 (~100F²)</td>
+                    <td>작음 (~6F²)</td>
+                </tr>
+                <tr>
+                    <td><strong>비용/비트</strong></td>
+                    <td>높음</td>
+                    <td>낮음</td>
+                </tr>
+                <tr>
+                    <td><strong>주요 용도</strong></td>
+                    <td>CPU 캐시, 레지스터</td>
+                    <td>메인 메모리</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>캐시 메모리 아키텍처</h2>
+
+        <h3>1. 캐시 계층 구조</h3>
+        <p>현대 프로세서는 다층 캐시 계층 구조를 사용하여 성능과 비용을 최적화합니다. L1, L2, L3 캐시는 각각 다른 크기와 레이턴시 특성을 가집니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>캐시 레벨</th>
+                    <th>크기</th>
+                    <th>레이턴시</th>
+                    <th>위치</th>
+                    <th>공유 범위</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>L1 Data</strong></td>
+                    <td>32-64 KB</td>
+                    <td>3-4 사이클</td>
+                    <td>코어 내부</td>
+                    <td>코어 전용</td>
+                </tr>
+                <tr>
+                    <td><strong>L1 Instruction</strong></td>
+                    <td>32-64 KB</td>
+                    <td>3-4 사이클</td>
+                    <td>코어 내부</td>
+                    <td>코어 전용</td>
+                </tr>
+                <tr>
+                    <td><strong>L2 Unified</strong></td>
+                    <td>256KB-1MB</td>
+                    <td>10-12 사이클</td>
+                    <td>코어 내부/근접</td>
+                    <td>코어 전용</td>
+                </tr>
+                <tr>
+                    <td><strong>L3 Unified</strong></td>
+                    <td>8-64 MB</td>
+                    <td>30-40 사이클</td>
+                    <td>칩 내부</td>
+                    <td>모든 코어 공유</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="code-block">
+            <code>
+// 캐시 히트율 계산 예시<br>
+class CacheSimulator {<br>
+&nbsp;&nbsp;constructor(size_kb, associativity, line_size) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.size = size_kb * 1024;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.associativity = associativity;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.line_size = line_size;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.num_sets = this.size / (associativity * line_size);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.hits = 0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.misses = 0;<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;getHitRate() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const total = this.hits + this.misses;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return total > 0 ? (this.hits / total) * 100 : 0;<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;calculateAMAT(hit_time, miss_penalty) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// AMAT = Hit Time + Miss Rate × Miss Penalty<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const miss_rate = 1 - (this.getHitRate() / 100);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return hit_time + (miss_rate * miss_penalty);<br>
+&nbsp;&nbsp;}<br>
+}<br>
+<br>
+// 예시: L1 캐시 (32KB, 8-way, 64B 라인)<br>
+const l1_cache = new CacheSimulator(32, 8, 64);<br>
+console.log(`Sets: ${l1_cache.num_sets}`); // 64 세트
+            </code>
+        </div>
+
+        <h3>2. 캐시 매핑 방식</h3>
+        <p>캐시는 메인 메모리의 데이터를 어떻게 배치할지 결정하는 매핑 방식에 따라 성능이 달라집니다.</p>
+
+        <div class="info-box">
+            <h4>캐시 매핑 방식 비교</h4>
+            <ul>
+                <li><strong>직접 매핑(Direct Mapped):</strong> 각 메모리 블록이 정확히 하나의 캐시 라인에만 매핑. 간단하지만 충돌 미스 발생 가능</li>
+                <li><strong>완전 연관(Fully Associative):</strong> 메모리 블록이 어떤 캐시 라인에도 매핑 가능. 유연하지만 하드웨어 복잡도 높음</li>
+                <li><strong>세트 연관(Set Associative):</strong> 직접 매핑과 완전 연관의 절충안. n-way 세트 연관이 가장 일반적 (n=4, 8, 16)</li>
+            </ul>
+        </div>
+
+        <h2>캐시 일관성 프로토콜</h2>
+
+        <h3>1. MESI 프로토콜</h3>
+        <p>멀티코어 시스템에서 각 코어의 캐시 간 데이터 일관성을 유지하기 위해 MESI 프로토콜을 사용합니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>상태</th>
+                    <th>의미</th>
+                    <th>특징</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>M (Modified)</strong></td>
+                    <td>수정됨</td>
+                    <td>이 캐시만 유효한 복사본 보유, 메모리와 불일치</td>
+                </tr>
+                <tr>
+                    <td><strong>E (Exclusive)</strong></td>
+                    <td>배타적</td>
+                    <td>이 캐시만 복사본 보유, 메모리와 일치</td>
+                </tr>
+                <tr>
+                    <td><strong>S (Shared)</strong></td>
+                    <td>공유됨</td>
+                    <td>여러 캐시가 복사본 보유, 읽기만 가능</td>
+                </tr>
+                <tr>
+                    <td><strong>I (Invalid)</strong></td>
+                    <td>무효</td>
+                    <td>캐시 라인이 유효하지 않음</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="code-block">
+            <code>
+// MESI 상태 전이 예시<br>
+class MESICache {<br>
+&nbsp;&nbsp;constructor() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.state = 'I'; // 초기 상태: Invalid<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;readHit() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// M, E, S 상태에서는 그대로 유지<br>
+&nbsp;&nbsp;&nbsp;&nbsp;console.log(`Read hit in state ${this.state}`);<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;writeHit() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 모든 상태에서 M으로 전이<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.state = 'M';<br>
+&nbsp;&nbsp;&nbsp;&nbsp;console.log('Write hit: transitioned to Modified');<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;readMiss() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 다른 캐시에 있으면 S, 없으면 E<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const otherCacheHas = this.checkOtherCaches();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.state = otherCacheHas ? 'S' : 'E';<br>
+&nbsp;&nbsp;&nbsp;&nbsp;console.log(`Read miss: loaded in ${this.state} state`);<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;writeMiss() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 다른 모든 캐시를 무효화하고 M 상태로<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.invalidateOtherCaches();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.state = 'M';<br>
+&nbsp;&nbsp;&nbsp;&nbsp;console.log('Write miss: loaded in Modified state');<br>
+&nbsp;&nbsp;}<br>
+}
+            </code>
+        </div>
+
+        <h3>2. 스누핑과 디렉터리 기반 일관성</h3>
+        <p>캐시 일관성을 유지하는 두 가지 주요 방법이 있습니다.</p>
+
+        <ul>
+            <li><strong>스누핑 기반:</strong> 모든 캐시가 버스를 모니터링하여 일관성 유지. 작은 시스템(2-16 코어)에 적합</li>
+            <li><strong>디렉터리 기반:</strong> 중앙 디렉터리가 각 캐시 라인의 상태 추적. 대규모 시스템(수십-수백 코어)에 적합</li>
+        </ul>
+
+        <h2>캐시 최적화 기법</h2>
+
+        <h3>1. 프리페칭(Prefetching)</h3>
+        <p>프로그램이 데이터를 요청하기 전에 미리 캐시로 가져와 미스를 줄입니다.</p>
+
+        <div class="info-box">
+            <h4>프리페칭 전략</h4>
+            <ul>
+                <li><strong>하드웨어 프리페칭:</strong> 순차 액세스 패턴 감지 시 다음 라인 자동 로드</li>
+                <li><strong>스트라이드 프리페칭:</strong> 일정 간격의 메모리 액세스 패턴 감지</li>
+                <li><strong>소프트웨어 프리페칭:</strong> 컴파일러나 프로그래머가 명시적 프리페치 명령 삽입</li>
+            </ul>
+        </div>
+
+        <div class="code-block">
+            <code>
+// 소프트웨어 프리페칭 예시 (x86-64)<br>
+void processArray(int* data, size_t size) {<br>
+&nbsp;&nbsp;for (size_t i = 0; i < size; i++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 16개 앞의 데이터를 프리페치<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if (i + 16 < size) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;__builtin_prefetch(&data[i + 16], 0, 3);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 현재 데이터 처리<br>
+&nbsp;&nbsp;&nbsp;&nbsp;processData(data[i]);<br>
+&nbsp;&nbsp;}<br>
+}<br>
+<br>
+// ARM NEON 프리페치 예시<br>
+void prefetchLoop(float* src, size_t count) {<br>
+&nbsp;&nbsp;for (size_t i = 0; i < count; i += 8) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;__pld(src + i + 64); // 64바이트 앞 프리페치<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// SIMD 연산 수행<br>
+&nbsp;&nbsp;&nbsp;&nbsp;float32x4_t v1 = vld1q_f32(src + i);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;float32x4_t v2 = vld1q_f32(src + i + 4);<br>
+&nbsp;&nbsp;}<br>
+}
+            </code>
+        </div>
+
+        <h3>2. 논블로킹 캐시</h3>
+        <p>캐시 미스 발생 시에도 다른 히트 요청을 계속 처리할 수 있는 구조입니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>기법</th>
+                    <th>설명</th>
+                    <th>효과</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>히트 언더 미스</strong></td>
+                    <td>미스 처리 중에도 히트 처리</td>
+                    <td>레이턴시 숨김</td>
+                </tr>
+                <tr>
+                    <td><strong>미스 언더 미스</strong></td>
+                    <td>여러 미스 동시 처리</td>
+                    <td>메모리 레벨 병렬성 향상</td>
+                </tr>
+                <tr>
+                    <td><strong>MSHR (Miss Status Holding Registers)</strong></td>
+                    <td>진행 중인 미스 추적</td>
+                    <td>중복 요청 방지</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>특수 목적 SRAM</h2>
+
+        <h3>1. CAM (Content Addressable Memory)</h3>
+        <p>CAM은 데이터 내용으로 검색하는 특수 메모리로, TLB(Translation Lookaside Buffer)와 캐시 태그 검색에 사용됩니다.</p>
+
+        <ul>
+            <li><strong>TCAM (Ternary CAM):</strong> 0, 1, X(don't care) 세 가지 상태 지원. 네트워크 라우팅 테이블에 사용</li>
+            <li><strong>BCAM (Binary CAM):</strong> 0, 1 두 가지 상태만 지원. 캐시 태그 매칭에 사용</li>
+        </ul>
+
+        <h3>2. 레지스터 파일</h3>
+        <p>CPU 레지스터는 가장 빠른 SRAM 기반 저장소로, 다중 포트 구조를 가집니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>아키텍처</th>
+                    <th>레지스터 개수</th>
+                    <th>포트 구성</th>
+                    <th>액세스 시간</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>x86-64</strong></td>
+                    <td>16 범용 레지스터</td>
+                    <td>3R2W (3읽기 2쓰기)</td>
+                    <td>&lt;1 사이클</td>
+                </tr>
+                <tr>
+                    <td><strong>ARM64</strong></td>
+                    <td>31 범용 레지스터</td>
+                    <td>3R2W</td>
+                    <td>&lt;1 사이클</td>
+                </tr>
+                <tr>
+                    <td><strong>RISC-V</strong></td>
+                    <td>32 범용 레지스터</td>
+                    <td>2R1W</td>
+                    <td>&lt;1 사이클</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>저전력 SRAM 기술</h2>
+
+        <h3>1. 전압 스케일링</h3>
+        <p>모바일 프로세서는 전력 절감을 위해 SRAM 전압을 동적으로 조절합니다.</p>
+
+        <div class="code-block">
+            <code>
+// 동적 전압/주파수 조절 (DVFS) 예시<br>
+class PowerManager {<br>
+&nbsp;&nbsp;setPowerMode(mode) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;switch(mode) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case 'HIGH_PERFORMANCE':<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.voltage = 1.0;  // V<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.frequency = 3.0; // GHz<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case 'BALANCED':<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.voltage = 0.8;  // V<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.frequency = 2.0; // GHz<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case 'POWER_SAVE':<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.voltage = 0.6;  // V<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.frequency = 1.0; // GHz<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 전력 = C × V² × f<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const power = this.capacitance * Math.pow(this.voltage, 2) * this.frequency;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;console.log(`Power: ${power.toFixed(2)}W`);<br>
+&nbsp;&nbsp;}<br>
+}
+            </code>
+        </div>
+
+        <h3>2. 파워 게이팅</h3>
+        <p>사용하지 않는 캐시 블록의 전원을 차단하여 누설 전력을 줄입니다.</p>
+
+        <ul>
+            <li><strong>웨이 단위 게이팅:</strong> 세트 연관 캐시의 개별 웨이를 선택적으로 차단</li>
+            <li><strong>뱅크 단위 게이팅:</strong> 캐시를 여러 뱅크로 나누어 미사용 뱅크 차단</li>
+            <li><strong>상태 보존:</strong> 전원 재개 시 이전 상태 복원</li>
+        </ul>
+
+        <h2>SRAM 제조 및 공정</h2>
+
+        <h3>1. FinFET SRAM</h3>
+        <p>최신 SRAM은 FinFET 트랜지스터를 사용하여 누설 전류를 크게 감소시켰습니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>공정 노드</th>
+                    <th>SRAM 셀 크기</th>
+                    <th>누설 전력</th>
+                    <th>동작 전압</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>28nm Planar</td>
+                    <td>0.12 μm²</td>
+                    <td>기준</td>
+                    <td>0.9-1.2V</td>
+                </tr>
+                <tr>
+                    <td>14nm FinFET</td>
+                    <td>0.06 μm²</td>
+                    <td>-50%</td>
+                    <td>0.7-1.0V</td>
+                </tr>
+                <tr>
+                    <td>7nm FinFET</td>
+                    <td>0.03 μm²</td>
+                    <td>-70%</td>
+                    <td>0.6-0.9V</td>
+                </tr>
+                <tr>
+                    <td>5nm FinFET</td>
+                    <td>0.021 μm²</td>
+                    <td>-80%</td>
+                    <td>0.55-0.85V</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. 안정성 향상 기법</h3>
+        <p>미세 공정에서 SRAM 셀의 안정성을 유지하기 위한 다양한 기법이 사용됩니다.</p>
+
+        <div class="info-box">
+            <h4>SRAM 안정성 메트릭</h4>
+            <ul>
+                <li><strong>SNM (Static Noise Margin):</strong> 읽기 안정성 지표. 외부 노이즈에 대한 내성</li>
+                <li><strong>WM (Write Margin):</strong> 쓰기 능력 지표. 셀 값을 변경할 수 있는 능력</li>
+                <li><strong>RSNM (Read Static Noise Margin):</strong> 읽기 동작 중 안정성</li>
+                <li><strong>Hold SNM:</strong> 대기 상태에서의 안정성</li>
+            </ul>
+        </div>
+
+        <div class="summary">
+            <h2>요약</h2>
+            <p>SRAM은 빠른 액세스 시간과 리프레시가 필요 없다는 장점으로 CPU 캐시의 핵심 기술입니다. 캐시 계층 구조, 일관성 프로토콜, 최적화 기법들이 종합적으로 작용하여 시스템 성능을 극대화합니다.</p>
+
+            <h3>핵심 요점</h3>
+            <ul>
+                <li>6T SRAM 셀은 빠르지만 DRAM보다 면적이 크고 비쌈</li>
+                <li>L1/L2/L3 캐시 계층 구조로 성능과 비용 균형 유지</li>
+                <li>MESI 프로토콜로 멀티코어 환경에서 캐시 일관성 보장</li>
+                <li>프리페칭과 논블로킹 캐시로 성능 향상</li>
+                <li>FinFET 기술로 전력 효율성 크게 개선</li>
+            </ul>
+        </div>
+
+        <div class="chapter-nav">
+            <a href="chapter-01.html">← 이전 장</a>
+            <span style="color: var(--text-dim);">제02장 / 8</span>
+            <a href="chapter-03.html">다음 장 →</a>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / 세계산업인증협회 (WIA)</p>
+            <p>弘益人間 (홍익인간) · 널리 인간을 이롭게 하라</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Sensors and Perception - WIA-ROB-003</title>
+</head>
+<body>
+
+<p><a href="index.html">🏭 WIA-ROB-003 Industrial Robot Standard Ebook</a> | Chapter 5 of 8</p>
+
+<hr>
+
+<h1>👁️ Chapter 5: Sensors and Perception</h1>
+
+<blockquote>
+<p><strong>"Sensors are the eyes, ears, and touch of robots. Without perception, automation cannot adapt to the real world."</strong></p>
+<p>Modern industrial robots rely on diverse sensor technologies to navigate complex environments, ensure quality, and enable flexible automation.</p>
+</blockquote>
+
+<hr>
+
+<h2>5.1 Position Encoders</h2>
+
+<p>Position encoders measure joint angles and linear positions with high precision, forming the foundation of robot control.</p>
+
+<h3>5.1.1 Absolute vs. Incremental Encoders</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Operation</th>
+            <th>Advantages</th>
+            <th>Disadvantages</th>
+            <th>Typical Use</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Incremental</td>
+            <td>Counts pulses from home position</td>
+            <td>Low cost, high resolution, simple</td>
+            <td>Requires homing, position lost on power-off</td>
+            <td>Legacy robots, cost-sensitive applications</td>
+        </tr>
+        <tr>
+            <td>Absolute</td>
+            <td>Unique code for each position</td>
+            <td>No homing needed, position retained</td>
+            <td>Higher cost, more complex</td>
+            <td>Modern industrial robots, safety-critical</td>
+        </tr>
+    </tbody>
+</table>
+
+<p><strong>Encoder Technologies:</strong></p>
+
+<ul>
+    <li><strong>Optical Encoders:</strong> LED + photodetectors reading coded disk (most common)
+        <ul>
+            <li>Resolution: 10,000 to 4,000,000 counts per revolution</li>
+            <li>Accuracy: ±5 to ±20 arc-seconds</li>
+            <li>Typical brands: Heidenhain, Renishaw, Sick, Stegmann</li>
+        </ul>
+    </li>
+    <li><strong>Magnetic Encoders:</strong> Hall-effect sensors reading magnetic patterns
+        <ul>
+            <li>Resolution: 1,000 to 100,000 counts per revolution</li>
+            <li>Robust in harsh environments (dust, vibration)</li>
+            <li>Applications: Welding robots, dirty environments</li>
+        </ul>
+    </li>
+    <li><strong>Resolver:</strong> Electromagnetic analog position sensor
+        <ul>
+            <li>Extremely robust, high temperature capable</li>
+            <li>Infinite resolution (analog output)</li>
+            <li>Applications: Aerospace, military, high-reliability</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>5.1.2 Multi-Turn Encoders</h3>
+
+<p>For multi-revolution joints (e.g., J6 can rotate ±360° or more), multi-turn encoders track total rotations.</p>
+
+<p><strong>Technologies:</strong></p>
+<ul>
+    <li><strong>Mechanical Gearing:</strong> Multiple code disks geared together</li>
+    <li><strong>Battery-Powered Counting:</strong> Electronics count turns, battery backup</li>
+    <li><strong>Wiegand Sensor:</strong> Self-powered pulse generator, no battery</li>
+    <li><strong>Energy Harvesting:</strong> Generates power from shaft rotation</li>
+</ul>
+
+<p><strong>WIA-ROB-003 Encoder Data Format:</strong></p>
+
+<pre>
+{
+  "sensor_type": "absolute_encoder",
+  "joint_id": "J1",
+  "position_raw": 2457638,  // encoder counts
+  "position_degrees": 45.234,
+  "resolution": 131072,  // 17-bit (counts per revolution)
+  "accuracy_arcsec": 10,
+  "multi_turn": true,
+  "turns": 2,
+  "total_position_degrees": 765.234,
+  "temperature_c": 38.5,
+  "status": "ok",
+  "error_flags": []
+}
+</pre>
+
+<hr>
+
+<h2>5.2 Force-Torque Sensors</h2>
+
+<p>Force-torque (F/T) sensors measure forces and moments in multiple axes, enabling force control and contact detection.</p>
+
+<h3>5.2.1 Six-Axis F/T Sensors</h3>
+
+<p><strong>Measurement Axes:</strong></p>
+<ul>
+    <li>Fx, Fy, Fz: Forces in X, Y, Z directions</li>
+    <li>Tx, Ty, Tz: Torques about X, Y, Z axes</li>
+</ul>
+
+<p><strong>Key Specifications:</strong></p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Parameter</th>
+            <th>Typical Range</th>
+            <th>Application Dependent</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Force Range</td>
+            <td>100 N to 10,000 N</td>
+            <td>Assembly: 100-500 N; Heavy industry: 1000-10000 N</td>
+        </tr>
+        <tr>
+            <td>Torque Range</td>
+            <td>10 Nm to 500 Nm</td>
+            <td>Depends on tool size and operation</td>
+        </tr>
+        <tr>
+            <td>Resolution</td>
+            <td>0.01 N to 1 N</td>
+            <td>Fine assembly needs high resolution</td>
+        </tr>
+        <tr>
+            <td>Accuracy</td>
+            <td>±0.5% to ±2% full scale</td>
+            <td>Calibration and temperature compensation</td>
+        </tr>
+        <tr>
+            <td>Sampling Rate</td>
+            <td>1000 Hz to 7000 Hz</td>
+            <td>High-speed operations need faster sampling</td>
+        </tr>
+        <tr>
+            <td>Protection Rating</td>
+            <td>IP50 to IP67</td>
+            <td>Environment dependent</td>
+        </tr>
+    </tbody>
+</table>
+
+<p><strong>Sensing Technologies:</strong></p>
+
+<ul>
+    <li><strong>Strain Gauge:</strong> Most common, excellent accuracy, moderate cost
+        <ul>
+            <li>Wheatstone bridge configuration</li>
+            <li>Temperature compensation required</li>
+            <li>Examples: ATI Industrial Automation, Robotiq, OnRobot</li>
+        </ul>
+    </li>
+    <li><strong>Piezoelectric:</strong> High stiffness, fast response, limited low-frequency response
+        <ul>
+            <li>Best for dynamic force measurement</li>
+            <li>Not suitable for static force holding</li>
+        </ul>
+    </li>
+    <li><strong>Capacitive:</strong> High resolution, sensitive to electromagnetic interference
+        <ul>
+            <li>Used in research applications</li>
+            <li>Less common in industrial settings</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>5.2.2 Applications</h3>
+
+<p><strong>1. Force-Controlled Assembly</strong></p>
+
+<pre>
+Peg-in-Hole Insertion:
+  - Measure contact forces during insertion
+  - Adjust position based on force feedback
+  - Detect successful insertion (force drop)
+  - Typical force threshold: 20-50 N
+
+Example WIA-ROB-003 Code:
+{
+  "command": "force_controlled_insertion",
+  "target_position": [500, 200, 100, 0, 180, 0],
+  "max_force_z": 50,  // N
+  "max_force_xy": 10,  // N
+  "compliance": {
+    "x": 0.05,  // mm/N
+    "y": 0.05,
+    "z": 0.01
+  },
+  "insertion_depth": 50,  // mm
+  "success_criteria": {
+    "force_drop": 15,  // N
+    "depth_achieved": 48  // mm
+  }
+}
+</pre>
+
+<p><strong>2. Polishing and Deburring</strong></p>
+
+<ul>
+    <li>Maintain constant contact force (typically 20-100 N)</li>
+    <li>Adapt to surface variations</li>
+    <li>Detect tool wear (force increase over time)</li>
+    <li>Typical control loop: 1-2 kHz</li>
+</ul>
+
+<p><strong>3. Collaborative Safety</strong></p>
+
+<ul>
+    <li>Detect human contact (force spike above baseline)</li>
+    <li>Trigger protective stop (within 100 ms)</li>
+    <li>Differentiate intentional contact (hand guiding) from collision</li>
+</ul>
+
+<h3>5.2.3 Joint Torque Sensors</h3>
+
+<p>Integrated into robot joints for collision detection without external F/T sensor.</p>
+
+<p><strong>Advantages:</strong></p>
+<ul>
+    <li>No wrist-mounted sensor (saves weight, space)</li>
+    <li>Can detect collisions anywhere on robot arm</li>
+    <li>Better for collaborative robots</li>
+</ul>
+
+<p><strong>Challenges:</strong></p>
+<ul>
+    <li>Less accurate than dedicated F/T sensor</li>
+    <li>Affected by joint friction and dynamics</li>
+    <li>Requires careful calibration and modeling</li>
+</ul>
+
+<hr>
+
+<h2>5.3 Vision Systems</h2>
+
+<p>Vision sensors provide robots with visual perception for positioning, inspection, and guidance.</p>
+
+<h3>5.3.1 2D Vision Systems</h3>
+
+<p><strong>Components:</strong></p>
+<ul>
+    <li><strong>Camera:</strong> Industrial area-scan or line-scan camera
+        <ul>
+            <li>Resolution: 0.3 MP (VGA) to 20+ MP</li>
+            <li>Frame rate: 30 fps to 1000+ fps</li>
+            <li>Sensor: CCD or CMOS</li>
+            <li>Interface: GigE Vision, USB3 Vision, Camera Link</li>
+        </ul>
+    </li>
+    <li><strong>Lens:</strong> Fixed focal length or telecentric
+        <ul>
+            <li>Focal length: 4 mm to 100 mm+</li>
+            <li>Working distance: 50 mm to 5000 mm+</li>
+            <li>Telecentric for dimensional measurement (eliminates perspective error)</li>
+        </ul>
+    </li>
+    <li><strong>Lighting:</strong> Critical for consistent imaging
+        <ul>
+            <li>Types: Ring light, backlight, dome, structured light</li>
+            <li>LED: Monochrome (red, blue, IR) or RGB</li>
+            <li>Strobe capability for motion freeze</li>
+        </ul>
+    </li>
+    <li><strong>Vision Processing:</strong> Dedicated vision computer or embedded
+        <ul>
+            <li>Software: Cognex VisionPro, Keyence CV-X, OpenCV, Halcon</li>
+            <li>Processing time: 10 ms to 1000 ms depending on complexity</li>
+        </ul>
+    </li>
+</ul>
+
+<p><strong>Common Vision Tasks:</strong></p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Task</th>
+            <th>Algorithm</th>
+            <th>Typical Accuracy</th>
+            <th>Processing Time</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Part Location</td>
+            <td>Pattern matching, edge detection</td>
+            <td>±0.1 mm to ±0.5 mm</td>
+            <td>50-200 ms</td>
+        </tr>
+        <tr>
+            <td>Barcode Reading</td>
+            <td>1D/2D code decoding</td>
+            <td>100% decode rate (good contrast)</td>
+            <td>20-100 ms</td>
+        </tr>
+        <tr>
+            <td>Dimension Measurement</td>
+            <td>Caliper, blob analysis</td>
+            <td>±0.01 mm (telecentric lens)</td>
+            <td>30-150 ms</td>
+        </tr>
+        <tr>
+            <td>Defect Detection</td>
+            <td>Anomaly detection, classification</td>
+            <td>95-99.9% detection rate</td>
+            <td>100-500 ms</td>
+        </tr>
+        <tr>
+            <td>Color Verification</td>
+            <td>RGB/HSV analysis</td>
+            <td>ΔE < 3 (color difference)</td>
+            <td>20-80 ms</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>5.3.2 3D Vision Systems</h3>
+
+<p><strong>Technologies:</strong></p>
+
+<p><strong>1. Structured Light</strong></p>
+<ul>
+    <li>Projects patterns onto object surface</li>
+    <li>Camera(s) capture distorted patterns</li>
+    <li>Triangulation computes 3D coordinates</li>
+    <li><strong>Accuracy:</strong> 0.01 mm to 0.5 mm</li>
+    <li><strong>Speed:</strong> 0.5 to 5 seconds per scan</li>
+    <li><strong>Applications:</strong> Bin picking, volume measurement, weld seam finding</li>
+</ul>
+
+<p><strong>2. Stereovision</strong></p>
+<ul>
+    <li>Two cameras at known separation (baseline)</li>
+    <li>Correspondence matching between images</li>
+    <li>Triangulation for depth calculation</li>
+    <li><strong>Accuracy:</strong> 0.5 mm to 5 mm (distance-dependent)</li>
+    <li><strong>Speed:</strong> 30-60 fps real-time</li>
+    <li><strong>Applications:</strong> AGV navigation, obstacle avoidance, large part measurement</li>
+</ul>
+
+<p><strong>3. Time-of-Flight (ToF)</strong></p>
+<ul>
+    <li>Measures time for light to return from object</li>
+    <li>Every pixel yields distance measurement</li>
+    <li><strong>Accuracy:</strong> 1 mm to 10 mm</li>
+    <li><strong>Speed:</strong> 30-60 fps</li>
+    <li><strong>Range:</strong> 0.5 m to 10 m</li>
+    <li><strong>Applications:</strong> Safety zones, volume scanning, bin picking</li>
+</ul>
+
+<p><strong>4. Laser Line Scanning</strong></p>
+<ul>
+    <li>Projects laser line onto object</li>
+    <li>Camera views line profile at angle</li>
+    <li>Robot or object motion creates 3D scan</li>
+    <li><strong>Accuracy:</strong> 0.05 mm to 0.5 mm</li>
+    <li><strong>Speed:</strong> 1000-8000 profiles/second</li>
+    <li><strong>Applications:</strong> Weld seam tracking, inspection, reverse engineering</li>
+</ul>
+
+<h3>5.3.3 Vision-Guided Robotics</h3>
+
+<p><strong>WIA-ROB-003 Vision Data Format:</strong></p>
+
+<pre>
+{
+  "format": "WIA-ROB-003-VISION-v1.0",
+  "timestamp": "2025-01-15T16:45:00Z",
+  "camera_id": "CAM-001",
+  "vision_task": "part_location",
+  
+  "detected_objects": [
+    {
+      "object_id": 1,
+      "class": "connector_type_A",
+      "confidence": 0.97,
+      "position_2d": {
+        "x_pixel": 1024,
+        "y_pixel": 768,
+        "angle_deg": 15.3
+      },
+      "position_3d": {
+        "x_mm": 450.2,
+        "y_mm": 220.8,
+        "z_mm": 150.5,
+        "rx_deg": 0.0,
+        "ry_deg": 0.0,
+        "rz_deg": 15.3
+      },
+      "dimensions": {
+        "length_mm": 45.2,
+        "width_mm": 20.1
+      },
+      "quality": "pass",
+      "defects": []
+    }
+  ],
+  
+  "calibration": {
+    "hand_eye": "eye_to_hand",
+    "transformation_matrix": [
+      [0.9998, -0.0175, 0.0000, 500.0],
+      [0.0175, 0.9998, 0.0000, 0.0],
+      [0.0000, 0.0000, 1.0000, 800.0],
+      [0.0, 0.0, 0.0, 1.0]
+    ],
+    "calibration_date": "2025-01-10",
+    "accuracy_mm": 0.15
+  },
+  
+  "processing_time_ms": 87,
+  "image_quality": {
+    "brightness": 128,
+    "contrast": 65,
+    "sharpness": 0.82
+  }
+}
+</pre>
+
+<hr>
+
+<h2>5.4 Tactile and Proximity Sensors</h2>
+
+<h3>5.4.1 Tactile Sensors</h3>
+
+<p><strong>Tactile Array Sensors:</strong></p>
+<ul>
+    <li>Grid of force-sensing elements (taxels)</li>
+    <li>Resolution: 10x10 to 64x64 taxels</li>
+    <li>Force range per taxel: 0.1 N to 100 N</li>
+    <li><strong>Applications:</strong> Grasping control, surface exploration, delicate manipulation</li>
+</ul>
+
+<p><strong>Binary Contact Sensors:</strong></p>
+<ul>
+    <li>Simple on/off detection of contact</li>
+    <li>Examples: Limit switches, photoelectric sensors at gripper</li>
+    <li><strong>Applications:</strong> Part presence detection, gripper confirmation</li>
+</ul>
+
+<h3>5.4.2 Proximity Sensors</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Technology</th>
+            <th>Range</th>
+            <th>Advantages</th>
+            <th>Limitations</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Inductive</td>
+            <td>0-40 mm</td>
+            <td>Detects metal, rugged, low cost</td>
+            <td>Short range, metal only</td>
+        </tr>
+        <tr>
+            <td>Capacitive</td>
+            <td>0-50 mm</td>
+            <td>Detects any material, through barriers</td>
+            <td>Affected by humidity, dust</td>
+        </tr>
+        <tr>
+            <td>Ultrasonic</td>
+            <td>30-8000 mm</td>
+            <td>Long range, detects any material</td>
+            <td>Slow response, affected by temperature/humidity</td>
+        </tr>
+        <tr>
+            <td>Laser Distance</td>
+            <td>20-10,000 mm</td>
+            <td>Accurate, fast, long range</td>
+            <td>Expensive, requires clean environment</td>
+        </tr>
+        <tr>
+            <td>Photoelectric</td>
+            <td>0-50,000 mm</td>
+            <td>Very long range, multiple modes</td>
+            <td>Requires line of sight, affected by reflectivity</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>5.4.3 Safety Sensors</h3>
+
+<p><strong>Laser Scanners (Safety-Rated):</strong></p>
+<ul>
+    <li>2D/3D area monitoring</li>
+    <li>Multiple safety zones with different actions</li>
+    <li>Range: up to 70 meters</li>
+    <li>Response time: <30 ms</li>
+    <li>Safety rating: PLd or PLe (IEC 62061)</li>
+    <li><strong>Examples:</strong> SICK S3000, S300, microScan3, Keyence SZ-V series</li>
+</ul>
+
+<p><strong>Safety Light Curtains:</strong></p>
+<ul>
+    <li>Infrared transmitter/receiver pairs</li>
+    <li>Resolution: 14 mm to 40 mm</li>
+    <li>Height: 150 mm to 3000 mm</li>
+    <li>Range: up to 70 meters</li>
+    <li>Muting capability for material passage</li>
+    <li><strong>Applications:</strong> Perimeter guarding, machine access points</li>
+</ul>
+
+<hr>
+
+<h2>5.5 Summary</h2>
+
+<p>This chapter covered industrial robot sensor systems:</p>
+
+<ul>
+    <li>Position encoders: Absolute/incremental, optical/magnetic, multi-turn</li>
+    <li>Force-torque sensors: Six-axis F/T sensors, joint torque sensors, force control applications</li>
+    <li>Vision systems: 2D cameras, 3D scanning, vision-guided robotics</li>
+    <li>Tactile and proximity sensors: Contact detection, non-contact ranging</li>
+    <li>Safety sensors: Laser scanners, light curtains for safeguarding</li>
+    <li>WIA-ROB-003 sensor data formats for standardized integration</li>
+</ul>
+
+<p><strong>Key Takeaways:</strong></p>
+<ul>
+    <li>Sensor selection depends on application requirements (accuracy, speed, environment)</li>
+    <li>Vision systems enable flexible automation but require careful lighting and calibration</li>
+    <li>Force control enables robots to adapt to variations and perform complex assembly</li>
+    <li>Safety-rated sensors are mandatory for collaborative and human-proximate applications</li>
+</ul>
+
+<p>Next chapter: Communication protocols for industrial robot integration.</p>
+
+<hr>
+
+<p><strong>Previous:</strong> <a href="chapter-04.html">← Chapter 4: Safety Standards and Regulations</a></p>
+<p><strong>Next:</strong> <a href="chapter-06.html">Chapter 6: Communication Protocols →</a></p>
+
+<hr>
+
+<footer>
+    <p><strong>弘益人間 (Hongik Ingan)</strong> · Benefit All Humanity</p>
+    <p>WIA - World Certification Industry Association</p>
+    <p>© 2025 MIT License</p>
+</footer>
+
+</body>
+</html>

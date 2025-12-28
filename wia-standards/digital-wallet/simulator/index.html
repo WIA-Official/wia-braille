@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Wallet Simulator - WIA-FIN-015</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: rgba(30, 41, 59, 0.8);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #22c55e;
+            text-decoration: none;
+        }
+
+        .logo span {
+            opacity: 0.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .tab:hover {
+            border-color: rgba(34, 197, 94, 0.5);
+            color: #cbd5e1;
+        }
+
+        .tab.active {
+            background: #22c55e;
+            color: #0f172a;
+            border-color: #22c55e;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #22c55e;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #22c55e;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #22c55e;
+            color: #0f172a;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background: #16a34a;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #22c55e;
+            color: #22c55e;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .result-box {
+            background: #0f172a;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .result-box pre {
+            color: #22c55e;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .wallet-card {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .wallet-card:hover {
+            border-color: #22c55e;
+            transform: translateY(-2px);
+        }
+
+        .currency-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 6px;
+            color: #22c55e;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .balance-display {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #22c55e;
+            margin: 1rem 0;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.1);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .transaction-item:hover {
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem auto;
+            padding: 1rem;
+        }
+
+        .success {
+            color: #22c55e;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+
+        .info-box {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 4px solid #22c55e;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            color: #cbd5e1;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <a href="../index.html" class="logo">
+                👛 <span>WIA-FIN-015</span> Digital Wallet Simulator
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('overview')">📋 Overview</div>
+            <div class="tab" onclick="switchTab('testing')">🧪 Testing</div>
+            <div class="tab" onclick="switchTab('validation')">✅ Validation</div>
+            <div class="tab" onclick="switchTab('results')">📊 Results</div>
+            <div class="tab" onclick="switchTab('integration')">🔌 Integration</div>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="card">
+                <h2 class="card-title">Digital Wallet Simulator</h2>
+                <p style="color: #94a3b8; margin-bottom: 2rem;">
+                    Test and validate digital wallet functionality including multi-currency support,
+                    NFC payments, QR code transactions, and security features.
+                </p>
+
+                <div class="grid-2">
+                    <div class="wallet-card">
+                        <h3 style="color: #22c55e; margin-bottom: 1rem;">💰 Multi-Currency Wallet</h3>
+                        <p style="color: #cbd5e1; margin-bottom: 1rem;">
+                            Support for 150+ fiat and cryptocurrencies
+                        </p>
+                        <div>
+                            <span class="currency-badge">USD</span>
+                            <span class="currency-badge">EUR</span>
+                            <span class="currency-badge">BTC</span>
+                            <span class="currency-badge">ETH</span>
+                            <span class="currency-badge">JPY</span>
+                            <span class="currency-badge">GBP</span>
+                        </div>
+                    </div>
+
+                    <div class="wallet-card">
+                        <h3 style="color: #22c55e; margin-bottom: 1rem;">📱 Payment Methods</h3>
+                        <p style="color: #cbd5e1; margin-bottom: 1rem;">
+                            Multiple ways to send and receive payments
+                        </p>
+                        <div>
+                            <span class="currency-badge">NFC Tap</span>
+                            <span class="currency-badge">QR Code</span>
+                            <span class="currency-badge">P2P</span>
+                            <span class="currency-badge">Bank Transfer</span>
+                        </div>
+                    </div>
+
+                    <div class="wallet-card">
+                        <h3 style="color: #22c55e; margin-bottom: 1rem;">🔒 Security Features</h3>
+                        <p style="color: #cbd5e1; margin-bottom: 1rem;">
+                            Advanced protection for your assets
+                        </p>
+                        <div>
+                            <span class="currency-badge">Biometric</span>
+                            <span class="currency-badge">2FA</span>
+                            <span class="currency-badge">Encryption</span>
+                            <span class="currency-badge">Hardware</span>
+                        </div>
+                    </div>
+
+                    <div class="wallet-card">
+                        <h3 style="color: #22c55e; margin-bottom: 1rem;">🌐 Integration</h3>
+                        <p style="color: #cbd5e1; margin-bottom: 1rem;">
+                            Connect with various platforms
+                        </p>
+                        <div>
+                            <span class="currency-badge">DeFi</span>
+                            <span class="currency-badge">Banking</span>
+                            <span class="currency-badge">POS</span>
+                            <span class="currency-badge">E-commerce</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box" style="margin-top: 2rem;">
+                    <p>
+                        <strong>💡 Quick Start:</strong> Navigate through the tabs above to test different
+                        wallet scenarios, validate transactions, and see integration examples.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Testing Tab -->
+        <div id="testing" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">🧪 Wallet Testing</h2>
+
+                <div class="form-group">
+                    <label>Wallet Type</label>
+                    <select id="walletType">
+                        <option value="hd">HD Wallet (BIP32/BIP39/BIP44)</option>
+                        <option value="simple">Simple Wallet</option>
+                        <option value="multisig">Multi-Signature Wallet</option>
+                        <option value="hardware">Hardware Wallet</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Supported Currencies</label>
+                    <input type="text" id="currencies" value="USD, EUR, BTC, ETH, USDT"
+                           placeholder="Comma-separated currency codes">
+                </div>
+
+                <div class="form-group">
+                    <label>Transaction Amount</label>
+                    <input type="number" id="amount" value="100.00" step="0.01"
+                           placeholder="Enter amount">
+                </div>
+
+                <div class="form-group">
+                    <label>Currency</label>
+                    <select id="currency">
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="BTC">BTC - Bitcoin</option>
+                        <option value="ETH">ETH - Ethereum</option>
+                        <option value="USDT">USDT - Tether</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select id="paymentMethod">
+                        <option value="nfc">NFC Tap-to-Pay</option>
+                        <option value="qr">QR Code Scan</option>
+                        <option value="p2p">Peer-to-Peer</option>
+                        <option value="bank">Bank Transfer</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Recipient Address</label>
+                    <input type="text" id="recipient"
+                           value="0x742d35Cc6634C0532925a3b844E76735f18D8E9C"
+                           placeholder="Wallet address or phone number">
+                </div>
+
+                <button class="btn" onclick="testWallet()">🚀 Test Wallet</button>
+                <button class="btn btn-secondary" onclick="simulateNFC()">📱 Simulate NFC Payment</button>
+                <button class="btn btn-secondary" onclick="generateQR()">📷 Generate QR Code</button>
+
+                <div id="testResult"></div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">💳 Current Wallet Balance</h2>
+                <div class="grid-2">
+                    <div>
+                        <div class="balance-display">$1,234.56</div>
+                        <p style="color: #94a3b8;">USD Balance</p>
+                    </div>
+                    <div>
+                        <div class="balance-display">0.0234 BTC</div>
+                        <p style="color: #94a3b8;">Bitcoin Balance</p>
+                    </div>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Recent Transactions</h3>
+                <div class="transaction-item">
+                    <div>
+                        <div style="font-weight: 600; color: #e2e8f0;">Coffee Shop</div>
+                        <div style="font-size: 0.875rem; color: #94a3b8;">NFC Payment • 2 hours ago</div>
+                    </div>
+                    <div style="font-weight: 700; color: #ef4444;">-$5.99</div>
+                </div>
+                <div class="transaction-item">
+                    <div>
+                        <div style="font-weight: 600; color: #e2e8f0;">Salary Deposit</div>
+                        <div style="font-size: 0.875rem; color: #94a3b8;">Bank Transfer • 1 day ago</div>
+                    </div>
+                    <div style="font-weight: 700; color: #22c55e;">+$3,500.00</div>
+                </div>
+                <div class="transaction-item">
+                    <div>
+                        <div style="font-weight: 600; color: #e2e8f0;">Online Shopping</div>
+                        <div style="font-size: 0.875rem; color: #94a3b8;">QR Code • 2 days ago</div>
+                    </div>
+                    <div style="font-weight: 700; color: #ef4444;">-$89.99</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Validation Tab -->
+        <div id="validation" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">✅ Transaction Validation</h2>
+
+                <div class="form-group">
+                    <label>Transaction Hash</label>
+                    <input type="text" id="txHash"
+                           value="0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+                           placeholder="Enter transaction hash">
+                </div>
+
+                <div class="form-group">
+                    <label>Validation Type</label>
+                    <select id="validationType">
+                        <option value="signature">Digital Signature</option>
+                        <option value="balance">Balance Check</option>
+                        <option value="compliance">Compliance (KYC/AML)</option>
+                        <option value="fraud">Fraud Detection</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="validateTransaction()">🔍 Validate Transaction</button>
+
+                <div id="validationResult"></div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">🔐 Security Checks</h2>
+
+                <div class="wallet-card">
+                    <h3 style="color: #22c55e; margin-bottom: 1rem;">Biometric Authentication</h3>
+                    <p style="color: #cbd5e1; margin-bottom: 1rem;">
+                        Face ID / Touch ID verification
+                    </p>
+                    <button class="btn" onclick="simulateBiometric()">
+                        🔓 Test Biometric Auth
+                    </button>
+                </div>
+
+                <div class="wallet-card" style="margin-top: 1rem;">
+                    <h3 style="color: #22c55e; margin-bottom: 1rem;">Two-Factor Authentication</h3>
+                    <p style="color: #cbd5e1; margin-bottom: 1rem;">
+                        SMS / Email / Authenticator app
+                    </p>
+                    <button class="btn" onclick="simulate2FA()">
+                        📱 Test 2FA
+                    </button>
+                </div>
+
+                <div class="wallet-card" style="margin-top: 1rem;">
+                    <h3 style="color: #22c55e; margin-bottom: 1rem;">Hardware Wallet</h3>
+                    <p style="color: #cbd5e1; margin-bottom: 1rem;">
+                        Ledger / Trezor integration
+                    </p>
+                    <button class="btn" onclick="simulateHardware()">
+                        💎 Test Hardware Wallet
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Tab -->
+        <div id="results" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">📊 Test Results</h2>
+                <p style="color: #94a3b8; margin-bottom: 2rem;">
+                    Comprehensive analysis of wallet operations and performance metrics
+                </p>
+
+                <div class="result-box">
+                    <pre id="resultsDisplay">No test results yet. Run tests from the Testing or Validation tabs to see results here.</pre>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">📈 Performance Metrics</h2>
+                <div class="grid-2">
+                    <div class="wallet-card">
+                        <h3 style="color: #22c55e; margin-bottom: 0.5rem;">Transaction Speed</h3>
+                        <div class="balance-display" style="font-size: 1.5rem;">1.2s</div>
+                        <p style="color: #94a3b8;">Average confirmation time</p>
+                    </div>
+                    <div class="wallet-card">
+                        <h3 style="color: #22c55e; margin-bottom: 0.5rem;">Success Rate</h3>
+                        <div class="balance-display" style="font-size: 1.5rem;">99.9%</div>
+                        <p style="color: #94a3b8;">Transaction success rate</p>
+                    </div>
+                    <div class="wallet-card">
+                        <h3 style="color: #22c55e; margin-bottom: 0.5rem;">Gas Fees</h3>
+                        <div class="balance-display" style="font-size: 1.5rem;">$0.12</div>
+                        <p style="color: #94a3b8;">Average transaction cost</p>
+                    </div>
+                    <div class="wallet-card">
+                        <h3 style="color: #22c55e; margin-bottom: 0.5rem;">Uptime</h3>
+                        <div class="balance-display" style="font-size: 1.5rem;">99.99%</div>
+                        <p style="color: #94a3b8;">Service availability</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integration Tab -->
+        <div id="integration" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">🔌 Integration Examples</h2>
+
+                <h3 style="color: #22c55e; margin-bottom: 1rem;">TypeScript SDK</h3>
+                <div class="result-box">
+<pre>import { DigitalWallet, WalletType } from '@wia/digital-wallet-sdk';
+
+// Initialize wallet
+const wallet = await DigitalWallet.create({
+  type: WalletType.HD,
+  currencies: ['USD', 'BTC', 'ETH'],
+  security: {
+    biometric: true,
+    twoFactor: true
+  }
+});
+
+// Send payment
+const tx = await wallet.send({
+  to: '0x742d35Cc6634C0532925a3b844E76735f18D8E9C',
+  amount: 100,
+  currency: 'USD',
+  method: 'instant'
+});
+
+console.log('Transaction:', tx.hash);</pre>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">REST API</h3>
+                <div class="result-box">
+<pre>// Create wallet
+POST /api/v1/wallets
+{
+  "type": "hd",
+  "currencies": ["USD", "EUR", "BTC"],
+  "security": {
+    "encryption": "256-bit",
+    "biometric": true
+  }
+}
+
+// Get balance
+GET /api/v1/wallets/{walletId}/balance?currency=USD
+
+// Send transaction
+POST /api/v1/wallets/{walletId}/send
+{
+  "to": "0x742d35Cc...",
+  "amount": 100.00,
+  "currency": "USD",
+  "method": "nfc"
+}</pre>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">NFC Payment Integration</h3>
+                <div class="result-box">
+<pre>// Enable NFC
+const nfc = await wallet.enableNFC({
+  merchantId: 'merchant_123',
+  amount: 25.99,
+  currency: 'USD'
+});
+
+// Handle tap event
+nfc.on('tap', async (device) => {
+  const result = await wallet.processPayment({
+    device,
+    authenticate: 'biometric'
+  });
+
+  if (result.success) {
+    console.log('Payment completed!');
+  }
+});</pre>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">QR Code Payment</h3>
+                <div class="result-box">
+<pre>// Generate payment QR code
+const qr = await wallet.generateQR({
+  amount: 50.00,
+  currency: 'USD',
+  merchant: 'Coffee Shop',
+  expires: 300 // 5 minutes
+});
+
+// Scan and pay
+const scanner = await wallet.scanQR();
+scanner.on('detected', async (qrData) => {
+  const payment = await wallet.confirmPayment(qrData);
+  console.log('Payment status:', payment.status);
+});</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        function testWallet() {
+            const walletType = document.getElementById('walletType').value;
+            const currencies = document.getElementById('currencies').value;
+            const amount = document.getElementById('amount').value;
+            const currency = document.getElementById('currency').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const recipient = document.getElementById('recipient').value;
+
+            const result = {
+                status: 'success',
+                timestamp: new Date().toISOString(),
+                wallet: {
+                    type: walletType,
+                    supported_currencies: currencies.split(',').map(c => c.trim()),
+                    address: '0x' + Array(40).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('')
+                },
+                transaction: {
+                    id: 'tx_' + Math.random().toString(36).substr(2, 9),
+                    amount: parseFloat(amount),
+                    currency: currency,
+                    method: paymentMethod,
+                    recipient: recipient,
+                    fee: (parseFloat(amount) * 0.001).toFixed(2),
+                    confirmation_time: '1.2s',
+                    status: 'confirmed'
+                },
+                security: {
+                    encryption: '256-bit AES',
+                    signature_verified: true,
+                    fraud_check: 'passed'
+                }
+            };
+
+            const resultHtml = `
+                <div class="result-box">
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                </div>
+            `;
+
+            document.getElementById('testResult').innerHTML = resultHtml;
+            document.getElementById('resultsDisplay').textContent = JSON.stringify(result, null, 2);
+        }
+
+        function simulateNFC() {
+            const result = {
+                status: 'success',
+                payment_method: 'NFC',
+                device: 'iPhone 15 Pro',
+                merchant: 'Coffee Shop',
+                amount: 5.99,
+                currency: 'USD',
+                authentication: 'Face ID verified',
+                transaction_time: '0.8s',
+                confirmation: 'Payment successful'
+            };
+
+            const resultHtml = `
+                <div class="result-box">
+                    <pre class="success">✅ NFC Payment Successful!\n\n${JSON.stringify(result, null, 2)}</pre>
+                </div>
+            `;
+
+            document.getElementById('testResult').innerHTML = resultHtml;
+            document.getElementById('resultsDisplay').textContent = '✅ NFC Payment Successful!\n\n' + JSON.stringify(result, null, 2);
+        }
+
+        function generateQR() {
+            const amount = document.getElementById('amount').value;
+            const currency = document.getElementById('currency').value;
+
+            const qrData = {
+                type: 'payment_request',
+                amount: parseFloat(amount),
+                currency: currency,
+                wallet: '0x742d35Cc6634C0532925a3b844E76735f18D8E9C',
+                expires: new Date(Date.now() + 5 * 60000).toISOString()
+            };
+
+            const resultHtml = `
+                <div class="result-box">
+                    <div class="qr-code">
+                        <div style="text-align: center; color: #0f172a;">
+                            <div style="font-size: 3rem;">📱</div>
+                            <div style="font-weight: 600; margin-top: 0.5rem;">QR Code</div>
+                            <div style="font-size: 0.875rem;">${amount} ${currency}</div>
+                        </div>
+                    </div>
+                    <pre>${JSON.stringify(qrData, null, 2)}</pre>
+                </div>
+            `;
+
+            document.getElementById('testResult').innerHTML = resultHtml;
+            document.getElementById('resultsDisplay').textContent = 'QR Code Generated\n\n' + JSON.stringify(qrData, null, 2);
+        }
+
+        function validateTransaction() {
+            const txHash = document.getElementById('txHash').value;
+            const validationType = document.getElementById('validationType').value;
+
+            const result = {
+                transaction_hash: txHash,
+                validation_type: validationType,
+                status: 'valid',
+                checks: {
+                    signature: 'verified',
+                    balance: 'sufficient',
+                    compliance: 'passed',
+                    fraud_score: 0.01,
+                    risk_level: 'low'
+                },
+                details: {
+                    from: '0x742d35Cc6634C0532925a3b844E76735f18D8E9C',
+                    to: '0x8ba1f109551bd432803012645ac136ddd64dba72',
+                    amount: '100.00 USD',
+                    timestamp: new Date().toISOString(),
+                    confirmations: 12
+                }
+            };
+
+            const resultHtml = `
+                <div class="result-box">
+                    <pre class="success">✅ Transaction Valid\n\n${JSON.stringify(result, null, 2)}</pre>
+                </div>
+            `;
+
+            document.getElementById('validationResult').innerHTML = resultHtml;
+            document.getElementById('resultsDisplay').textContent = '✅ Transaction Valid\n\n' + JSON.stringify(result, null, 2);
+        }
+
+        function simulateBiometric() {
+            setTimeout(() => {
+                alert('✅ Biometric authentication successful!\n\nFace ID verified in 0.3s');
+            }, 500);
+        }
+
+        function simulate2FA() {
+            const code = Math.floor(100000 + Math.random() * 900000);
+            alert(`📱 2FA Code sent to your device:\n\n${code}\n\n(Valid for 60 seconds)`);
+        }
+
+        function simulateHardware() {
+            alert('💎 Hardware Wallet Connected\n\nLedger Nano X detected\nFirmware: v2.1.0\n\nReady to sign transactions');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-EDU-015: Educational Metaverse Simulator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+
+        .header {
+            text-align: center;
+            padding: 3rem 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .tab-content.active { display: block; }
+
+        .demo-section {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .demo-section h3 {
+            color: #10B981;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .demo-section p {
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+
+        .virtual-campus {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            margin: 1rem 0;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar-demo {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 8px;
+            min-height: 350px;
+            margin: 1rem 0;
+            padding: 2rem;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .avatar-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            width: 200px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .avatar-card:hover {
+            transform: translateY(-10px);
+            border-color: #10B981;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .avatar-emoji {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .avatar-name {
+            color: #10B981;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .avatar-type {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10B981;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .metric-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            color: #10B981;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .experience-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .experience-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .experience-card:hover {
+            transform: translateY(-5px);
+            border-color: #10B981;
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .experience-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .experience-title {
+            color: #10B981;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .experience-desc {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .lab-demo {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 1rem 0;
+        }
+
+        .lab-equipment {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 1.5rem 0;
+        }
+
+        .equipment-item {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            width: 120px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .equipment-item:hover {
+            background: rgba(16, 185, 129, 0.2);
+            transform: scale(1.05);
+        }
+
+        .equipment-emoji {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .equipment-name {
+            color: #10B981;
+            font-size: 0.85rem;
+        }
+
+        .status-bar {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            background: #10B981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .scene-3d {
+            background: #000;
+            border-radius: 8px;
+            min-height: 400px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scene-content {
+            text-align: center;
+            z-index: 1;
+        }
+
+        .scene-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 30% 40%, rgba(16, 185, 129, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(5, 150, 105, 0.1) 0%, transparent 50%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 Educational Metaverse Simulator</h1>
+            <p>Experience immersive 3D learning environments - WIA-EDU-015</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('virtual-campus')">Virtual Campus</div>
+            <div class="tab" onclick="switchTab('avatars')">Avatar System</div>
+            <div class="tab" onclick="switchTab('field-trips')">Field Trips</div>
+            <div class="tab" onclick="switchTab('labs')">3D Labs</div>
+            <div class="tab" onclick="switchTab('social')">Social Learning</div>
+            <div class="tab" onclick="switchTab('analytics')">Analytics</div>
+        </div>
+
+        <!-- Virtual Campus Tab -->
+        <div id="virtual-campus" class="tab-content active">
+            <div class="demo-section">
+                <h3>🏛️ Virtual Campus Builder</h3>
+                <p>Design and explore immersive 3D virtual campuses with classrooms, libraries, labs, and social spaces.</p>
+
+                <div class="virtual-campus">
+                    <div class="scene-bg"></div>
+                    <div class="scene-content">
+                        <div style="font-size: 5rem; margin-bottom: 1rem;">🏛️</div>
+                        <div style="color: #10B981; font-size: 1.5rem; font-weight: 600;">Innovation University</div>
+                        <div style="color: #94a3b8; margin-top: 0.5rem;">Virtual Campus - 10,000 students online</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn" onclick="alert('Creating new virtual campus...')">Create Campus</button>
+                    <button class="btn btn-secondary" onclick="alert('Loading campus templates...')">Load Template</button>
+                    <button class="btn btn-secondary" onclick="alert('Customizing environment...')">Customize</button>
+                    <button class="btn btn-secondary" onclick="alert('Inviting students...')">Invite Students</button>
+                </div>
+
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">50</div>
+                        <div class="metric-label">Classrooms</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">5</div>
+                        <div class="metric-label">Libraries</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">20</div>
+                        <div class="metric-label">Labs</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">30</div>
+                        <div class="metric-label">Social Spaces</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Avatars Tab -->
+        <div id="avatars" class="tab-content">
+            <div class="demo-section">
+                <h3>🎭 Avatar Customization System</h3>
+                <p>Create personalized avatars with expressions, gestures, and realistic interactions.</p>
+
+                <div class="avatar-demo">
+                    <div class="avatar-card">
+                        <div class="avatar-emoji">👨‍🎓</div>
+                        <div class="avatar-name">Student Alex</div>
+                        <div class="avatar-type">Realistic Style</div>
+                    </div>
+                    <div class="avatar-card">
+                        <div class="avatar-emoji">👩‍🏫</div>
+                        <div class="avatar-name">Prof. Sarah</div>
+                        <div class="avatar-type">Professional</div>
+                    </div>
+                    <div class="avatar-card">
+                        <div class="avatar-emoji">🧑‍🔬</div>
+                        <div class="avatar-name">Dr. Chen</div>
+                        <div class="avatar-type">Scientist</div>
+                    </div>
+                    <div class="avatar-card">
+                        <div class="avatar-emoji">👾</div>
+                        <div class="avatar-name">Cyber Student</div>
+                        <div class="avatar-type">Stylized</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn" onclick="alert('Customizing avatar appearance...')">Customize Look</button>
+                    <button class="btn btn-secondary" onclick="alert('Adding animations...')">Add Gestures</button>
+                    <button class="btn btn-secondary" onclick="alert('Enabling face tracking...')">Face Tracking</button>
+                    <button class="btn btn-secondary" onclick="alert('Testing voice sync...')">Voice Sync</button>
+                </div>
+
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">1000+</div>
+                        <div class="metric-label">Customization Options</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">50+</div>
+                        <div class="metric-label">Gestures</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">Real-time</div>
+                        <div class="metric-label">Face Tracking</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">100%</div>
+                        <div class="metric-label">Lip Sync</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Field Trips Tab -->
+        <div id="field-trips" class="tab-content">
+            <div class="demo-section">
+                <h3>🌍 Virtual Field Trip Experiences</h3>
+                <p>Explore historical sites, natural wonders, and distant locations in immersive 3D.</p>
+
+                <div class="experience-grid">
+                    <div class="experience-card">
+                        <div class="experience-icon">🏛️</div>
+                        <div class="experience-title">Ancient Rome</div>
+                        <div class="experience-desc">Explore the Colosseum and Roman Forum</div>
+                    </div>
+                    <div class="experience-card">
+                        <div class="experience-icon">🌋</div>
+                        <div class="experience-title">Volcanic Study</div>
+                        <div class="experience-desc">Inside an active volcano safely</div>
+                    </div>
+                    <div class="experience-card">
+                        <div class="experience-icon">🚀</div>
+                        <div class="experience-title">Space Station</div>
+                        <div class="experience-desc">Tour the ISS in zero gravity</div>
+                    </div>
+                    <div class="experience-card">
+                        <div class="experience-icon">🦕</div>
+                        <div class="experience-title">Dinosaur Era</div>
+                        <div class="experience-desc">Walk with prehistoric creatures</div>
+                    </div>
+                    <div class="experience-card">
+                        <div class="experience-icon">🌊</div>
+                        <div class="experience-title">Ocean Depths</div>
+                        <div class="experience-desc">Explore deep sea ecosystems</div>
+                    </div>
+                    <div class="experience-card">
+                        <div class="experience-icon">🗿</div>
+                        <div class="experience-title">Easter Island</div>
+                        <div class="experience-desc">Study ancient Moai statues</div>
+                    </div>
+                    <div class="experience-card">
+                        <div class="experience-icon">🧬</div>
+                        <div class="experience-title">DNA Structure</div>
+                        <div class="experience-desc">Journey inside a living cell</div>
+                    </div>
+                    <div class="experience-card">
+                        <div class="experience-icon">🏔️</div>
+                        <div class="experience-title">Mount Everest</div>
+                        <div class="experience-desc">Climb the world's highest peak</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn" onclick="alert('Starting field trip...')">Start Field Trip</button>
+                    <button class="btn btn-secondary" onclick="alert('Creating custom destination...')">Create Custom</button>
+                    <button class="btn btn-secondary" onclick="alert('Enabling AI guide...')">AI Guide</button>
+                    <button class="btn btn-secondary" onclick="alert('Adding quizzes...')">Add Quizzes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Labs Tab -->
+        <div id="labs" class="tab-content">
+            <div class="demo-section">
+                <h3>🔬 3D Virtual Laboratory</h3>
+                <p>Conduct safe experiments with realistic physics and chemistry simulations.</p>
+
+                <div class="lab-demo">
+                    <div class="scene-3d">
+                        <div class="scene-bg"></div>
+                        <div class="scene-content">
+                            <div style="font-size: 4rem; margin-bottom: 1rem;">🔬⚗️🧪</div>
+                            <div style="color: #10B981; font-size: 1.3rem; font-weight: 600;">Chemistry Lab Active</div>
+                            <div style="color: #94a3b8; margin-top: 0.5rem;">25 students conducting experiments</div>
+                        </div>
+                    </div>
+
+                    <h4 style="color: #10B981; margin: 1.5rem 0 1rem;">Available Equipment:</h4>
+                    <div class="lab-equipment">
+                        <div class="equipment-item">
+                            <div class="equipment-emoji">🧪</div>
+                            <div class="equipment-name">Test Tubes</div>
+                        </div>
+                        <div class="equipment-item">
+                            <div class="equipment-emoji">⚗️</div>
+                            <div class="equipment-name">Beakers</div>
+                        </div>
+                        <div class="equipment-item">
+                            <div class="equipment-emoji">🔥</div>
+                            <div class="equipment-name">Bunsen Burner</div>
+                        </div>
+                        <div class="equipment-item">
+                            <div class="equipment-emoji">🔬</div>
+                            <div class="equipment-name">Microscope</div>
+                        </div>
+                        <div class="equipment-item">
+                            <div class="equipment-emoji">⚖️</div>
+                            <div class="equipment-name">Scale</div>
+                        </div>
+                        <div class="equipment-item">
+                            <div class="equipment-emoji">🧬</div>
+                            <div class="equipment-name">DNA Model</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn" onclick="alert('Starting experiment...')">Start Experiment</button>
+                    <button class="btn btn-secondary" onclick="alert('Viewing safety protocols...')">Safety Guide</button>
+                    <button class="btn btn-secondary" onclick="alert('Recording results...')">Record Data</button>
+                    <button class="btn btn-secondary" onclick="alert('Resetting lab...')">Reset Lab</button>
+                </div>
+
+                <div class="status-bar">
+                    <div class="status-item">
+                        <div class="status-indicator"></div>
+                        <div class="status-text">Physics Engine: Active</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-indicator"></div>
+                        <div class="status-text">Safety Mode: Enabled</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-indicator"></div>
+                        <div class="status-text">Simulation: Running</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Social Tab -->
+        <div id="social" class="tab-content">
+            <div class="demo-section">
+                <h3>👥 Social Learning Spaces</h3>
+                <p>Collaborative zones for group discussions, peer learning, and social interaction.</p>
+
+                <div class="scene-3d">
+                    <div class="scene-bg"></div>
+                    <div class="scene-content">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">👥💬🤝</div>
+                        <div style="color: #10B981; font-size: 1.3rem; font-weight: 600;">Student Lounge Active</div>
+                        <div style="color: #94a3b8; margin-top: 0.5rem;">150 students socializing</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn" onclick="alert('Joining study group...')">Join Study Group</button>
+                    <button class="btn btn-secondary" onclick="alert('Creating collaboration space...')">Create Space</button>
+                    <button class="btn btn-secondary" onclick="alert('Enabling spatial audio...')">Spatial Audio</button>
+                    <button class="btn btn-secondary" onclick="alert('Starting peer session...')">Peer Learning</button>
+                </div>
+
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">25</div>
+                        <div class="metric-label">Active Groups</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">150</div>
+                        <div class="metric-label">Students Online</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">Real-time</div>
+                        <div class="metric-label">Voice Chat</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">100%</div>
+                        <div class="metric-label">Moderated</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="demo-section">
+                <h3>📊 Learning Analytics Dashboard</h3>
+                <p>Track engagement, progress, and learning outcomes in the metaverse.</p>
+
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">9,547</div>
+                        <div class="metric-label">Total Active Users</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">45m</div>
+                        <div class="metric-label">Avg. Session Time</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">87%</div>
+                        <div class="metric-label">Engagement Rate</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">1,234</div>
+                        <div class="metric-label">Completed Quests</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">456</div>
+                        <div class="metric-label">Field Trips Taken</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">789</div>
+                        <div class="metric-label">Experiments Done</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">92%</div>
+                        <div class="metric-label">Satisfaction Score</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">567</div>
+                        <div class="metric-label">Achievements Unlocked</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn" onclick="alert('Generating report...')">Generate Report</button>
+                    <button class="btn btn-secondary" onclick="alert('Exporting data...')">Export Data</button>
+                    <button class="btn btn-secondary" onclick="alert('Viewing heatmaps...')">View Heatmaps</button>
+                    <button class="btn btn-secondary" onclick="alert('Analyzing behavior...')">Behavior Analysis</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

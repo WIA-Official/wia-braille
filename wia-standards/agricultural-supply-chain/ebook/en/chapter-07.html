@@ -1,0 +1,110 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Chapter 7: Phase 4 - Integration</title><style>body{font-family:-apple-system,sans-serif;background:#0f172a;color:#f8fafc;line-height:1.8;max-width:900px;margin:0 auto;padding:40px 20px}h1,h2{color:#84CC16;margin-top:2em}h1{border-bottom:3px solid #84CC16;padding-bottom:10px}a{color:#60a5fa;text-decoration:none}.nav{display:flex;justify-content:space-between;margin:20px 0;padding:20px 0;border-top:1px solid #334155;border-bottom:1px solid #334155}.info-box{background:#1e293b;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #84CC16}pre{background:#1e293b;padding:15px;border-radius:6px;overflow-x:auto;font-size:0.9em}code{color:#10b981}footer{margin-top:60px;padding-top:20px;border-top:1px solid #334155;text-align:center;color:#94a3b8}</style></head><body><div class="nav"><a href="chapter-06.html">← Previous</a><a href="chapter-08.html">Next →</a></div><h1>Chapter 7: Phase 4 - Integration</h1><div class="info-box"><strong>Overview:</strong> WIA ecosystem integration, ERP systems, warehouse management, retailer POS, and regulatory compliance.</div><h2>7.1 WIA Ecosystem Integration</h2><h3>WIA-BLOCKCHAIN Integration</h3><pre><code>const WIABlockchain = require('@wia/blockchain');
+
+async function recordProvenance(shipmentData) {
+  const blockchain = new WIABlockchain({
+    network: 'WIA-SUPPLY-CHAIN'
+  });
+  
+  const tx = await blockchain.submitTransaction({
+    type: 'AGRICULTURAL_SHIPMENT',
+    productId: shipmentData.productInfo.productId,
+    hash: generateHash(shipmentData)
+  });
+  
+  return tx.transactionId;
+}
+</code></pre><h3>WIA-VC Integration</h3><p>Verifiable credentials for product provenance:</p><pre><code>{
+  "@context": ["https://www.w3.org/2018/credentials/v1"],
+  "type": ["VerifiableCredential", "AgriculturalProvenanceCredential"],
+  "issuer": "did:wia:agricultural-authority",
+  "credentialSubject": {
+    "productName": "Organic Tomatoes",
+    "farmName": "Green Valley Farm",
+    "certifications": ["ORGANIC", "GAP"],
+    "blockchainVerified": true
+  }
+}
+</code></pre><h2>7.2 ERP Integration</h2><h3>SAP S/4HANA</h3><pre><code>const SAPClient = require('node-rfc');
+
+async function syncToSAP(shipmentData) {
+  const client = new SAPClient({dest: 'SAP_EWM'});
+  await client.connect();
+  
+  const result = await client.call('BAPI_INBOUND_DELIVERY_CREATE_SLS', {
+    HEADER_DATA: {
+      DELIV_DATE: shipmentData.timestamp.split('T')[0]
+    },
+    ITEM_DATA: [{
+      MATERIAL: shipmentData.productInfo.productId,
+      DELIV_QTY: shipmentData.productInfo.quantity
+    }]
+  });
+  
+  return result.DELIVERY;
+}
+</code></pre><h2>7.3 Warehouse Management Integration</h2><h3>Oracle WMS</h3><pre><code>async function createWarehouseReceipt(shipmentData) {
+  const response = await fetch('https://oracle-wms.com/api/v1/receipts', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      receiptNumber: shipmentData.shipmentId,
+      items: [{
+        itemId: shipmentData.productInfo.productId,
+        quantity: shipmentData.productInfo.quantity,
+        lotNumber: shipmentData.productInfo.batchNumber
+      }],
+      customFields: {
+        blockchainTx: shipmentData.blockchain.transactionId
+      }
+    })
+  });
+  return await response.json();
+}
+</code></pre><h2>7.4 Retailer POS Integration</h2><h3>Walmart Retail Link</h3><pre><code>async function sendToWalmart(shipmentData) {
+  const response = await fetch('https://retaillink.walmart.com/api/v1/asn', {
+    method: 'POST',
+    body: JSON.stringify({
+      asnNumber: shipmentData.shipmentId,
+      items: [{
+        itemNumber: shipmentData.productInfo.upc,
+        quantity: shipmentData.productInfo.quantity,
+        wiaProvenance: {
+          blockchainVerified: true,
+          coldChainMonitored: true
+        }
+      }]
+    })
+  });
+  return await response.json();
+}
+</code></pre><h2>7.5 Regulatory Compliance</h2><h3>FDA FSMA Traceability</h3><pre><code>async function submitFSMA(shipmentData) {
+  const response = await fetch('https://fda.gov/api/fsma/traceability', {
+    method: 'POST',
+    body: JSON.stringify({
+      traceabilityLotCode: shipmentData.productInfo.batchNumber,
+      harvestLocation: shipmentData.origin.farmName,
+      harvestDate: shipmentData.productInfo.harvestDate,
+      blockchainVerified: true,
+      transactionHash: shipmentData.blockchain.transactionId
+    })
+  });
+  return await response.json();
+}
+</code></pre><h2>7.6 Consumer-Facing Integration</h2><h3>QR Code Generation</h3><pre><code>const QRCode = require('qrcode');
+
+async function generateConsumerQRCode(productData) {
+  const consumerData = {
+    productName: productData.productInfo.productName,
+    farmName: productData.origin.farmName,
+    harvestDate: productData.productInfo.harvestDate,
+    verifyUrl: `https://verify.wia.org/product/${productData.productInfo.productId}`,
+    blockchain: {
+      verified: true,
+      txId: productData.blockchain.transactionId
+    }
+  };
+  
+  const qrCode = await QRCode.toDataURL(JSON.stringify(consumerData));
+  return qrCode;
+}
+</code></pre><h2>Chapter Summary</h2><div class="info-box"><h3>Key Takeaways:</h3><ol><li>WIA ecosystem integration provides blockchain, VC, and carbon tracking</li><li>ERP connectors support SAP, Oracle, and other major platforms</li><li>WMS integration enables automated warehouse receipt processing</li><li>Retailer POS integration includes Walmart, Target, Amazon Fresh</li><li>Regulatory compliance APIs cover FDA FSMA, EU Farm to Fork</li><li>Consumer QR codes enable blockchain-verified product verification</li></ol></div><div class="nav"><a href="chapter-06.html">← Previous</a><a href="chapter-08.html">Next →</a></div><footer><p>© 2025 WIA · 弘益人間</p></footer></body></html>

@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 3: Real-time Tracking Systems - WIA-PET-TRACKING</title>
+</head>
+<body>
+<p><a href="index.html">← Table of Contents</a></p>
+
+<h1>Chapter 3: Real-time Tracking Systems</h1>
+
+<blockquote>
+"弘益人間: Real-time location awareness transforms anxious waiting into confident knowing—your pet's safety, always at your fingertips."
+</blockquote>
+
+<hr>
+
+<h2>3.1 Real-time Tracking Architecture</h2>
+
+<p>Real-time pet tracking requires a distributed system architecture that balances responsiveness, reliability, scalability, and battery efficiency. The WIA-PET-TRACKING standard defines a three-tier architecture optimized for these requirements.</p>
+
+<h3>System Components</h3>
+
+<pre>
+REAL-TIME TRACKING ARCHITECTURE
+================================
+
++------------------+
+|   Pet Tracker    |  (Tier 1: Edge Device)
+|   - GPS Module   |
+|   - Cellular     |
+|   - Battery      |
++--------+---------+
+         |
+         | HTTPS/MQTT/CoAP
+         ↓
++------------------+
+|  Cloud Gateway   |  (Tier 2: Backend Services)
+|  - Load Balancer |
+|  - API Servers   |
+|  - Message Queue |
+|  - Database      |
++--------+---------+
+         |
+         | WebSocket/SSE/Push
+         ↓
++------------------+
+|  Client Apps     |  (Tier 3: User Interface)
+|  - Mobile Apps   |
+|  - Web Portal    |
+|  - Watch Apps    |
++------------------+
+</pre>
+
+<h3>Data Flow Patterns</h3>
+
+<table border="1">
+<tr>
+<th>Pattern</th>
+<th>Protocol</th>
+<th>Latency</th>
+<th>Power</th>
+<th>Use Case</th>
+</tr>
+<tr>
+<td>Streaming</td>
+<td>WebSocket</td>
+<td>&lt;100ms</td>
+<td>High</td>
+<td>Active tracking, live following</td>
+</tr>
+<tr>
+<td>Polling</td>
+<td>HTTPS</td>
+<td>500ms-5s</td>
+<td>Medium</td>
+<td>Periodic updates, background refresh</td>
+</tr>
+<tr>
+<td>Push</td>
+<td>FCM/APNS</td>
+<td>1-5s</td>
+<td>Low</td>
+<td>Alerts, geofence violations</td>
+</tr>
+<tr>
+<td>Event-Driven</td>
+<td>MQTT</td>
+<td>&lt;200ms</td>
+<td>Low</td>
+<td>IoT devices, telemetry</td>
+</tr>
+<tr>
+<td>Batch</td>
+<td>HTTPS</td>
+<td>Minutes</td>
+<td>Very Low</td>
+<td>Historical data, analytics</td>
+</tr>
+</table>
+
+<h3>Update Frequency Modes</h3>
+
+<p>The WIA-PET-TRACKING standard defines five update frequency modes that balance real-time responsiveness with battery life:</p>
+
+<table border="1">
+<tr>
+<th>Mode</th>
+<th>Interval</th>
+<th>Battery Life</th>
+<th>Use Case</th>
+<th>Data Usage</th>
+</tr>
+<tr>
+<td>High Performance</td>
+<td>10 seconds</td>
+<td>12-18 hours</td>
+<td>Active search, lost pet</td>
+<td>~50 MB/month</td>
+</tr>
+<tr>
+<td>Real-time</td>
+<td>30 seconds</td>
+<td>24-36 hours</td>
+<td>Live tracking, walks</td>
+<td>~25 MB/month</td>
+</tr>
+<tr>
+<td>Normal</td>
+<td>2 minutes</td>
+<td>48-60 hours</td>
+<td>Daily monitoring</td>
+<td>~10 MB/month</td>
+</tr>
+<tr>
+<td>Eco</td>
+<td>5 minutes</td>
+<td>60-72 hours</td>
+<td>Home monitoring</td>
+<td>~5 MB/month</td>
+</tr>
+<tr>
+<td>Sleep</td>
+<td>30 minutes</td>
+<td>5-7 days</td>
+<td>Low activity, indoor</td>
+<td>~1 MB/month</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>3.2 Location Update Protocol</h2>
+
+<p>The location update protocol defines how trackers communicate position data to backend servers and how clients receive real-time updates.</p>
+
+<h3>Tracker-to-Server Communication</h3>
+
+<p>Trackers SHALL support at least one of the following protocols for sending location updates:</p>
+
+<pre>
+PROTOCOL 1: HTTPS POST (Required for Basic conformance)
+========================================================
+
+Endpoint: POST /api/v1/tracking/update
+Headers:
+  Authorization: Bearer {tracker_jwt_token}
+  Content-Type: application/json
+
+Request Body:
+{
+  "trackerId": "TRK-ABC123",
+  "timestamp": "2025-12-25T10:30:45.123Z",
+  "location": {
+    "latitude": 37.774929,
+    "longitude": -122.419418,
+    "accuracy": 8.5,
+    "altitude": 52.3,
+    "heading": 275.5,
+    "speed": 1.2
+  },
+  "positioning": {
+    "method": "multi-gnss",
+    "satellites": 12,
+    "hdop": 0.9
+  },
+  "battery": {
+    "level": 78,
+    "voltage": 3.87,
+    "estimatedHours": 36
+  }
+}
+
+Response (200 OK):
+{
+  "status": "accepted",
+  "sequenceNumber": 12847,
+  "nextUpdate": "2025-12-25T10:31:15.000Z",
+  "config": {
+    "updateInterval": 30,
+    "mode": "real-time"
+  }
+}
+
+PROTOCOL 2: MQTT (Recommended for Standard conformance)
+========================================================
+
+Topic: wia/tracking/{trackerId}/location
+QoS: 1 (at least once delivery)
+Retain: false
+
+Message Payload (JSON):
+{
+  "timestamp": "2025-12-25T10:30:45.123Z",
+  "location": { ... },
+  "positioning": { ... },
+  "battery": { ... }
+}
+
+PROTOCOL 3: CoAP (Optional for Advanced conformance)
+=====================================================
+
+Endpoint: coap://api.example.com/tracking/update
+Method: POST
+Content-Format: application/json
+
+(Same JSON payload as HTTPS)
+</pre>
+
+<h3>Server-to-Client Communication</h3>
+
+<p>Clients SHALL support at least one of the following protocols for receiving real-time updates:</p>
+
+<pre>
+METHOD 1: WebSocket (Recommended)
+=================================
+
+Connection: wss://api.example.com/ws/tracking
+Protocol: wia-tracking-v1
+
+Client Subscribe Message:
+{
+  "action": "subscribe",
+  "trackerIds": ["TRK-ABC123", "TRK-DEF456"],
+  "updateTypes": ["location", "geofence", "alert"]
+}
+
+Server Location Update:
+{
+  "type": "location",
+  "trackerId": "TRK-ABC123",
+  "timestamp": "2025-12-25T10:30:45.123Z",
+  "location": { ... }
+}
+
+Server Geofence Alert:
+{
+  "type": "geofence",
+  "trackerId": "TRK-ABC123",
+  "geofenceId": "GEO-HOME",
+  "event": "exit",
+  "timestamp": "2025-12-25T10:32:10.456Z",
+  "location": { ... }
+}
+
+METHOD 2: Server-Sent Events (Alternative)
+===========================================
+
+Endpoint: GET /api/v1/tracking/stream?trackers=TRK-ABC123,TRK-DEF456
+Headers:
+  Accept: text/event-stream
+  Authorization: Bearer {user_jwt_token}
+
+Event Stream:
+event: location
+data: {"trackerId":"TRK-ABC123","timestamp":"2025-12-25T10:30:45.123Z",...}
+
+event: geofence
+data: {"trackerId":"TRK-ABC123","geofenceId":"GEO-HOME","event":"exit",...}
+
+METHOD 3: Push Notifications (Alerts only)
+===========================================
+
+For critical alerts (geofence violations, low battery, lost pet)
+Platform: FCM (Android) / APNS (iOS)
+
+Payload:
+{
+  "notification": {
+    "title": "Buddy left Home zone",
+    "body": "Your pet exited the safe zone at 10:32 AM"
+  },
+  "data": {
+    "type": "geofence",
+    "trackerId": "TRK-ABC123",
+    "geofenceId": "GEO-HOME",
+    "event": "exit",
+    "timestamp": "2025-12-25T10:32:10.456Z"
+  }
+}
+</pre>
+
+<hr>
+
+<h2>3.3 Motion Detection and Smart Updates</h2>
+
+<p>Battery-powered pet trackers benefit greatly from motion-aware update strategies that reduce GPS sampling when pets are stationary.</p>
+
+<h3>Accelerometer-Based Motion Detection</h3>
+
+<p>Modern pet trackers include accelerometers to detect movement without activating GPS:</p>
+
+<table border="1">
+<tr>
+<th>State</th>
+<th>Detection Criteria</th>
+<th>GPS Sampling</th>
+<th>Update Frequency</th>
+</tr>
+<tr>
+<td>Stationary</td>
+<td>Acceleration &lt;0.1g for &gt;2 min</td>
+<td>Every 30 minutes</td>
+<td>Only on movement</td>
+</tr>
+<tr>
+<td>Resting</td>
+<td>Minor movement &lt;0.3g</td>
+<td>Every 10 minutes</td>
+<td>Every 30 minutes</td>
+</tr>
+<tr>
+<td>Walking</td>
+<td>Regular pattern 0.3-1.0g</td>
+<td>Every 2 minutes</td>
+<td>Every 2 minutes</td>
+</tr>
+<tr>
+<td>Running</td>
+<td>High activity &gt;1.0g</td>
+<td>Every 30 seconds</td>
+<td>Every 30 seconds</td>
+</tr>
+<tr>
+<td>Alert</td>
+<td>Sudden spike or shake</td>
+<td>Immediate</td>
+<td>Immediate + frequent</td>
+</tr>
+</table>
+
+<h3>Smart Update Algorithm</h3>
+
+<pre>
+ADAPTIVE UPDATE FREQUENCY
+=========================
+
+1. Initialize:
+   - Default mode: "Normal" (2-minute updates)
+   - Motion threshold: 0.3g
+   - Stationary timeout: 5 minutes
+
+2. Continuous Monitoring:
+   - Sample accelerometer every 1 second
+   - Calculate movement magnitude
+   - Detect activity state
+
+3. State Machine:
+
+   IF stationary for &gt;5 minutes:
+     - Reduce GPS sampling to every 30 minutes
+     - Report "Last known location" with staleness
+     - Monitor for movement via accelerometer only
+     - Battery savings: ~80%
+
+   ELSE IF movement detected:
+     - Increase GPS sampling to every 30 seconds
+     - Report actual location updates
+     - Continue for duration of movement + 2 minutes
+
+   ELSE IF geofence boundary nearby (&lt;50m):
+     - Increase GPS sampling to every 10 seconds
+     - Monitor for boundary crossing
+     - Return to normal after crossing or moving away
+
+   ELSE IF battery &lt;20%:
+     - Reduce to "Eco" mode regardless of movement
+     - GPS every 5 minutes minimum
+     - Alert user about low battery
+
+4. Override Conditions:
+   - User activates "Live Tracking": 10-second updates
+   - Lost Pet Mode: 10-second updates, ignore battery
+   - Sleep Schedule: Minimum updates during night hours
+
+Example State Transition:
+10:00 - Pet resting at home (stationary)
+        → GPS every 30 min, battery saver ON
+10:15 - Movement detected (walking)
+        → GPS every 30 sec, normal tracking
+10:45 - Stationary again (sleeping)
+        → GPS every 30 min after 5-min timeout
+11:30 - Movement + near geofence boundary
+        → GPS every 10 sec, high-frequency mode
+11:35 - Crossed boundary, alert sent
+        → Return to movement-based updates
+</pre>
+
+<hr>
+
+<h2>3.4 Network Connectivity and Failover</h2>
+
+<p>Pet trackers must handle variable network conditions gracefully, including areas with poor or no cellular coverage.</p>
+
+<h3>Connectivity States</h3>
+
+<table border="1">
+<tr>
+<th>State</th>
+<th>Condition</th>
+<th>Behavior</th>
+</tr>
+<tr>
+<td>Online</td>
+<td>Active cellular connection</td>
+<td>Normal operation, real-time updates</td>
+</tr>
+<tr>
+<td>Degraded</td>
+<td>Weak signal (&lt;2 bars)</td>
+<td>Reduce update frequency, queue data</td>
+</tr>
+<tr>
+<td>Offline</td>
+<td>No cellular coverage</td>
+<td>Store locations locally, sync when online</td>
+</tr>
+<tr>
+<td>Roaming</td>
+<td>Outside home network</td>
+<td>Continue tracking (may incur roaming fees)</td>
+</tr>
+<tr>
+<td>Wi-Fi Available</td>
+<td>Known Wi-Fi network in range</td>
+<td>Use Wi-Fi for data, save cellular</td>
+</tr>
+</table>
+
+<h3>Offline Buffering Strategy</h3>
+
+<pre>
+OFFLINE DATA MANAGEMENT
+=======================
+
+Local Storage Capacity: Minimum 7 days of location history
+Buffer Format: Circular buffer (FIFO)
+Storage Medium: Flash memory
+
+When Offline:
+1. Continue GPS positioning (if needed)
+2. Store location updates locally with timestamps
+3. Compress older data to extend buffer
+4. Monitor for network connectivity
+
+When Connection Restored:
+1. Authenticate with server
+2. Upload buffered locations in chronological order
+3. Use batch API for efficiency:
+
+   POST /api/v1/tracking/batch
+   {
+     "trackerId": "TRK-ABC123",
+     "locations": [
+       {
+         "timestamp": "2025-12-25T10:00:00Z",
+         "location": {...}
+       },
+       {
+         "timestamp": "2025-12-25T10:02:00Z",
+         "location": {...}
+       },
+       ...
+     ]
+   }
+
+5. Delete uploaded data from local buffer
+6. Resume normal operation
+
+Buffer Overflow Handling:
+- If buffer fills before connectivity restored:
+  - Keep most recent locations (last 24 hours)
+  - Keep locations at geofence crossings (critical)
+  - Compress older data by reducing frequency
+  - Discard oldest non-critical locations
+
+Priority Levels:
+  CRITICAL:   Geofence violations, alerts
+  HIGH:       Movement periods, boundary approaches
+  NORMAL:     Regular updates during activity
+  LOW:        Stationary periods, redundant data
+</pre>
+
+<hr>
+
+<h2>3.5 Live Tracking User Experience</h2>
+
+<p>The client application user experience is critical for effective real-time tracking. The WIA-PET-TRACKING standard provides UX guidelines.</p>
+
+<h3>Map Display Requirements</h3>
+
+<ul>
+<li><strong>Current Location Marker</strong>: Clearly visible icon at pet's latest position</li>
+<li><strong>Accuracy Circle</strong>: Visual representation of position uncertainty</li>
+<li><strong>Heading Indicator</strong>: Arrow showing direction of movement (when available)</li>
+<li><strong>Track History</strong>: Breadcrumb trail or line showing recent path</li>
+<li><strong>Geofence Visualization</strong>: Shaded areas showing safe zones</li>
+<li><strong>Refresh Indicator</strong>: Visual feedback showing last update time</li>
+<li><strong>Connection Status</strong>: Indicator showing tracker online/offline state</li>
+</ul>
+
+<h3>Map Interface Example</h3>
+
+<pre>
++-----------------------------------------------------------+
+|  [≡ Menu]    Buddy's Location    [⚙ Settings] [🔋 78%]  |
++-----------------------------------------------------------+
+|                                                           |
+|    ┌─────────────────────────────────────────────┐      |
+|    │                   [MAP VIEW]                 │      |
+|    │                                               │      |
+|    │          ╭─────────────╮    (Safe Zone)     │      |
+|    │          │   🏠 Home    │   ░░░░░░░░░░░      │      |
+|    │          ╰─────────────╯   ░░░░░░░░░░░      │      |
+|    │                             ░░░░░░░░░░░      │      |
+|    │                                               │      |
+|    │              🐕←                              │      |
+|    │            (Buddy)                            │      |
+|    │          ●●●●●●  (track history)              │      |
+|    │        ●●●                                    │      |
+|    │      ●●                                       │      |
+|    │                                               │      |
+|    │    📍 Central Park                            │      |
+|    │                                               │      |
+|    └─────────────────────────────────────────────┘      |
+|                                                           |
+|  📍 Last Update: 3 seconds ago                           |
+|  🎯 Accuracy: ±8.5m  |  🗺️ 12 satellites                 |
+|  ⬆️ Heading: NW (275°)  |  🏃 Speed: 1.2 m/s (walking)   |
+|                                                           |
+|  ┌─────────────────────────────────────────────┐        |
+|  │  [📍 Center on Pet]  [▶️ Start Live Track]   │        |
+|  └─────────────────────────────────────────────┘        |
++-----------------------------------------------------------+
+</pre>
+
+<h3>Live Tracking Features</h3>
+
+<table border="1">
+<tr>
+<th>Feature</th>
+<th>Description</th>
+<th>User Benefit</th>
+</tr>
+<tr>
+<td>Auto-Center</td>
+<td>Map follows pet automatically</td>
+<td>No manual scrolling needed</td>
+</tr>
+<tr>
+<td>Refresh on Demand</td>
+<td>Pull-to-refresh for immediate update</td>
+<td>Get latest location instantly</td>
+</tr>
+<tr>
+<td>Distance/Direction</td>
+<td>Show distance and compass bearing to pet</td>
+<td>Navigate to pet's location</td>
+</tr>
+<tr>
+<td>Share Location</td>
+<td>Send link to real-time location</td>
+<td>Coordinate with family/friends</td>
+</tr>
+<tr>
+<td>History Playback</td>
+<td>Replay pet's movements over time</td>
+<td>Understand movement patterns</td>
+</tr>
+<tr>
+<td>Satellite View</td>
+<td>Toggle map/satellite imagery</td>
+<td>Better context in unfamiliar areas</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>3.6 Battery Life Optimization</h2>
+
+<p>Battery life is the most critical constraint in pet tracking devices. The WIA-PET-TRACKING standard defines optimization strategies.</p>
+
+<h3>Power Consumption Profile</h3>
+
+<table border="1">
+<tr>
+<th>Component</th>
+<th>Active Power</th>
+<th>Sleep Power</th>
+<th>% of Total</th>
+</tr>
+<tr>
+<td>GPS Module</td>
+<td>30-50 mA</td>
+<td>0.5 mA</td>
+<td>40-60%</td>
+</tr>
+<tr>
+<td>Cellular Modem (4G)</td>
+<td>200-400 mA (tx)</td>
+<td>2-5 mA</td>
+<td>30-40%</td>
+</tr>
+<tr>
+<td>Accelerometer</td>
+<td>0.15 mA</td>
+<td>0.01 mA</td>
+<td>1-2%</td>
+</tr>
+<tr>
+<td>MCU (Microcontroller)</td>
+<td>10-20 mA</td>
+<td>0.05 mA</td>
+<td>5-10%</td>
+</tr>
+<tr>
+<td>Other (LED, sensors)</td>
+<td>5-10 mA</td>
+<td>0.01 mA</td>
+<td>2-5%</td>
+</tr>
+</table>
+
+<h3>Battery Life Calculation</h3>
+
+<pre>
+BATTERY LIFE ESTIMATION
+=======================
+
+Given:
+  Battery capacity: 1000 mAh (typical for small tracker)
+  Update interval: 30 seconds
+  GPS fix time: 5 seconds per update
+  Cellular transmission: 2 seconds per update
+
+Calculation:
+  Per 30-second cycle:
+    - GPS active: 5 sec × 40 mA = 0.055 mAh
+    - Cellular tx: 2 sec × 300 mA = 0.167 mAh
+    - Sleep: 23 sec × 3 mA = 0.019 mAh
+    - Total per cycle: 0.241 mAh
+
+  Cycles per hour: 120
+  Consumption per hour: 120 × 0.241 = 28.9 mAh
+
+  Battery life: 1000 mAh / 28.9 mAh = 34.6 hours
+
+Optimization Strategies:
+1. Reduce update frequency → 72+ hours at 5-min intervals
+2. Use accelerometer wake → 60+ hours with motion detection
+3. Implement A-GPS → Reduce GPS fix time to 1-2 seconds
+4. Use NB-IoT instead of 4G → Reduce cellular power by 50%
+5. Optimize antenna → Improve GPS sensitivity, faster fixes
+
+Mode Comparisons:
+  High Performance (10s):  ~15 hours
+  Real-time (30s):         ~35 hours
+  Normal (2min):           ~55 hours
+  Eco (5min):              ~72 hours
+  Sleep (30min):           ~140 hours (5-6 days)
+</pre>
+
+<hr>
+
+<h2>3.7 Multi-Pet Tracking</h2>
+
+<p>Many pet owners have multiple pets and need to track them simultaneously. The standard supports efficient multi-pet scenarios.</p>
+
+<h3>Multi-Pet Data Structure</h3>
+
+<pre>
+{
+  "userId": "USER-123456",
+  "timestamp": "2025-12-25T10:30:45Z",
+  "pets": [
+    {
+      "petId": "PET-789ABC",
+      "name": "Buddy",
+      "trackerId": "TRK-ABC123",
+      "location": {
+        "latitude": 37.774929,
+        "longitude": -122.419418,
+        "accuracy": 8.5
+      },
+      "status": "active",
+      "battery": 78,
+      "lastUpdate": "2025-12-25T10:30:45Z"
+    },
+    {
+      "petId": "PET-789DEF",
+      "name": "Luna",
+      "trackerId": "TRK-DEF456",
+      "location": {
+        "latitude": 37.775123,
+        "longitude": -122.419234,
+        "accuracy": 9.2
+      },
+      "status": "active",
+      "battery": 65,
+      "lastUpdate": "2025-12-25T10:30:42Z"
+    }
+  ],
+  "summary": {
+    "totalPets": 2,
+    "allSafeZones": true,
+    "distanceBetween": 24.5,
+    "nearestAlert": null
+  }
+}
+</pre>
+
+<h3>Multi-Pet Features</h3>
+
+<ul>
+<li><strong>Group View</strong>: Display all pets on single map</li>
+<li><strong>Distance Matrix</strong>: Show distances between all pets</li>
+<li><strong>Proximity Alerts</strong>: Notify when pets are near each other or separated</li>
+<li><strong>Batch Operations</strong>: Configure geofences for all pets simultaneously</li>
+<li><strong>Comparative Analytics</strong>: Compare activity levels, locations, patterns</li>
+</ul>
+
+<hr>
+
+<h2>3.8 Performance Monitoring and Quality Metrics</h2>
+
+<p>Tracking system quality should be continuously monitored to ensure reliable service.</p>
+
+<h3>Key Performance Indicators</h3>
+
+<table border="1">
+<tr>
+<th>Metric</th>
+<th>Target</th>
+<th>Measurement</th>
+</tr>
+<tr>
+<td>Update Latency</td>
+<td>&lt;5 seconds</td>
+<td>Time from GPS fix to client display</td>
+</tr>
+<tr>
+<td>Location Accuracy</td>
+<td>≤10 meters</td>
+<td>Median horizontal accuracy (95% conf.)</td>
+</tr>
+<tr>
+<td>Uptime</td>
+<td>99.5%</td>
+<td>% time tracker is online and reporting</td>
+</tr>
+<tr>
+<td>Battery Life</td>
+<td>≥48 hours</td>
+<td>Actual battery life in normal mode</td>
+</tr>
+<tr>
+<td>Connection Success Rate</td>
+<td>&gt;95%</td>
+<td>% of update attempts that succeed</td>
+</tr>
+<tr>
+<td>Geofence Detection Rate</td>
+<td>&gt;98%</td>
+<td>% of boundary crossings detected</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>Chapter Summary</h2>
+
+<p><strong>Key Takeaways:</strong></p>
+
+<ol>
+<li><strong>Three-Tier Architecture</strong>: Real-time tracking requires edge devices (trackers), backend services (cloud), and client applications working together seamlessly.</li>
+<li><strong>Adaptive Updates</strong>: Smart update algorithms using motion detection can extend battery life by 80% while maintaining tracking quality during active periods.</li>
+<li><strong>Protocol Flexibility</strong>: The standard supports multiple protocols (HTTPS, MQTT, WebSocket) to accommodate different implementation needs and constraints.</li>
+<li><strong>Offline Resilience</strong>: Buffering location data locally ensures no data loss during connectivity gaps, with automatic sync when connection is restored.</li>
+<li><strong>Battery Optimization</strong>: GPS and cellular transmission are the largest power consumers; optimizing their usage through motion detection and update frequency adjustment is essential for multi-day battery life.</li>
+</ol>
+
+<hr>
+
+<h2>Review Questions</h2>
+
+<ol>
+<li>Describe the three-tier architecture of real-time pet tracking systems and explain the role of each tier.</li>
+<li>How does motion detection using accelerometers improve battery life? Provide specific examples of state transitions.</li>
+<li>Compare HTTPS POST, MQTT, and WebSocket protocols for location updates. When is each most appropriate?</li>
+<li>Explain the offline buffering strategy. How should a tracker prioritize data when the buffer is full?</li>
+<li>Calculate the expected battery life for a 1200 mAh tracker using 2-minute update intervals. Show your work.</li>
+<li>What are the key UX requirements for a live tracking map interface, and why is each important?</li>
+</ol>
+
+<hr>
+
+<p><a href="chapter-04.html">Next Chapter: Geofencing and Safe Zones →</a></p>
+
+<p><a href="index.html">← Back to Table of Contents</a></p>
+
+<hr>
+
+<p><strong>弘益人間 · Benefit All Humanity</strong></p>
+<p>© 2025 WIA - World Certification Industry Association | MIT License</p>
+
+</body>
+</html>

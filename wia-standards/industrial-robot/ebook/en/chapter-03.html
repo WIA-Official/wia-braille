@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: Control Systems and Programming - WIA-ROB-003</title>
+</head>
+<body>
+
+<p><a href="index.html">🏭 WIA-ROB-003 Industrial Robot Standard Ebook</a> | Chapter 3 of 8</p>
+
+<hr>
+
+<h1>⚙️ Chapter 3: Control Systems and Programming</h1>
+
+<blockquote>
+<p><strong>"A robot without programming is just metal and motors. Programming breathes life into the machine."</strong></p>
+<p>Mastering robot programming languages and control systems is essential for unlocking the full potential of industrial automation.</p>
+</blockquote>
+
+<hr>
+
+<h2>3.1 Motion Control Fundamentals</h2>
+
+<p>Motion control is the heart of industrial robot operation, determining how the robot moves from one position to another while ensuring safety, efficiency, and precision.</p>
+
+<h3>3.1.1 Point-to-Point (PTP) Motion</h3>
+
+<p><strong>Point-to-Point (Joint Interpolation)</strong> is the fastest motion type where each joint moves independently to reach the target position.</p>
+
+<p><strong>Characteristics:</strong></p>
+<ul>
+    <li><strong>Path:</strong> Not controlled (unpredictable in Cartesian space)</li>
+    <li><strong>Speed:</strong> Fastest motion type (each joint at maximum safe speed)</li>
+    <li><strong>Accuracy:</strong> Only position matters, path does not</li>
+    <li><strong>Typical Use:</strong> Moving between widely spaced points without obstacles</li>
+</ul>
+
+<p><strong>Mathematical Model:</strong></p>
+
+<pre>
+For each joint i:
+  θᵢ(t) = θᵢ₀ + (θᵢf - θᵢ₀) × s(t)
+
+where s(t) is a smooth profile function (trapezoidal or S-curve)
+
+Velocity Profile Phases:
+  1. Acceleration: a(t) = aₘₐₓ
+  2. Constant velocity: v(t) = vₘₐₓ
+  3. Deceleration: a(t) = -aₘₐₓ
+</pre>
+
+<p><strong>WIA-ROB-003 PTP Command Format:</strong></p>
+
+<pre>
+{
+  "command": "MOVE_PTP",
+  "target_joint": [45.0, -30.0, 60.0, 0.0, 90.0, 0.0],
+  "speed_override": 75,  // percentage of maximum
+  "acceleration": 50,    // percentage of maximum
+  "blend_radius": 0,     // mm (0 = exact stop)
+  "motion_type": "joint_interpolation"
+}
+</pre>
+
+<h3>3.1.2 Linear Motion</h3>
+
+<p><strong>Linear Interpolation (LIN)</strong> moves the TCP in a straight line from start to end position.</p>
+
+<p><strong>Characteristics:</strong></p>
+<ul>
+    <li><strong>Path:</strong> Straight line in Cartesian space</li>
+    <li><strong>Speed:</strong> Constant TCP velocity (joint velocities vary)</li>
+    <li><strong>Accuracy:</strong> Path deviation typically <0.1 mm</li>
+    <li><strong>Typical Use:</strong> Welding, gluing, precise material handling</li>
+</ul>
+
+<p><strong>Implementation:</strong></p>
+
+<pre>
+1. Divide path into small segments (1-10 mm)
+2. For each segment:
+   - Compute desired TCP position
+   - Solve inverse kinematics
+   - Move joints to required positions
+3. Interpolation cycle: 1-8 ms (125-1000 Hz)
+</pre>
+
+<p><strong>Speed Specification:</strong></p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Application</th>
+            <th>Typical Speed</th>
+            <th>Accuracy Required</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Arc Welding</td>
+            <td>5-15 mm/s</td>
+            <td>±0.5 mm</td>
+        </tr>
+        <tr>
+            <td>Gluing/Sealing</td>
+            <td>50-200 mm/s</td>
+            <td>±0.2 mm</td>
+        </tr>
+        <tr>
+            <td>Material Handling</td>
+            <td>500-2000 mm/s</td>
+            <td>±2 mm</td>
+        </tr>
+        <tr>
+            <td>Deburring</td>
+            <td>20-100 mm/s</td>
+            <td>±0.1 mm</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>3.1.3 Circular Motion</h3>
+
+<p><strong>Circular Interpolation (CIRC)</strong> moves the TCP along a circular arc defined by a via point.</p>
+
+<p><strong>Definition:</strong></p>
+<pre>
+Circle defined by three points:
+  - Start point (current TCP position)
+  - Via point (on the arc)
+  - End point (final TCP position)
+
+Plane: Determined by these three points
+Radius: Calculated automatically
+</pre>
+
+<p><strong>Applications:</strong></p>
+<ul>
+    <li>Rounded corners in material handling</li>
+    <li>Circular welding patterns</li>
+    <li>Painting curved surfaces</li>
+    <li>Polishing circular parts</li>
+</ul>
+
+<h3>3.1.4 Trajectory Generation</h3>
+
+<p><strong>Velocity Profiles:</strong></p>
+
+<p>Modern robots use smooth acceleration profiles to minimize jerk (rate of change of acceleration), reducing mechanical stress and improving accuracy.</p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Profile Type</th>
+            <th>Jerk</th>
+            <th>Smoothness</th>
+            <th>Complexity</th>
+            <th>Use Case</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Trapezoidal</td>
+            <td>Infinite (steps)</td>
+            <td>Low</td>
+            <td>Simple</td>
+            <td>Non-critical paths</td>
+        </tr>
+        <tr>
+            <td>S-Curve (7-segment)</td>
+            <td>Limited</td>
+            <td>High</td>
+            <td>Moderate</td>
+            <td>Standard industrial</td>
+        </tr>
+        <tr>
+            <td>Polynomial (5th order)</td>
+            <td>Zero at endpoints</td>
+            <td>Very high</td>
+            <td>High</td>
+            <td>Precision tasks</td>
+        </tr>
+        <tr>
+            <td>B-Spline</td>
+            <td>Continuous</td>
+            <td>Highest</td>
+            <td>Very high</td>
+            <td>Complex 3D paths</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>3.1.5 Blending and Rounding</h3>
+
+<p><strong>Zone Blending</strong> allows the robot to smoothly transition between path segments without stopping.</p>
+
+<pre>
+Without Blending:
+  Point A → [Decel] → [Stop] → [Accel] → Point B
+  Time: High | Smoothness: Low | Cycle time: +15-30%
+
+With Blending (CNT/Rounding):
+  Point A → [Blend Zone] → Point B
+  Time: Low | Smoothness: High | Cycle time: Optimized
+</pre>
+
+<p><strong>Blend Radius Specification:</strong></p>
+
+<ul>
+    <li><strong>Zone Fine (z0):</strong> Exact positioning (0 mm tolerance)</li>
+    <li><strong>Zone 1-10:</strong> Small blending (1-10 mm)</li>
+    <li><strong>Zone 20-100:</strong> Standard blending (20-100 mm)</li>
+    <li><strong>Zone 200+:</strong> Large blending for high-speed paths</li>
+</ul>
+
+<p><strong>Safety Consideration:</strong> Blending must ensure the TCP never violates safety zones or collides with obstacles.</p>
+
+<hr>
+
+<h2>3.2 Programming Languages</h2>
+
+<h3>3.2.1 Manufacturer-Specific Languages</h3>
+
+<p>Most robot manufacturers provide proprietary programming languages optimized for their controllers.</p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Manufacturer</th>
+            <th>Language</th>
+            <th>File Extension</th>
+            <th>Key Features</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>ABB</td>
+            <td>RAPID</td>
+            <td>.mod, .prg</td>
+            <td>Event-driven, multi-tasking, advanced motion</td>
+        </tr>
+        <tr>
+            <td>FANUC</td>
+            <td>KAREL, TP</td>
+            <td>.kl, .ls</td>
+            <td>Structured programming, background logic</td>
+        </tr>
+        <tr>
+            <td>KUKA</td>
+            <td>KRL</td>
+            <td>.src, .dat</td>
+            <td>Pascal-like, integrated PLC logic</td>
+        </tr>
+        <tr>
+            <td>Yaskawa</td>
+            <td>INFORM</td>
+            <td>.jbi</td>
+            <td>Job-based, easy teach pendant programming</td>
+        </tr>
+        <tr>
+            <td>Universal Robots</td>
+            <td>URScript</td>
+            <td>.script</td>
+            <td>Python-like, easy to learn, script-based</td>
+        </tr>
+        <tr>
+            <td>Stäubli</td>
+            <td>VAL3</td>
+            <td>.pgx</td>
+            <td>Real-time, deterministic, multi-robot coordination</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>3.2.2 WIA Robot Language (WRL)</h3>
+
+<p>WIA-ROB-003 defines a vendor-neutral robot programming language to promote interoperability.</p>
+
+<p><strong>WRL Example Program:</strong></p>
+
+<pre>
+// WIA Robot Language (WRL) v1.0
+// Pick and Place Application
+
+PROGRAM PickAndPlace
+
+// Variable Declarations
+VAR
+    homePos: JOINT_POSITION := [0, 0, 0, 0, 0, 0];
+    pickPos: CARTESIAN_POSITION := [500, 200, 300, 0, 180, 0];
+    placePos: CARTESIAN_POSITION := [500, -200, 300, 0, 180, 0];
+    approachOffset: REAL := 100.0;  // mm
+    cycleCount: INTEGER := 0;
+    maxCycles: INTEGER := 1000;
+END_VAR
+
+// Main Program
+BEGIN
+    // Initialize
+    DIGITAL_OUT(1, FALSE);  // Gripper open
+    MOVE_JOINT(homePos, speed:=100, accel:=80);
+    
+    // Main Loop
+    WHILE (cycleCount < maxCycles) DO
+        // Approach pick position
+        MOVE_LINEAR(pickPos + [0, 0, approachOffset, 0, 0, 0], 
+                   speed:=500, blend:=10);
+        
+        // Move to pick position
+        MOVE_LINEAR(pickPos, speed:=100, blend:=0);
+        
+        // Close gripper
+        DIGITAL_OUT(1, TRUE);
+        WAIT(0.5);  // seconds
+        
+        // Check grip
+        IF (DIGITAL_IN(1) == FALSE) THEN
+            ERROR("Grip failed at cycle " + STR(cycleCount));
+            GOTO ErrorHandler;
+        END_IF;
+        
+        // Lift part
+        MOVE_LINEAR(pickPos + [0, 0, approachOffset, 0, 0, 0], 
+                   speed:=300, blend:=20);
+        
+        // Move to place position
+        MOVE_LINEAR(placePos + [0, 0, approachOffset, 0, 0, 0], 
+                   speed:=800, blend:=50);
+        MOVE_LINEAR(placePos, speed:=100, blend:=0);
+        
+        // Open gripper
+        DIGITAL_OUT(1, FALSE);
+        WAIT(0.3);
+        
+        // Retract
+        MOVE_LINEAR(placePos + [0, 0, approachOffset, 0, 0, 0], 
+                   speed:=500, blend:=20);
+        
+        cycleCount := cycleCount + 1;
+    END_WHILE;
+    
+    // Return home
+    MOVE_JOINT(homePos, speed:=100, accel:=50);
+    
+    EXIT;
+
+ErrorHandler:
+    // Emergency stop and alarm
+    STOP_MOTION();
+    ALARM("Pick and place error");
+    DIGITAL_OUT(1, FALSE);  // Open gripper
+    
+END_PROGRAM
+</pre>
+
+<h3>3.2.3 IEC 61131-3 Structured Text</h3>
+
+<p>Industrial automation standard programming language, widely used for PLC integration.</p>
+
+<p><strong>Example:</strong></p>
+
+<pre>
+PROGRAM RobotControl
+VAR
+    Robot: WIA_ROBOT;
+    PartPresent: BOOL;
+    CycleTime: TIME;
+END_VAR
+
+IF PartPresent THEN
+    Robot.MoveLinear(PickPosition, Speed := 500);
+    Robot.Gripper.Close(Force := 50);
+    Robot.MoveLinear(PlacePosition, Speed := 800);
+    Robot.Gripper.Open();
+END_IF;
+</pre>
+
+<h3>3.2.4 Python and High-Level APIs</h3>
+
+<p><strong>WIA-ROB-003 Python SDK:</strong></p>
+
+<pre>
+from wia_robot import WIARobot, CartesianPosition, JointPosition
+
+# Connect to robot
+robot = WIARobot(ip="192.168.1.100", model="WIA-ROB-6DOF")
+
+# Define positions
+home = JointPosition([0, 0, 0, 0, 0, 0])
+pick = CartesianPosition(x=500, y=200, z=300, rx=0, ry=180, rz=0)
+place = CartesianPosition(x=500, y=-200, z=300, rx=0, ry=180, rz=0)
+
+# Program
+robot.move_joint(home, speed=100)
+
+for cycle in range(1000):
+    # Pick
+    robot.move_linear(pick, speed=500)
+    robot.gripper.close(force=50)
+    time.sleep(0.5)
+    
+    # Place
+    robot.move_linear(place, speed=800)
+    robot.gripper.open()
+    time.sleep(0.3)
+
+robot.move_joint(home, speed=100)
+robot.disconnect()
+</pre>
+
+<hr>
+
+<h2>3.3 Path Planning</h2>
+
+<h3>3.3.1 Collision Avoidance</h3>
+
+<p><strong>Static Obstacle Avoidance:</strong></p>
+
+<p>Methods to avoid fixed obstacles in the workspace:</p>
+
+<ol>
+    <li><strong>Manual Programming:</strong> Programmer defines via points to avoid obstacles</li>
+    <li><strong>Workspace Zones:</strong> Define prohibited regions in Cartesian space</li>
+    <li><strong>Joint Limits:</strong> Software limits restrict certain joint ranges</li>
+    <li><strong>Geometric Modeling:</strong> 3D model of cell checks for collisions</li>
+</ol>
+
+<p><strong>Dynamic Obstacle Avoidance:</strong></p>
+
+<ul>
+    <li><strong>Vision-Based:</strong> Camera systems detect moving objects</li>
+    <li><strong>Sensor-Based:</strong> Proximity sensors trigger speed reduction or stop</li>
+    <li><strong>Predictive:</strong> Path planning algorithms recalculate paths in real-time</li>
+</ul>
+
+<h3>3.3.2 Optimization Algorithms</h3>
+
+<p><strong>Rapidly-exploring Random Trees (RRT):</strong></p>
+
+<pre>
+Used for complex path planning in cluttered environments
+Advantages: Probabilistically complete, handles high-DOF robots
+Disadvantages: Paths not optimal, requires post-processing
+
+Algorithm:
+1. Start with initial configuration
+2. Sample random configuration in workspace
+3. Find nearest node in tree
+4. Extend tree towards sample (if collision-free)
+5. Repeat until goal reached or max iterations
+6. Extract path from tree
+7. Smooth path using optimization
+</pre>
+
+<p><strong>A* (A-Star) Planning:</strong></p>
+
+<pre>
+Graph-based search algorithm, guarantees optimal path
+Cost function: f(n) = g(n) + h(n)
+  g(n) = cost from start to node n
+  h(n) = estimated cost from n to goal (heuristic)
+
+Suitable for: Discrete configuration spaces, grid-based maps
+</pre>
+
+<h3>3.3.3 Time-Optimal Path Planning</h3>
+
+<p>Finding the fastest path given velocity and acceleration limits.</p>
+
+<p><strong>Time Scaling Method:</strong></p>
+
+<ol>
+    <li>Define geometric path (independent of time)</li>
+    <li>Compute maximum velocity along path considering:
+        <ul>
+            <li>Joint velocity limits</li>
+            <li>Joint acceleration limits</li>
+            <li>Jerk limits</li>
+            <li>Path curvature</li>
+        </ul>
+    </li>
+    <li>Generate time-optimal velocity profile</li>
+    <li>Execute path with computed timing</li>
+</ol>
+
+<p><strong>Typical Cycle Time Improvements:</strong></p>
+
+<ul>
+    <li>Manual programming: Baseline (100%)</li>
+    <li>Basic optimization: 15-20% reduction</li>
+    <li>Advanced time-optimal: 25-35% reduction</li>
+    <li>Dynamic blending: 30-40% reduction</li>
+</ul>
+
+<hr>
+
+<h2>3.4 Teach Pendant and Offline Programming</h2>
+
+<h3>3.4.1 Teach Pendant Programming</h3>
+
+<p><strong>Hand-Held Teach Pendant (HMI):</strong></p>
+
+<p>Traditional method where the programmer manually jogs the robot to desired positions and records them.</p>
+
+<p><strong>Typical Features:</strong></p>
+<ul>
+    <li>6-axis joystick or directional buttons</li>
+    <li>Touchscreen display (5-12 inches)</li>
+    <li>Program editor with syntax highlighting</li>
+    <li>Variable monitor and debugger</li>
+    <li>I/O status display</li>
+    <li>Emergency stop button</li>
+    <li>Deadman switch (3-position enable device)</li>
+</ul>
+
+<p><strong>Programming Steps:</strong></p>
+
+<ol>
+    <li>Enter teach mode (robot at reduced speed, typically 250 mm/s max)</li>
+    <li>Jog robot to position 1</li>
+    <li>Record position (creates program instruction)</li>
+    <li>Repeat for all positions</li>
+    <li>Add motion commands, I/O operations, logic</li>
+    <li>Test program at reduced speed</li>
+    <li>Optimize and run at production speed</li>
+</ol>
+
+<p><strong>Advantages:</strong></p>
+<ul>
+    <li>Intuitive for operators</li>
+    <li>Exact position teaching</li>
+    <li>No offline tools required</li>
+    <li>Easy for simple programs</li>
+</ul>
+
+<p><strong>Disadvantages:</strong></p>
+<ul>
+    <li>Production downtime during programming</li>
+    <li>Safety risks (human in robot workspace)</li>
+    <li>Time-consuming for complex programs</li>
+    <li>Difficult for precise speed/acceleration tuning</li>
+</ul>
+
+<h3>3.4.2 Offline Programming (OLP)</h3>
+
+<p><strong>3D Simulation Environment:</strong></p>
+
+<p>Programs are created on a PC using CAD data and virtual robot models, then downloaded to the real robot.</p>
+
+<p><strong>Major OLP Software:</strong></p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Software</th>
+            <th>Vendor</th>
+            <th>Key Features</th>
+            <th>Supported Robots</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>RobotStudio</td>
+            <td>ABB</td>
+            <td>Virtual controller, realistic simulation</td>
+            <td>ABB (native), others via import</td>
+        </tr>
+        <tr>
+            <td>RoboGuide</td>
+            <td>FANUC</td>
+            <td>Integrated vision, welding simulation</td>
+            <td>FANUC (native), others limited</td>
+        </tr>
+        <tr>
+            <td>KUKA.Sim</td>
+            <td>KUKA</td>
+            <td>Physics simulation, PLC integration</td>
+            <td>KUKA (native), others via import</td>
+        </tr>
+        <tr>
+            <td>Process Simulate</td>
+            <td>Siemens</td>
+            <td>Factory simulation, ergonomics</td>
+            <td>Multi-vendor support</td>
+        </tr>
+        <tr>
+            <td>RoboDK</td>
+            <td>RoboDK Inc.</td>
+            <td>Multi-robot, affordable, Python API</td>
+            <td>50+ robot brands</td>
+        </tr>
+        <tr>
+            <td>Visual Components</td>
+            <td>Visual Components</td>
+            <td>Material flow, logistics simulation</td>
+            <td>Multi-vendor, library-based</td>
+        </tr>
+    </tbody>
+</table>
+
+<p><strong>OLP Workflow:</strong></p>
+
+<ol>
+    <li><strong>Import CAD Data:</strong> Load part and fixture geometry</li>
+    <li><strong>Place Robot:</strong> Position robot in virtual cell</li>
+    <li><strong>Define Targets:</strong> Create TCP positions from CAD features</li>
+    <li><strong>Generate Path:</strong> Automatic or manual path creation</li>
+    <li><strong>Optimize:</strong> Collision checking, cycle time optimization</li>
+    <li><strong>Simulate:</strong> Virtual execution with timing analysis</li>
+    <li><strong>Post-Process:</strong> Convert to robot-specific language</li>
+    <li><strong>Download:</strong> Transfer program to real robot</li>
+    <li><strong>Touch-Up:</strong> Minor adjustments on real robot (typically <5% of positions)</li>
+</ol>
+
+<p><strong>Benefits:</strong></p>
+<ul>
+    <li>70-90% reduction in programming time for complex cells</li>
+    <li>No production downtime</li>
+    <li>Collision detection before execution</li>
+    <li>Cycle time optimization</li>
+    <li>Documentation and visualization</li>
+    <li>Reachability analysis before robot purchase</li>
+</ul>
+
+<h3>3.4.3 Lead-Through Programming</h3>
+
+<p>Modern collaborative robots offer intuitive lead-through (hand-guiding) programming.</p>
+
+<p><strong>Process:</strong></p>
+<ol>
+    <li>Activate lead-through mode</li>
+    <li>Physically guide robot arm to positions</li>
+    <li>Press button to record waypoints</li>
+    <li>Add logic via graphical interface</li>
+    <li>Test and run program</li>
+</ol>
+
+<p><strong>Requirements:</strong></p>
+<ul>
+    <li>Force-torque sensors on all joints</li>
+    <li>Gravity compensation algorithms</li>
+    <li>Low-inertia mechanical design</li>
+    <li>Collision detection</li>
+</ul>
+
+<p><strong>Typical for:</strong> Universal Robots, Techman, ABB YuMi, FANUC CRX series</p>
+
+<hr>
+
+<h2>3.5 Advanced Control Techniques</h2>
+
+<h3>3.5.1 Force Control</h3>
+
+<p><strong>Impedance Control:</strong></p>
+
+<p>Robot acts as a mechanical impedance (mass-spring-damper) in response to external forces.</p>
+
+<pre>
+Impedance Equation:
+F = M(ẍ - ẍd) + D(ẋ - ẋd) + K(x - xd)
+
+where:
+  F = external force
+  M = virtual mass
+  D = virtual damping
+  K = virtual stiffness
+  x = actual position
+  xd = desired position
+</pre>
+
+<p><strong>Applications:</strong></p>
+<ul>
+    <li>Assembly with compliance (peg-in-hole)</li>
+    <li>Polishing and grinding (constant force)</li>
+    <li>Deburring (force-controlled edge following)</li>
+    <li>Human-robot collaboration (safety compliance)</li>
+</ul>
+
+<h3>3.5.2 Vision-Guided Control</h3>
+
+<p><strong>2D Vision:</strong></p>
+<ul>
+    <li>Part location and orientation</li>
+    <li>Quality inspection</li>
+    <li>Barcode/QR code reading</li>
+    <li>Pick-from-bin with 2D pattern matching</li>
+</ul>
+
+<p><strong>3D Vision:</strong></p>
+<ul>
+    <li>Bin picking with arbitrary orientations</li>
+    <li>Volumetric inspection</li>
+    <li>Palletizing optimization</li>
+    <li>Welding seam tracking</li>
+</ul>
+
+<p><strong>Eye-in-Hand vs. Eye-to-Hand:</strong></p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Configuration</th>
+            <th>Advantages</th>
+            <th>Disadvantages</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Eye-in-Hand (camera on robot)</td>
+            <td>Moves with robot, flexible viewing angles</td>
+            <td>Limited field of view, payload reduction</td>
+        </tr>
+        <tr>
+            <td>Eye-to-Hand (fixed camera)</td>
+            <td>Large field of view, no payload penalty</td>
+            <td>Fixed perspective, occlusion issues</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>3.5.3 Adaptive Control</h3>
+
+<p><strong>Machine Learning Integration:</strong></p>
+
+<ul>
+    <li><strong>Reinforcement Learning:</strong> Robot learns optimal picking strategies</li>
+    <li><strong>Neural Networks:</strong> Pattern recognition for quality control</li>
+    <li><strong>Predictive Maintenance:</strong> Anomaly detection in joint currents/vibrations</li>
+    <li><strong>Process Optimization:</strong> Automatic tuning of welding/painting parameters</li>
+</ul>
+
+<hr>
+
+<h2>3.6 Summary</h2>
+
+<p>This chapter covered robot control and programming:</p>
+
+<ul>
+    <li>Motion control fundamentals: PTP, linear, circular interpolation</li>
+    <li>Trajectory generation with smooth velocity profiles</li>
+    <li>Programming languages: vendor-specific and WIA-ROB-003 standard</li>
+    <li>Path planning algorithms for collision avoidance and optimization</li>
+    <li>Programming methods: teach pendant, offline programming, lead-through</li>
+    <li>Advanced control: force control, vision guidance, machine learning</li>
+</ul>
+
+<p><strong>Key Takeaways:</strong></p>
+<ul>
+    <li>Choice of motion type (PTP vs. linear) affects cycle time and path accuracy</li>
+    <li>Blending significantly reduces cycle time while maintaining safety</li>
+    <li>Offline programming minimizes production downtime for complex applications</li>
+    <li>Force and vision control enable adaptive, flexible automation</li>
+</ul>
+
+<p>Next chapter: Safety standards and regulations (ISO 10218, ISO/TS 15066).</p>
+
+<hr>
+
+<p><strong>Previous:</strong> <a href="chapter-02.html">← Chapter 2: Robot Anatomy and Kinematics</a></p>
+<p><strong>Next:</strong> <a href="chapter-04.html">Chapter 4: Safety Standards and Regulations →</a></p>
+
+<hr>
+
+<footer>
+    <p><strong>弘益人間 (Hongik Ingan)</strong> · Benefit All Humanity</p>
+    <p>WIA - World Certification Industry Association</p>
+    <p>© 2025 MIT License</p>
+</footer>
+
+</body>
+</html>

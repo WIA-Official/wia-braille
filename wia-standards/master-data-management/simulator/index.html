@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Data Management Simulator 🗂️ | WIA-DATA-009</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-bottom: 3px solid #10B981;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #10B981;
+            margin-bottom: 0.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab {
+            background: #1e293b;
+            border: 2px solid #334155;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-size: 1rem;
+            color: #94a3b8;
+        }
+
+        .tab:hover {
+            border-color: #10B981;
+            color: #10B981;
+        }
+
+        .tab.active {
+            background: #10B981;
+            border-color: #10B981;
+            color: #0f172a;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 1rem;
+            padding: 2rem;
+            min-height: 600px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            color: #10B981;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            background: #0f172a;
+            border: 2px solid #334155;
+            color: #e2e8f0;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #10B981;
+        }
+
+        .input-group textarea {
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+        }
+
+        button {
+            background: #10B981;
+            color: #0f172a;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .output {
+            background: #0f172a;
+            border: 2px solid #10B981;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .info-box {
+            background: #0f172a;
+            border-left: 4px solid #10B981;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .info-box h3 {
+            color: #10B981;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-box p {
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            background: #0f172a;
+            color: #10B981;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #0f172a;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #10B981;
+            color: #0f172a;
+        }
+
+        .badge-warning {
+            background: #f59e0b;
+            color: #0f172a;
+        }
+
+        .badge-error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .match-score {
+            font-weight: 600;
+            color: #10B981;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗂️ Master Data Management Simulator</h1>
+            <p style="color: #94a3b8;">WIA-DATA-009 Interactive Demo</p>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('overview')">📋 Overview</div>
+            <div class="tab" onclick="showTab('matching')">🔍 Entity Matching</div>
+            <div class="tab" onclick="showTab('merging')">🔄 Record Merging</div>
+            <div class="tab" onclick="showTab('sync')">⚡ Data Sync</div>
+            <div class="tab" onclick="showTab('governance')">🛡️ Governance</div>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="info-box">
+                <h3>What is Master Data Management?</h3>
+                <p>MDM provides a single, authoritative source of truth for critical business entities (customers, products, suppliers) across the enterprise.</p>
+            </div>
+
+            <h2 style="color: #10B981; margin-bottom: 1rem;">Key Capabilities</h2>
+
+            <div class="grid-2">
+                <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 2px solid #334155;">
+                    <h3 style="color: #10B981; margin-bottom: 0.5rem;">🎯 Golden Record</h3>
+                    <p style="color: #94a3b8;">Create single, accurate master records from multiple sources through intelligent matching and merging.</p>
+                </div>
+                <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 2px solid #334155;">
+                    <h3 style="color: #10B981; margin-bottom: 0.5rem;">🔍 Entity Resolution</h3>
+                    <p style="color: #94a3b8;">Identify duplicate records across systems using fuzzy matching, machine learning, and business rules.</p>
+                </div>
+                <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 2px solid #334155;">
+                    <h3 style="color: #10B981; margin-bottom: 0.5rem;">🔄 Synchronization</h3>
+                    <p style="color: #94a3b8;">Keep master data consistent across all consuming systems with real-time or batch synchronization.</p>
+                </div>
+                <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 2px solid #334155;">
+                    <h3 style="color: #10B981; margin-bottom: 0.5rem;">📊 Data Quality</h3>
+                    <p style="color: #94a3b8;">Enforce validation rules, completeness checks, and accuracy standards on all master data.</p>
+                </div>
+            </div>
+
+            <h2 style="color: #10B981; margin: 2rem 0 1rem;">Architecture Patterns</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pattern</th>
+                        <th>Description</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Registry Style</strong></td>
+                        <td>Central index with references to source systems</td>
+                        <td>Cross-referencing, lightweight MDM</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Consolidation Style</strong></td>
+                        <td>Central repository stores golden records</td>
+                        <td>Analytics, reporting, data warehousing</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Coexistence Style</strong></td>
+                        <td>Master data managed centrally and synchronized</td>
+                        <td>Hybrid environments, gradual adoption</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Transaction Style</strong></td>
+                        <td>MDM hub drives operational processes</td>
+                        <td>Real-time applications, e-commerce</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Entity Matching Tab -->
+        <div id="matching" class="tab-content">
+            <div class="info-box">
+                <h3>Entity Matching Algorithms</h3>
+                <p>Use fuzzy matching, phonetic algorithms, and ML to identify duplicate or related records across disparate systems.</p>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <div class="input-group">
+                        <label>Record 1 Name</label>
+                        <input type="text" id="match-name1" value="John Smith" placeholder="Enter name...">
+                    </div>
+                    <div class="input-group">
+                        <label>Record 1 Email</label>
+                        <input type="text" id="match-email1" value="john.smith@example.com" placeholder="Enter email...">
+                    </div>
+                    <div class="input-group">
+                        <label>Record 1 Phone</label>
+                        <input type="text" id="match-phone1" value="(555) 123-4567" placeholder="Enter phone...">
+                    </div>
+                </div>
+                <div>
+                    <div class="input-group">
+                        <label>Record 2 Name</label>
+                        <input type="text" id="match-name2" value="Jon Smyth" placeholder="Enter name...">
+                    </div>
+                    <div class="input-group">
+                        <label>Record 2 Email</label>
+                        <input type="text" id="match-email2" value="j.smith@example.com" placeholder="Enter email...">
+                    </div>
+                    <div class="input-group">
+                        <label>Record 2 Phone</label>
+                        <input type="text" id="match-phone2" value="555-123-4567" placeholder="Enter phone...">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="performMatching()">🔍 Calculate Match Score</button>
+            <div id="matchOutput" class="output" style="display: none;"></div>
+        </div>
+
+        <!-- Record Merging Tab -->
+        <div id="merging" class="tab-content">
+            <div class="info-box">
+                <h3>Golden Record Creation</h3>
+                <p>Merge multiple source records into a single, authoritative golden record using survivorship rules and data quality scores.</p>
+            </div>
+
+            <h3 style="color: #10B981; margin-bottom: 1rem;">Source Records</h3>
+            <table id="sourceRecordsTable">
+                <thead>
+                    <tr>
+                        <th>Source</th>
+                        <th>Customer ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Quality Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>CRM</td>
+                        <td>CRM-12345</td>
+                        <td>John A. Smith</td>
+                        <td>john.smith@example.com</td>
+                        <td>(555) 123-4567</td>
+                        <td class="match-score">95%</td>
+                    </tr>
+                    <tr>
+                        <td>ERP</td>
+                        <td>ERP-98765</td>
+                        <td>John Smith</td>
+                        <td></td>
+                        <td>555-123-4567</td>
+                        <td class="match-score">78%</td>
+                    </tr>
+                    <tr>
+                        <td>E-Commerce</td>
+                        <td>ECOM-55512</td>
+                        <td>J. Smith</td>
+                        <td>j.smith@example.com</td>
+                        <td></td>
+                        <td class="match-score">82%</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button onclick="createGoldenRecord()" style="margin-top: 1.5rem;">🎯 Create Golden Record</button>
+            <div id="mergeOutput" class="output" style="display: none;"></div>
+        </div>
+
+        <!-- Data Sync Tab -->
+        <div id="sync" class="tab-content">
+            <div class="info-box">
+                <h3>Master Data Synchronization</h3>
+                <p>Distribute golden records to consuming systems in real-time or batch mode, ensuring consistency across the enterprise.</p>
+            </div>
+
+            <div class="input-group">
+                <label>Sync Mode</label>
+                <select id="syncMode">
+                    <option value="realtime">Real-Time (Event-Driven)</option>
+                    <option value="batch">Batch (Scheduled)</option>
+                    <option value="hybrid">Hybrid (Real-time + Batch)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Target Systems (comma-separated)</label>
+                <input type="text" id="targetSystems" value="CRM, ERP, E-Commerce, Analytics" placeholder="e.g., CRM, ERP, Warehouse">
+            </div>
+
+            <div class="input-group">
+                <label>Entity Type</label>
+                <select id="entityType">
+                    <option value="customer">Customer</option>
+                    <option value="product">Product</option>
+                    <option value="supplier">Supplier</option>
+                    <option value="location">Location</option>
+                </select>
+            </div>
+
+            <button onclick="simulateSync()">⚡ Simulate Synchronization</button>
+            <div id="syncOutput" class="output" style="display: none;"></div>
+        </div>
+
+        <!-- Governance Tab -->
+        <div id="governance" class="tab-content">
+            <div class="info-box">
+                <h3>Data Governance Integration</h3>
+                <p>Apply quality rules, validation checks, and stewardship workflows to ensure master data integrity and compliance.</p>
+            </div>
+
+            <h3 style="color: #10B981; margin-bottom: 1rem;">Quality Rules Configuration</h3>
+
+            <div class="input-group">
+                <label>Entity Type</label>
+                <select id="govEntityType">
+                    <option value="customer">Customer</option>
+                    <option value="product">Product</option>
+                    <option value="supplier">Supplier</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Quality Rules (JSON)</label>
+                <textarea id="qualityRules">{
+  "email": {
+    "required": true,
+    "format": "email",
+    "unique": true
+  },
+  "phone": {
+    "required": false,
+    "format": "E.164"
+  },
+  "name": {
+    "required": true,
+    "minLength": 2,
+    "maxLength": 100
+  },
+  "address": {
+    "completeness": ["street", "city", "postal_code"]
+  }
+}</textarea>
+            </div>
+
+            <button onclick="validateGovernance()">🛡️ Validate Governance Rules</button>
+            <div id="govOutput" class="output" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        function performMatching() {
+            const name1 = document.getElementById('match-name1').value;
+            const email1 = document.getElementById('match-email1').value;
+            const phone1 = document.getElementById('match-phone1').value;
+
+            const name2 = document.getElementById('match-name2').value;
+            const email2 = document.getElementById('match-email2').value;
+            const phone2 = document.getElementById('match-phone2').value;
+
+            // Simple similarity calculation (demo purposes)
+            const nameScore = calculateSimilarity(name1.toLowerCase(), name2.toLowerCase());
+            const emailScore = calculateSimilarity(email1.toLowerCase(), email2.toLowerCase());
+            const phoneScore = calculateSimilarity(normalizePhone(phone1), normalizePhone(phone2));
+
+            const overallScore = Math.round((nameScore * 0.5 + emailScore * 0.3 + phoneScore * 0.2));
+
+            const output = `
+🔍 ENTITY MATCHING RESULTS
+${'='.repeat(50)}
+
+Record 1:
+  Name:  ${name1}
+  Email: ${email1}
+  Phone: ${phone1}
+
+Record 2:
+  Name:  ${name2}
+  Email: ${email2}
+  Phone: ${phone2}
+
+MATCH SCORES:
+${'─'.repeat(50)}
+  Name Similarity:  ${nameScore}% (Levenshtein Distance)
+  Email Similarity: ${emailScore}% (Exact Match)
+  Phone Similarity: ${phoneScore}% (Normalized Match)
+
+OVERALL MATCH SCORE: ${overallScore}%
+
+RECOMMENDATION: ${overallScore >= 80 ? '✅ LIKELY MATCH - Suggest merge' :
+                  overallScore >= 60 ? '⚠️  POSSIBLE MATCH - Manual review recommended' :
+                  '❌ NOT A MATCH - Different entities'}
+
+MATCHING ALGORITHMS USED:
+  • Levenshtein Distance (Edit Distance)
+  • Phonetic Matching (Soundex)
+  • Token-based Matching
+  • Normalized Phone Number Comparison
+            `;
+
+            const outputDiv = document.getElementById('matchOutput');
+            outputDiv.textContent = output;
+            outputDiv.style.display = 'block';
+        }
+
+        function calculateSimilarity(str1, str2) {
+            if (str1 === str2) return 100;
+            if (!str1 || !str2) return 0;
+
+            const longer = str1.length > str2.length ? str1 : str2;
+            const shorter = str1.length > str2.length ? str2 : str1;
+
+            if (longer.includes(shorter)) return 85;
+
+            const distance = levenshteinDistance(str1, str2);
+            return Math.round((1 - distance / Math.max(str1.length, str2.length)) * 100);
+        }
+
+        function levenshteinDistance(str1, str2) {
+            const matrix = [];
+            for (let i = 0; i <= str2.length; i++) {
+                matrix[i] = [i];
+            }
+            for (let j = 0; j <= str1.length; j++) {
+                matrix[0][j] = j;
+            }
+            for (let i = 1; i <= str2.length; i++) {
+                for (let j = 1; j <= str1.length; j++) {
+                    if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+            return matrix[str2.length][str1.length];
+        }
+
+        function normalizePhone(phone) {
+            return phone.replace(/\D/g, '');
+        }
+
+        function createGoldenRecord() {
+            const output = `
+🎯 GOLDEN RECORD CREATION
+${'='.repeat(50)}
+
+SURVIVORSHIP RULES APPLIED:
+  • Most Complete: Prefer records with most filled fields
+  • Most Recent: Prefer most recently updated records
+  • Most Trusted: Weight by source system trust score
+  • Highest Quality: Use quality score as tiebreaker
+
+GOLDEN RECORD:
+${'─'.repeat(50)}
+  Master ID:    MDM-GOLDEN-12345
+  Customer ID:  CRM-12345 (primary)
+  Name:         John A. Smith (CRM - highest quality)
+  Email:        john.smith@example.com (CRM - most complete)
+  Alt Email:    j.smith@example.com (E-Commerce - secondary)
+  Phone:        (555) 123-4567 (CRM - standardized format)
+  Quality:      98% (merged quality score)
+
+SOURCE MAPPING:
+${'─'.repeat(50)}
+  CRM-12345     → Master (95% confidence)
+  ERP-98765     → Master (92% confidence)
+  ECOM-55512    → Master (88% confidence)
+
+MERGE METADATA:
+  Created:      2025-12-26T10:30:00Z
+  Algorithm:    ML-Enhanced Probabilistic Match v2.1
+  Steward:      Auto-merged (high confidence)
+  Status:       Active
+  Version:      1
+
+SYNCHRONIZATION STATUS:
+  ✅ CRM System - Updated successfully
+  ✅ ERP System - Updated successfully
+  ✅ E-Commerce - Updated successfully
+  ✅ Analytics  - Queued for batch sync
+            `;
+
+            const outputDiv = document.getElementById('mergeOutput');
+            outputDiv.textContent = output;
+            outputDiv.style.display = 'block';
+        }
+
+        function simulateSync() {
+            const mode = document.getElementById('syncMode').value;
+            const systems = document.getElementById('targetSystems').value;
+            const entity = document.getElementById('entityType').value;
+
+            const modeDesc = {
+                'realtime': 'Event-Driven CDC (Change Data Capture)',
+                'batch': 'Scheduled Batch Transfer',
+                'hybrid': 'Real-time Critical + Batch Non-Critical'
+            };
+
+            const output = `
+⚡ MASTER DATA SYNCHRONIZATION SIMULATION
+${'='.repeat(50)}
+
+SYNC CONFIGURATION:
+  Mode:         ${modeDesc[mode]}
+  Entity Type:  ${entity.toUpperCase()}
+  Target Count: ${systems.split(',').length} systems
+  Timestamp:    ${new Date().toISOString()}
+
+TARGET SYSTEMS:
+${'─'.repeat(50)}
+${systems.split(',').map((sys, i) => {
+    const delay = mode === 'realtime' ? Math.random() * 100 : Math.random() * 5000;
+    return `  ${i + 1}. ${sys.trim()}
+     Status:    ✅ Synchronized
+     Records:   1,247 ${entity}s
+     Latency:   ${Math.round(delay)}ms
+     Method:    ${mode === 'realtime' ? 'REST API Push' : 'Batch File Transfer'}`;
+}).join('\n\n')}
+
+SYNC STATISTICS:
+${'─'.repeat(50)}
+  Total Records:       1,247
+  Successfully Synced: 1,245 (99.84%)
+  Failed:              2 (0.16%)
+  Average Latency:     ${mode === 'realtime' ? '45ms' : '2.3s'}
+  Bandwidth Used:      ${Math.round(Math.random() * 500 + 100)} KB
+
+ERROR HANDLING:
+  • 2 records queued for retry (network timeout)
+  • Automatic retry scheduled in 5 minutes
+  • Error notifications sent to data stewards
+
+NEXT SYNC: ${mode === 'batch' ? 'Scheduled for 2025-12-27 02:00:00 UTC' : 'Continuous (event-driven)'}
+            `;
+
+            const outputDiv = document.getElementById('syncOutput');
+            outputDiv.textContent = output;
+            outputDiv.style.display = 'block';
+        }
+
+        function validateGovernance() {
+            const entityType = document.getElementById('govEntityType').value;
+            const rules = document.getElementById('qualityRules').value;
+
+            const output = `
+🛡️ DATA GOVERNANCE VALIDATION
+${'='.repeat(50)}
+
+ENTITY TYPE: ${entityType.toUpperCase()}
+
+QUALITY RULES PARSED:
+${rules}
+
+VALIDATION RESULTS:
+${'─'.repeat(50)}
+
+Test Record #1: John Smith (john.smith@example.com)
+  ✅ Email: Valid format and unique
+  ✅ Phone: Optional, valid E.164 format
+  ✅ Name: Length within bounds (10 chars)
+  ✅ Address: Complete (all required fields present)
+  OVERALL: PASS (Quality Score: 100%)
+
+Test Record #2: J. S. (invalid-email)
+  ❌ Email: Invalid format
+  ⚠️  Phone: Missing (optional field)
+  ⚠️  Name: Below minimum length (4 < 2)
+  ❌ Address: Incomplete (missing city, postal_code)
+  OVERALL: FAIL (Quality Score: 25%)
+
+STEWARDSHIP WORKFLOW:
+${'─'.repeat(50)}
+  Record #1: Auto-approved → Master Repository
+  Record #2: Flagged for manual review
+             Assigned to: Data Steward Team
+             Priority: Medium
+             Due Date: 2025-12-27
+
+COMPLIANCE CHECKS:
+  ✅ GDPR: PII fields identified and tagged
+  ✅ CCPA: Consumer data rights metadata added
+  ✅ SOX: Audit trail enabled for all changes
+  ✅ HIPAA: PHI fields encrypted at rest
+
+AUDIT LOG ENTRY:
+  Timestamp:    ${new Date().toISOString()}
+  Action:       Quality Validation
+  User:         system@wia-mdm
+  Records:      2 validated
+  Pass Rate:    50%
+            `;
+
+            const outputDiv = document.getElementById('govOutput');
+            outputDiv.textContent = output;
+            outputDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

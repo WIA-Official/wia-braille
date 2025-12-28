@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제2장: 기술 아키텍처 - WIA 스트리밍</title>
+    <link rel="icon" href="/favicon.ico">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #0f172a; color: #e2e8f0; line-height: 1.8;">
+
+<nav style="margin-bottom: 30px; padding: 15px; background: #1e293b; border-radius: 8px;">
+    <a href="index.html" style="color: #a855f7; text-decoration: none;">📚 목차</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <span style="color: #64748b;">제2장 / 8장</span>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-01.html" style="color: #a855f7; text-decoration: none;">← 이전</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-03.html" style="color: #a855f7; text-decoration: none;">다음 →</a>
+</nav>
+
+<h1 style="color: #a855f7;">제2장: 기술 아키텍처</h1>
+
+<blockquote style="background: #1e293b; padding: 20px; border-left: 4px solid #fbbf24; margin: 20px 0;">
+<p style="color: #fbbf24; font-style: italic;">"좋은 아키텍처는 보이지 않습니다. 학생은 기술이 아닌 학습에 집중합니다."</p>
+</blockquote>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">2.1 WIA 스트리밍 아키텍처 개요</h2>
+
+<p>WIA 스트리밍 표준은 4계층 아키텍처를 정의합니다:</p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #a855f7; overflow-x: auto;">
+<span style="color: #fbbf24;">┌─────────────────────────────────────────────┐</span>
+<span style="color: #fbbf24;">│</span>  <span style="color: #10b981;">Layer 4: 애플리케이션 계층</span>            <span style="color: #fbbf24;">│</span>
+<span style="color: #fbbf24;">│</span>  (학습 플랫폼, 플레이어, UI)             <span style="color: #fbbf24;">│</span>
+<span style="color: #fbbf24;">├─────────────────────────────────────────────┤</span>
+<span style="color: #fbbf24;">│</span>  <span style="color: #10b981;">Layer 3: 전송 계층</span>                    <span style="color: #fbbf24;">│</span>
+<span style="color: #fbbf24;">│</span>  (HLS, DASH, WebRTC 프로토콜)            <span style="color: #fbbf24;">│</span>
+<span style="color: #fbbf24;">├─────────────────────────────────────────────┤</span>
+<span style="color: #fbbf24;">│</span>  <span style="color: #10b981;">Layer 2: 처리 계층</span>                    <span style="color: #fbbf24;">│</span>
+<span style="color: #fbbf24;">│</span>  (인코딩, 트랜스코딩, 패키징)            <span style="color: #fbbf24;">│</span>
+<span style="color: #fbbf24;">├─────────────────────────────────────────────┤</span>
+<span style="color: #fbbf24;">│</span>  <span style="color: #10b981;">Layer 1: 인프라 계층</span>                  <span style="color: #fbbf24;">│</span>
+<span style="color: #fbbf24;">│</span>  (CDN, 스토리지, 네트워크)               <span style="color: #fbbf24;">│</span>
+<span style="color: #fbbf24;">└─────────────────────────────────────────────┘</span>
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">2.2 Layer 1: 인프라 계층</h2>
+
+<h3 style="color: #a855f7;">2.2.1 CDN (Content Delivery Network)</h3>
+
+<p>CDN은 전 세계에 분산된 서버 네트워크로, 사용자에게 가장 가까운 서버에서 콘텐츠를 제공합니다.</p>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">CDN 구성요소</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">역할</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">WIA 요구사항</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Origin Server</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">원본 콘텐츠 저장</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">99.99% 가용성</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Edge Server</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">캐시된 콘텐츠 제공</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">50ms 미만 지연</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>PoP (Point of Presence)</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">지역별 서버 클러스터</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">100+ 글로벌 PoP</td>
+    </tr>
+</table>
+
+<h3 style="color: #a855f7;">2.2.2 스토리지 아키텍처</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #a855f7; overflow-x: auto;">
+<span style="color: #fbbf24;">스토리지 계층 구조:</span>
+
+<span style="color: #94a3b8;">1. Hot Storage (자주 접근)</span>
+   💾 SSD 기반
+   📍 원본 + 최근 30일 콘텐츠
+   ⚡ 1ms 미만 읽기 지연
+
+<span style="color: #94a3b8;">2. Warm Storage (보통 접근)</span>
+   💿 HDD 기반
+   📍 최근 1년 콘텐츠
+   ⚡ 10ms 미만 읽기 지연
+
+<span style="color: #94a3b8;">3. Cold Storage (드물게 접근)</span>
+   📦 객체 스토리지 (S3, Azure Blob)
+   📍 아카이브 콘텐츠
+   ⚡ 100ms+ 읽기 지연
+</pre>
+
+<h3 style="color: #a855f7;">2.2.3 네트워크 최적화</h3>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">HTTP/2</strong> — 멀티플렉싱, 헤더 압축</li>
+    <li><strong style="color: #e2e8f0;">HTTP/3 (QUIC)</strong> — 저지연, 패킷 손실 복구</li>
+    <li><strong style="color: #e2e8f0;">TCP BBR</strong> — 혼잡 제어 알고리즘</li>
+    <li><strong style="color: #e2e8f0;">IPv6</strong> — 확장성, 라우팅 효율성</li>
+</ul>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">2.3 Layer 2: 처리 계층</h2>
+
+<h3 style="color: #a855f7;">2.3.1 비디오 인코딩 파이프라인</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #a855f7; overflow-x: auto;">
+<span style="color: #fbbf24;">입력 → 인코딩 → 출력</span>
+
+<span style="color: #94a3b8;">📹 원본 입력:</span>
+   - 해상도: 3840×2160 (4K)
+   - 프레임율: 60 fps
+   - 비트레이트: 50 Mbps
+   - 코덱: 원본 (ProRes, DNxHR)
+
+<span style="color: #94a3b8;">🔄 트랜스코딩 (Adaptive Bitrate Ladder):</span>
+
+   4K:    3840×2160 @ 15 Mbps (H.265)
+   1080p: 1920×1080 @ 5 Mbps  (H.264)
+   720p:  1280×720  @ 2.5 Mbps (H.264)
+   480p:  854×480   @ 1 Mbps   (H.264)
+   360p:  640×360   @ 0.5 Mbps (H.264)
+   240p:  426×240   @ 0.25 Mbps (H.264)
+
+<span style="color: #94a3b8;">📦 패키징:</span>
+   - HLS: .m3u8 플레이리스트 + .ts 세그먼트
+   - DASH: .mpd 매니페스트 + .m4s 세그먼트
+   - 세그먼트 길이: 4초 (권장)
+</pre>
+
+<h3 style="color: #a855f7;">2.3.2 코덱 선택 가이드</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">코덱</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">장점</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">단점</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">권장 용도</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>H.264 (AVC)</strong></td>
+        <td style="border: 1px solid #475569; color: #10b981;">보편적 지원</td>
+        <td style="border: 1px solid #475569; color: #ef4444;">낮은 압축률</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">기본 선택</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>H.265 (HEVC)</strong></td>
+        <td style="border: 1px solid #475569; color: #10b981;">50% 대역폭 절감</td>
+        <td style="border: 1px solid #475569; color: #ef4444;">라이선스 비용</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">4K 콘텐츠</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>VP9</strong></td>
+        <td style="border: 1px solid #475569; color: #10b981;">무료, 좋은 압축</td>
+        <td style="border: 1px solid #475569; color: #ef4444;">하드웨어 지원 제한</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">YouTube, 웹</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>AV1</strong></td>
+        <td style="border: 1px solid #475569; color: #10b981;">최고 압축률</td>
+        <td style="border: 1px solid #475569; color: #ef4444;">인코딩 느림</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">미래 준비</td>
+    </tr>
+</table>
+
+<h3 style="color: #a855f7;">2.3.3 적응형 비트레이트 (ABR) 알고리즘</h3>
+
+<p>ABR은 네트워크 조건에 따라 자동으로 비디오 품질을 조정합니다.</p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #a855f7; overflow-x: auto;">
+<span style="color: #fbbf24;">ABR 결정 프로세스:</span>
+
+<span style="color: #94a3b8;">1. 대역폭 측정</span>
+   ⏱️ 세그먼트 다운로드 시간 추적
+   📊 이동 평균 계산 (10초 윈도우)
+
+   측정 대역폭 = 세그먼트 크기 / 다운로드 시간
+
+<span style="color: #94a3b8;">2. 버퍼 상태 확인</span>
+   📦 현재 버퍼: 12초
+   🎯 목표 버퍼: 30초
+   ⚠️ 임계값: 5초
+
+<span style="color: #94a3b8;">3. 품질 선택</span>
+   IF 버퍼 < 5초:
+      → 품질 낮춤 (360p)
+   ELSE IF 버퍼 > 30초 AND 대역폭 > 5 Mbps:
+      → 품질 높임 (1080p)
+   ELSE:
+      → 현재 품질 유지 (720p)
+
+<span style="color: #94a3b8;">4. 부드러운 전환</span>
+   🔄 점진적 품질 변경 (한 번에 1단계)
+   ⏰ 최소 전환 간격: 10초
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">2.4 Layer 3: 전송 계층</h2>
+
+<h3 style="color: #a855f7;">2.4.1 HLS (HTTP Live Streaming)</h3>
+
+<p>Apple이 개발한 HTTP 기반 스트리밍 프로토콜입니다.</p>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">속성</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">값</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>매니페스트</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">.m3u8 (UTF-8 텍스트)</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>세그먼트</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">.ts (MPEG-2 TS)</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>지연시간</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">6-30초 (일반), 2-6초 (LL-HLS)</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>브라우저 지원</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Safari 네이티브, 기타는 hls.js</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>DRM</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">FairPlay (iOS/Safari)</td>
+    </tr>
+</table>
+
+<p><strong style="color: #fbbf24;">HLS 매니페스트 예시:</strong></p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">#EXTM3U</span>
+<span style="color: #64748b;">#EXT-X-VERSION:3</span>
+<span style="color: #64748b;">#EXT-X-STREAM-INF:BANDWIDTH=5000000,RESOLUTION=1920x1080</span>
+<span style="color: #94a3b8;">1080p.m3u8</span>
+<span style="color: #64748b;">#EXT-X-STREAM-INF:BANDWIDTH=2500000,RESOLUTION=1280x720</span>
+<span style="color: #94a3b8;">720p.m3u8</span>
+<span style="color: #64748b;">#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=854x480</span>
+<span style="color: #94a3b8;">480p.m3u8</span>
+</pre>
+
+<h3 style="color: #a855f7;">2.4.2 DASH (Dynamic Adaptive Streaming over HTTP)</h3>
+
+<p>MPEG에서 표준화한 국제 표준 스트리밍 프로토콜입니다.</p>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">속성</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">값</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>매니페스트</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">.mpd (XML)</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>세그먼트</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">.m4s (fMP4)</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>표준화</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">ISO/IEC 23009-1</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>브라우저 지원</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">dash.js 라이브러리 사용</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>DRM</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Widevine, PlayReady</td>
+    </tr>
+</table>
+
+<h3 style="color: #a855f7;">2.4.3 WebRTC (Web Real-Time Communication)</h3>
+
+<p>초저지연 실시간 스트리밍을 위한 P2P 기반 프로토콜입니다.</p>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">지연시간</strong> — 0.5초 미만</li>
+    <li><strong style="color: #e2e8f0;">프로토콜</strong> — UDP, SRTP, DTLS</li>
+    <li><strong style="color: #e2e8f0;">코덱</strong> — VP8, VP9, H.264</li>
+    <li><strong style="color: #e2e8f0;">용도</strong> — 화상회의, 실시간 강의</li>
+    <li><strong style="color: #e2e8f0;">단점</strong> — 확장성 제한 (100명+ 어려움)</li>
+</ul>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">2.5 Layer 4: 애플리케이션 계층</h2>
+
+<h3 style="color: #a855f7;">2.5.1 비디오 플레이어 아키텍처</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #a855f7; overflow-x: auto;">
+<span style="color: #fbbf24;">플레이어 구성요소:</span>
+
+<span style="color: #94a3b8;">┌─────────────────────────────────────┐</span>
+<span style="color: #94a3b8;">│  UI 컨트롤 (재생, 일시정지, 볼륨)  │</span>
+<span style="color: #94a3b8;">├─────────────────────────────────────┤</span>
+<span style="color: #94a3b8;">│  자막/캡션 렌더러                   │</span>
+<span style="color: #94a3b8;">├─────────────────────────────────────┤</span>
+<span style="color: #94a3b8;">│  ABR 엔진 (품질 선택)               │</span>
+<span style="color: #94a3b8;">├─────────────────────────────────────┤</span>
+<span style="color: #94a3b8;">│  버퍼 관리                          │</span>
+<span style="color: #94a3b8;">├─────────────────────────────────────┤</span>
+<span style="color: #94a3b8;">│  DRM 모듈                           │</span>
+<span style="color: #94a3b8;">├─────────────────────────────────────┤</span>
+<span style="color: #94a3b8;">│  네트워크 레이어                    │</span>
+<span style="color: #94a3b8;">├─────────────────────────────────────┤</span>
+<span style="color: #94a3b8;">│  미디어 디코더 (하드웨어 가속)     │</span>
+<span style="color: #94a3b8;">└─────────────────────────────────────┘</span>
+</pre>
+
+<h3 style="color: #a855f7;">2.5.2 추천 플레이어 라이브러리</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">라이브러리</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">프로토콜</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">특징</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>hls.js</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">HLS</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">MSE 기반, 브라우저 광범위 지원</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>dash.js</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">DASH</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">MPEG 공식, 고급 기능</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Video.js</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">HLS, DASH</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">플러그인 생태계, 커스터마이징</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Shaka Player</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">HLS, DASH</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Google, 강력한 DRM 지원</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">2.6 확장성 및 성능</h2>
+
+<h3 style="color: #a855f7;">2.6.1 동시 접속자 처리</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #a855f7; overflow-x: auto;">
+<span style="color: #fbbf24;">확장 전략:</span>
+
+<span style="color: #94a3b8;">소규모 (< 100명):</span>
+   🖥️ 단일 서버
+   💾 로컬 스토리지
+   📊 비용: $50-200/월
+
+<span style="color: #94a3b8;">중규모 (100-10,000명):</span>
+   ⚖️ 로드 밸런서
+   🌐 CDN (Cloudflare, CloudFront)
+   💾 객체 스토리지 (S3)
+   📊 비용: $500-5,000/월
+
+<span style="color: #94a3b8;">대규모 (10,000-100만명+):</span>
+   🌍 글로벌 CDN (Akamai, Fastly)
+   ⚙️ 자동 확장 (Auto-scaling)
+   🔄 멀티-리전 복제
+   📊 비용: $10,000-100,000+/월
+</pre>
+
+<h3 style="color: #a855f7;">2.6.2 성능 메트릭</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">메트릭</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">우수</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">양호</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">개선 필요</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>시작 시간</strong></td>
+        <td style="border: 1px solid #475569; color: #10b981;">< 2초</td>
+        <td style="border: 1px solid #475569; color: #fbbf24;">2-5초</td>
+        <td style="border: 1px solid #475569; color: #ef4444;">> 5초</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>버퍼링 비율</strong></td>
+        <td style="border: 1px solid #475569; color: #10b981;">< 0.5%</td>
+        <td style="border: 1px solid #475569; color: #fbbf24;">0.5-2%</td>
+        <td style="border: 1px solid #475569; color: #ef4444;">> 2%</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>비트레이트</strong></td>
+        <td style="border: 1px solid #475569; color: #10b981;">안정적</td>
+        <td style="border: 1px solid #475569; color: #fbbf24;">가끔 변동</td>
+        <td style="border: 1px solid #475569; color: #ef4444;">자주 변동</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>에러율</strong></td>
+        <td style="border: 1px solid #475569; color: #10b981;">< 0.1%</td>
+        <td style="border: 1px solid #475569; color: #fbbf24;">0.1-1%</td>
+        <td style="border: 1px solid #475569; color: #ef4444;">> 1%</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">장 요약</h2>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">계층</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">핵심 기술</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Layer 1</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">CDN, 스토리지, 네트워크 최적화</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Layer 2</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">인코딩, 트랜스코딩, ABR</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Layer 3</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">HLS, DASH, WebRTC</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Layer 4</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">플레이어, UI, 학습 플랫폼</td>
+    </tr>
+</table>
+
+<nav style="margin-top: 30px; padding: 15px; background: #1e293b; border-radius: 8px; display: flex; justify-content: space-between;">
+    <a href="chapter-01.html" style="color: #a855f7; text-decoration: none;">← 제1장: 스트리밍 표준 소개</a>
+    <a href="chapter-03.html" style="color: #a855f7; text-decoration: none;">제3장: 데이터 형식 →</a>
+</nav>
+
+<p style="text-align: center; color: #fbbf24; margin-top: 40px;">弘益人間 · 널리 인간을 이롭게 하라</p>
+<p style="text-align: center; color: #64748b;">© 2025 WIA - 세계지능연합</p>
+
+</body>
+</html>

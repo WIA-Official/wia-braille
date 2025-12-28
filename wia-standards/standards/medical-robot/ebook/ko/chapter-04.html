@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Phase 1 - Data Format Standardization | WIA-ROB-005</title>
+    <style>
+        :root { --bg: #0f172a; --bg-secondary: #1e293b; --bg-tertiary: #334155; --primary: #10B981; --text: #f1f5f9; --text-secondary: #cbd5e1; --border: #475569; --success: #10b981; --warning: #f59e0b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-secondary); padding: 3rem; border-radius: 10px; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: var(--bg-tertiary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--primary); font-weight: bold; }
+        tr:hover { background: var(--bg-tertiary); }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: 5px; transition: all 0.3s ease; }
+        .btn:hover { background: var(--success); transform: translateY(-2px); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', monospace; color: var(--success); font-size: 0.9em; }
+        pre { background: var(--bg); padding: 1.5rem; border-radius: 5px; overflow-x: auto; margin: 1.5rem 0; border-left: 4px solid var(--primary); }
+        pre code { font-size: 0.85em; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">Chapter 4</p>
+        <h1>Phase 1: Data Format Standardization</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            Mastering standardized data formats for patient demographics, vital signs, medical imaging, robot telemetry, and surgical procedures using HL7 FHIR, DICOM, LOINC, and SNOMED CT.
+        </p>
+
+        <h2>HL7 FHIR R4 Resources</h2>
+        <p>
+            Fast Healthcare Interoperability Resources (FHIR) provides a modern standard for healthcare data exchange. FHIR R4 (Release 4), published in December 2018 and achieving Normative status for core resources in 2019, defines over 140 resource types covering clinical, financial, workflow, and infrastructure use cases. WIA-ROB-005 Phase 1 mandates FHIR compliance for all clinical data elements.
+        </p>
+
+        <h3>Patient Demographics - FHIR Patient Resource</h3>
+        <p>
+            The Patient resource represents demographic and administrative information about an individual receiving healthcare services. Essential elements include:
+        </p>
+        <ul>
+            <li><strong>Identifiers:</strong> Medical record number (MRN), national ID, passport, driver's license with system URIs and values</li>
+            <li><strong>Name:</strong> Official name, maiden name, nicknames with use indicators (official, usual, nickname, old)</li>
+            <li><strong>Demographics:</strong> Gender (male, female, other, unknown), birthdate (full date or partial for privacy), deceased indicator</li>
+            <li><strong>Contact:</strong> Phone, email, address with use type (home, work, temp, old) and period validity</li>
+            <li><strong>Communication:</strong> Preferred language with ISO 639-1 codes (en, es, zh, ko, etc.)</li>
+            <li><strong>Emergency Contact:</strong> Name, relationship, phone, address</li>
+        </ul>
+
+        <div class="info-box">
+            <h3>FHIR Patient Resource Example</h3>
+            <pre><code>{
+  "resourceType": "Patient",
+  "id": "example-patient-001",
+  "identifier": [
+    {
+      "system": "http://hospital.org/mrn",
+      "value": "MRN-12345678"
+    },
+    {
+      "system": "http://hl7.org/fhir/sid/us-ssn",
+      "value": "123-45-6789"
+    }
+  ],
+  "name": [
+    {
+      "use": "official",
+      "family": "Kim",
+      "given": ["Jin", "Soo"],
+      "prefix": ["Mr."]
+    }
+  ],
+  "gender": "male",
+  "birthDate": "1975-06-15",
+  "address": [
+    {
+      "use": "home",
+      "line": ["123 Main Street", "Apt 4B"],
+      "city": "Seoul",
+      "state": "Seoul",
+      "postalCode": "03142",
+      "country": "KR"
+    }
+  ],
+  "telecom": [
+    {
+      "system": "phone",
+      "value": "+82-10-1234-5678",
+      "use": "mobile"
+    },
+    {
+      "system": "email",
+      "value": "jinsoo.kim@email.com"
+    }
+  ],
+  "contact": [
+    {
+      "relationship": [
+        {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/v2-0131",
+              "code": "N",
+              "display": "Next of Kin"
+            }
+          ]
+        }
+      ],
+      "name": {
+        "family": "Kim",
+        "given": ["Min", "Ji"]
+      },
+      "telecom": [
+        {
+          "system": "phone",
+          "value": "+82-10-9876-5432"
+        }
+      ]
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <h3>Vital Signs - FHIR Observation Resource with LOINC</h3>
+        <p>
+            The Observation resource captures measurements and simple assertions about a patient. Vital signs use standardized LOINC (Logical Observation Identifiers Names and Codes) for consistent coding across systems. WIA-ROB-005 mandates LOINC codes for all vital signs:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Vital Sign</th>
+                    <th>LOINC Code</th>
+                    <th>Unit (UCUM)</th>
+                    <th>Normal Range</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Heart Rate</td>
+                    <td>8867-4</td>
+                    <td>/min (beats per minute)</td>
+                    <td>60-100 /min</td>
+                </tr>
+                <tr>
+                    <td>Respiratory Rate</td>
+                    <td>9279-1</td>
+                    <td>/min (breaths per minute)</td>
+                    <td>12-20 /min</td>
+                </tr>
+                <tr>
+                    <td>Blood Pressure Systolic</td>
+                    <td>8480-6</td>
+                    <td>mm[Hg]</td>
+                    <td>90-120 mmHg</td>
+                </tr>
+                <tr>
+                    <td>Blood Pressure Diastolic</td>
+                    <td>8462-4</td>
+                    <td>mm[Hg]</td>
+                    <td>60-80 mmHg</td>
+                </tr>
+                <tr>
+                    <td>Oxygen Saturation (SpO2)</td>
+                    <td>59408-5</td>
+                    <td>% (percentage)</td>
+                    <td>95-100 %</td>
+                </tr>
+                <tr>
+                    <td>Body Temperature</td>
+                    <td>8310-5</td>
+                    <td>Cel (degrees Celsius)</td>
+                    <td>36.5-37.5 °C</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <h3>Vital Signs Observation Example</h3>
+            <pre><code>{
+  "resourceType": "Observation",
+  "id": "heart-rate-001",
+  "status": "final",
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code": "vital-signs",
+          "display": "Vital Signs"
+        }
+      ]
+    }
+  ],
+  "code": {
+    "coding": [
+      {
+        "system": "http://loinc.org",
+        "code": "8867-4",
+        "display": "Heart rate"
+      }
+    ],
+    "text": "Heart Rate"
+  },
+  "subject": {
+    "reference": "Patient/example-patient-001"
+  },
+  "effectiveDateTime": "2025-01-15T14:30:00Z",
+  "performer": [
+    {
+      "reference": "Device/robot-monitor-123"
+    }
+  ],
+  "valueQuantity": {
+    "value": 72,
+    "unit": "/min",
+    "system": "http://unitsofmeasure.org",
+    "code": "/min"
+  },
+  "interpretation": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+          "code": "N",
+          "display": "Normal"
+        }
+      ]
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <h2>Medical Imaging - DICOM Standards</h2>
+        <p>
+            Digital Imaging and Communications in Medicine (DICOM) defines formats and protocols for medical imaging. DICOM PS3.10 specifies file format, PS3.3 defines information object definitions, and PS3.6 contains the data dictionary. WIA-ROB-005 requires DICOM compliance for all medical imaging data and DICOM Web for network imaging access.
+        </p>
+
+        <h3>DICOM Core Tags for Surgical Robots</h3>
+        <p>
+            Surgical robots must extract and utilize DICOM metadata including patient demographics, study information, series details, and image parameters:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>DICOM Tag</th>
+                    <th>Tag Number</th>
+                    <th>Description</th>
+                    <th>Example Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Patient Name</td>
+                    <td>(0010,0010)</td>
+                    <td>Patient's full name</td>
+                    <td>Kim^Jin^Soo</td>
+                </tr>
+                <tr>
+                    <td>Patient ID</td>
+                    <td>(0010,0020)</td>
+                    <td>Primary patient identifier</td>
+                    <td>MRN-12345678</td>
+                </tr>
+                <tr>
+                    <td>Study Instance UID</td>
+                    <td>(0020,000D)</td>
+                    <td>Unique study identifier</td>
+                    <td>1.2.840.113619...</td>
+                </tr>
+                <tr>
+                    <td>Series Instance UID</td>
+                    <td>(0020,000E)</td>
+                    <td>Unique series identifier</td>
+                    <td>1.2.840.113619...</td>
+                </tr>
+                <tr>
+                    <td>Modality</td>
+                    <td>(0008,0060)</td>
+                    <td>Imaging modality</td>
+                    <td>CT, MR, CR, DX</td>
+                </tr>
+                <tr>
+                    <td>Image Position</td>
+                    <td>(0020,0032)</td>
+                    <td>3D position (x,y,z mm)</td>
+                    <td>[-125.0, -125.0, 100.0]</td>
+                </tr>
+                <tr>
+                    <td>Image Orientation</td>
+                    <td>(0020,0037)</td>
+                    <td>Direction cosines</td>
+                    <td>[1,0,0,0,1,0]</td>
+                </tr>
+                <tr>
+                    <td>Pixel Spacing</td>
+                    <td>(0028,0030)</td>
+                    <td>Row/column spacing (mm)</td>
+                    <td>[0.5, 0.5]</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>DICOM Web - RESTful Medical Imaging</h3>
+        <p>
+            DICOM Web provides RESTful access to DICOM objects using standard HTTP methods. Three services enable complete imaging workflows:
+        </p>
+        <ul>
+            <li><strong>WADO-RS (Web Access to DICOM Objects):</strong> Retrieve studies, series, instances, metadata, or rendered images via HTTP GET. Example: <code>GET /studies/{studyUID}/series/{seriesUID}/instances/{instanceUID}</code></li>
+            <li><strong>STOW-RS (Store Over Web):</strong> Upload DICOM instances via HTTP POST with multipart/related content type</li>
+            <li><strong>QIDO-RS (Query based on ID for DICOM Objects):</strong> Search for studies, series, instances using query parameters. Example: <code>GET /studies?PatientID=MRN-12345678&amp;Modality=CT</code></li>
+        </ul>
+
+        <h2>Surgical Procedures - FHIR Procedure with SNOMED CT</h2>
+        <p>
+            The Procedure resource describes activities performed on or for a patient. SNOMED CT (Systematized Nomenclature of Medicine Clinical Terms) provides standardized procedure codes. ICD-10-PCS (Procedure Coding System) serves billing purposes in the US.
+        </p>
+
+        <div class="info-box">
+            <h3>Robotic Prostatectomy Procedure Example</h3>
+            <pre><code>{
+  "resourceType": "Procedure",
+  "id": "robotic-prostatectomy-001",
+  "status": "completed",
+  "code": {
+    "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "176258007",
+        "display": "Robotic-assisted laparoscopic prostatectomy"
+      },
+      {
+        "system": "http://www.cms.gov/Medicare/Coding/ICD10",
+        "code": "0VT00ZZ",
+        "display": "Resection of Prostate, Open Approach"
+      }
+    ]
+  },
+  "subject": {
+    "reference": "Patient/example-patient-001"
+  },
+  "performedDateTime": "2025-01-15T09:00:00Z",
+  "performer": [
+    {
+      "function": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "304292004",
+            "display": "Surgeon"
+          }
+        ]
+      },
+      "actor": {
+        "reference": "Practitioner/surgeon-001",
+        "display": "Dr. John Smith"
+      }
+    }
+  ],
+  "location": {
+    "reference": "Location/OR-5",
+    "display": "Operating Room 5"
+  },
+  "usedCode": [
+    {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "462307004",
+          "display": "da Vinci Surgical System"
+        }
+      ]
+    }
+  ],
+  "note": [
+    {
+      "text": "Nerve-sparing technique utilized. Estimated blood loss 100ml. No complications."
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <h2>Robot Telemetry Data Formats</h2>
+        <p>
+            Medical robots generate continuous telemetry data including pose (position + orientation), joint angles, velocities, forces/torques, and operational status. WIA-ROB-005 defines JSON schemas for robot telemetry ensuring consistent data structure across manufacturers.
+        </p>
+
+        <h3>Robot Pose and Kinematics</h3>
+        <p>
+            Robot pose combines position (x, y, z coordinates in millimeters) and orientation (quaternion or Euler angles). WIA-ROB-005 mandates quaternions to avoid gimbal lock:
+        </p>
+
+        <div class="info-box">
+            <pre><code>{
+  "telemetry": {
+    "timestamp": "2025-01-15T14:35:22.123Z",
+    "robotId": "da-vinci-xi-001",
+    "instrumentId": "endowrist-grasper-001",
+    "pose": {
+      "position": {
+        "x": 125.3,
+        "y": -87.2,
+        "z": 340.1,
+        "unit": "mm",
+        "coordinateFrame": "patient-reference"
+      },
+      "orientation": {
+        "quaternion": {
+          "w": 0.707,
+          "x": 0.0,
+          "y": 0.707,
+          "z": 0.0
+        }
+      }
+    },
+    "jointAngles": {
+      "unit": "degrees",
+      "values": [15.3, 45.7, -22.1, 90.0, -12.5, 33.8, 0.0]
+    },
+    "velocity": {
+      "linear": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "unit": "mm/s"
+      },
+      "angular": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "unit": "deg/s"
+      }
+    },
+    "forceTorque": {
+      "force": {
+        "x": 0.12,
+        "y": -0.05,
+        "z": 0.31,
+        "unit": "N"
+      },
+      "torque": {
+        "x": 0.002,
+        "y": 0.001,
+        "z": -0.003,
+        "unit": "Nm"
+      }
+    },
+    "status": "active",
+    "errorCode": null,
+    "batteryLevel": 87.5,
+    "temperature": 38.2
+  }
+}</code></pre>
+        </div>
+
+        <h2>JSON Schema Validation</h2>
+        <p>
+            WIA-ROB-005 provides comprehensive JSON Schema definitions for all data types, enabling automated validation. TypeScript interfaces, Python Pydantic models, and C++ structs are generated from schemas ensuring type safety across programming languages.
+        </p>
+
+        <div class="highlight-box">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li><strong>HL7 FHIR R4:</strong> Patient demographics, vital signs (LOINC codes), procedures (SNOMED CT), medications (RxNorm)</li>
+                <li><strong>DICOM:</strong> Medical imaging file format (PS3.10), metadata tags, SOP Classes for modalities (CT, MRI, CR, DX)</li>
+                <li><strong>DICOM Web:</strong> RESTful imaging access via WADO-RS (retrieve), STOW-RS (store), QIDO-RS (query)</li>
+                <li><strong>Robot Telemetry:</strong> JSON schemas for pose, kinematics, force/torque, operational status</li>
+                <li><strong>Standardized Coding:</strong> LOINC (observations), SNOMED CT (procedures), ICD-10 (diagnoses), CPT (billing)</li>
+            </ul>
+        </div>
+
+        <h2>Review Questions</h2>
+        <div class="info-box">
+            <ol>
+                <li>Create a FHIR Observation resource for blood pressure measurement during robotic surgery. Include both systolic and diastolic components with proper LOINC codes.</li>
+                <li>Explain why WIA-ROB-005 mandates quaternions for orientation rather than Euler angles. What is gimbal lock and how do quaternions prevent it?</li>
+                <li>Design a DICOM Web workflow for surgical robot pre-operative planning: retrieving CT scans, processing for 3D reconstruction, and storing surgical plan.</li>
+                <li>Compare FHIR and traditional HL7 v2.x messaging. What advantages does FHIR provide for medical robot integration?</li>
+                <li>Implement JSON Schema validation for robot telemetry data. What validation rules ensure data quality and detect anomalies?</li>
+                <li>Map surgical procedure documentation from robot console to FHIR Procedure resource. What data elements must be captured for regulatory compliance?</li>
+            </ol>
+        </div>
+
+        <h2>Looking Ahead</h2>
+        <p>
+            Chapter 4 established Phase 1 data format standards using HL7 FHIR, DICOM, LOINC, and SNOMED CT. Chapter 5 builds on this foundation, defining RESTful APIs that provide programmatic access to robot control, sensor data, and hospital system integration using OpenAPI 3.0 specifications and OAuth 2.0 security.
+        </p>
+
+        <div class="nav-buttons">
+            <a href="chapter-03.html" class="btn">← Previous: Standard Overview</a>
+            <a href="index.html" class="btn">Home</a>
+            <a href="chapter-05.html" class="btn">Next: Phase 2 APIs →</a>
+        </div>
+
+        <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-secondary);">
+            <p>© 2025 WIA (World Certification Industry Association)</p>
+            <p style="margin-top: 0.5rem;">弘益人間 (홍익인간) · Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

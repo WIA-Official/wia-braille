@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제로 트러스트 아키텍처 - 완전 가이드 | WIA-SEC-005</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #8B5CF6;
+            --primary-dark: #7C3AED;
+            --bg-dark: #0f172a;
+            --bg-darker: #020617;
+            --text-light: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #a78bfa;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+            color: var(--text-light);
+            line-height: 1.8;
+            word-break: keep-all;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 4rem 0 3rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 20px;
+            margin-bottom: 3rem;
+            box-shadow: 0 20px 60px rgba(139, 92, 246, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: #e9d5ff;
+            margin-bottom: 0.5rem;
+        }
+
+        .standard-id {
+            font-size: 1.1rem;
+            color: #c4b5fd;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        nav {
+            background: rgba(30, 41, 59, 0.7);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            position: sticky;
+            top: 2rem;
+            z-index: 100;
+        }
+
+        nav h3 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        nav ul {
+            list-style: none;
+        }
+
+        nav ul li {
+            margin: 0.5rem 0;
+        }
+
+        nav ul li a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: block;
+            padding: 0.5rem;
+            border-radius: 8px;
+        }
+
+        nav ul li a:hover {
+            color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+            transform: translateX(5px);
+        }
+
+        section {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 2.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(139, 92, 246, 0.3);
+        }
+
+        h3 {
+            color: var(--accent);
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem;
+        }
+
+        h4 {
+            color: #c4b5fd;
+            font-size: 1.2rem;
+            margin: 1.5rem 0 0.75rem;
+        }
+
+        p {
+            margin-bottom: 1.25rem;
+            color: #cbd5e1;
+        }
+
+        ul, ol {
+            margin: 1rem 0 1.5rem 2rem;
+            color: #cbd5e1;
+        }
+
+        li {
+            margin: 0.5rem 0;
+        }
+
+        .highlight-box {
+            background: rgba(139, 92, 246, 0.15);
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box h4 {
+            margin-top: 0;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.15);
+            border-left: 4px solid #3b82f6;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.15);
+            border-left: 4px solid #f59e0b;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .principle {
+            background: rgba(139, 92, 246, 0.1);
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 10px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .principle h4 {
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        th {
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        code {
+            background: rgba(139, 92, 246, 0.15);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #c4b5fd;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 2rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--accent);
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .back-link:hover {
+            background: rgba(139, 92, 246, 0.3);
+            transform: translateY(-2px);
+        }
+
+        footer {
+            text-align: center;
+            padding: 3rem 0;
+            margin-top: 4rem;
+            border-top: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .philosophy {
+            font-size: 1.5rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .copyright {
+            color: var(--text-muted);
+            margin-top: 1rem;
+        }
+
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+
+            nav {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../../index.html" class="back-link">← 메인으로 돌아가기</a>
+
+        <header>
+            <div class="standard-id">WIA-SEC-005</div>
+            <h1>제로 트러스트 아키텍처</h1>
+            <p class="subtitle">절대 신뢰하지 말고, 항상 검증하라</p>
+            <p class="subtitle">완전 구현 가이드</p>
+        </header>
+
+        <nav>
+            <h3>목차</h3>
+            <ul>
+                <li><a href="#introduction">소개</a></li>
+                <li><a href="#principles">핵심 원칙</a></li>
+                <li><a href="#architecture">아키텍처</a></li>
+                <li><a href="#trust-scoring">신뢰 점수</a></li>
+                <li><a href="#implementation">구현 가이드</a></li>
+                <li><a href="#use-cases">사용 사례</a></li>
+                <li><a href="#best-practices">모범 사례</a></li>
+                <li><a href="#conclusion">결론</a></li>
+            </ul>
+        </nav>
+
+        <section id="introduction">
+            <h2>제1장: 제로 트러스트 소개</h2>
+
+            <p>
+                오늘날의 디지털 환경에서 "신뢰하되 검증하라"는 전통적인 보안 모델은 더 이상 충분하지 않습니다.
+                조직은 외부 공격자와 내부 위협으로부터 오는 정교한 위협에 직면하고 있습니다. 클라우드 컴퓨팅,
+                원격 근무, 모바일 기기의 증가로 인해 네트워크 경계가 사라졌습니다.
+            </p>
+
+            <p>
+                <strong>제로 트러스트 아키텍처</strong>는 사이버 보안 전략의 근본적인 변화를 나타냅니다.
+                조직의 네트워크 내부에 있는 모든 것이 안전하다고 가정하는 대신, 제로 트러스트는
+                <em>네트워크 경계 내부 또는 외부에 있는지에 관계없이 사용자, 장치 또는 네트워크를 기본적으로
+                신뢰해서는 안 된다</em>는 원칙으로 운영됩니다.
+            </p>
+
+            <h3>제로 트러스트란 무엇인가?</h3>
+
+            <p>
+                제로 트러스트는 조직 네트워크 내부 또는 외부의 모든 사용자가 애플리케이션 및 데이터에 대한
+                액세스 권한을 부여받거나 유지하기 전에 인증, 권한 부여 및 지속적으로 검증되어야 하는 보안
+                프레임워크입니다.
+            </p>
+
+            <div class="highlight-box">
+                <h4>핵심 철학: "절대 신뢰하지 말고, 항상 검증하라"</h4>
+                <p>
+                    모든 액세스 요청은 신뢰할 수 없는 네트워크에서 발생한 것처럼 처리됩니다. 검증은
+                    초기 로그인 시에만이 아니라 세션 전체에 걸쳐 지속적으로 이루어집니다.
+                </p>
+            </div>
+
+            <h3>제로 트러스트가 중요한 이유</h3>
+
+            <ul>
+                <li><strong>진화하는 위협 환경:</strong> 사이버 공격은 점점 더 정교해지고 있으며, 특정 사용자를 대상으로 신뢰 관계를 악용합니다</li>
+                <li><strong>분산된 인력:</strong> 원격 근무 및 BYOD(개인 기기 업무 사용) 정책으로 인해 네트워크 경계가 사라졌습니다</li>
+                <li><strong>클라우드 채택:</strong> 데이터와 애플리케이션이 더 이상 조직이 통제하는 네트워크 내에만 존재하지 않습니다</li>
+                <li><strong>규제 준수:</strong> GDPR, HIPAA, PCI DSS와 같은 규정은 더 강력한 액세스 제어 및 데이터 보호를 요구합니다</li>
+                <li><strong>내부 위협:</strong> 모든 위협이 외부에서 오는 것은 아닙니다. 악의적이거나 부주의한 내부자가 중대한 위험을 초래합니다</li>
+            </ul>
+
+            <h3>전통적 보안 vs 제로 트러스트</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>측면</th>
+                        <th>전통적 (경계 기반)</th>
+                        <th>제로 트러스트</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>신뢰 모델</td>
+                        <td>네트워크 위치 기반 신뢰</td>
+                        <td>절대 신뢰하지 말고, 항상 검증</td>
+                    </tr>
+                    <tr>
+                        <td>액세스 제어</td>
+                        <td>내부 진입 후 광범위한 네트워크 액세스</td>
+                        <td>최소 권한, 필요한 정보만 제공</td>
+                    </tr>
+                    <tr>
+                        <td>검증</td>
+                        <td>로그인 시 한 번</td>
+                        <td>세션 전체에 걸쳐 지속적</td>
+                    </tr>
+                    <tr>
+                        <td>네트워크 세분화</td>
+                        <td>최소, 평면 네트워크 일반적</td>
+                        <td>마이크로 세그먼테이션 시행</td>
+                    </tr>
+                    <tr>
+                        <td>침해 가정</td>
+                        <td>예방에 집중</td>
+                        <td>침해 가정, 피해 제한</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="principles">
+            <h2>제2장: 제로 트러스트의 핵심 원칙</h2>
+
+            <p>
+                제로 트러스트 아키텍처는 구현 및 운영을 안내하는 6가지 기본 원칙을 기반으로 합니다:
+            </p>
+
+            <div class="principle">
+                <h4>1. 절대 신뢰하지 말고, 항상 검증</h4>
+                <p>
+                    네트워크 위치 또는 이전 인증을 기반으로 한 암묵적 신뢰를 제거합니다. 모든 액세스 요청은
+                    발생 위치에 관계없이 인증, 권한 부여 및 암호화되어야 합니다.
+                </p>
+                <ul>
+                    <li>네트워크 "내부"와 "외부" 구분 없음</li>
+                    <li>모든 액세스에 다중 요소 인증 필요</li>
+                    <li>신원의 암호화 검증</li>
+                    <li>모든 요청에 대한 실시간 위협 평가</li>
+                </ul>
+            </div>
+
+            <div class="principle">
+                <h4>2. 최소 권한 액세스</h4>
+                <p>
+                    사용자와 시스템에 특정 작업을 수행하는 데 필요한 최소 수준의 액세스 권한을 부여합니다.
+                    액세스 권한은 범위와 기간이 제한됩니다.
+                </p>
+                <ul>
+                    <li>적시(JIT) 액세스 프로비저닝</li>
+                    <li>충분한 액세스(JEA) 원칙</li>
+                    <li>시간 제한 액세스 부여</li>
+                    <li>정기적인 액세스 검토 및 재인증</li>
+                </ul>
+            </div>
+
+            <div class="principle">
+                <h4>3. 마이크로 세그먼테이션</h4>
+                <p>
+                    네트워크를 격리된 세그먼트로 나누고, 각각 자체 액세스 제어를 가집니다. 이는 측면 이동을
+                    제한하고 잠재적인 침해를 격리합니다.
+                </p>
+                <ul>
+                    <li>애플리케이션 수준 세분화</li>
+                    <li>신원 기반 액세스 정책</li>
+                    <li>동적 보안 그룹</li>
+                    <li>동서 트래픽 검사</li>
+                </ul>
+            </div>
+
+            <div class="principle">
+                <h4>4. 지속적 검증</h4>
+                <p>
+                    보안은 일회성 점검이 아닙니다. 신뢰는 사용자 행동, 장치 상태 및 컨텍스트 요인을 기반으로
+                    세션 전체에 걸쳐 지속적으로 평가됩니다.
+                </p>
+                <ul>
+                    <li>사용자 행동의 실시간 모니터링</li>
+                    <li>주기적 재인증 요구 사항</li>
+                    <li>이상 탐지 및 대응</li>
+                    <li>동적 신뢰 점수 계산</li>
+                </ul>
+            </div>
+
+            <div class="principle">
+                <h4>5. 장치 신뢰</h4>
+                <p>
+                    액세스를 부여하기 전에 장치가 패치 수준, 안티바이러스 상태 및 기업 정책 준수를 포함한 보안
+                    요구 사항을 충족하는지 확인합니다.
+                </p>
+                <ul>
+                    <li>장치 상태 평가</li>
+                    <li>엔드포인트 탐지 및 대응 (EDR)</li>
+                    <li>모바일 장치 관리 (MDM)</li>
+                    <li>규정 준수 시행</li>
+                </ul>
+            </div>
+
+            <div class="principle">
+                <h4>6. 침해 가정</h4>
+                <p>
+                    공격자가 이미 네트워크 내부에 있다고 가정하여 보안 아키텍처를 설계합니다. 폭발 반경을
+                    최소화하고 위협을 조기에 탐지하는 데 집중합니다.
+                </p>
+                <ul>
+                    <li>포괄적인 로깅 및 모니터링</li>
+                    <li>신속한 사고 탐지 및 대응</li>
+                    <li>자동화된 위협 격리</li>
+                    <li>심층 방어 전략</li>
+                </ul>
+            </div>
+
+            <div class="info-box">
+                <h4>NIST SP 800-207 정렬</h4>
+                <p>
+                    이러한 원칙은 전 세계 정부 및 기업 조직에서 채택한 제로 트러스트 아키텍처의 기본 프레임워크를
+                    제공하는 미국 국립표준기술연구소(NIST) 특별 간행물 800-207과 일치합니다.
+                </p>
+            </div>
+        </section>
+
+        <section id="architecture">
+            <h2>제3장: 제로 트러스트 아키텍처 구성 요소</h2>
+
+            <p>
+                완전한 제로 트러스트 아키텍처는 보안 정책을 시행하고 액세스를 관리하기 위해 함께 작동하는
+                여러 주요 구성 요소로 구성됩니다.
+            </p>
+
+            <h3>정책 결정 지점 (PDP)</h3>
+            <p>
+                제로 트러스트의 두뇌 — 보안 정책에 대해 액세스 요청을 평가하고 허용/거부 결정을 내립니다.
+            </p>
+            <ul>
+                <li>정책 시행 지점으로부터 액세스 요청 수신</li>
+                <li>정의된 정책에 대해 요청 평가</li>
+                <li>여러 요인을 기반으로 신뢰 점수 계산</li>
+                <li>조건과 함께 액세스 결정 반환</li>
+            </ul>
+
+            <h3>정책 시행 지점 (PEP)</h3>
+            <p>
+                게이트키퍼 — PDP가 내린 액세스 결정을 시행합니다.
+            </p>
+            <ul>
+                <li>액세스 요청 가로채기</li>
+                <li>평가를 위해 PDP로 요청 전달</li>
+                <li>허용/거부 결정 시행</li>
+                <li>활성 세션 모니터링</li>
+                <li>신뢰도가 저하될 때 세션 종료</li>
+            </ul>
+
+            <h3>정책 관리 지점 (PAP)</h3>
+            <p>
+                제어 센터 — 보안 정책의 수명 주기를 관리합니다.
+            </p>
+            <ul>
+                <li>정책 생성 및 편집</li>
+                <li>정책 버전 관리 및 롤백</li>
+                <li>정책 테스트 및 시뮬레이션</li>
+                <li>정책 변경 감사 추적</li>
+            </ul>
+
+            <h3>신뢰 엔진</h3>
+            <p>
+                다음을 기반으로 신뢰 점수를 지속적으로 계산합니다:
+            </p>
+            <ul>
+                <li><strong>신원 검증 (30%):</strong> 인증 방법 강도, 자격 증명 유효성</li>
+                <li><strong>장치 규정 준수 (25%):</strong> 보안 상태, 패치 수준, 암호화 상태</li>
+                <li><strong>행동 분석 (25%):</strong> 과거 패턴, 이상 탐지</li>
+                <li><strong>네트워크 컨텍스트 (20%):</strong> 위치, IP 평판, 네트워크 유형</li>
+            </ul>
+
+            <div class="highlight-box">
+                <h4>신뢰 점수 계산 예제</h4>
+                <p><strong>시나리오:</strong> 직원이 VPN을 통해 기업 노트북에서 재무 대시보드에 액세스</p>
+                <ul>
+                    <li>신원 점수: 95 (생체 인식이 포함된 MFA) × 0.30 = 28.5</li>
+                    <li>장치 점수: 92 (완전 준수) × 0.25 = 23.0</li>
+                    <li>행동 점수: 88 (정상 패턴) × 0.25 = 22.0</li>
+                    <li>네트워크 점수: 88 (기업 VPN) × 0.20 = 17.6</li>
+                    <li><strong>전체 신뢰 점수: 91.1 → 액세스 허용</strong></li>
+                </ul>
+            </div>
+
+            <h3>데이터 소스 및 통합 지점</h3>
+            <p>제로 트러스트 아키텍처는 기존 보안 인프라와 통합됩니다:</p>
+            <ul>
+                <li><strong>신원 제공자:</strong> Azure AD, Okta, Google Workspace</li>
+                <li><strong>SIEM 시스템:</strong> Splunk, Elastic, Microsoft Sentinel</li>
+                <li><strong>EDR/XDR:</strong> CrowdStrike, SentinelOne, Microsoft Defender</li>
+                <li><strong>위협 인텔리전스:</strong> 악의적인 IP, 도메인에 대한 실시간 피드</li>
+                <li><strong>MDM/UEM:</strong> Intune, Jamf, VMware Workspace ONE</li>
+            </ul>
+        </section>
+
+        <section id="trust-scoring">
+            <h2>제4장: 신뢰 점수 이해하기</h2>
+
+            <p>
+                신뢰 점수는 제로 트러스트의 핵심입니다. 사용자의 신원, 장치 보안 및 행동 패턴에 대한 신뢰도를
+                정량적으로 측정합니다.
+            </p>
+
+            <h3>신뢰의 네 기둥</h3>
+
+            <h4>1. 신원 신뢰 (가중치: 30%)</h4>
+            <p>사용자 인증의 강도와 유효성을 측정합니다:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>인증 방법</th>
+                        <th>기본 점수</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>생체 인식 + 하드웨어 토큰</td>
+                        <td>100</td>
+                    </tr>
+                    <tr>
+                        <td>FIDO2/WebAuthn</td>
+                        <td>95</td>
+                    </tr>
+                    <tr>
+                        <td>다중 요소 인증 (MFA)</td>
+                        <td>90</td>
+                    </tr>
+                    <tr>
+                        <td>스마트 카드/PIV</td>
+                        <td>85</td>
+                    </tr>
+                    <tr>
+                        <td>시간 기반 OTP (TOTP)</td>
+                        <td>80</td>
+                    </tr>
+                    <tr>
+                        <td>SMS OTP</td>
+                        <td>60</td>
+                    </tr>
+                    <tr>
+                        <td>비밀번호만</td>
+                        <td>40</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>2. 장치 신뢰 (가중치: 25%)</h4>
+            <p>장치 보안 상태를 평가합니다:</p>
+            <ul>
+                <li>운영 체제 최신 상태</li>
+                <li>디스크 암호화 활성화</li>
+                <li>안티바이러스 활성 및 최신</li>
+                <li>방화벽 활성화</li>
+                <li>MDM 등록 상태</li>
+                <li>탈옥/루팅 탐지 없음</li>
+            </ul>
+
+            <h4>3. 행동 신뢰 (가중치: 25%)</h4>
+            <p>머신 러닝을 사용하여 사용자 행동 패턴을 분석합니다:</p>
+            <ul>
+                <li>일반적인 액세스 시간 및 위치</li>
+                <li>리소스 액세스 패턴</li>
+                <li>탐색 행동</li>
+                <li>데이터 전송 볼륨</li>
+                <li>기준선에서의 편차</li>
+            </ul>
+
+            <h4>4. 네트워크 컨텍스트 (가중치: 20%)</h4>
+            <p>네트워크 및 위치 요인을 평가합니다:</p>
+            <ul>
+                <li>IP 평판 (정상, 의심스러운, 악의적인)</li>
+                <li>지리적 위치 (예상 vs 예상치 못한)</li>
+                <li>네트워크 유형 (기업, VPN, 공용 WiFi)</li>
+                <li>불가능한 이동 탐지</li>
+            </ul>
+
+            <h3>위험 수정자</h3>
+            <p>특정 조건은 신뢰 점수를 감소시킵니다:</p>
+            <ul>
+                <li><strong>비정상적인 위치:</strong> -15점</li>
+                <li><strong>비정상적인 시간:</strong> -10점</li>
+                <li><strong>새로운/알 수 없는 장치:</strong> -20점</li>
+                <li><strong>인증 시도 실패:</strong> 각 -5점</li>
+                <li><strong>위협 인텔리전스 일치:</strong> -40점</li>
+            </ul>
+
+            <h3>신뢰 기반 액세스 결정</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>신뢰 점수</th>
+                        <th>수준</th>
+                        <th>조치</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>85-100</td>
+                        <td>높음</td>
+                        <td>전체 액세스 허용</td>
+                    </tr>
+                    <tr>
+                        <td>70-84</td>
+                        <td>중간</td>
+                        <td>제한된 액세스, 강화된 모니터링</td>
+                    </tr>
+                    <tr>
+                        <td>50-69</td>
+                        <td>낮음</td>
+                        <td>단계적 인증 필요</td>
+                    </tr>
+                    <tr>
+                        <td>0-49</td>
+                        <td>심각</td>
+                        <td>액세스 거부, 경고 트리거</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="warning-box">
+                <h4>동적 재평가</h4>
+                <p>
+                    신뢰 점수는 정적이지 않습니다. 지속적인 모니터링을 기반으로 지속적으로 재계산됩니다.
+                    높은 신뢰로 시작한 세션도 점수가 임계값 아래로 떨어지면 종료될 수 있습니다.
+                </p>
+            </div>
+        </section>
+
+        <section id="implementation">
+            <h2>제5장: 구현 가이드</h2>
+
+            <p>
+                제로 트러스트 구현은 목적지가 아닌 여정입니다. 신중한 계획, 단계적 배포 및 지속적인 개선이
+                필요합니다.
+            </p>
+
+            <h3>1단계: 평가 및 계획</h3>
+            <ol>
+                <li><strong>보호 대상 식별:</strong> 중요한 데이터, 자산, 애플리케이션 및 서비스(DAAS) 목록 작성</li>
+                <li><strong>트랜잭션 흐름 매핑:</strong> 시스템과 사용자 간의 데이터 흐름 이해</li>
+                <li><strong>제로 트러스트 네트워크 설계:</strong> 보호 대상을 중심으로 마이크로 세그먼트 설계</li>
+                <li><strong>제로 트러스트 정책 생성:</strong> 누가 어떤 조건에서 무엇에 액세스해야 하는지 정의</li>
+                <li><strong>모니터링 및 유지 관리:</strong> 지속적인 개선 및 적응</li>
+            </ol>
+
+            <h3>2단계: 신원 기반</h3>
+            <ul>
+                <li>최신 신원 제공자 배포 (Azure AD, Okta 등)</li>
+                <li>조직 전체에 다중 요소 인증(MFA) 시행</li>
+                <li>가능한 경우 싱글 사인온(SSO) 구현</li>
+                <li>관리자 계정에 대한 권한 액세스 관리(PAM) 배포</li>
+                <li>조건부 액세스 정책 활성화</li>
+            </ul>
+
+            <h3>3단계: 장치 보안</h3>
+            <ul>
+                <li>모바일 장치 관리(MDM) / 엔드포인트 관리 배포</li>
+                <li>장치 규정 준수 정책 시행</li>
+                <li>모든 장치에 디스크 암호화 요구</li>
+                <li>엔드포인트 탐지 및 대응(EDR) 배포</li>
+                <li>장치 상태 증명 구현</li>
+            </ul>
+
+            <h3>4단계: 네트워크 마이크로 세그먼테이션</h3>
+            <ul>
+                <li>소프트웨어 정의 경계(SDP) 구현</li>
+                <li>신원 인식 기능이 있는 차세대 방화벽 배포</li>
+                <li>세분화된 네트워크 세그먼트 생성</li>
+                <li>최소 권한 네트워크 액세스 시행</li>
+                <li>동서 트래픽 모니터링 (시스템 간)</li>
+            </ul>
+
+            <h3>5단계: 애플리케이션 보안</h3>
+            <ul>
+                <li>애플리케이션 인식 프록시/게이트웨이 배포</li>
+                <li>제로 트러스트 제어가 있는 API 게이트웨이 구현</li>
+                <li>애플리케이션 수준 암호화 활성화</li>
+                <li>웹 애플리케이션 방화벽(WAF) 배포</li>
+                <li>런타임 애플리케이션 자체 보호(RASP) 구현</li>
+            </ul>
+
+            <h3>6단계: 지속적 모니터링</h3>
+            <ul>
+                <li>중앙 집중식 로깅을 위한 SIEM 배포</li>
+                <li>사용자 및 엔티티 행동 분석(UEBA) 구현</li>
+                <li>실시간 위협 탐지 활성화</li>
+                <li>사고 대응 워크플로 자동화</li>
+                <li>정기적인 보안 평가 및 감사</li>
+            </ul>
+
+            <div class="highlight-box">
+                <h4>빠른 시작: 최소 실행 가능한 제로 트러스트(MVZT)</h4>
+                <p>다음 필수 구성 요소로 시작하세요:</p>
+                <ol>
+                    <li>모든 사용자에게 MFA 시행</li>
+                    <li>장치 규정 준수 확인 배포</li>
+                    <li>클라우드 앱에 대한 조건부 액세스 구현</li>
+                    <li>중앙 집중식 로깅 및 모니터링 활성화</li>
+                    <li>일반 네트워크에서 중요한 자산 분리</li>
+                </ol>
+            </div>
+        </section>
+
+        <section id="use-cases">
+            <h2>제6장: 실제 사용 사례</h2>
+
+            <h3>사용 사례 1: 원격 인력 보안</h3>
+            <p><strong>과제:</strong> 개인 기기로 재택 근무하는 직원이 민감한 기업 데이터에 액세스합니다.</p>
+            <p><strong>제로 트러스트 솔루션:</strong></p>
+            <ul>
+                <li>모든 원격 액세스에 MFA 요구</li>
+                <li>액세스 허용 전 장치 규정 준수 확인</li>
+                <li>민감한 리소스에 대한 VPN 시행</li>
+                <li>비정상적인 액세스 패턴 모니터링</li>
+                <li>전체 네트워크가 아닌 특정 애플리케이션에 대한 액세스 제한</li>
+            </ul>
+
+            <h3>사용 사례 2: 제3자 공급업체 액세스</h3>
+            <p><strong>과제:</strong> 계약자와 공급업체가 특정 시스템에 대한 임시 액세스가 필요합니다.</p>
+            <p><strong>제로 트러스트 솔루션:</strong></p>
+            <ul>
+                <li>적시 액세스 프로비저닝</li>
+                <li>시간 제한 액세스 부여 (자동 만료)</li>
+                <li>측면 이동을 방지하는 마이크로 세그먼테이션</li>
+                <li>공급업체 활동에 대한 강화된 모니터링</li>
+                <li>영구 자격 증명 없음; 임시 토큰만</li>
+            </ul>
+
+            <h3>사용 사례 3: 내부자 위협 방지</h3>
+            <p><strong>과제:</strong> 합법적인 액세스 권한을 가진 악의적이거나 부주의한 내부자.</p>
+            <p><strong>제로 트러스트 솔루션:</strong></p>
+            <ul>
+                <li>이상을 탐지하는 행동 분석</li>
+                <li>최소 권한 액세스 시행</li>
+                <li>데이터 손실 방지(DLP) 통합</li>
+                <li>의심스러운 행동에 대한 자동 경고</li>
+                <li>정기적인 액세스 검토 및 재인증</li>
+            </ul>
+
+            <h3>사용 사례 4: 클라우드 마이그레이션</h3>
+            <p><strong>과제:</strong> 보안을 유지하면서 애플리케이션을 클라우드로 이동합니다.</p>
+            <p><strong>제로 트러스트 솔루션:</strong></p>
+            <ul>
+                <li>클라우드 액세스 보안 브로커(CASB) 배포</li>
+                <li>클라우드 리소스에 대한 신원 기반 액세스</li>
+                <li>전송 중 및 저장 데이터 암호화</li>
+                <li>제로 트러스트 제어가 있는 API 게이트웨이</li>
+                <li>지속적인 규정 준수 모니터링</li>
+            </ul>
+
+            <h3>사용 사례 5: 인수 합병</h3>
+            <p><strong>과제:</strong> 인수한 회사의 시스템과 사용자를 안전하게 통합합니다.</p>
+            <p><strong>제로 트러스트 솔루션:</strong></p>
+            <ul>
+                <li>인수한 회사를 위한 별도의 마이크로 세그먼트</li>
+                <li>검증을 기반으로 점진적인 신뢰 구축</li>
+                <li>통합 기간 동안 강화된 모니터링</li>
+                <li>조직 단위 기반 조건부 액세스</li>
+                <li>신뢰가 증가함에 따라 단계적 액세스 확장</li>
+            </ul>
+        </section>
+
+        <section id="best-practices">
+            <h2>제7장: 모범 사례 및 권장 사항</h2>
+
+            <h3>신원 및 액세스 관리</h3>
+            <ul>
+                <li>모든 사용자, 특히 권한 있는 계정에 MFA 시행</li>
+                <li>가능한 경우 비밀번호 없는 인증 사용 (FIDO2, 생체 인식)</li>
+                <li>적시(JIT) 권한 액세스 구현</li>
+                <li>정기적인 액세스 검토 (최소 분기별)</li>
+                <li>사용자 및 관리자 계정 분리</li>
+                <li>강력한 비밀번호 정책 구현 (길이 > 복잡성)</li>
+            </ul>
+
+            <h3>장치 관리</h3>
+            <ul>
+                <li>액세스 허용 전 장치 등록 요구</li>
+                <li>자동 OS 업데이트 시행</li>
+                <li>모든 장치에 디스크 암호화 의무화</li>
+                <li>모든 엔드포인트에 EDR 배포</li>
+                <li>BYOD에 대한 모바일 애플리케이션 관리(MAM) 구현</li>
+                <li>정기적인 취약성 스캐닝</li>
+            </ul>
+
+            <h3>네트워크 보안</h3>
+            <ul>
+                <li>VLAN만이 아닌 마이크로 세그먼테이션 구현</li>
+                <li>모든 트래픽 암호화 (최소 TLS 1.3)</li>
+                <li>북남 트래픽뿐만 아니라 동서 트래픽 모니터링</li>
+                <li>소프트웨어 정의 경계(SDP) 사용</li>
+                <li>DNS 필터링 및 모니터링 구현</li>
+            </ul>
+
+            <h3>애플리케이션 보안</h3>
+            <ul>
+                <li>속도 제한이 있는 API 게이트웨이 배포</li>
+                <li>OAuth 2.0 / OpenID Connect 구현</li>
+                <li>단기 액세스 토큰 사용</li>
+                <li>애플리케이션 수준 로깅 활성화</li>
+                <li>정기적인 보안 테스트 (SAST, DAST, 침투 테스트)</li>
+            </ul>
+
+            <h3>모니터링 및 대응</h3>
+            <ul>
+                <li>중앙 집중식 로깅 (SIEM 배포)</li>
+                <li>중요 이벤트에 대한 실시간 경고</li>
+                <li>자동화된 사고 대응 플레이북</li>
+                <li>정기적인 보안 훈련 및 탁상 연습</li>
+                <li>위협 사냥 활동</li>
+                <li>위협 인텔리전스 피드와의 통합</li>
+            </ul>
+
+            <h3>정책 관리</h3>
+            <ul>
+                <li>제한적인 정책으로 시작하여 점진적으로 완화</li>
+                <li>시행 전에 감사 모드에서 정책 테스트</li>
+                <li>모든 정책 결정 및 예외 문서화</li>
+                <li>정기적인 정책 검토 (최소 연간)</li>
+                <li>정책 변경에 대한 버전 제어</li>
+            </ul>
+
+            <div class="warning-box">
+                <h4>피해야 할 일반적인 함정</h4>
+                <ul>
+                    <li><strong>바다 끓이기:</strong> 한 번에 모든 것을 구현하려고 시도. 고가치 자산으로 시작하세요.</li>
+                    <li><strong>사용자 경험 무시:</strong> 사용자를 좌절시키는 보안은 우회 방법과 섀도우 IT로 이어집니다.</li>
+                    <li><strong>설정 후 망각:</strong> 제로 트러스트는 지속적인 모니터링 및 조정이 필요합니다.</li>
+                    <li><strong>불충분한 로깅:</strong> 볼 수 없는 것은 보호할 수 없습니다.</li>
+                    <li><strong>경영진 지원 부족:</strong> 제로 트러스트는 조직 전체의 동의와 리소스가 필요합니다.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="conclusion">
+            <h2>제8장: 결론</h2>
+
+            <p>
+                제로 트러스트 아키텍처는 조직이 사이버 보안에 접근하는 방식의 근본적인 변화를 나타냅니다.
+                암묵적 신뢰를 제거하고 지속적인 검증을 요구함으로써 조직은 위험 노출을 크게 줄이고 중요한
+                자산을 더 잘 보호할 수 있습니다.
+            </p>
+
+            <h3>핵심 요점</h3>
+            <ul>
+                <li><strong>절대 신뢰하지 말고, 항상 검증:</strong> 모든 제로 트러스트 결정을 주도하는 핵심 원칙</li>
+                <li><strong>지속적 검증:</strong> 보안은 일회성 점검이 아니라 지속적인 프로세스</li>
+                <li><strong>최소 권한:</strong> 필요한 최소 시간 동안 필요한 최소 액세스 권한 부여</li>
+                <li><strong>침해 가정:</strong> 공격자가 이미 내부에 있다고 가정하여 시스템 설계</li>
+                <li><strong>목적지가 아닌 여정:</strong> 제로 트러스트는 시간이 지남에 따라 단계적으로 구현됩니다</li>
+            </ul>
+
+            <h3>시작하기</h3>
+            <p>다음 즉각적인 단계로 제로 트러스트 여정을 시작하세요:</p>
+            <ol>
+                <li>현재 보안 상태 평가</li>
+                <li>가장 중요한 자산 식별 (보호 대상)</li>
+                <li>조직 전체에 MFA 구현</li>
+                <li>장치 규정 준수 확인 배포</li>
+                <li>중앙 집중식 로깅 및 모니터링 활성화</li>
+                <li>단계적 구현 로드맵 작성</li>
+            </ol>
+
+            <h3>제로 트러스트의 미래</h3>
+            <p>
+                제로 트러스트는 AI, 머신 러닝 및 자동화의 발전과 함께 계속 진화하고 있습니다. 향후 개발에는
+                다음이 포함됩니다:
+            </p>
+            <ul>
+                <li>더 정확한 신뢰 점수를 위한 AI 기반 행동 분석</li>
+                <li>자동화된 정책 생성 및 최적화</li>
+                <li>변경 불가능한 감사 추적을 위한 블록체인과의 통합</li>
+                <li>양자 저항성 암호화</li>
+                <li>확장 탐지 및 대응(XDR) 통합</li>
+            </ul>
+
+            <div class="highlight-box">
+                <h4>추가 학습 리소스</h4>
+                <ul>
+                    <li><strong>NIST SP 800-207:</strong> 제로 트러스트 아키텍처 공식 프레임워크</li>
+                    <li><strong>CISA 제로 트러스트 성숙도 모델:</strong> 구현 지침</li>
+                    <li><strong>WIA-SEC-005 사양:</strong> 기술 구현 세부 사항</li>
+                    <li><strong>WIA 대화형 시뮬레이터:</strong> 실습 제로 트러스트 연습</li>
+                    <li><strong>커뮤니티 포럼:</strong> 토론 및 지원을 위한 wia.org/community</li>
+                </ul>
+            </div>
+
+            <p style="margin-top: 2rem; font-size: 1.1em; color: var(--accent);">
+                제로 트러스트는 단순한 기술이 아니라 사고방식입니다. 지속적인 검증, 최소 권한 및 침해 가정의
+                원칙을 채택함으로써 조직은 현재 및 미래의 위협으로부터 보호하는 탄력적인 보안 아키텍처를
+                구축할 수 있습니다.
+            </p>
+        </section>
+
+        <footer>
+            <p class="philosophy">弘益人間 (홍익인간)</p>
+            <p class="philosophy">널리 인간을 이롭게 하라</p>
+            <p class="copyright">© 2025 SmileStory Inc. / WIA</p>
+            <p class="copyright" style="margin-top: 1rem;">
+                <a href="https://github.com/WIA-Official/wia-standards" target="_blank" style="color: var(--accent); text-decoration: none;">GitHub</a> •
+                <a href="https://wia.org" target="_blank" style="color: var(--accent); text-decoration: none;">WIA.org</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

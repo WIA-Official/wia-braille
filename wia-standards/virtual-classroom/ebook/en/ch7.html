@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 7: Integration Patterns | WIA-EDU-006</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; }
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+        header { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-bottom: 3px solid #8B5CF6; padding: 2rem; margin-bottom: 3rem; border-radius: 10px; }
+        .chapter-title { color: #8B5CF6; font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .chapter-subtitle { color: #94a3b8; font-size: 1.2rem; }
+        nav { background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        nav a { color: #8B5CF6; text-decoration: none; padding: 0.5rem 1rem; border: 2px solid #8B5CF6; border-radius: 5px; transition: all 0.3s ease; }
+        nav a:hover { background: #8B5CF6; color: white; }
+        .content { background: #1e293b; padding: 3rem; border-radius: 10px; margin-bottom: 2rem; }
+        h1, h2, h3 { color: #8B5CF6; margin-top: 2rem; margin-bottom: 1rem; }
+        h1 { font-size: 2rem; border-bottom: 2px solid #334155; padding-bottom: 0.5rem; }
+        h2 { font-size: 1.6rem; }
+        h3 { font-size: 1.3rem; color: #a78bfa; }
+        p { margin-bottom: 1rem; color: #cbd5e1; }
+        ul, ol { margin-left: 2rem; margin-bottom: 1rem; color: #cbd5e1; }
+        li { margin-bottom: 0.5rem; }
+        .highlight { background: #334155; padding: 1.5rem; border-left: 4px solid #8B5CF6; border-radius: 5px; margin: 1.5rem 0; }
+        code { background: #0a0f1e; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Courier New', monospace; color: #10b981; }
+        pre { background: #0a0f1e; padding: 1.5rem; border-radius: 5px; overflow-x: auto; margin: 1rem 0; color: #e2e8f0; }
+        .diagram { background: #334155; padding: 2rem; border-radius: 8px; margin: 1.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #334155; color: #8B5CF6; font-weight: bold; }
+        footer { background: #1e293b; padding: 2rem; border-radius: 8px; text-align: center; border-top: 3px solid #8B5CF6; }
+        .philosophy { color: #8B5CF6; font-size: 1.2rem; font-weight: bold; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-title">Chapter 7</div>
+            <div class="chapter-subtitle">Integration Patterns</div>
+        </header>
+
+        <nav>
+            <a href="ch6.html">← Previous</a>
+            <span style="color: #94a3b8;">WIA-EDU-006 eBook</span>
+            <a href="ch8.html">Next Chapter →</a>
+        </nav>
+
+        <div class="content">
+            <h1>Integration Patterns</h1>
+
+            <p>
+                Virtual classrooms rarely exist in isolation. They integrate with learning management systems,
+                student information systems, identity providers, calendar services, and numerous third-party
+                educational tools. This chapter explores standardized integration patterns that enable seamless
+                interoperability while maintaining security and data integrity.
+            </p>
+
+            <h2>7.1 LMS Integration</h2>
+
+            <h3>7.1.1 LTI (Learning Tools Interoperability)</h3>
+
+            <p>
+                LTI is the industry standard for integrating learning tools with LMS platforms. WIA-EDU-006
+                mandates LTI 1.3 (LTI Advantage) support for deep integration capabilities.
+            </p>
+
+            <div class="highlight">
+                <strong style="color: #8B5CF6;">LTI Integration Benefits:</strong>
+                <ul>
+                    <li>Single sign-on: Students launch virtual classroom from LMS without separate login</li>
+                    <li>Automatic roster sync: Participant lists synchronized from course enrollments</li>
+                    <li>Grade passback: Assessment scores automatically posted to LMS gradebook</li>
+                    <li>Deep linking: Launch directly to specific classroom sessions or content</li>
+                    <li>Membership updates: Real-time notification of enrollment changes</li>
+                </ul>
+            </div>
+
+            <h3>7.1.2 LTI Implementation</h3>
+
+            <p>
+                Implementing LTI 1.3 involves several components:
+            </p>
+
+            <pre><code>// Example: LTI 1.3 Launch Request Handler
+const ltijs = require('ltijs').Provider;
+
+// Initialize LTI provider
+ltijs.setup(process.env.LTI_KEY, {
+  url: process.env.DATABASE_URL,
+  connection: { user: 'user', password: 'pass' }
+}, {
+  appRoute: '/',
+  loginRoute: '/login',
+  keysetRoute: '/keys',
+  staticPath: '/public'
+});
+
+// Register LTI platform (LMS)
+await ltijs.registerPlatform({
+  url: 'https://lms.institution.edu',
+  name: 'Institution LMS',
+  clientId: 'client_id_from_lms',
+  authenticationEndpoint: 'https://lms.institution.edu/auth',
+  accesstokenEndpoint: 'https://lms.institution.edu/token',
+  authConfig: { method: 'JWK_SET', key: 'https://lms.institution.edu/jwks' }
+});
+
+// Handle LTI launch
+ltijs.onConnect(async (token, req, res) => {
+  // Extract user information
+  const userId = token.user;
+  const userName = await token.userInfo.name;
+  const userEmail = await token.userInfo.email;
+  const roles = token.platformContext.roles;
+
+  // Get course context
+  const courseId = token.platformContext.context.id;
+  const courseTitle = token.platformContext.context.title;
+
+  // Create or find virtual classroom session
+  const session = await findOrCreateSession({
+    lmsId: token.platform,
+    courseId,
+    courseTitle,
+    launchedBy: userId
+  });
+
+  // Add user to session with appropriate role
+  const role = mapLTIRole(roles);
+  await session.addParticipant({
+    id: userId,
+    name: userName,
+    email: userEmail,
+    role
+  });
+
+  // Redirect to classroom
+  return res.redirect(`/classroom/${session.id}`);
+});
+
+// Grade passback
+async function submitGrade(userId, sessionId, score) {
+  const grade = ltijs.Grade.scoreGrade(score, 100);
+  await ltijs.Grade.submitScore(userId, grade);
+}</code></pre>
+
+            <h3>7.1.3 Common LMS Platforms</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Platform</th>
+                        <th>LTI Support</th>
+                        <th>Integration Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Canvas</td>
+                        <td>LTI 1.3</td>
+                        <td>Excellent support, developer console available</td>
+                    </tr>
+                    <tr>
+                        <td>Moodle</td>
+                        <td>LTI 1.3</td>
+                        <td>Requires plugin installation, extensive documentation</td>
+                    </tr>
+                    <tr>
+                        <td>Blackboard</td>
+                        <td>LTI 1.3</td>
+                        <td>Building block SDK, institutional approval process</td>
+                    </tr>
+                    <tr>
+                        <td>Google Classroom</td>
+                        <td>Limited</td>
+                        <td>Uses Google OAuth, custom integration required</td>
+                    </tr>
+                    <tr>
+                        <td>Brightspace (D2L)</td>
+                        <td>LTI 1.3</td>
+                        <td>Strong support, integration wizard available</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>7.2 Identity Provider Integration</h2>
+
+            <h3>7.2.1 Single Sign-On (SSO)</h3>
+
+            <p>
+                SSO enables users to access virtual classrooms using existing institutional credentials.
+                WIA-EDU-006 supports multiple SSO protocols:
+            </p>
+
+            <div class="diagram">
+                <h4 style="color: #8B5CF6; margin-bottom: 1rem;">SAML 2.0 Authentication Flow</h4>
+                <pre style="text-align: left; color: #10b981; font-size: 0.85rem;">
+1. User attempts to access virtual classroom
+2. Virtual classroom (SP) redirects to institution IdP
+3. User authenticates with institution credentials
+4. IdP generates SAML assertion
+5. IdP redirects user back to virtual classroom with assertion
+6. Virtual classroom validates assertion
+7. User granted access based on assertion claims
+                </pre>
+            </div>
+
+            <h3>7.2.2 OAuth 2.0 Integration</h3>
+
+            <pre><code>// Example: Google OAuth 2.0 Integration
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  'https://classroom.example.com/auth/google/callback'
+);
+
+// Redirect to Google for authentication
+app.get('/auth/google', (req, res) => {
+  const authorizeUrl = client.generateAuthUrl({
+    access_type: 'offline',
+    scope: [
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/calendar.events'
+    ]
+  });
+  res.redirect(authorizeUrl);
+});
+
+// Handle OAuth callback
+app.get('/auth/google/callback', async (req, res) => {
+  const { code } = req.query;
+
+  // Exchange code for tokens
+  const { tokens } = await client.getToken(code);
+  client.setCredentials(tokens);
+
+  // Get user info
+  const ticket = await client.verifyIdToken({
+    idToken: tokens.id_token,
+    audience: process.env.GOOGLE_CLIENT_ID
+  });
+
+  const payload = ticket.getPayload();
+  const userId = payload['sub'];
+  const email = payload['email'];
+  const name = payload['name'];
+
+  // Create or update user
+  const user = await findOrCreateUser({
+    providerId: userId,
+    provider: 'google',
+    email,
+    name
+  });
+
+  // Create session
+  req.session.userId = user.id;
+  res.redirect('/dashboard');
+});</code></pre>
+
+            <h2>7.3 Calendar Integration</h2>
+
+            <h3>7.3.1 Bidirectional Sync</h3>
+
+            <p>
+                Virtual classroom sessions should synchronize with calendar systems for scheduling:
+            </p>
+
+            <ul>
+                <li><strong>Google Calendar:</strong> Create/update events via Calendar API</li>
+                <li><strong>Microsoft Outlook:</strong> Use Microsoft Graph API for calendar operations</li>
+                <li><strong>iCal/CalDAV:</strong> Generate .ics files for universal calendar support</li>
+            </ul>
+
+            <pre><code>// Example: Create Google Calendar event for classroom session
+async function createCalendarEvent(session, userTokens) {
+  const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
+
+  const event = {
+    summary: session.name,
+    description: `Virtual classroom session\nJoin: ${session.joinUrl}`,
+    start: {
+      dateTime: session.startTime.toISOString(),
+      timeZone: session.timeZone
+    },
+    end: {
+      dateTime: session.endTime.toISOString(),
+      timeZone: session.timeZone
+    },
+    attendees: session.participants.map(p => ({ email: p.email })),
+    conferenceData: {
+      createRequest: {
+        requestId: session.id,
+        conferenceSolutionKey: { type: 'hangoutsMeet' }
+      }
+    },
+    reminders: {
+      useDefault: false,
+      overrides: [
+        { method: 'email', minutes: 24 * 60 },
+        { method: 'popup', minutes: 10 }
+      ]
+    }
+  };
+
+  const response = await calendar.events.insert({
+    calendarId: 'primary',
+    resource: event,
+    conferenceDataVersion: 1,
+    sendUpdates: 'all'
+  });
+
+  return response.data;
+}</code></pre>
+
+            <h2>7.4 Third-Party Tool Integration</h2>
+
+            <h3>7.4.1 Collaborative Whiteboards</h3>
+
+            <p>
+                Integrate external whiteboard tools for enhanced collaboration:
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tool</th>
+                        <th>Integration Method</th>
+                        <th>Use Cases</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Miro</td>
+                        <td>Embed API, OAuth</td>
+                        <td>Design thinking, brainstorming</td>
+                    </tr>
+                    <tr>
+                        <td>Mural</td>
+                        <td>iframe embed, API</td>
+                        <td>Visual collaboration, workshops</td>
+                    </tr>
+                    <tr>
+                        <td>Jamboard</td>
+                        <td>Google API</td>
+                        <td>Simple sketching, annotations</td>
+                    </tr>
+                    <tr>
+                        <td>Whiteboard.fi</td>
+                        <td>URL sharing</td>
+                        <td>Individual student whiteboards</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>7.4.2 Assessment Platforms</h3>
+
+            <p>
+                Integrate specialized assessment tools:
+            </p>
+
+            <ul>
+                <li><strong>Kahoot:</strong> Gamified quizzes and polls</li>
+                <li><strong>Quizlet:</strong> Flashcards and study tools</li>
+                <li><strong>Turnitin:</strong> Plagiarism detection and grading</li>
+                <li><strong>Gradescope:</strong> AI-assisted grading</li>
+            </ul>
+
+            <h3>7.4.3 Content Libraries</h3>
+
+            <p>
+                Connect to educational content repositories:
+            </p>
+
+            <div class="highlight">
+                <strong style="color: #8B5CF6;">Content Integration Options:</strong>
+                <ul>
+                    <li><strong>OpenStax:</strong> Free, peer-reviewed textbooks via API</li>
+                    <li><strong>YouTube Education:</strong> Embed educational videos</li>
+                    <li><strong>Khan Academy:</strong> Supplemental video lessons</li>
+                    <li><strong>OER Commons:</strong> Open educational resources</li>
+                    <li><strong>PhET Simulations:</strong> Interactive STEM simulations</li>
+                </ul>
+            </div>
+
+            <h2>7.5 Data Exchange Formats</h2>
+
+            <h3>7.5.1 xAPI (Experience API)</h3>
+
+            <p>
+                xAPI tracks learning experiences in a standardized format:
+            </p>
+
+            <pre><code>// Example: Send xAPI statement when student completes activity
+const statement = {
+  actor: {
+    mbox: `mailto:${student.email}`,
+    name: student.name,
+    objectType: 'Agent'
+  },
+  verb: {
+    id: 'http://adlnet.gov/expapi/verbs/completed',
+    display: { 'en-US': 'completed' }
+  },
+  object: {
+    id: `https://classroom.example.com/activities/${activityId}`,
+    objectType: 'Activity',
+    definition: {
+      name: { 'en-US': 'Lab Exercise 3' },
+      description: { 'en-US': 'DNA Replication Simulation' },
+      type: 'http://adlnet.gov/expapi/activities/simulation'
+    }
+  },
+  result: {
+    score: {
+      scaled: 0.95,
+      raw: 95,
+      min: 0,
+      max: 100
+    },
+    success: true,
+    completion: true,
+    duration: 'PT45M'
+  },
+  context: {
+    contextActivities: {
+      parent: [{
+        id: `https://classroom.example.com/courses/${courseId}`,
+        objectType: 'Activity'
+      }]
+    },
+    instructor: {
+      mbox: `mailto:${instructor.email}`,
+      name: instructor.name,
+      objectType: 'Agent'
+    }
+  }
+};
+
+// Send to Learning Record Store (LRS)
+await sendToLRS(statement);</code></pre>
+
+            <h3>7.5.2 SCORM Packages</h3>
+
+            <p>
+                Support SCORM content for compatibility with legacy content:
+            </p>
+
+            <ul>
+                <li>Extract SCORM package ZIP files</li>
+                <li>Parse manifest (imsmanifest.xml)</li>
+                <li>Track completion, score, time via SCORM API</li>
+                <li>Report data back to LMS</li>
+            </ul>
+
+            <h2>7.6 Webhook Integrations</h2>
+
+            <h3>7.6.1 Event Notifications</h3>
+
+            <p>
+                Webhooks enable real-time notifications to external systems:
+            </p>
+
+            <pre><code>// Example: Webhook system for classroom events
+class WebhookManager {
+  async trigger(event, data) {
+    const subscriptions = await getWebhookSubscriptions(event);
+
+    const promises = subscriptions.map(async (sub) => {
+      try {
+        const payload = {
+          event,
+          timestamp: new Date().toISOString(),
+          data,
+          signature: this.generateSignature(data, sub.secret)
+        };
+
+        await axios.post(sub.url, payload, {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Webhook-Event': event,
+            'X-Webhook-Signature': payload.signature
+          },
+          timeout: 5000
+        });
+
+        await logWebhookSuccess(sub.id, event);
+      } catch (error) {
+        await logWebhookFailure(sub.id, event, error);
+        await retryWebhook(sub, event, data);
+      }
+    });
+
+    await Promise.allSettled(promises);
+  }
+
+  generateSignature(data, secret) {
+    return crypto
+      .createHmac('sha256', secret)
+      .update(JSON.stringify(data))
+      .digest('hex');
+  }
+}
+
+// Trigger webhook on session start
+await webhooks.trigger('session.started', {
+  sessionId: session.id,
+  name: session.name,
+  startTime: session.startTime,
+  participantCount: session.participants.length
+});</code></pre>
+
+            <h3>7.6.2 Supported Webhook Events</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Payload</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>session.started</td>
+                        <td>Session details</td>
+                        <td>Trigger recording, send notifications</td>
+                    </tr>
+                    <tr>
+                        <td>session.ended</td>
+                        <td>Session summary, analytics</td>
+                        <td>Process recordings, generate reports</td>
+                    </tr>
+                    <tr>
+                        <td>participant.joined</td>
+                        <td>Participant info</td>
+                        <td>Update attendance logs</td>
+                    </tr>
+                    <tr>
+                        <td>participant.left</td>
+                        <td>Participant info, duration</td>
+                        <td>Track engagement time</td>
+                    </tr>
+                    <tr>
+                        <td>assessment.submitted</td>
+                        <td>Assessment data, score</td>
+                        <td>Grade passback to LMS</td>
+                    </tr>
+                    <tr>
+                        <td>recording.ready</td>
+                        <td>Recording URL, metadata</td>
+                        <td>Publish to content library</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>7.7 API Design Best Practices</h2>
+
+            <h3>7.7.1 RESTful API Standards</h3>
+
+            <p>
+                Well-designed APIs enable third-party integrations:
+            </p>
+
+            <div class="highlight">
+                <strong style="color: #8B5CF6;">API Design Principles:</strong>
+                <ul>
+                    <li>Versioning: Include version in URL (e.g., /api/v1/)</li>
+                    <li>Consistent naming: Use plural nouns for resources</li>
+                    <li>HTTP verbs: GET (read), POST (create), PUT/PATCH (update), DELETE (delete)</li>
+                    <li>Status codes: 200 (success), 201 (created), 400 (bad request), 401 (unauthorized), etc.</li>
+                    <li>Pagination: Return large datasets in pages with metadata</li>
+                    <li>Filtering: Support query parameters for filtering results</li>
+                    <li>Rate limiting: Prevent abuse with request limits</li>
+                    <li>Documentation: Comprehensive API docs with examples (OpenAPI/Swagger)</li>
+                </ul>
+            </div>
+
+            <h3>7.7.2 GraphQL Alternative</h3>
+
+            <p>
+                For complex data requirements, GraphQL provides flexible querying:
+            </p>
+
+            <pre><code>// Example: GraphQL schema for virtual classroom
+type Session {
+  id: ID!
+  name: String!
+  startTime: DateTime!
+  endTime: DateTime
+  status: SessionStatus!
+  participants: [Participant!]!
+  messages(limit: Int, offset: Int): [Message!]!
+  analytics: SessionAnalytics
+}
+
+type Participant {
+  id: ID!
+  name: String!
+  email: String!
+  role: UserRole!
+  audioEnabled: Boolean!
+  videoEnabled: Boolean!
+  joinedAt: DateTime!
+}
+
+type Query {
+  session(id: ID!): Session
+  sessions(status: SessionStatus, limit: Int, offset: Int): [Session!]!
+  participant(id: ID!): Participant
+}
+
+type Mutation {
+  createSession(input: CreateSessionInput!): Session!
+  joinSession(sessionId: ID!, participant: ParticipantInput!): Participant!
+  sendMessage(sessionId: ID!, content: String!): Message!
+}</code></pre>
+
+            <h2>7.8 Summary</h2>
+
+            <p>
+                Effective integration transforms isolated virtual classrooms into comprehensive learning ecosystems.
+                By supporting standard protocols like LTI, SAML, OAuth, and xAPI, WIA-EDU-006 compliant platforms
+                seamlessly connect with the broader educational technology landscape.
+            </p>
+
+            <div class="highlight">
+                <strong style="color: #8B5CF6;">Integration Best Practices:</strong>
+                <ul>
+                    <li>Prioritize standards-based integration (LTI, SAML, OAuth) over custom solutions</li>
+                    <li>Implement robust error handling and retry logic for external API calls</li>
+                    <li>Use webhooks for real-time event notifications</li>
+                    <li>Design APIs with third-party developers in mind</li>
+                    <li>Maintain comprehensive API documentation</li>
+                    <li>Version APIs to allow breaking changes without disrupting existing integrations</li>
+                    <li>Monitor integration health and performance</li>
+                </ul>
+            </div>
+
+            <p style="margin-top: 2rem;">
+                In the final chapter, we'll explore the future roadmap for WIA-EDU-006, examining emerging
+                technologies, planned enhancements, and the evolution of virtual classroom standards.
+            </p>
+        </div>
+
+        <nav>
+            <a href="ch6.html">← Previous</a>
+            <span style="color: #94a3b8;">Chapter 7 of 8</span>
+            <a href="ch8.html">Next Chapter →</a>
+        </nav>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / WIA (World Certification Industry Association)</p>
+            <p>WIA-EDU-006: Virtual Classroom Standard</p>
+            <p class="philosophy">弘益人間 · Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

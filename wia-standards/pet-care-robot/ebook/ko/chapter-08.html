@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>제8장: 구현 가이드 - WIA-PET-CARE-ROBOT</title>
+</head>
+<body>
+<p><a href="index.html">목차</a></p>
+
+<h1>제8장: 구현 가이드</h1>
+
+<blockquote>
+"홍익인간: 세심한 구현은 기술이 도움을 주려는 존재를 진정으로 섬기도록 보장합니다."
+</blockquote>
+
+<hr>
+
+<h2>8.1 시스템 아키텍처</h2>
+
+<pre>
+서비스 아키텍처
+==============
+
++------------------+
+|   모바일 앱      |
+|  (iOS/Android)   |
++------------------+
+        |
++------------------+
+|   API 게이트웨이 |
++------------------+
+        |
++-------+-------+-------+-------+
+|       |       |       |       |
+v       v       v       v       v
+로봇    급식    놀이    건강    알림
+제어    서비스  서비스  서비스  서비스
+|       |       |       |       |
++-------+-------+-------+-------+
+        |
++-------+-------+
+|               |
+v               v
+PostgreSQL    Redis
++ TimescaleDB  (캐시)
+</pre>
+
+<hr>
+
+<h2>8.2 핵심 서비스</h2>
+
+<table border="1">
+<tr>
+<th>서비스</th>
+<th>책임</th>
+<th>기술</th>
+</tr>
+<tr>
+<td>로봇 제어</td>
+<td>명령 발송, 상태</td>
+<td>Rust/Go</td>
+</tr>
+<tr>
+<td>급식 서비스</td>
+<td>스케줄, 급식, 추적</td>
+<td>Rust</td>
+</tr>
+<tr>
+<td>놀이 서비스</td>
+<td>세션, AI 적응</td>
+<td>Python + Rust</td>
+</tr>
+<tr>
+<td>건강 서비스</td>
+<td>지표, 패턴, 알림</td>
+<td>Python</td>
+</tr>
+<tr>
+<td>안전 서비스</td>
+<td>실시간 모니터링</td>
+<td>Rust</td>
+</tr>
+<tr>
+<td>알림</td>
+<td>푸시, 이메일, SMS</td>
+<td>Node.js</td>
+</tr>
+<tr>
+<td>스트림 서비스</td>
+<td>비디오/오디오 스트리밍</td>
+<td>Rust + WebRTC</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>8.3 데이터베이스 스키마</h2>
+
+<pre>
+핵심 테이블
+==========
+
+-- 로봇 등록
+CREATE TABLE care_robots (
+  robot_id UUID PRIMARY KEY,
+  household_id UUID NOT NULL,
+  robot_type VARCHAR(30) NOT NULL,
+  model VARCHAR(100) NOT NULL,
+  firmware_version VARCHAR(20),
+  capabilities JSONB NOT NULL,
+  status VARCHAR(20) DEFAULT 'OFFLINE',
+  configuration JSONB,
+  registered_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 급식 구성
+CREATE TABLE feeding_configurations (
+  config_id UUID PRIMARY KEY,
+  robot_id UUID REFERENCES care_robots,
+  pet_id UUID NOT NULL,
+  daily_target_grams DECIMAL(6,1),
+  max_single_portion DECIMAL(6,1),
+  min_time_between INTEGER,
+  access_control JSONB
+);
+
+-- 급식 기록
+CREATE TABLE feeding_records (
+  record_id UUID PRIMARY KEY,
+  robot_id UUID REFERENCES care_robots,
+  pet_id UUID NOT NULL,
+  dispensed_grams DECIMAL(6,1),
+  consumed_grams DECIMAL(6,1),
+  duration_seconds INTEGER,
+  started_at TIMESTAMPTZ
+);
+
+-- 환경 측정 (TimescaleDB)
+CREATE TABLE environment_readings (
+  time TIMESTAMPTZ NOT NULL,
+  robot_id UUID NOT NULL,
+  sensor_type VARCHAR(30),
+  value DECIMAL(10,2),
+  unit VARCHAR(20)
+);
+SELECT create_hypertable('environment_readings', 'time');
+
+-- 안전 이벤트
+CREATE TABLE safety_events (
+  event_id UUID PRIMARY KEY,
+  robot_id UUID REFERENCES care_robots,
+  event_type VARCHAR(50) NOT NULL,
+  severity VARCHAR(20) NOT NULL,
+  details JSONB,
+  occurred_at TIMESTAMPTZ DEFAULT NOW()
+);
+</pre>
+
+<hr>
+
+<h2>8.4 통신 프로토콜</h2>
+
+<pre>
+로봇 통신 스택
+=============
+
+MQTT 토픽:
+  robot/{id}/status      - 로봇 상태 업데이트
+  robot/{id}/command     - 로봇으로 명령
+  robot/{id}/response    - 명령 응답
+  robot/{id}/sensors/#   - 센서 데이터
+  robot/{id}/alerts      - 안전 알림
+
+WebSocket 채널:
+  /ws/robot/{id}/stream  - 비디오/오디오
+  /ws/robot/{id}/control - 실시간 제어
+
+REST API:
+  /api/v1/robots         - 로봇 관리
+  /api/v1/feeding        - 급식 제어
+  /api/v1/play           - 놀이 세션
+  /api/v1/health         - 건강 지표
+  /api/v1/safety         - 안전 상태
+
+보안:
+  - 모든 연결에 TLS 1.3
+  - OAuth 2.0 + JWT 토큰
+  - 로봇용 인증서 피닝
+  - 클라이언트별 레이트 제한
+</pre>
+
+<hr>
+
+<h2>8.5 배포</h2>
+
+<pre>
+DOCKER COMPOSE
+==============
+
+version: '3.8'
+services:
+  robot-api:
+    image: wia/care-robot-api:latest
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://db:5432/care_robot
+      REDIS_URL: redis://redis:6379
+      MQTT_BROKER: mqtt://mqtt:1883
+    depends_on:
+      - db
+      - redis
+      - mqtt
+
+  safety-service:
+    image: wia/safety-service:latest
+    environment:
+      ALERT_THRESHOLD_MS: 100
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  stream-service:
+    image: wia/stream-service:latest
+    ports:
+      - "8084:8084"
+    environment:
+      TURN_SERVER: turn.example.com
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+      - "8883:8883"
+
+  db:
+    image: timescale/timescaledb:latest-pg15
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+
+volumes:
+  pgdata:
+  redis_data:
+</pre>
+
+<hr>
+
+<h2>8.6 보안 요구사항</h2>
+
+<table border="1">
+<tr>
+<th>계층</th>
+<th>보호</th>
+</tr>
+<tr>
+<td>전송</td>
+<td>TLS 1.3, 인증서 피닝</td>
+</tr>
+<tr>
+<td>인증</td>
+<td>OAuth 2.0, 디바이스 인증서</td>
+</tr>
+<tr>
+<td>인가</td>
+<td>RBAC, 로봇별 권한</td>
+</tr>
+<tr>
+<td>저장 데이터</td>
+<td>AES-256 암호화</td>
+</tr>
+<tr>
+<td>비디오/오디오</td>
+<td>종단 간 암호화 옵션</td>
+</tr>
+<tr>
+<td>펌웨어</td>
+<td>서명된 업데이트만</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>8.7 펌웨어 요구사항</h2>
+
+<pre>
+로봇 펌웨어 표준
+===============
+
+핵심 요구사항:
+  - 보안 부팅
+  - 서명된 펌웨어 업데이트
+  - 롤백 기능
+  - 워치독 타이머
+  - 안전 모드 폴백
+
+통신:
+  - MQTT 클라이언트
+  - TLS 지원
+  - 인증서 저장
+  - 오프라인 큐
+
+안전:
+  - 로컬 안전 모니터링
+  - 비상 정지 로직
+  - 페일세이프 동작
+  - 센서 검증
+
+업데이트:
+  - OTA 업데이트 지원
+  - 델타 업데이트 선호
+  - 예약 업데이트 시간
+  - 보호자 동의 필요
+</pre>
+
+<hr>
+
+<h2>8.8 테스트 요구사항</h2>
+
+<pre>
+테스트 체크리스트
+================
+
+안전 테스트:
+  [ ] 비상 정지 응답 < 100ms
+  [ ] 충돌 회피 정확도
+  [ ] 반려동물 감지 신뢰성
+  [ ] 아이 안전 기능
+  [ ] 페일세이프 활성화
+
+기능 테스트:
+  [ ] 급식 정확도 +/- 5%
+  [ ] 스케줄 실행
+  [ ] 다중 반려동물 인식
+  [ ] 놀이 세션 관리
+  [ ] 건강 지표 수집
+
+통합 테스트:
+  [ ] 클라우드 연결
+  [ ] 모바일 앱 제어
+  [ ] 건강 서비스 동기화
+  [ ] 스마트 홈 통합
+
+스트레스 테스트:
+  [ ] 24/7 작동
+  [ ] 네트워크 중단
+  [ ] 전원 사이클링
+  [ ] 동시 사용자
+
+규정 준수 테스트:
+  [ ] 재료 안전
+  [ ] 전기 안전
+  [ ] RF 방출
+  [ ] 개인정보 요구사항
+</pre>
+
+<hr>
+
+<h2>8.9 규정 준수 체크리스트</h2>
+
+<pre>
+구현 규정 준수
+=============
+
+로봇 하드웨어:
+  [ ] 안전 센서 설치
+  [ ] 비상 정지 작동
+  [ ] 반려동물 안전 재료 확인
+  [ ] 소음 수준 < 50dB
+  [ ] 전기 안전 인증
+
+급식 시스템:
+  [ ] 분량 정확도 확인
+  [ ] 반려동물 인식 작동
+  [ ] 다중 반려동물 지원 테스트
+  [ ] 일일 한도 적용
+  [ ] 수의사 오버라이드 지원
+
+놀이 시스템:
+  [ ] 레이저 눈 안전 구역
+  [ ] 속도 제한 적용
+  [ ] 참여 감지 작동
+  [ ] 피로 시 자동 정지
+  [ ] 세션 로깅 완료
+
+안전:
+  [ ] 모든 페일세이프 테스트
+  [ ] 반려동물 근접 감지
+  [ ] 비상 정지 < 100ms
+  [ ] 아이 안전 확인
+  [ ] 이벤트 로깅 완료
+
+개인정보:
+  [ ] 데이터 암호화 확인
+  [ ] 동의 관리
+  [ ] 보존 정책
+  [ ] 삭제 기능
+  [ ] 공유 제어
+</pre>
+
+<hr>
+
+<h2>8.10 지원 통합</h2>
+
+<pre>
+지원 리소스
+==========
+
+문서:
+  - API 레퍼런스
+  - 통합 가이드
+  - 문제 해결
+  - 안전 매뉴얼
+
+모니터링:
+  - 건강 대시보드
+  - 알림 관리
+  - 로그 집계
+  - 성능 지표
+
+지원 채널:
+  - 인앱 도움말
+  - 이메일 지원
+  - 전화 핫라인 (안전)
+  - 커뮤니티 포럼
+
+교육:
+  - 설정 가이드
+  - 반려동물 도입
+  - 기능 튜토리얼
+  - 안전 교육
+</pre>
+
+<hr>
+
+<h2>장 요약</h2>
+
+<ul>
+<li>[OK] 확장성을 위한 마이크로서비스 아키텍처</li>
+<li>[OK] 데이터를 위한 PostgreSQL + TimescaleDB</li>
+<li>[OK] 실시간을 위한 MQTT + WebSocket</li>
+<li>[OK] Docker 기반 배포</li>
+<li>[OK] 포괄적인 보안 조치</li>
+<li>[OK] 완전한 테스트 요구사항</li>
+</ul>
+
+<hr>
+
+<h2>문서 정보</h2>
+
+<table border="1">
+<tr><td>표준</td><td>WIA-PET-CARE-ROBOT 버전 1.0.0</td></tr>
+<tr><td>문서</td><td>구현 Ebook</td></tr>
+<tr><td>상태</td><td>활성</td></tr>
+<tr><td>철학</td><td>홍익인간</td></tr>
+</table>
+
+<hr>
+
+<p><a href="chapter-07.html">이전: 제7장 - 안전 시스템</a> | <a href="index.html">목차로 돌아가기</a></p>
+
+</body>
+</html>

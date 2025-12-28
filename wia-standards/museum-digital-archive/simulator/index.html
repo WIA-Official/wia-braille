@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Museum Digital Archive Simulator 🖼️</title>
+    <style>
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg) 100%);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Language Toggle */
+        .lang-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .lang-btn:hover {
+            color: var(--text);
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            padding: 0 10px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .tab:hover {
+            border-color: var(--primary);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Panels */
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin: 20px 0;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .panel h2 {
+            color: var(--primary);
+            margin-bottom: 25px;
+            font-size: 2rem;
+        }
+
+        .panel h3 {
+            color: var(--primary);
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin: 20px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="url"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Buttons */
+        .btn-center {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .btn {
+            padding: 14px 40px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Output */
+        .output {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin: 20px 0;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .output pre {
+            color: var(--primary);
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .card {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .card h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            margin-top: 60px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .philosophy {
+            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .tab {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .panel {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Language Switch -->
+    <div class="lang-switch">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('ko')">KO</button>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <h1>🖼️ <span data-en="Museum Digital Archive Simulator" data-ko="박물관 디지털 아카이브 시뮬레이터">Museum Digital Archive Simulator</span></h1>
+        <p class="subtitle" data-en="Experience digital collection management and online exhibitions" data-ko="디지털 컬렉션 관리 및 온라인 전시 체험">Experience digital collection management and online exhibitions</p>
+    </header>
+
+    <!-- Tabs -->
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="showPanel(0)" data-en="🗄️ Collections" data-ko="🗄️ 컬렉션">🗄️ Collections</div>
+            <div class="tab" onclick="showPanel(1)" data-en="📸 Imaging" data-ko="📸 이미징">📸 Imaging</div>
+            <div class="tab" onclick="showPanel(2)" data-en="🎨 Exhibitions" data-ko="🎨 전시">🎨 Exhibitions</div>
+            <div class="tab" onclick="showPanel(3)" data-en="🔍 Search" data-ko="🔍 검색">🔍 Search</div>
+            <div class="tab" onclick="showPanel(4)" data-en="📡 API Access" data-ko="📡 API 접근">📡 API Access</div>
+        </div>
+
+        <!-- Panel 0: Collections -->
+        <div class="panel active" id="panel-0">
+            <h2 data-en="Digital Collection Management" data-ko="디지털 컬렉션 관리">Digital Collection Management</h2>
+
+            <div class="form-group">
+                <label data-en="Object Title" data-ko="객체 제목">Object Title</label>
+                <input type="text" id="obj-title" placeholder="Starry Night">
+            </div>
+
+            <div class="form-group">
+                <label data-en="Creator/Artist" data-ko="창작자/예술가">Creator/Artist</label>
+                <input type="text" id="obj-creator" placeholder="Vincent van Gogh">
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Date Created" data-ko="제작 연도">Date Created</label>
+                    <input type="text" id="obj-date" placeholder="1889">
+                </div>
+                <div class="form-group">
+                    <label data-en="Medium" data-ko="매체">Medium</label>
+                    <select id="obj-medium">
+                        <option value="painting">Painting</option>
+                        <option value="sculpture">Sculpture</option>
+                        <option value="photograph">Photograph</option>
+                        <option value="textile">Textile</option>
+                        <option value="ceramic">Ceramic</option>
+                        <option value="digital">Digital Art</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Accession Number" data-ko="수입 번호">Accession Number</label>
+                    <input type="text" id="obj-accession" placeholder="MoMA.1234.2025">
+                </div>
+                <div class="form-group">
+                    <label data-en="Department" data-ko="부서">Department</label>
+                    <select id="obj-dept">
+                        <option value="paintings">Paintings</option>
+                        <option value="sculpture">Sculpture & Decorative Arts</option>
+                        <option value="photography">Photography</option>
+                        <option value="contemporary">Contemporary Art</option>
+                        <option value="antiquities">Antiquities</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Description" data-ko="설명">Description</label>
+                <textarea id="obj-description" placeholder="Post-impressionist masterpiece depicting a swirling night sky...">Post-impressionist masterpiece depicting a swirling night sky...</textarea>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="createArtifact()">
+                    <span data-en="Create Digital Record" data-ko="디지털 레코드 생성">Create Digital Record</span>
+                </button>
+            </div>
+
+            <div class="output" id="output-0" style="display:none;"></div>
+        </div>
+
+        <!-- Panel 1: Imaging -->
+        <div class="panel" id="panel-1">
+            <h2 data-en="High-Resolution Imaging" data-ko="고해상도 이미징">High-Resolution Imaging</h2>
+
+            <h3 data-en="IIIF Image Metadata" data-ko="IIIF 이미지 메타데이터">IIIF Image Metadata</h3>
+
+            <div class="form-group">
+                <label data-en="Object ID" data-ko="객체 ID">Object ID</label>
+                <input type="text" id="img-object-id" placeholder="MoMA.1234.2025">
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Image Width (px)" data-ko="이미지 너비 (px)">Image Width (px)</label>
+                    <input type="number" id="img-width" value="15000" min="1000">
+                </div>
+                <div class="form-group">
+                    <label data-en="Image Height (px)" data-ko="이미지 높이 (px)">Image Height (px)</label>
+                    <input type="number" id="img-height" value="10000" min="1000">
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Color Space" data-ko="색 공간">Color Space</label>
+                    <select id="img-colorspace">
+                        <option value="sRGB">sRGB</option>
+                        <option value="AdobeRGB">Adobe RGB</option>
+                        <option value="ProPhotoRGB">ProPhoto RGB</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-en="Format" data-ko="형식">Format</label>
+                    <select id="img-format">
+                        <option value="jpeg2000">JPEG 2000</option>
+                        <option value="tiff">TIFF</option>
+                        <option value="png">PNG</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-en="IIIF Image Server URL" data-ko="IIIF 이미지 서버 URL">IIIF Image Server URL</label>
+                <input type="url" id="img-iiif-url" placeholder="https://iiif.museum.org/images/starry-night">
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="generateIIIF()">
+                    <span data-en="Generate IIIF Manifest" data-ko="IIIF 매니페스트 생성">Generate IIIF Manifest</span>
+                </button>
+            </div>
+
+            <div class="output" id="output-1" style="display:none;"></div>
+        </div>
+
+        <!-- Panel 2: Exhibitions -->
+        <div class="panel" id="panel-2">
+            <h2 data-en="Online Exhibition Creator" data-ko="온라인 전시 생성기">Online Exhibition Creator</h2>
+
+            <h3 data-en="Exhibition Metadata" data-ko="전시 메타데이터">Exhibition Metadata</h3>
+
+            <div class="form-group">
+                <label data-en="Exhibition Title" data-ko="전시 제목">Exhibition Title</label>
+                <input type="text" id="exh-title" placeholder="Impressionism: Dawn of Modern Art">
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Curator" data-ko="큐레이터">Curator</label>
+                    <input type="text" id="exh-curator" placeholder="Dr. Sarah Johnson">
+                </div>
+                <div class="form-group">
+                    <label data-en="Exhibition Type" data-ko="전시 유형">Exhibition Type</label>
+                    <select id="exh-type">
+                        <option value="permanent">Permanent</option>
+                        <option value="temporary">Temporary</option>
+                        <option value="virtual-only">Virtual Only</option>
+                        <option value="traveling">Traveling</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Start Date" data-ko="시작일">Start Date</label>
+                    <input type="text" id="exh-start" value="2025-03-01">
+                </div>
+                <div class="form-group">
+                    <label data-en="End Date" data-ko="종료일">End Date</label>
+                    <input type="text" id="exh-end" value="2025-08-31">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Description" data-ko="설명">Description</label>
+                <textarea id="exh-description" placeholder="Explore the revolutionary movement that changed art forever...">Explore the revolutionary movement that changed art forever...</textarea>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Number of Objects" data-ko="객체 수">Number of Objects</label>
+                <input type="number" id="exh-objects" value="45" min="1">
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="createExhibition()">
+                    <span data-en="Create Exhibition" data-ko="전시 생성">Create Exhibition</span>
+                </button>
+            </div>
+
+            <div class="output" id="output-2" style="display:none;"></div>
+        </div>
+
+        <!-- Panel 3: Search -->
+        <div class="panel" id="panel-3">
+            <h2 data-en="Advanced Search System" data-ko="고급 검색 시스템">Advanced Search System</h2>
+
+            <h3 data-en="Search Query" data-ko="검색 쿼리">Search Query</h3>
+
+            <div class="form-group">
+                <label data-en="Search Keywords" data-ko="검색 키워드">Search Keywords</label>
+                <input type="text" id="search-query" placeholder="impressionist landscape">
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Filter by Department" data-ko="부서별 필터">Filter by Department</label>
+                    <select id="search-dept">
+                        <option value="">All Departments</option>
+                        <option value="paintings">Paintings</option>
+                        <option value="sculpture">Sculpture</option>
+                        <option value="photography">Photography</option>
+                        <option value="contemporary">Contemporary Art</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-en="Filter by Medium" data-ko="매체별 필터">Filter by Medium</label>
+                    <select id="search-medium">
+                        <option value="">All Media</option>
+                        <option value="painting">Painting</option>
+                        <option value="sculpture">Sculpture</option>
+                        <option value="photograph">Photograph</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Date Range Start" data-ko="날짜 범위 시작">Date Range Start</label>
+                    <input type="number" id="search-date-start" placeholder="1800" min="0">
+                </div>
+                <div class="form-group">
+                    <label data-en="Date Range End" data-ko="날짜 범위 종료">Date Range End</label>
+                    <input type="number" id="search-date-end" placeholder="1900" min="0">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Search Algorithm" data-ko="검색 알고리즘">Search Algorithm</label>
+                <select id="search-algo">
+                    <option value="keyword">Keyword Match</option>
+                    <option value="semantic">Semantic Search</option>
+                    <option value="ai-powered">AI-Powered Recommendations</option>
+                </select>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="performSearch()">
+                    <span data-en="Search Collection" data-ko="컬렉션 검색">Search Collection</span>
+                </button>
+            </div>
+
+            <div class="output" id="output-3" style="display:none;"></div>
+        </div>
+
+        <!-- Panel 4: API Access -->
+        <div class="panel" id="panel-4">
+            <h2 data-en="Public API Access" data-ko="공개 API 접근">Public API Access</h2>
+
+            <h3 data-en="API Request Builder" data-ko="API 요청 빌더">API Request Builder</h3>
+
+            <div class="form-group">
+                <label data-en="Endpoint" data-ko="엔드포인트">Endpoint</label>
+                <select id="api-endpoint">
+                    <option value="objects">GET /api/v1/objects</option>
+                    <option value="object-detail">GET /api/v1/objects/{id}</option>
+                    <option value="search">GET /api/v1/search</option>
+                    <option value="exhibitions">GET /api/v1/exhibitions</option>
+                    <option value="iiif-manifest">GET /api/v1/iiif/{id}/manifest</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Object ID (if applicable)" data-ko="객체 ID (해당되는 경우)">Object ID (if applicable)</label>
+                <input type="text" id="api-object-id" placeholder="MoMA.1234.2025">
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label data-en="Response Format" data-ko="응답 형식">Response Format</label>
+                    <select id="api-format">
+                        <option value="json">JSON</option>
+                        <option value="json-ld">JSON-LD</option>
+                        <option value="xml">XML</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-en="Include Images" data-ko="이미지 포함">Include Images</label>
+                    <select id="api-images">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-en="API Key (for rate limiting)" data-ko="API 키 (속도 제한용)">API Key (for rate limiting)</label>
+                <input type="text" id="api-key" placeholder="wia-museum-api-key-12345">
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="generateAPIRequest()">
+                    <span data-en="Generate API Request" data-ko="API 요청 생성">Generate API Request</span>
+                </button>
+            </div>
+
+            <div class="output" id="output-4" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p class="philosophy" data-en="弘益人間 · Benefit All Humanity" data-ko="弘益人間 · 널리 인간을 이롭게 하라">弘益人間 · Benefit All Humanity</p>
+        <p>WIA - World Certification Industry Association</p>
+        <p>© 2025 MIT License</p>
+    </footer>
+
+    <script>
+        let currentLang = localStorage.getItem('wiaLang') || 'en';
+
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('wiaLang', lang);
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute('data-' + lang);
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+        }
+
+        function showPanel(index) {
+            document.querySelectorAll('.panel').forEach((panel, i) => {
+                panel.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+        }
+
+        function createArtifact() {
+            const data = {
+                "@context": "https://schema.org",
+                "@type": "MuseumObject",
+                "wiaStandard": "WIA-EDU-024",
+                "title": document.getElementById('obj-title').value,
+                "creator": {
+                    "@type": "Person",
+                    "name": document.getElementById('obj-creator').value
+                },
+                "dateCreated": document.getElementById('obj-date').value,
+                "artMedium": document.getElementById('obj-medium').value,
+                "identifier": {
+                    "@type": "PropertyValue",
+                    "name": "Accession Number",
+                    "value": document.getElementById('obj-accession').value
+                },
+                "department": document.getElementById('obj-dept').value,
+                "description": document.getElementById('obj-description').value,
+                "catalogedAt": new Date().toISOString(),
+                "metadata": {
+                    "completeness": "98%",
+                    "lastUpdated": new Date().toISOString(),
+                    "verificationStatus": "verified"
+                }
+            };
+
+            const output = document.getElementById('output-0');
+            output.style.display = 'block';
+            output.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+
+        function generateIIIF() {
+            const manifest = {
+                "@context": "http://iiif.io/api/presentation/3/context.json",
+                "id": document.getElementById('img-iiif-url').value + "/manifest.json",
+                "type": "Manifest",
+                "wiaStandard": "WIA-EDU-024",
+                "label": {
+                    "en": ["High-Resolution Digital Image"]
+                },
+                "items": [{
+                    "id": document.getElementById('img-iiif-url').value + "/canvas/1",
+                    "type": "Canvas",
+                    "width": parseInt(document.getElementById('img-width').value),
+                    "height": parseInt(document.getElementById('img-height').value),
+                    "items": [{
+                        "id": document.getElementById('img-iiif-url').value + "/page/1",
+                        "type": "AnnotationPage",
+                        "items": [{
+                            "id": document.getElementById('img-iiif-url').value + "/annotation/1",
+                            "type": "Annotation",
+                            "motivation": "painting",
+                            "body": {
+                                "id": document.getElementById('img-iiif-url').value + "/full/max/0/default." + document.getElementById('img-format').value,
+                                "type": "Image",
+                                "format": "image/" + document.getElementById('img-format').value,
+                                "width": parseInt(document.getElementById('img-width').value),
+                                "height": parseInt(document.getElementById('img-height').value),
+                                "service": [{
+                                    "@id": document.getElementById('img-iiif-url').value,
+                                    "@type": "ImageService3",
+                                    "profile": "level2"
+                                }]
+                            }
+                        }]
+                    }]
+                }],
+                "technical": {
+                    "colorSpace": document.getElementById('img-colorspace').value,
+                    "bitDepth": 48,
+                    "compression": "lossless"
+                }
+            };
+
+            const output = document.getElementById('output-1');
+            output.style.display = 'block';
+            output.innerHTML = '<pre>' + JSON.stringify(manifest, null, 2) + '</pre>';
+        }
+
+        function createExhibition() {
+            const data = {
+                "@context": "https://schema.org",
+                "@type": "ExhibitionEvent",
+                "wiaStandard": "WIA-EDU-024",
+                "name": document.getElementById('exh-title').value,
+                "curator": {
+                    "@type": "Person",
+                    "name": document.getElementById('exh-curator').value
+                },
+                "eventType": document.getElementById('exh-type').value,
+                "startDate": document.getElementById('exh-start').value,
+                "endDate": document.getElementById('exh-end').value,
+                "description": document.getElementById('exh-description').value,
+                "numberOfObjects": parseInt(document.getElementById('exh-objects').value),
+                "eventStatus": "EventScheduled",
+                "virtualExhibition": {
+                    "enabled": true,
+                    "url": "https://museum.org/exhibitions/virtual/" + encodeURIComponent(document.getElementById('exh-title').value),
+                    "features": [
+                        "3D viewing",
+                        "virtual tours",
+                        "interactive storytelling",
+                        "educational modules"
+                    ]
+                },
+                "createdAt": new Date().toISOString()
+            };
+
+            const output = document.getElementById('output-2');
+            output.style.display = 'block';
+            output.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+
+        function performSearch() {
+            const query = {
+                "@type": "SearchQuery",
+                "wiaStandard": "WIA-EDU-024",
+                "query": document.getElementById('search-query').value,
+                "filters": {
+                    "department": document.getElementById('search-dept').value,
+                    "medium": document.getElementById('search-medium').value,
+                    "dateRange": {
+                        "start": document.getElementById('search-date-start').value,
+                        "end": document.getElementById('search-date-end').value
+                    }
+                },
+                "algorithm": document.getElementById('search-algo').value,
+                "facets": ["department", "medium", "creator", "period"],
+                "timestamp": new Date().toISOString()
+            };
+
+            const mockResults = {
+                "totalResults": 127,
+                "page": 1,
+                "pageSize": 20,
+                "results": [
+                    {
+                        "id": "MoMA.1234.2025",
+                        "title": "Water Lilies",
+                        "creator": "Claude Monet",
+                        "date": "1906",
+                        "relevanceScore": 0.95
+                    },
+                    {
+                        "id": "MoMA.5678.2025",
+                        "title": "The Japanese Bridge",
+                        "creator": "Claude Monet",
+                        "date": "1899",
+                        "relevanceScore": 0.89
+                    }
+                ],
+                "query": query
+            };
+
+            const output = document.getElementById('output-3');
+            output.style.display = 'block';
+            output.innerHTML = '<h3 style="color: var(--primary);">Search Results</h3><pre>' + JSON.stringify(mockResults, null, 2) + '</pre>';
+        }
+
+        function generateAPIRequest() {
+            const endpoint = document.getElementById('api-endpoint').value;
+            const objectId = document.getElementById('api-object-id').value;
+            const format = document.getElementById('api-format').value;
+            const includeImages = document.getElementById('api-images').value;
+            const apiKey = document.getElementById('api-key').value;
+
+            let url = "https://api.museum.org/v1/";
+
+            if (endpoint === 'object-detail' && objectId) {
+                url += `objects/${objectId}`;
+            } else if (endpoint === 'iiif-manifest' && objectId) {
+                url += `iiif/${objectId}/manifest`;
+            } else {
+                url += endpoint;
+            }
+
+            const request = {
+                "method": "GET",
+                "url": url,
+                "headers": {
+                    "Accept": format === 'json' ? "application/json" :
+                             format === 'json-ld' ? "application/ld+json" :
+                             "application/xml",
+                    "X-API-Key": apiKey,
+                    "User-Agent": "WIA-EDU-024-Client/1.0"
+                },
+                "queryParameters": {
+                    "includeImages": includeImages,
+                    "format": format
+                },
+                "rateLimit": {
+                    "limit": 100,
+                    "window": "1 hour"
+                },
+                "wiaStandard": "WIA-EDU-024"
+            };
+
+            const curlCommand = `curl -X GET "${url}?includeImages=${includeImages}&format=${format}" \\
+  -H "Accept: ${request.headers.Accept}" \\
+  -H "X-API-Key: ${apiKey}"`;
+
+            const output = document.getElementById('output-4');
+            output.style.display = 'block';
+            output.innerHTML = '<h3 style="color: var(--primary);">API Request</h3><pre>' + JSON.stringify(request, null, 2) + '</pre>' +
+                              '<h3 style="margin-top:20px; color: var(--primary);">cURL Command</h3><pre>' + curlCommand + '</pre>';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setLang(currentLang);
+        });
+    </script>
+</body>
+</html>

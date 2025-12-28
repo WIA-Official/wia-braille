@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>6장: 마스터 데이터 동기화 | WIA-DATA-009</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .nav { display: flex; justify-content: space-between; margin-bottom: 2rem; }
+        .nav a { color: #10B981; text-decoration: none; }
+        h1 { font-size: 2.5rem; color: #10B981; margin-bottom: 2rem; }
+        h2 { font-size: 1.8rem; color: #10B981; margin-top: 3rem; margin-bottom: 1rem; }
+        h3 { font-size: 1.4rem; color: #10B981; margin-top: 2rem; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; }
+        ul, ol { margin-left: 2rem; margin-bottom: 1.5rem; color: #cbd5e1; }
+        li { margin-bottom: 0.5rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 0.75rem; border: 1px solid #334155; text-align: left; }
+        th { background: #1e293b; color: #10B981; font-weight: 600; }
+        .highlight-box { background: #1e293b; border-left: 4px solid #10B981; padding: 1.5rem; margin: 2rem 0; }
+        pre { background: #1e293b; border: 2px solid #334155; padding: 1.5rem; border-radius: 0.5rem; overflow-x: auto; margin: 1.5rem 0; color: #cbd5e1; font-size: 0.9rem; }
+        code { font-family: 'Courier New', monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav"><a href="chapter-05.html">← 이전</a><a href="chapter-07.html">다음 →</a></div>
+        <h1>6장: 마스터 데이터 동기화</h1>
+
+        <p>마스터 데이터와 소스 시스템 간의 일관성을 유지하는 것은 MDM의 핵심 과제입니다. 이 장에서는 실시간 동기화 패턴, CDC(Change Data Capture), 이벤트 기반 아키텍처, 충돌 해결 전략을 상세히 다룹니다.</p>
+
+        <h2>1. 데이터 동기화 개요</h2>
+        <p>동기화는 마스터 데이터 허브와 소스 시스템 간의 데이터 일관성을 보장하는 프로세스입니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>동기화 방향</th>
+                    <th>설명</th>
+                    <th>사용 사례</th>
+                    <th>복잡도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>단방향 (One-Way)</strong></td>
+                    <td>소스 → MDM 또는 MDM → 소스</td>
+                    <td>데이터 웨어하우스, 분석</td>
+                    <td>낮음</td>
+                </tr>
+                <tr>
+                    <td><strong>양방향 (Bi-Directional)</strong></td>
+                    <td>MDM ↔ 소스 상호 동기화</td>
+                    <td>Coexistence 아키텍처</td>
+                    <td>높음</td>
+                </tr>
+                <tr>
+                    <td><strong>멀티소스 (Multi-Source)</strong></td>
+                    <td>여러 소스 → MDM → 여러 타겟</td>
+                    <td>엔터프라이즈 MDM</td>
+                    <td>매우 높음</td>
+                </tr>
+                <tr>
+                    <td><strong>체인 (Chained)</strong></td>
+                    <td>시스템 A → MDM → 시스템 B → 시스템 C</td>
+                    <td>프로세스 자동화</td>
+                    <td>중간</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>2. 실시간 동기화 패턴</h2>
+        <p>실시간 또는 거의 실시간으로 데이터 변경을 전파하는 다양한 패턴들을 살펴봅니다.</p>
+
+        <h3>동기화 패턴 비교</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>패턴</th>
+                    <th>지연시간</th>
+                    <th>복잡도</th>
+                    <th>데이터 일관성</th>
+                    <th>적용 사례</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Polling</strong></td>
+                    <td>초~분</td>
+                    <td>낮음</td>
+                    <td>최종 일관성</td>
+                    <td>레거시 시스템</td>
+                </tr>
+                <tr>
+                    <td><strong>Webhooks</strong></td>
+                    <td>초</td>
+                    <td>중간</td>
+                    <td>최종 일관성</td>
+                    <td>SaaS 통합</td>
+                </tr>
+                <tr>
+                    <td><strong>Message Queue</strong></td>
+                    <td>밀리초~초</td>
+                    <td>중간</td>
+                    <td>최종 일관성</td>
+                    <td>비동기 처리</td>
+                </tr>
+                <tr>
+                    <td><strong>Event Streaming</strong></td>
+                    <td>밀리초</td>
+                    <td>높음</td>
+                    <td>최종 일관성</td>
+                    <td>실시간 분석</td>
+                </tr>
+                <tr>
+                    <td><strong>Database Triggers</strong></td>
+                    <td>밀리초</td>
+                    <td>중간</td>
+                    <td>강한 일관성</td>
+                    <td>트랜잭션 무결성</td>
+                </tr>
+                <tr>
+                    <td><strong>CDC (Change Data Capture)</strong></td>
+                    <td>초~분</td>
+                    <td>중간</td>
+                    <td>최종 일관성</td>
+                    <td>데이터 복제</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Webhook 기반 동기화 구현</h3>
+        <pre><code>from flask import Flask, request, jsonify
+from typing import Dict, List
+import requests
+import hashlib
+import hmac
+import json
+
+app = Flask(__name__)
+
+class WebhookSyncService:
+    """Webhook 기반 데이터 동기화 서비스"""
+
+    def __init__(self, secret_key: str):
+        self.secret_key = secret_key
+        self.subscribers = []  # 구독자 목록
+
+    def verify_signature(self, payload: str, signature: str) -> bool:
+        """
+        Webhook 요청 서명 검증
+
+        Args:
+            payload: 요청 본문
+            signature: 서명 해시
+
+        Returns:
+            검증 성공 여부
+        """
+        expected_signature = hmac.new(
+            self.secret_key.encode(),
+            payload.encode(),
+            hashlib.sha256
+        ).hexdigest()
+
+        return hmac.compare_digest(expected_signature, signature)
+
+    def register_webhook(self, url: str, events: List[str]):
+        """
+        Webhook 구독 등록
+
+        Args:
+            url: Webhook 엔드포인트 URL
+            events: 구독할 이벤트 타입 리스트
+        """
+        self.subscribers.append({
+            'url': url,
+            'events': events
+        })
+
+    def trigger_webhook(self, event_type: str, data: Dict):
+        """
+        Webhook 트리거 (구독자에게 전송)
+
+        Args:
+            event_type: 이벤트 타입
+            data: 전송할 데이터
+        """
+        payload = {
+            'event': event_type,
+            'timestamp': datetime.now().isoformat(),
+            'data': data
+        }
+
+        for subscriber in self.subscribers:
+            if event_type in subscriber['events']:
+                self._send_webhook(subscriber['url'], payload)
+
+    def _send_webhook(self, url: str, payload: Dict):
+        """Webhook 전송 (재시도 로직 포함)"""
+        max_retries = 3
+        retry_delay = [1, 2, 4]  # 지수 백오프
+
+        payload_json = json.dumps(payload)
+
+        # 서명 생성
+        signature = hmac.new(
+            self.secret_key.encode(),
+            payload_json.encode(),
+            hashlib.sha256
+        ).hexdigest()
+
+        headers = {
+            'Content-Type': 'application/json',
+            'X-Webhook-Signature': signature
+        }
+
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(
+                    url,
+                    data=payload_json,
+                    headers=headers,
+                    timeout=10
+                )
+
+                if response.status_code == 200:
+                    print(f"Webhook sent successfully to {url}")
+                    return
+                else:
+                    print(f"Webhook failed: {response.status_code}")
+
+            except requests.exceptions.RequestException as e:
+                print(f"Webhook error (attempt {attempt + 1}): {e}")
+
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay[attempt])
+
+        print(f"Webhook failed after {max_retries} attempts")
+
+
+# Flask 엔드포인트
+webhook_service = WebhookSyncService(secret_key='your-secret-key')
+
+@app.route('/webhook/receive', methods=['POST'])
+def receive_webhook():
+    """외부 시스템으로부터 Webhook 수신"""
+    # 서명 검증
+    signature = request.headers.get('X-Webhook-Signature')
+    payload = request.get_data(as_text=True)
+
+    if not webhook_service.verify_signature(payload, signature):
+        return jsonify({'error': 'Invalid signature'}), 401
+
+    # 데이터 처리
+    data = request.json
+    event_type = data.get('event')
+    event_data = data.get('data')
+
+    # MDM에 데이터 동기화
+    sync_to_mdm(event_type, event_data)
+
+    return jsonify({'status': 'success'}), 200
+
+@app.route('/master-data/update', methods=['POST'])
+def update_master_data():
+    """마스터 데이터 업데이트 (다른 시스템에 Webhook 전송)"""
+    data = request.json
+
+    # MDM 업데이트
+    update_mdm(data)
+
+    # 구독자에게 Webhook 전송
+    webhook_service.trigger_webhook('master_data.updated', data)
+
+    return jsonify({'status': 'success'}), 200</code></pre>
+
+        <h2>3. CDC (Change Data Capture)</h2>
+        <p>데이터베이스 트랜잭션 로그를 읽어 변경 사항을 실시간으로 캡처하는 기술입니다.</p>
+
+        <h3>CDC 구현 방법</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>방법</th>
+                    <th>원리</th>
+                    <th>장점</th>
+                    <th>단점</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Trigger-based</strong></td>
+                    <td>DB 트리거로 변경 기록</td>
+                    <td>간단한 구현</td>
+                    <td>성능 오버헤드</td>
+                </tr>
+                <tr>
+                    <td><strong>Timestamp-based</strong></td>
+                    <td>업데이트 타임스탬프 확인</td>
+                    <td>낮은 복잡도</td>
+                    <td>삭제 추적 불가</td>
+                </tr>
+                <tr>
+                    <td><strong>Log-based</strong></td>
+                    <td>트랜잭션 로그 읽기</td>
+                    <td>낮은 오버헤드, 완전한 추적</td>
+                    <td>DB별 구현 필요</td>
+                </tr>
+                <tr>
+                    <td><strong>Query-based</strong></td>
+                    <td>주기적 쿼리 실행</td>
+                    <td>DB 독립적</td>
+                    <td>높은 지연시간</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Debezium을 사용한 CDC 구현</h3>
+        <pre><code># Debezium 커넥터 설정 (JSON)
+{
+  "name": "mdm-postgres-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "postgres-master",
+    "database.port": "5432",
+    "database.user": "mdm_user",
+    "database.password": "secure_password",
+    "database.dbname": "master_data",
+    "database.server.name": "mdm-db",
+    "table.include.list": "public.customers,public.products",
+    "plugin.name": "pgoutput",
+    "publication.autocreate.mode": "filtered",
+    "slot.name": "mdm_replication_slot",
+    "heartbeat.interval.ms": "10000",
+    "transforms": "unwrap,route",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.route.type": "org.apache.kafka.connect.transforms.RegexRouter",
+    "transforms.route.regex": "([^.]+)\\.([^.]+)\\.([^.]+)",
+    "transforms.route.replacement": "mdm.$3"
+  }
+}
+
+# Python Consumer - CDC 이벤트 처리
+from kafka import KafkaConsumer
+import json
+
+class CDCEventProcessor:
+    """CDC 이벤트를 처리하여 MDM에 동기화"""
+
+    def __init__(self, kafka_bootstrap_servers: str):
+        self.consumer = KafkaConsumer(
+            'mdm.customers',
+            'mdm.products',
+            bootstrap_servers=kafka_bootstrap_servers,
+            value_deserializer=lambda m: json.loads(m.decode('utf-8')),
+            group_id='mdm-sync-group',
+            enable_auto_commit=True
+        )
+
+    def process_events(self):
+        """CDC 이벤트 소비 및 처리"""
+        for message in self.consumer:
+            topic = message.topic
+            event = message.value
+
+            # 이벤트 타입 확인
+            operation = event.get('__op')  # c=create, u=update, d=delete
+
+            if operation == 'c':
+                self.handle_create(topic, event)
+            elif operation == 'u':
+                self.handle_update(topic, event)
+            elif operation == 'd':
+                self.handle_delete(topic, event)
+
+    def handle_create(self, topic: str, event: Dict):
+        """새 레코드 생성 이벤트 처리"""
+        entity_type = topic.split('.')[-1]
+        data = event.get('after')
+
+        print(f"Creating new {entity_type}: {data}")
+        # MDM에 새 레코드 추가 로직
+
+    def handle_update(self, topic: str, event: Dict):
+        """레코드 업데이트 이벤트 처리"""
+        entity_type = topic.split('.')[-1]
+        before = event.get('before')
+        after = event.get('after')
+
+        print(f"Updating {entity_type}:")
+        print(f"  Before: {before}")
+        print(f"  After: {after}")
+        # MDM 레코드 업데이트 로직
+
+    def handle_delete(self, topic: str, event: Dict):
+        """레코드 삭제 이벤트 처리"""
+        entity_type = topic.split('.')[-1]
+        before = event.get('before')
+
+        print(f"Deleting {entity_type}: {before}")
+        # MDM 레코드 삭제/소프트 삭제 로직
+
+
+# 사용 예시
+processor = CDCEventProcessor('localhost:9092')
+processor.process_events()</code></pre>
+
+        <h2>4. 이벤트 기반 동기화</h2>
+        <p>이벤트 소싱과 CQRS 패턴을 활용한 확장 가능한 동기화 아키텍처입니다.</p>
+
+        <h3>이벤트 기반 아키텍처 구성요소</h3>
+        <div class="highlight-box">
+            <ul style="margin: 0;">
+                <li><strong>Event Producer:</strong> 데이터 변경 이벤트 생성</li>
+                <li><strong>Event Bus:</strong> 이벤트 라우팅 및 배포 (Kafka, RabbitMQ)</li>
+                <li><strong>Event Store:</strong> 모든 이벤트 영구 저장</li>
+                <li><strong>Event Consumer:</strong> 이벤트 구독 및 처리</li>
+                <li><strong>Projection:</strong> 이벤트로부터 읽기 모델 생성</li>
+            </ul>
+        </div>
+
+        <h3>이벤트 소싱 구현</h3>
+        <pre><code>from dataclasses import dataclass, field
+from datetime import datetime
+from typing import List, Dict, Any
+from uuid import uuid4
+import json
+
+@dataclass
+class DomainEvent:
+    """도메인 이벤트 기본 클래스"""
+    event_id: str = field(default_factory=lambda: str(uuid4()))
+    event_type: str = ""
+    aggregate_id: str = ""
+    aggregate_type: str = ""
+    timestamp: datetime = field(default_factory=datetime.now)
+    version: int = 1
+    data: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class CustomerCreatedEvent(DomainEvent):
+    """고객 생성 이벤트"""
+    event_type: str = "CustomerCreated"
+
+@dataclass
+class CustomerUpdatedEvent(DomainEvent):
+    """고객 업데이트 이벤트"""
+    event_type: str = "CustomerUpdated"
+
+@dataclass
+class CustomerMergedEvent(DomainEvent):
+    """고객 병합 이벤트"""
+    event_type: str = "CustomerMerged"
+
+
+class EventStore:
+    """이벤트 저장소"""
+
+    def __init__(self):
+        self.events = []  # 실제로는 DB 사용
+
+    def append(self, event: DomainEvent):
+        """이벤트 추가"""
+        self.events.append(event)
+
+    def get_events(self, aggregate_id: str) -> List[DomainEvent]:
+        """특정 Aggregate의 모든 이벤트 조회"""
+        return [e for e in self.events if e.aggregate_id == aggregate_id]
+
+    def get_all_events(self, from_version: int = 0) -> List[DomainEvent]:
+        """모든 이벤트 조회 (버전 필터링)"""
+        return [e for e in self.events if e.version > from_version]
+
+
+class CustomerAggregate:
+    """고객 Aggregate - 이벤트 소싱"""
+
+    def __init__(self, customer_id: str):
+        self.customer_id = customer_id
+        self.version = 0
+        self.state = {}
+        self.uncommitted_events = []
+
+    def create(self, data: Dict):
+        """고객 생성"""
+        event = CustomerCreatedEvent(
+            aggregate_id=self.customer_id,
+            aggregate_type="Customer",
+            version=self.version + 1,
+            data=data
+        )
+        self._apply_event(event)
+        self.uncommitted_events.append(event)
+
+    def update(self, changes: Dict):
+        """고객 정보 업데이트"""
+        event = CustomerUpdatedEvent(
+            aggregate_id=self.customer_id,
+            aggregate_type="Customer",
+            version=self.version + 1,
+            data={
+                'changes': changes,
+                'previous_state': self.state.copy()
+            }
+        )
+        self._apply_event(event)
+        self.uncommitted_events.append(event)
+
+    def merge_with(self, other_customer_id: str, merged_data: Dict):
+        """다른 고객과 병합"""
+        event = CustomerMergedEvent(
+            aggregate_id=self.customer_id,
+            aggregate_type="Customer",
+            version=self.version + 1,
+            data={
+                'merged_from': other_customer_id,
+                'merged_data': merged_data
+            }
+        )
+        self._apply_event(event)
+        self.uncommitted_events.append(event)
+
+    def _apply_event(self, event: DomainEvent):
+        """이벤트 적용 (상태 변경)"""
+        if isinstance(event, CustomerCreatedEvent):
+            self.state = event.data.copy()
+        elif isinstance(event, CustomerUpdatedEvent):
+            self.state.update(event.data['changes'])
+        elif isinstance(event, CustomerMergedEvent):
+            self.state.update(event.data['merged_data'])
+
+        self.version = event.version
+
+    def load_from_history(self, events: List[DomainEvent]):
+        """이벤트 히스토리로부터 상태 재구성"""
+        for event in sorted(events, key=lambda e: e.version):
+            self._apply_event(event)
+
+    def commit(self, event_store: EventStore):
+        """Uncommitted 이벤트를 Event Store에 저장"""
+        for event in self.uncommitted_events:
+            event_store.append(event)
+        self.uncommitted_events = []
+
+
+# 사용 예시
+event_store = EventStore()
+
+# 새 고객 생성
+customer = CustomerAggregate("CUST-001")
+customer.create({
+    'name': 'John Doe',
+    'email': 'john@example.com',
+    'phone': '555-1234'
+})
+customer.commit(event_store)
+
+# 고객 정보 업데이트
+customer.update({'phone': '555-5678'})
+customer.commit(event_store)
+
+# 다른 고객과 병합
+customer.merge_with("CUST-002", {'secondary_email': 'john.doe@work.com'})
+customer.commit(event_store)
+
+# 이벤트 히스토리로부터 상태 재구성
+new_instance = CustomerAggregate("CUST-001")
+history = event_store.get_events("CUST-001")
+new_instance.load_from_history(history)
+
+print(f"Current state: {new_instance.state}")
+print(f"Version: {new_instance.version}")</code></pre>
+
+        <h2>5. 충돌 해결 전략</h2>
+        <p>양방향 동기화에서 불가피하게 발생하는 데이터 충돌을 해결하는 전략들입니다.</p>
+
+        <h3>충돌 해결 방법</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>전략</th>
+                    <th>설명</th>
+                    <th>장점</th>
+                    <th>단점</th>
+                    <th>적용 사례</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Last Write Wins (LWW)</strong></td>
+                    <td>타임스탬프 기준 최신 변경 채택</td>
+                    <td>간단함</td>
+                    <td>데이터 손실 가능</td>
+                    <td>로그, 메트릭</td>
+                </tr>
+                <tr>
+                    <td><strong>Master Wins</strong></td>
+                    <td>마스터 시스템 변경 우선</td>
+                    <td>예측 가능</td>
+                    <td>유연성 부족</td>
+                    <td>중앙집중 MDM</td>
+                </tr>
+                <tr>
+                    <td><strong>Manual Resolution</strong></td>
+                    <td>사용자가 수동 해결</td>
+                    <td>정확성 높음</td>
+                    <td>확장성 낮음</td>
+                    <td>중요 비즈니스 데이터</td>
+                </tr>
+                <tr>
+                    <td><strong>Field-Level Merge</strong></td>
+                    <td>필드별로 최적 값 선택</td>
+                    <td>데이터 손실 최소화</td>
+                    <td>복잡한 로직</td>
+                    <td>고객 프로필</td>
+                </tr>
+                <tr>
+                    <td><strong>Version Vector</strong></td>
+                    <td>벡터 시계로 인과관계 추적</td>
+                    <td>정교한 충돌 감지</td>
+                    <td>높은 복잡도</td>
+                    <td>분산 시스템</td>
+                </tr>
+                <tr>
+                    <td><strong>CRDT</strong></td>
+                    <td>충돌 없는 복제 데이터 타입</td>
+                    <td>자동 병합</td>
+                    <td>제한된 데이터 타입</td>
+                    <td>협업 편집</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>충돌 해결 엔진 구현</h3>
+        <pre><code>from enum import Enum
+from typing import Any, Dict, Optional, Tuple
+from datetime import datetime
+
+class ConflictResolutionStrategy(Enum):
+    LAST_WRITE_WINS = "last_write_wins"
+    MASTER_WINS = "master_wins"
+    MANUAL = "manual"
+    FIELD_LEVEL_MERGE = "field_level_merge"
+    SOURCE_PRIORITY = "source_priority"
+
+class ConflictResolver:
+    """데이터 충돌 해결 엔진"""
+
+    def __init__(self):
+        self.source_priorities = {}  # 소스별 우선순위
+        self.field_strategies = {}   # 필드별 해결 전략
+        self.pending_conflicts = []  # 수동 해결 대기 충돌
+
+    def set_source_priority(self, source: str, priority: int):
+        """소스 시스템의 우선순위 설정 (높을수록 우선)"""
+        self.source_priorities[source] = priority
+
+    def set_field_strategy(self, field: str, strategy: ConflictResolutionStrategy):
+        """필드별 충돌 해결 전략 설정"""
+        self.field_strategies[field] = strategy
+
+    def resolve_conflict(
+        self,
+        field: str,
+        value1: Any, source1: str, timestamp1: datetime,
+        value2: Any, source2: str, timestamp2: datetime
+    ) -> Tuple[Any, str]:
+        """
+        두 값 간 충돌 해결
+
+        Returns:
+            (선택된 값, 선택 이유)
+        """
+        # 값이 같으면 충돌 아님
+        if value1 == value2:
+            return value1, "values_identical"
+
+        # 필드별 전략 확인
+        strategy = self.field_strategies.get(
+            field,
+            ConflictResolutionStrategy.LAST_WRITE_WINS  # 기본 전략
+        )
+
+        if strategy == ConflictResolutionStrategy.LAST_WRITE_WINS:
+            return self._last_write_wins(
+                value1, timestamp1, value2, timestamp2
+            )
+
+        elif strategy == ConflictResolutionStrategy.MASTER_WINS:
+            return self._master_wins(
+                value1, source1, value2, source2
+            )
+
+        elif strategy == ConflictResolutionStrategy.SOURCE_PRIORITY:
+            return self._source_priority(
+                value1, source1, value2, source2
+            )
+
+        elif strategy == ConflictResolutionStrategy.MANUAL:
+            return self._manual_resolution(
+                field, value1, source1, value2, source2
+            )
+
+        elif strategy == ConflictResolutionStrategy.FIELD_LEVEL_MERGE:
+            return self._field_level_merge(
+                value1, value2
+            )
+
+    def _last_write_wins(
+        self, value1: Any, timestamp1: datetime,
+        value2: Any, timestamp2: datetime
+    ) -> Tuple[Any, str]:
+        """최신 타임스탬프의 값 선택"""
+        if timestamp1 > timestamp2:
+            return value1, f"last_write_wins (t1={timestamp1})"
+        else:
+            return value2, f"last_write_wins (t2={timestamp2})"
+
+    def _master_wins(
+        self, value1: Any, source1: str,
+        value2: Any, source2: str
+    ) -> Tuple[Any, str]:
+        """'master' 소스의 값 선택"""
+        if source1.lower() == 'master' or source1.lower() == 'mdm':
+            return value1, f"master_wins (source={source1})"
+        else:
+            return value2, f"master_wins (source={source2})"
+
+    def _source_priority(
+        self, value1: Any, source1: str,
+        value2: Any, source2: str
+    ) -> Tuple[Any, str]:
+        """소스 우선순위 기준 선택"""
+        priority1 = self.source_priorities.get(source1, 0)
+        priority2 = self.source_priorities.get(source2, 0)
+
+        if priority1 >= priority2:
+            return value1, f"source_priority ({source1}={priority1})"
+        else:
+            return value2, f"source_priority ({source2}={priority2})"
+
+    def _manual_resolution(
+        self, field: str,
+        value1: Any, source1: str,
+        value2: Any, source2: str
+    ) -> Tuple[Any, str]:
+        """수동 해결 큐에 추가"""
+        conflict = {
+            'field': field,
+            'value1': value1,
+            'source1': source1,
+            'value2': value2,
+            'source2': source2,
+            'timestamp': datetime.now()
+        }
+        self.pending_conflicts.append(conflict)
+
+        # 임시로 value1 반환 (나중에 수동 해결)
+        return value1, "manual_resolution_pending"
+
+    def _field_level_merge(
+        self, value1: Any, value2: Any
+    ) -> Tuple[Any, str]:
+        """필드 수준 병합 (더 완전한 값 선택)"""
+        # 문자열의 경우 더 긴 값 선택
+        if isinstance(value1, str) and isinstance(value2, str):
+            if len(value1) >= len(value2):
+                return value1, "field_merge (longer)"
+            else:
+                return value2, "field_merge (longer)"
+
+        # 리스트/딕셔너리의 경우 병합
+        if isinstance(value1, list) and isinstance(value2, list):
+            merged = list(set(value1 + value2))
+            return merged, "field_merge (union)"
+
+        if isinstance(value1, dict) and isinstance(value2, dict):
+            merged = {**value1, **value2}
+            return merged, "field_merge (dict_merge)"
+
+        # 기본: value1 반환
+        return value1, "field_merge (default)"
+
+    def resolve_record_conflict(
+        self,
+        record1: Dict, source1: str, timestamp1: datetime,
+        record2: Dict, source2: str, timestamp2: datetime
+    ) -> Dict:
+        """
+        레코드 수준 충돌 해결 (모든 필드)
+
+        Returns:
+            충돌 해결된 병합 레코드
+        """
+        merged = {}
+        all_fields = set(record1.keys()) | set(record2.keys())
+
+        for field in all_fields:
+            value1 = record1.get(field)
+            value2 = record2.get(field)
+
+            if value1 is None:
+                merged[field] = value2
+            elif value2 is None:
+                merged[field] = value1
+            else:
+                resolved_value, reason = self.resolve_conflict(
+                    field, value1, source1, timestamp1,
+                    value2, source2, timestamp2
+                )
+                merged[field] = resolved_value
+                merged[f"_{field}_resolution"] = reason  # 메타데이터
+
+        return merged
+
+
+# 사용 예시
+resolver = ConflictResolver()
+
+# 소스 우선순위 설정
+resolver.set_source_priority('CRM', 10)
+resolver.set_source_priority('ERP', 8)
+resolver.set_source_priority('Website', 5)
+
+# 필드별 전략 설정
+resolver.set_field_strategy('email', ConflictResolutionStrategy.SOURCE_PRIORITY)
+resolver.set_field_strategy('phone', ConflictResolutionStrategy.LAST_WRITE_WINS)
+resolver.set_field_strategy('address', ConflictResolutionStrategy.FIELD_LEVEL_MERGE)
+
+# 충돌 해결
+record_crm = {
+    'name': 'John Doe',
+    'email': 'john@company.com',
+    'phone': '555-1111',
+    'address': '123 Main St'
+}
+
+record_web = {
+    'name': 'John Doe',
+    'email': 'john@gmail.com',
+    'phone': '555-2222',
+    'address': '123 Main Street, Apt 5'
+}
+
+merged = resolver.resolve_record_conflict(
+    record_crm, 'CRM', datetime(2025, 1, 10),
+    record_web, 'Website', datetime(2025, 1, 15)
+)
+
+print("Merged Record:")
+for key, value in merged.items():
+    print(f"  {key}: {value}")</code></pre>
+
+        <h2>6. 글로벌 데이터 동기화</h2>
+        <p>지리적으로 분산된 데이터센터 간 마스터 데이터 동기화 전략입니다.</p>
+
+        <h3>글로벌 동기화 패턴</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>패턴</th>
+                    <th>설명</th>
+                    <th>일관성</th>
+                    <th>지연시간</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Multi-Master</strong></td>
+                    <td>모든 리전에서 쓰기 가능</td>
+                    <td>최종 일관성</td>
+                    <td>낮음</td>
+                </tr>
+                <tr>
+                    <td><strong>Primary-Secondary</strong></td>
+                    <td>하나의 Primary, 여러 Read Replica</td>
+                    <td>강한 일관성</td>
+                    <td>중간</td>
+                </tr>
+                <tr>
+                    <td><strong>Active-Active</strong></td>
+                    <td>모든 리전 활성화</td>
+                    <td>최종 일관성</td>
+                    <td>낮음</td>
+                </tr>
+                <tr>
+                    <td><strong>Hub-and-Spoke (Global)</strong></td>
+                    <td>중앙 글로벌 허브</td>
+                    <td>강한 일관성</td>
+                    <td>높음</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box">
+            <strong>글로벌 동기화 고려사항:</strong>
+            <ul style="margin-top: 1rem; margin-bottom: 0;">
+                <li><strong>데이터 주권:</strong> GDPR 등 지역별 데이터 규제 준수</li>
+                <li><strong>네트워크 지연:</strong> 리전 간 레이턴시 최소화</li>
+                <li><strong>장애 복구:</strong> 리전 장애 시 자동 페일오버</li>
+                <li><strong>대역폭 비용:</strong> 리전 간 데이터 전송 비용 최적화</li>
+                <li><strong>시차 문제:</strong> 타임스탬프 동기화 및 UTC 사용</li>
+            </ul>
+        </div>
+
+        <h2>7. 동기화 모니터링 및 관찰성</h2>
+        <p>동기화 프로세스의 건강 상태와 성능을 모니터링하는 방법입니다.</p>
+
+        <h3>주요 모니터링 지표</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>지표</th>
+                    <th>설명</th>
+                    <th>목표 값</th>
+                    <th>알람 조건</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Sync Lag</strong></td>
+                    <td>소스 변경과 MDM 반영 시간 차이</td>
+                    <td>< 1분</td>
+                    <td>> 5분</td>
+                </tr>
+                <tr>
+                    <td><strong>Success Rate</strong></td>
+                    <td>동기화 성공률</td>
+                    <td>> 99%</td>
+                    <td>< 95%</td>
+                </tr>
+                <tr>
+                    <td><strong>Throughput</strong></td>
+                    <td>초당 동기화 레코드 수</td>
+                    <td>시스템 의존</td>
+                    <td>급격한 감소</td>
+                </tr>
+                <tr>
+                    <td><strong>Error Count</strong></td>
+                    <td>동기화 오류 건수</td>
+                    <td>0</td>
+                    <td>> 10/시간</td>
+                </tr>
+                <tr>
+                    <td><strong>Conflict Rate</strong></td>
+                    <td>충돌 발생 비율</td>
+                    <td>< 1%</td>
+                    <td>> 5%</td>
+                </tr>
+                <tr>
+                    <td><strong>Queue Depth</strong></td>
+                    <td>대기 중인 동기화 작업 수</td>
+                    <td>< 1000</td>
+                    <td>> 10000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>모니터링 대시보드 구현 (Prometheus + Grafana)</h3>
+        <pre><code># Prometheus 메트릭 수집
+from prometheus_client import Counter, Gauge, Histogram, start_http_server
+import time
+
+# 메트릭 정의
+sync_records_total = Counter(
+    'mdm_sync_records_total',
+    'Total number of records synced',
+    ['source', 'status']
+)
+
+sync_lag_seconds = Gauge(
+    'mdm_sync_lag_seconds',
+    'Lag between source change and MDM sync',
+    ['source']
+)
+
+sync_duration_seconds = Histogram(
+    'mdm_sync_duration_seconds',
+    'Time taken to sync a batch',
+    ['source'],
+    buckets=[0.1, 0.5, 1.0, 2.5, 5.0, 10.0]
+)
+
+conflict_count = Counter(
+    'mdm_conflict_count_total',
+    'Total number of conflicts detected',
+    ['resolution_strategy']
+)
+
+# 메트릭 기록
+def record_sync_metrics(source: str, records_count: int, duration: float,
+                        lag: float, conflicts: int = 0):
+    """동기화 메트릭 기록"""
+    sync_records_total.labels(source=source, status='success').inc(records_count)
+    sync_lag_seconds.labels(source=source).set(lag)
+    sync_duration_seconds.labels(source=source).observe(duration)
+
+    if conflicts > 0:
+        conflict_count.labels(resolution_strategy='auto').inc(conflicts)
+
+# Prometheus 서버 시작
+start_http_server(8000)
+
+# SQL - 동기화 상태 추적 테이블
+CREATE TABLE sync_status (
+    id SERIAL PRIMARY KEY,
+    source_system VARCHAR(50) NOT NULL,
+    last_sync_timestamp TIMESTAMP WITH TIME ZONE,
+    last_sync_version BIGINT,
+    records_synced INTEGER,
+    errors_count INTEGER DEFAULT 0,
+    status VARCHAR(20),  -- 'success', 'failed', 'in_progress'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 동기화 이력 테이블
+CREATE TABLE sync_history (
+    id SERIAL PRIMARY KEY,
+    source_system VARCHAR(50) NOT NULL,
+    sync_started_at TIMESTAMP WITH TIME ZONE,
+    sync_completed_at TIMESTAMP WITH TIME ZONE,
+    records_processed INTEGER,
+    records_succeeded INTEGER,
+    records_failed INTEGER,
+    conflicts_detected INTEGER,
+    average_lag_seconds FLOAT,
+    error_messages TEXT[],
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 동기화 모니터링 쿼리
+SELECT
+    source_system,
+    last_sync_timestamp,
+    EXTRACT(EPOCH FROM (NOW() - last_sync_timestamp)) AS seconds_since_last_sync,
+    status,
+    errors_count
+FROM sync_status
+WHERE status != 'success' OR last_sync_timestamp < NOW() - INTERVAL '10 minutes';
+</code></pre>
+
+        <h2>8. 요약 및 핵심 포인트</h2>
+        <p>효과적인 데이터 동기화는 MDM의 성공을 좌우하는 핵심 요소입니다.</p>
+
+        <div class="highlight-box">
+            <strong>핵심 요약:</strong>
+            <ul style="margin-top: 1rem; margin-bottom: 0;">
+                <li>실시간 동기화는 Webhook, CDC, 이벤트 스트리밍 등 다양한 패턴 활용</li>
+                <li>CDC는 트랜잭션 로그 기반으로 낮은 오버헤드와 완전한 변경 추적</li>
+                <li>이벤트 소싱은 모든 변경을 이벤트로 저장하여 완전한 감사 추적</li>
+                <li>충돌 해결 전략은 비즈니스 요구사항에 맞게 필드별로 설정</li>
+                <li>글로벌 동기화는 데이터 주권과 네트워크 지연을 고려</li>
+                <li>모니터링은 Sync Lag, Success Rate, Conflict Rate 등 핵심 지표 추적</li>
+            </ul>
+        </div>
+
+        <h3>복습 질문</h3>
+        <ol>
+            <li>Webhook과 CDC의 차이점을 설명하고, 각각 어떤 상황에서 적합한가요?</li>
+            <li>이벤트 소싱 패턴의 장점과 단점은 무엇인가요?</li>
+            <li>'Last Write Wins' 충돌 해결 전략의 한계는 무엇이며, 어떤 대안이 있나요?</li>
+            <li>글로벌 Multi-Master 동기화에서 발생할 수 있는 문제와 해결 방법은?</li>
+            <li>동기화 모니터링에서 'Sync Lag'이 중요한 이유와 측정 방법을 설명하세요.</li>
+        </ol>
+
+        <div class="nav" style="margin-top: 3rem;"><a href="chapter-05.html">← 이전</a><a href="chapter-07.html">다음 →</a></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: Royalties & Creator Economics | WIA-FIN-009</title>
+    <style>* {margin: 0; padding: 0; box-sizing: border-box;} body {font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.8;} .header {background: rgba(30, 41, 59, 0.8); border-bottom: 1px solid rgba(34, 197, 94, 0.2); padding: 2rem; position: sticky; top: 0; z-index: 100;} .header-content {max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;} .logo {font-size: 1.5rem; font-weight: 800; color: #22c55e; text-decoration: none;} nav a {color: #94a3b8; text-decoration: none; margin-left: 2rem;} .container {max-width: 900px; margin: 0 auto; padding: 3rem 2rem;} .chapter-number {display: inline-block; background: #22c55e; color: #0f172a; padding: 0.5rem 1rem; border-radius: 20px; margin-bottom: 1rem;} h1 {font-size: 3rem; font-weight: 800; background: linear-gradient(135deg, #22c55e 0%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;} h2 {font-size: 2rem; color: #22c55e; margin: 3rem 0 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(34, 197, 94, 0.2);} h3 {font-size: 1.5rem; color: #10b981; margin: 2rem 0 1rem;} p {margin-bottom: 1.5rem; color: #cbd5e1; font-size: 1.125rem;} ul {margin: 1.5rem 0; padding-left: 2rem; color: #cbd5e1;} li {margin-bottom: 0.75rem; font-size: 1.125rem;} .code-block {background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto;} .code-block pre {color: #22c55e; font-family: 'Courier New', monospace; font-size: 0.85rem;} .highlight {background: rgba(34, 197, 94, 0.1); border-left: 4px solid #22c55e; padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0;} .warning-box {background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; padding: 1.5rem; margin: 2rem 0;} .warning-box h4 {color: #eab308; margin-bottom: 1rem;} .navigation {display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(34, 197, 94, 0.2);} .nav-button {padding: 1rem 2rem; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px; color: #22c55e; text-decoration: none; font-weight: 600;} footer {background: rgba(15, 23, 42, 0.8); padding: 2rem; text-align: center; border-top: 1px solid rgba(34, 197, 94, 0.2); margin-top: 4rem; color: #64748b;}</style>
+</head>
+<body>
+    <div class="header"><div class="header-content"><a href="index.html" class="logo">🖼️ WIA-FIN-009</a><nav><a href="index.html">Contents</a><a href="../../index.html">Home</a></nav></div></div>
+    <div class="container">
+        <div class="chapter-header"><span class="chapter-number">CHAPTER 6</span><h1>Royalties & Creator Economics</h1></div>
+
+        <p>One of NFTs' most revolutionary features is programmable royalties—creators can earn from secondary sales automatically and perpetually. This chapter explores royalty mechanisms, implementation strategies, and the evolving economics of digital creation.</p>
+
+        <h2>The Royalty Revolution</h2>
+
+        <p>In traditional art markets, when a painting sells at auction for millions, the original artist receives nothing—all proceeds go to the seller. NFTs change this fundamentally. Smart contracts can enforce perpetual royalties, ensuring creators benefit from the appreciating value of their work throughout its entire lifecycle.</p>
+
+        <p>This mechanism has profound implications for creator economics. A musician can earn from every resale of their album NFT. A digital artist benefits as their work gains recognition and value. Game developers share in the secondary market success of in-game items. This aligns incentives between creators and collectors in unprecedented ways.</p>
+
+        <h2>ERC-2981: The Royalty Standard</h2>
+
+        <h3>Standard Overview</h3>
+
+        <p>ERC-2981 provides a standardized way for NFT contracts to signal royalty information. It defines a simple interface that marketplaces can query to determine the appropriate royalty amount and recipient for any sale.</p>
+
+        <div class="code-block"><pre>interface IERC2981 {
+    /// @notice Called with the sale price to determine how much royalty
+    ///         is owed and to whom.
+    /// @param tokenId - the NFT asset queried for royalty information
+    /// @param salePrice - the sale price of the NFT asset
+    /// @return receiver - address to send royalty payment
+    /// @return royaltyAmount - the royalty payment amount for salePrice
+    function royaltyInfo(uint256 tokenId, uint256 salePrice)
+        external view
+        returns (address receiver, uint256 royaltyAmount);
+}</pre></div>
+
+        <h3>Implementation</h3>
+
+        <div class="code-block"><pre>import "@openzeppelin/contracts/token/common/ERC2981.sol";
+
+contract MyNFT is ERC721, ERC2981 {
+    constructor() ERC721("MyNFT", "MNFT") {
+        // Set default royalty: 7.5% to creator
+        _setDefaultRoyalty(msg.sender, 750); // 750 basis points
+    }
+
+    // Set custom royalty for specific token
+    function setTokenRoyalty(
+        uint256 tokenId,
+        address receiver,
+        uint96 feeNumerator
+    ) public onlyOwner {
+        _setTokenRoyalty(tokenId, receiver, feeNumerator);
+    }
+
+    // Query royalty info
+    function royaltyInfo(uint256 tokenId, uint256 salePrice)
+        public view override
+        returns (address, uint256)
+    {
+        return super.royaltyInfo(tokenId, salePrice);
+    }
+}</pre></div>
+
+        <h2>Royalty Economics</h2>
+
+        <h3>Typical Royalty Rates</h3>
+        <ul>
+            <li><strong>Digital Art:</strong> 5-10% is standard, with premium artists sometimes commanding 15%</li>
+            <li><strong>Profile Pictures/Collectibles:</strong> 5-7.5% typical for major collections</li>
+            <li><strong>Gaming NFTs:</strong> 2.5-5% to balance with high trading volume</li>
+            <li><strong>Music NFTs:</strong> 10-15% reflecting traditional music industry economics</li>
+            <li><strong>Generative Art:</strong> 5-10% depending on collection size and strategy</li>
+        </ul>
+
+        <h3>Revenue Projections</h3>
+
+        <p>Consider a 10,000 NFT collection minted at 0.08 ETH:</p>
+        <ul>
+            <li>Primary sales: 800 ETH (10,000 × 0.08 ETH)</li>
+            <li>If 50% of collection trades once at 0.15 ETH average with 7.5% royalty: 56.25 ETH</li>
+            <li>Over multiple trading cycles, royalties can exceed primary sales revenue</li>
+        </ul>
+
+        <p>Successful collections with active secondary markets often generate 2-5x more revenue from royalties than from initial minting over their lifetime.</p>
+
+        <h2>The Royalty Enforcement Debate</h2>
+
+        <div class="warning-box">
+            <h4>⚠️ Current Challenges</h4>
+            <p>In 2022-2023, the NFT ecosystem faced a royalty crisis. Marketplace competition led some platforms (notably Blur and LooksRare) to make creator royalties optional, giving buyers the choice to pay or bypass them. This sparked intense debate about creator compensation versus market efficiency.</p>
+        </div>
+
+        <h3>Arguments For Optional Royalties</h3>
+        <ul>
+            <li>Market efficiency: Buyers prefer lower costs, increasing liquidity</li>
+            <li>Freedom of choice: Buyers should decide what to pay</li>
+            <li>Competition: Forces creators to provide value beyond initial sale</li>
+            <li>Technical reality: Smart contracts can't enforce off-chain behavior</li>
+        </ul>
+
+        <h3>Arguments For Enforced Royalties</h3>
+        <ul>
+            <li>Creator sustainability: Artists need ongoing revenue to continue creating</li>
+            <li>Aligned incentives: Creators invested in long-term success of their projects</li>
+            <li>Cultural norms: Royalties were a founding promise of NFTs</li>
+            <li>Fair compensation: Artists deserve to benefit from value appreciation</li>
+        </ul>
+
+        <h2>Technical Enforcement Mechanisms</h2>
+
+        <h3>Operator Filtering</h3>
+
+        <p>Some projects implement transfer restrictions, only allowing approved marketplaces that honor royalties:</p>
+
+        <div class="code-block"><pre>import "operator-filter-registry/src/DefaultOperatorFilterer.sol";
+
+contract RoyaltyEnforcedNFT is ERC721, DefaultOperatorFilterer {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public override onlyAllowedOperator(from) {
+        super.transferFrom(from, to, tokenId);
+    }
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public override onlyAllowedOperator(from) {
+        super.safeTransferFrom(from, to, tokenId);
+    }
+}</pre></div>
+
+        <div class="warning-box">
+            <h4>⚠️ Trade-offs</h4>
+            <p>Operator filtering enforces royalties but reduces liquidity and composability. Many buyers avoid collections with transfer restrictions, viewing them as anti-user. This remains a contentious design decision.</p>
+        </div>
+
+        <h3>On-Chain Royalty Registries</h3>
+
+        <p>Platforms like Manifold's Royalty Registry provide centralized on-chain records of royalty information, even for contracts that predate ERC-2981. This enables marketplaces to honor creator intent regardless of original contract implementation.</p>
+
+        <h2>Alternative Creator Revenue Models</h2>
+
+        <h3>Bundled Benefits</h3>
+        <p>Instead of relying solely on royalties, successful projects provide ongoing value:</p>
+        <ul>
+            <li>Exclusive content and experiences for holders</li>
+            <li>Governance rights in project decisions</li>
+            <li>Airdrops of new collections or tokens</li>
+            <li>Access to IRL events and merchandise</li>
+            <li>Staking rewards or token distributions</li>
+        </ul>
+
+        <h3>Creator Coins and Social Tokens</h3>
+        <p>Some creators issue fungible tokens alongside NFTs, creating alternative revenue streams through token appreciation, trading fees, or access gating.</p>
+
+        <h3>Membership and Subscription Models</h3>
+        <p>NFTs as membership passes with recurring benefits, incentivizing holding rather than flipping. Some projects implement time-based rewards that decrease with frequent trading.</p>
+
+        <h2>Royalty Distribution Strategies</h2>
+
+        <h3>Multi-Recipient Royalties</h3>
+
+        <div class="code-block"><pre>contract MultiRoyaltyNFT is ERC721 {
+    address[] public royaltyRecipients;
+    uint256[] public royaltyShares;
+
+    function setRoyaltyRecipients(
+        address[] memory recipients,
+        uint256[] memory shares
+    ) public onlyOwner {
+        require(recipients.length == shares.length, "Length mismatch");
+
+        uint256 totalShares = 0;
+        for (uint256 i = 0; i < shares.length; i++) {
+            totalShares += shares[i];
+        }
+        require(totalShares == 10000, "Shares must equal 100%");
+
+        royaltyRecipients = recipients;
+        royaltyShares = shares;
+    }
+
+    function distributeRoyalties() public payable {
+        for (uint256 i = 0; i < royaltyRecipients.length; i++) {
+            uint256 amount = (msg.value * royaltyShares[i]) / 10000;
+            payable(royaltyRecipients[i]).transfer(amount);
+        }
+    }
+}</pre></div>
+
+        <h3>Team Splits</h3>
+        <p>For collaborative projects, royalties can split between artists, developers, and project treasury automatically. Common patterns include 40% artist, 40% development team, 20% project treasury for ongoing operations.</p>
+
+        <h2>Tax and Legal Considerations</h2>
+
+        <p>Royalty income has tax implications that vary by jurisdiction:</p>
+        <ul>
+            <li>Generally taxed as ordinary income when received</li>
+            <li>May require quarterly estimated tax payments</li>
+            <li>International sales may have additional reporting requirements</li>
+            <li>Consult tax professionals familiar with cryptocurrency transactions</li>
+        </ul>
+
+        <div class="highlight">
+            <p><strong>Best Practice:</strong> Implement royalty payments to a multi-sig wallet or payment splitter contract rather than individual addresses. This provides transparency, enables fair distribution, and simplifies accounting.</p>
+        </div>
+
+        <h2>Future of Creator Economics</h2>
+
+        <p>The royalty debate continues evolving. Potential future developments include:</p>
+        <ul>
+            <li>Layer 2 solutions reducing gas costs and enabling microroyalties</li>
+            <li>Cross-chain royalty standards as NFTs bridge between networks</li>
+            <li>Programmable royalty curves (higher for quick flips, lower for long-term holds)</li>
+            <li>Community governance over royalty rates and distribution</li>
+            <li>Integration with traditional IP licensing frameworks</li>
+        </ul>
+
+        <h2>Conclusion</h2>
+
+        <p>Royalties represent one of NFTs' most powerful innovations, fundamentally changing creator economics in the digital age. While enforcement challenges and market dynamics continue evolving, the principle that creators should benefit from the ongoing success of their work remains central to the NFT value proposition. Successful projects will balance fair creator compensation with market efficiency and user experience.</p>
+
+        <div class="navigation">
+            <a href="chapter-05.html" class="nav-button">← Previous: Marketplaces</a>
+            <a href="chapter-07.html" class="nav-button">Next: Use Cases →</a>
+        </div>
+    </div>
+    <footer><p>© 2025 SmileStory Inc. / WIA</p><p>弘益人間 (홍익인간) · Benefit All Humanity</p></footer>
+</body>
+</html>

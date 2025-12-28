@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-PET-010 Simulator | Pet Translator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #F59E0B 0%, #fbbf24 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.2em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab-button {
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-radius: 10px;
+            color: #cbd5e1;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            border-color: #F59E0B;
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #F59E0B 0%, #fbbf24 100%);
+            color: #0f172a;
+            border-color: #F59E0B;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .panel h2 {
+            color: #F59E0B;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .panel h3 {
+            color: #fbbf24;
+            font-size: 1.5em;
+            margin: 30px 0 15px 0;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        label {
+            display: block;
+            color: #fbbf24;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 1em;
+            font-family: 'Courier New', monospace;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #F59E0B;
+        }
+
+        button {
+            background: linear-gradient(135deg, #F59E0B 0%, #fbbf24 100%);
+            color: #0f172a;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .output {
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid #F59E0B;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(245, 158, 11, 0.05);
+            border-left: 4px solid #F59E0B;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .card h4 {
+            color: #fbbf24;
+            margin-bottom: 10px;
+        }
+
+        code {
+            background: rgba(245, 158, 11, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #fbbf24;
+        }
+
+        .success {
+            color: #10b981;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin: 20px 0;
+            color: #F59E0B;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← Back to Main</a>
+
+        <header>
+            <h1>🗣️ WIA-PET-010 Simulator</h1>
+            <p class="subtitle">Interactive Pet Translator Testing Environment</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('data-format')">Data Format</button>
+            <button class="tab-button" onclick="switchTab('algorithms')">Algorithms</button>
+            <button class="tab-button" onclick="switchTab('protocol')">Protocol</button>
+            <button class="tab-button" onclick="switchTab('integration')">Integration</button>
+            <button class="tab-button" onclick="switchTab('test')">Test</button>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div id="data-format" class="tab-content active">
+            <div class="panel">
+                <h2>Data Format Specification</h2>
+                <p>The WIA-PET-010 standard uses JSON-based data structures for pet communication events.</p>
+
+                <h3>Input Event Structure</h3>
+                <div class="input-group">
+                    <label>Species:</label>
+                    <select id="species-input" onchange="updateDataFormat()">
+                        <option value="dog">Dog</option>
+                        <option value="cat">Cat</option>
+                        <option value="bird">Bird</option>
+                        <option value="rabbit">Rabbit</option>
+                        <option value="hamster">Hamster</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Breed:</label>
+                    <input type="text" id="breed-input" value="Golden Retriever" onchange="updateDataFormat()">
+                </div>
+
+                <div class="input-group">
+                    <label>Event Type:</label>
+                    <select id="event-type" onchange="updateDataFormat()">
+                        <option value="vocalization">Vocalization</option>
+                        <option value="body_language">Body Language</option>
+                        <option value="facial_expression">Facial Expression</option>
+                        <option value="combined">Combined Signal</option>
+                    </select>
+                </div>
+
+                <button onclick="generateSampleData()">Generate Sample Data</button>
+
+                <div id="data-output" class="output"></div>
+
+                <h3>Data Schema</h3>
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>Required Fields</h4>
+                        <ul>
+                            <li><code>timestamp</code>: ISO 8601 format</li>
+                            <li><code>petId</code>: Unique identifier</li>
+                            <li><code>species</code>: Animal species</li>
+                            <li><code>eventType</code>: Communication type</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Optional Fields</h4>
+                        <ul>
+                            <li><code>breed</code>: Specific breed</li>
+                            <li><code>age</code>: Age in months</li>
+                            <li><code>context</code>: Environmental context</li>
+                            <li><code>metadata</code>: Additional data</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div id="algorithms" class="tab-content">
+            <div class="panel">
+                <h2>Translation Algorithms</h2>
+                <p>Test different AI models for pet communication analysis.</p>
+
+                <h3>Vocalization Analysis</h3>
+                <div class="input-group">
+                    <label>Audio Sample (Simulated):</label>
+                    <select id="audio-sample">
+                        <option value="bark-alert">Dog: Alert Bark (High pitch, rapid)</option>
+                        <option value="bark-playful">Dog: Playful Bark (Varied pitch)</option>
+                        <option value="meow-hungry">Cat: Hungry Meow (Persistent)</option>
+                        <option value="meow-content">Cat: Content Purr</option>
+                        <option value="chirp-excited">Bird: Excited Chirping</option>
+                        <option value="squeak-scared">Hamster: Scared Squeak</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Analysis Model:</label>
+                    <select id="analysis-model">
+                        <option value="cnn-spectral">CNN Spectral Analysis</option>
+                        <option value="rnn-temporal">RNN Temporal Pattern</option>
+                        <option value="transformer-context">Transformer Context-Aware</option>
+                        <option value="ensemble">Ensemble Model</option>
+                    </select>
+                </div>
+
+                <button onclick="runVocalizationAnalysis()">Analyze Vocalization</button>
+
+                <div id="algorithm-output" class="output"></div>
+
+                <h3>Body Language Processing</h3>
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>Computer Vision Pipeline</h4>
+                        <ol>
+                            <li>Pose estimation (keypoint detection)</li>
+                            <li>Motion tracking (temporal analysis)</li>
+                            <li>Feature extraction (tail, ears, posture)</li>
+                            <li>Pattern classification (SVM/Random Forest)</li>
+                        </ol>
+                    </div>
+                    <div class="card">
+                        <h4>Emotion Mapping</h4>
+                        <ul>
+                            <li><span class="success">Happy:</span> Tail wagging, relaxed posture</li>
+                            <li><span class="warning">Anxious:</span> Ears back, tense body</li>
+                            <li><span class="error">Fearful:</span> Crouched, tail tucked</li>
+                            <li><span class="success">Playful:</span> Play bow, bouncing</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div id="protocol" class="tab-content">
+            <div class="panel">
+                <h2>Communication Protocol</h2>
+                <p>WIA-PET-010 uses WebSocket for real-time bidirectional communication.</p>
+
+                <h3>Connection Setup</h3>
+                <div class="input-group">
+                    <label>WebSocket URL:</label>
+                    <input type="text" id="ws-url" value="wss://api.wia-pet.org/v2/translate">
+                </div>
+
+                <div class="input-group">
+                    <label>API Key:</label>
+                    <input type="text" id="api-key" value="demo-key-12345" placeholder="Your API key">
+                </div>
+
+                <button onclick="simulateConnection()">Simulate Connection</button>
+
+                <div id="protocol-output" class="output"></div>
+
+                <h3>Message Types</h3>
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>Client → Server</h4>
+                        <ul>
+                            <li><code>translate_request</code>: Send pet data</li>
+                            <li><code>subscribe</code>: Subscribe to pet events</li>
+                            <li><code>heartbeat</code>: Keep connection alive</li>
+                            <li><code>stop_stream</code>: Stop real-time feed</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Server → Client</h4>
+                        <ul>
+                            <li><code>translation_result</code>: Translation output</li>
+                            <li><code>emotion_update</code>: Emotion state change</li>
+                            <li><code>error</code>: Error notification</li>
+                            <li><code>ack</code>: Acknowledgment</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>Protocol Flow</h3>
+                <div class="card">
+                    <h4>Real-Time Translation Flow</h4>
+                    <ol>
+                        <li>Client establishes WebSocket connection with authentication</li>
+                        <li>Client sends <code>subscribe</code> message with petId</li>
+                        <li>Server sends <code>ack</code> confirmation</li>
+                        <li>Client streams audio/video data as <code>translate_request</code></li>
+                        <li>Server processes and returns <code>translation_result</code></li>
+                        <li>Server sends <code>emotion_update</code> when state changes</li>
+                        <li>Client sends periodic <code>heartbeat</code> (every 30s)</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div id="integration" class="tab-content">
+            <div class="panel">
+                <h2>System Integration</h2>
+                <p>Integrate WIA-PET-010 with your applications using our SDKs and APIs.</p>
+
+                <h3>Quick Start Integration</h3>
+                <div class="input-group">
+                    <label>Select Platform:</label>
+                    <select id="platform-select" onchange="updateIntegrationCode()">
+                        <option value="typescript">TypeScript/JavaScript</option>
+                        <option value="python">Python</option>
+                        <option value="swift">Swift (iOS)</option>
+                        <option value="kotlin">Kotlin (Android)</option>
+                        <option value="rust">Rust</option>
+                    </select>
+                </div>
+
+                <button onclick="generateIntegrationCode()">Generate Code</button>
+
+                <div id="integration-output" class="output"></div>
+
+                <h3>Integration Capabilities</h3>
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>Hardware Integration</h4>
+                        <ul>
+                            <li>Smart collars with microphones</li>
+                            <li>Pet cameras with AI processing</li>
+                            <li>Wearable sensors (heart rate, temperature)</li>
+                            <li>IoT pet feeders and toys</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Software Integration</h4>
+                        <ul>
+                            <li>Veterinary management systems</li>
+                            <li>Pet health tracking apps</li>
+                            <li>Smart home platforms (Alexa, Google)</li>
+                            <li>Pet care service platforms</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>API Endpoints</h3>
+                <div class="card">
+                    <h4>REST API</h4>
+                    <ul>
+                        <li><code>POST /v2/translate</code>: One-time translation</li>
+                        <li><code>GET /v2/pets/{petId}/history</code>: Communication history</li>
+                        <li><code>GET /v2/pets/{petId}/emotions</code>: Emotion timeline</li>
+                        <li><code>POST /v2/pets/{petId}/profile</code>: Update pet profile</li>
+                        <li><code>GET /v2/models</code>: Available AI models</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Test -->
+        <div id="test" class="tab-content">
+            <div class="panel">
+                <h2>Live Translation Test</h2>
+                <p>Test the complete translation pipeline with sample scenarios.</p>
+
+                <h3>Test Scenario</h3>
+                <div class="input-group">
+                    <label>Pet Profile:</label>
+                    <select id="test-pet">
+                        <option value="max-dog">Max - 3yr Golden Retriever</option>
+                        <option value="luna-cat">Luna - 2yr Siamese Cat</option>
+                        <option value="tweety-bird">Tweety - 1yr Parakeet</option>
+                        <option value="fluffy-rabbit">Fluffy - 6mo Holland Lop</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Scenario:</label>
+                    <select id="test-scenario">
+                        <option value="hungry">Hungry - Mealtime approaching</option>
+                        <option value="playful">Playful - Wants to play</option>
+                        <option value="anxious">Anxious - Thunderstorm outside</option>
+                        <option value="sick">Sick - Not feeling well</option>
+                        <option value="happy">Happy - Owner returned home</option>
+                        <option value="bored">Bored - Needs stimulation</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Output Language:</label>
+                    <select id="output-language">
+                        <option value="en">English</option>
+                        <option value="ko">한국어 (Korean)</option>
+                        <option value="ja">日本語 (Japanese)</option>
+                        <option value="es">Español (Spanish)</option>
+                        <option value="fr">Français (French)</option>
+                        <option value="de">Deutsch (German)</option>
+                    </select>
+                </div>
+
+                <button onclick="runTranslationTest()">Run Translation Test</button>
+
+                <div id="test-output" class="output"></div>
+
+                <h3>Test Results Dashboard</h3>
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>Accuracy Metrics</h4>
+                        <p><strong>Vocalization Accuracy:</strong> <span class="success">94.7%</span></p>
+                        <p><strong>Emotion Detection:</strong> <span class="success">91.3%</span></p>
+                        <p><strong>Context Understanding:</strong> <span class="success">88.5%</span></p>
+                        <p><strong>Overall Confidence:</strong> <span class="success">92.1%</span></p>
+                    </div>
+                    <div class="card">
+                        <h4>Performance Metrics</h4>
+                        <p><strong>Processing Latency:</strong> <span class="success">247ms</span></p>
+                        <p><strong>Translation Time:</strong> <span class="success">89ms</span></p>
+                        <p><strong>Model Load Time:</strong> <span class="success">1.2s</span></p>
+                        <p><strong>API Response Time:</strong> <span class="success">156ms</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function generateSampleData() {
+            const species = document.getElementById('species-input').value;
+            const breed = document.getElementById('breed-input').value;
+            const eventType = document.getElementById('event-type').value;
+
+            const data = {
+                timestamp: new Date().toISOString(),
+                petId: `pet_${Math.random().toString(36).substr(2, 9)}`,
+                species: species,
+                breed: breed,
+                eventType: eventType,
+                payload: {
+                    audioFrequency: Math.floor(Math.random() * 2000) + 500,
+                    duration: Math.floor(Math.random() * 3000) + 500,
+                    intensity: Math.random().toFixed(2),
+                    pattern: eventType === 'vocalization' ? 'bark-sequence' : 'tail-wagging'
+                },
+                context: {
+                    timeOfDay: new Date().getHours() < 12 ? 'morning' : 'afternoon',
+                    location: 'living_room',
+                    recentActivity: 'resting',
+                    temperature: Math.floor(Math.random() * 10) + 20
+                },
+                metadata: {
+                    deviceId: 'collar-sensor-001',
+                    firmwareVersion: '2.1.5',
+                    batteryLevel: Math.floor(Math.random() * 40) + 60
+                }
+            };
+
+            document.getElementById('data-output').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function runVocalizationAnalysis() {
+            const sample = document.getElementById('audio-sample').value;
+            const model = document.getElementById('analysis-model').value;
+
+            const results = {
+                sample: sample,
+                model: model,
+                analysis: {
+                    primaryEmotion: sample.includes('alert') ? 'Alert' : sample.includes('playful') ? 'Playful' : sample.includes('hungry') ? 'Hungry' : 'Content',
+                    confidence: (Math.random() * 0.2 + 0.8).toFixed(3),
+                    secondaryEmotions: [
+                        { emotion: 'Excited', probability: (Math.random() * 0.3).toFixed(3) },
+                        { emotion: 'Curious', probability: (Math.random() * 0.2).toFixed(3) }
+                    ],
+                    audioFeatures: {
+                        pitch: `${Math.floor(Math.random() * 500) + 300}Hz`,
+                        duration: `${Math.floor(Math.random() * 2000) + 500}ms`,
+                        amplitude: `${Math.floor(Math.random() * 40) + 60}dB`,
+                        pattern: 'repetitive'
+                    },
+                    interpretation: sample.includes('bark-alert') ? 'Dog is alerting to something unusual' :
+                                  sample.includes('meow-hungry') ? 'Cat is requesting food' :
+                                  sample.includes('chirp-excited') ? 'Bird is excited and happy' :
+                                  'Pet is expressing contentment',
+                    processingTime: `${Math.floor(Math.random() * 200) + 100}ms`
+                }
+            };
+
+            document.getElementById('algorithm-output').textContent = JSON.stringify(results, null, 2);
+        }
+
+        function simulateConnection() {
+            const url = document.getElementById('ws-url').value;
+            const apiKey = document.getElementById('api-key').value;
+
+            const log = [];
+            log.push(`[${new Date().toISOString()}] Connecting to ${url}...`);
+            log.push(`[${new Date().toISOString()}] Authenticating with API key: ${apiKey.substr(0, 10)}...`);
+
+            setTimeout(() => {
+                log.push(`[${new Date().toISOString()}] ✓ Connection established`);
+                log.push(`[${new Date().toISOString()}] ✓ Authentication successful`);
+                log.push(`[${new Date().toISOString()}] Sending subscribe message...`);
+                log.push(`[${new Date().toISOString()}] → {"type":"subscribe","petId":"pet_abc123"}`);
+                log.push(`[${new Date().toISOString()}] ← {"type":"ack","status":"subscribed","petId":"pet_abc123"}`);
+                log.push(`[${new Date().toISOString()}] Ready to receive translation events`);
+                log.push(`\nConnection Status: CONNECTED`);
+                log.push(`Protocol Version: WIA-PET-010 v2.0`);
+                log.push(`Compression: Enabled (gzip)`);
+                log.push(`Heartbeat Interval: 30s`);
+
+                document.getElementById('protocol-output').textContent = log.join('\n');
+            }, 1000);
+
+            document.getElementById('protocol-output').textContent = log.join('\n');
+        }
+
+        function generateIntegrationCode() {
+            const platform = document.getElementById('platform-select').value;
+            let code = '';
+
+            switch(platform) {
+                case 'typescript':
+                    code = `import { PetTranslator, Species } from '@wia/pet-translator';
+
+const translator = new PetTranslator({
+  apiKey: 'your-api-key',
+  websocketUrl: 'wss://api.wia-pet.org/v2/translate'
+});
+
+// Subscribe to pet events
+await translator.subscribe({
+  petId: 'pet_abc123',
+  species: Species.Dog,
+  breed: 'Golden Retriever'
+});
+
+// Listen for translations
+translator.on('translation', (result) => {
+  console.log('Translation:', result.message);
+  console.log('Emotion:', result.emotion);
+  console.log('Confidence:', result.confidence);
+});
+
+// Process audio stream
+const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+translator.processAudioStream(stream);`;
+                    break;
+
+                case 'python':
+                    code = `from wia_pet_translator import PetTranslator, Species
+
+translator = PetTranslator(
+    api_key='your-api-key',
+    websocket_url='wss://api.wia-pet.org/v2/translate'
+)
+
+# Subscribe to pet events
+translator.subscribe(
+    pet_id='pet_abc123',
+    species=Species.DOG,
+    breed='Golden Retriever'
+)
+
+# Listen for translations
+@translator.on('translation')
+def handle_translation(result):
+    print(f"Translation: {result.message}")
+    print(f"Emotion: {result.emotion}")
+    print(f"Confidence: {result.confidence}")
+
+# Process audio file
+translator.process_audio_file('recording.wav')`;
+                    break;
+
+                case 'swift':
+                    code = `import WIAPetTranslator
+
+let translator = PetTranslator(
+    apiKey: "your-api-key",
+    websocketURL: "wss://api.wia-pet.org/v2/translate"
+)
+
+// Subscribe to pet events
+translator.subscribe(
+    petId: "pet_abc123",
+    species: .dog,
+    breed: "Golden Retriever"
+)
+
+// Listen for translations
+translator.onTranslation { result in
+    print("Translation: \\(result.message)")
+    print("Emotion: \\(result.emotion)")
+    print("Confidence: \\(result.confidence)")
+}
+
+// Start audio recording
+translator.startAudioRecording()`;
+                    break;
+
+                case 'kotlin':
+                    code = `import org.wia.pettranslator.*
+
+val translator = PetTranslator(
+    apiKey = "your-api-key",
+    websocketUrl = "wss://api.wia-pet.org/v2/translate"
+)
+
+// Subscribe to pet events
+translator.subscribe(
+    petId = "pet_abc123",
+    species = Species.DOG,
+    breed = "Golden Retriever"
+)
+
+// Listen for translations
+translator.onTranslation { result ->
+    println("Translation: \${result.message}")
+    println("Emotion: \${result.emotion}")
+    println("Confidence: \${result.confidence}")
+}
+
+// Process audio stream
+translator.processAudioStream(audioStream)`;
+                    break;
+
+                case 'rust':
+                    code = `use wia_pet_translator::{PetTranslator, Species};
+
+let translator = PetTranslator::new(
+    "your-api-key",
+    "wss://api.wia-pet.org/v2/translate"
+)?;
+
+// Subscribe to pet events
+translator.subscribe(
+    "pet_abc123",
+    Species::Dog,
+    Some("Golden Retriever")
+).await?;
+
+// Listen for translations
+translator.on_translation(|result| {
+    println!("Translation: {}", result.message);
+    println!("Emotion: {:?}", result.emotion);
+    println!("Confidence: {}", result.confidence);
+});
+
+// Process audio file
+translator.process_audio_file("recording.wav").await?;`;
+                    break;
+            }
+
+            document.getElementById('integration-output').textContent = code;
+        }
+
+        function runTranslationTest() {
+            const pet = document.getElementById('test-pet').value;
+            const scenario = document.getElementById('test-scenario').value;
+            const language = document.getElementById('output-language').value;
+
+            const translations = {
+                'hungry-en': "I'm really hungry! It's almost dinner time and I can smell food. Can you feed me now?",
+                'hungry-ko': "정말 배고파요! 저녁 시간이 거의 다 됐고 음식 냄새가 나요. 지금 밥 줄 수 있나요?",
+                'playful-en': "I want to play! I've been resting all day and I have so much energy. Let's play fetch!",
+                'playful-ko': "놀고 싶어요! 하루 종일 쉬었더니 에너지가 넘쳐요. 공놀이 해요!",
+                'anxious-en': "I'm scared of the loud thunder. Can you stay close to me? I feel safer when you're here.",
+                'anxious-ko': "큰 천둥소리가 무서워요. 가까이 있어줄 수 있나요? 당신이 있으면 안전해요.",
+                'sick-en': "I don't feel well. My stomach hurts and I don't want to eat. I need help.",
+                'sick-ko': "몸이 안 좋아요. 배가 아프고 먹고 싶지 않아요. 도움이 필요해요.",
+                'happy-en': "You're home! I'm so happy to see you! I missed you so much today!",
+                'happy-ko': "집에 왔네요! 너무 반가워요! 오늘 하루 정말 보고 싶었어요!",
+                'bored-en': "I'm bored. I've played with all my toys and nothing is interesting anymore. New activity?",
+                'bored-ko': "지루해요. 장난감은 다 가지고 놀았고 더 이상 재미없어요. 새로운 활동 할까요?"
+            };
+
+            const key = `${scenario}-${language}`;
+            const message = translations[key] || translations[`${scenario}-en`];
+
+            const result = {
+                testId: `test_${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                input: {
+                    pet: pet,
+                    scenario: scenario,
+                    language: language
+                },
+                processing: {
+                    audioAnalysis: `${Math.floor(Math.random() * 100) + 50}ms`,
+                    emotionDetection: `${Math.floor(Math.random() * 80) + 40}ms`,
+                    translation: `${Math.floor(Math.random() * 120) + 60}ms`,
+                    totalTime: `${Math.floor(Math.random() * 200) + 150}ms`
+                },
+                output: {
+                    translatedMessage: message,
+                    primaryEmotion: scenario.charAt(0).toUpperCase() + scenario.slice(1),
+                    emotionConfidence: (Math.random() * 0.15 + 0.85).toFixed(3),
+                    secondaryEmotions: [
+                        { emotion: 'Excited', confidence: (Math.random() * 0.3).toFixed(3) },
+                        { emotion: 'Alert', confidence: (Math.random() * 0.2).toFixed(3) }
+                    ],
+                    urgency: scenario === 'sick' ? 'high' : scenario === 'anxious' ? 'medium' : 'low',
+                    suggestedActions: scenario === 'hungry' ? ['Feed pet', 'Check feeding schedule'] :
+                                     scenario === 'playful' ? ['Play with pet', 'Take for walk'] :
+                                     scenario === 'anxious' ? ['Comfort pet', 'Create safe space'] :
+                                     scenario === 'sick' ? ['Monitor symptoms', 'Contact veterinarian'] :
+                                     scenario === 'happy' ? ['Give affection', 'Spend quality time'] :
+                                     ['Provide new toy', 'Change environment']
+                },
+                metrics: {
+                    accuracy: (Math.random() * 0.1 + 0.9).toFixed(3),
+                    confidence: (Math.random() * 0.15 + 0.85).toFixed(3),
+                    contextRelevance: (Math.random() * 0.12 + 0.88).toFixed(3)
+                }
+            };
+
+            document.getElementById('test-output').textContent = JSON.stringify(result, null, 2);
+        }
+
+        // Initialize with sample data
+        window.onload = function() {
+            generateSampleData();
+        };
+    </script>
+</body>
+</html>

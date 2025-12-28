@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 04: 드론 비행 제어 | WIA-SPACE-017</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+            background: #1a1a2e; color: #eee; line-height: 1.8; padding: 2rem;
+        }
+        .container {
+            max-width: 900px; margin: 0 auto; background: rgba(255, 255, 255, 0.03);
+            padding: 3rem; border-radius: 12px; border: 1px solid rgba(233, 69, 96, 0.2);
+        }
+        .chapter-header { border-bottom: 3px solid #e94560; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #e94560; font-size: 1rem; font-weight: 600; letter-spacing: 2px; margin-bottom: 0.5rem; }
+        h1 { color: #fff; font-size: 2.5rem; margin-bottom: 1rem; }
+        .chapter-intro { color: #aaa; font-size: 1.1rem; line-height: 1.8; }
+        h2 {
+            color: #e94560; font-size: 1.8rem; margin-top: 3rem; margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem; border-bottom: 2px solid rgba(233, 69, 96, 0.3);
+        }
+        h3 { color: #4ecca3; font-size: 1.4rem; margin-top: 2rem; margin-bottom: 1rem; }
+        p { margin-bottom: 1.5rem; color: #ccc; font-size: 1.05rem; }
+        ul, ol { margin-bottom: 1.5rem; padding-left: 2rem; }
+        li { margin-bottom: 0.8rem; color: #ccc; }
+        .info-box {
+            background: rgba(78, 204, 163, 0.1); border-left: 4px solid #4ecca3;
+            padding: 1.5rem; margin: 2rem 0; border-radius: 6px;
+        }
+        .info-box h4 { color: #4ecca3; margin-bottom: 1rem; font-size: 1.2rem; }
+        .warning-box {
+            background: rgba(233, 69, 96, 0.1); border-left: 4px solid #e94560;
+            padding: 1.5rem; margin: 2rem 0; border-radius: 6px;
+        }
+        .warning-box h4 { color: #e94560; margin-bottom: 1rem; font-size: 1.2rem; }
+        .code-block {
+            background: #0f3460; padding: 1.5rem; border-radius: 6px; margin: 1.5rem 0;
+            overflow-x: auto; border: 1px solid rgba(233, 69, 96, 0.3); font-family: 'Courier New', monospace;
+        }
+        code { color: #4ecca3; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+        table {
+            width: 100%; border-collapse: collapse; margin: 2rem 0;
+            background: rgba(15, 52, 96, 0.3); border-radius: 6px; overflow: hidden;
+        }
+        th { background: #0f3460; color: #e94560; padding: 1rem; text-align: left; font-weight: 600; }
+        td { padding: 1rem; border-top: 1px solid rgba(233, 69, 96, 0.2); color: #ccc; }
+        tr:hover { background: rgba(233, 69, 96, 0.1); }
+        .nav-buttons {
+            margin-top: 4rem; padding-top: 2rem; border-top: 2px solid rgba(233, 69, 96, 0.3);
+            display: flex; justify-content: space-between; gap: 1rem;
+        }
+        .btn {
+            display: inline-block; background: #e94560; color: white; padding: 1rem 2rem;
+            border-radius: 6px; text-decoration: none; font-weight: 600; transition: all 0.3s ease;
+        }
+        .btn:hover { background: #d63651; transform: translateY(-2px); }
+        .btn-secondary { background: #0f3460; }
+        .btn-secondary:hover { background: #16213e; }
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .container { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            .nav-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 04</div>
+            <h1>🎮 드론 비행 제어</h1>
+            <p class="chapter-intro">
+                드론의 두뇌인 비행 제어 시스템을 상세히 탐구합니다.
+                Flight Controller, GPS, IMU, 그리고 PID 제어 알고리즘을 이해합니다.
+            </p>
+        </div>
+
+        <h2>4.1 비행 제어기 (Flight Controller, FC)</h2>
+
+        <p>
+            비행 제어기는 드론의 두뇌로, 센서 데이터를 읽고 모터를 제어하여
+            안정적인 비행을 가능하게 하는 핵심 장치입니다.
+        </p>
+
+        <h3>4.1.1 FC의 역할</h3>
+
+        <ul>
+            <li><strong>자세 안정화</strong>: 수평 유지, 바람 보정</li>
+            <li><strong>모터 제어</strong>: ESC에 신호 전송, 추력 조절</li>
+            <li><strong>센서 융합</strong>: IMU, GPS, 기압계 데이터 통합</li>
+            <li><strong>비행 모드 관리</strong>: Acro, Angle, GPS Hold 등</li>
+            <li><strong>안전 기능</strong>: 배터리 저전압 경고, Failsafe</li>
+            <li><strong>데이터 기록</strong>: 블랙박스 로그</li>
+        </ul>
+
+        <h3>4.1.2 주요 FC 펌웨어</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>펌웨어</th>
+                    <th>특징</th>
+                    <th>용도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Betaflight</strong></td>
+                    <td>가장 인기, 레이싱 최적화</td>
+                    <td>FPV 레이싱, 프리스타일</td>
+                </tr>
+                <tr>
+                    <td><strong>iNav</strong></td>
+                    <td>GPS 네비게이션, 장거리 비행</td>
+                    <td>장거리, 웨이포인트 비행</td>
+                </tr>
+                <tr>
+                    <td><strong>ArduPilot</strong></td>
+                    <td>다양한 기능, 자율 비행</td>
+                    <td>촬영, 측량, 연구용</td>
+                </tr>
+                <tr>
+                    <td><strong>PX4</strong></td>
+                    <td>전문가용, ROS 통합</td>
+                    <td>상업용, 연구 개발</td>
+                </tr>
+                <tr>
+                    <td><strong>KISS</strong></td>
+                    <td>단순함, 낮은 지연</td>
+                    <td>순수 레이싱</td>
+                </tr>
+                <tr>
+                    <td><strong>Cleanflight / Butterflight</strong></td>
+                    <td>Betaflight 파생</td>
+                    <td>특정 하드웨어 최적화</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>4.1.3 FC 하드웨어 사양</h3>
+
+        <p>
+            현대 FC의 핵심 사양:
+        </p>
+
+        <ul>
+            <li><strong>MCU (마이크로컨트롤러)</strong>:
+                <ul>
+                    <li>STM32 F4 (168MHz) - 구형, 여전히 사용 가능</li>
+                    <li>STM32 F7 (216MHz) - 표준, Betaflight 권장</li>
+                    <li>STM32 H7 (480MHz) - 최신, 고급 필터링</li>
+                </ul>
+            </li>
+            <li><strong>자이로 (Gyroscope)</strong>:
+                <ul>
+                    <li>MPU6000 / ICM20602 - 일반적</li>
+                    <li>BMI270 - 저잡음, 고성능</li>
+                    <li>듀얼 자이로 - 이중화로 신뢰성 향상</li>
+                </ul>
+            </li>
+            <li><strong>루프 주파수</strong>:
+                <ul>
+                    <li>Gyro: 8kHz (표준), 32kHz (고급)</li>
+                    <li>PID Loop: 4kHz~8kHz</li>
+                </ul>
+            </li>
+        </ul>
+
+        <div class="info-box">
+            <h4>💡 FC 선택 가이드</h4>
+            <p>
+                <strong>레이싱 드론</strong>: F7 또는 H7 FC, 8kHz 루프, 듀얼 자이로<br>
+                <strong>프리스타일</strong>: F7 FC, 4kHz~8kHz<br>
+                <strong>촬영 드론</strong>: ArduPilot/PX4, GPS, 나침반 내장<br>
+                <strong>초보자</strong>: All-in-One (FC+ESC 통합)
+            </p>
+        </div>
+
+        <h2>4.2 IMU (Inertial Measurement Unit)</h2>
+
+        <p>
+            IMU는 드론의 움직임과 자세를 측정하는 센서 집합입니다.
+        </p>
+
+        <h3>4.2.1 IMU 구성 센서</h3>
+
+        <ul>
+            <li><strong>자이로스코프 (Gyroscope)</strong>: 3축 각속도 측정 (deg/s)
+                <ul>
+                    <li>Roll rate (좌우 회전)</li>
+                    <li>Pitch rate (상하 기울기 회전)</li>
+                    <li>Yaw rate (좌우 회전)</li>
+                </ul>
+            </li>
+            <li><strong>가속도계 (Accelerometer)</strong>: 3축 선형 가속도 측정 (m/s²)
+                <ul>
+                    <li>중력 방향 감지로 수평 계산</li>
+                    <li>충격, 진동 감지</li>
+                </ul>
+            </li>
+            <li><strong>자력계 (Magnetometer, 선택)</strong>: 3축 자기장 측정
+                <ul>
+                    <li>나침반 기능, Yaw 드리프트 보정</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>4.2.2 센서 융합 (Sensor Fusion)</h3>
+
+        <p>
+            여러 센서 데이터를 결합하여 정확한 자세를 추정합니다:
+        </p>
+
+        <ul>
+            <li><strong>상보 필터 (Complementary Filter)</strong>: 간단하고 빠름
+                <ul>
+                    <li>자이로: 단기 정확, 장기 드리프트</li>
+                    <li>가속도계: 장기 정확, 단기 잡음</li>
+                    <li>두 센서 데이터를 가중 평균</li>
+                </ul>
+            </li>
+            <li><strong>칼만 필터 (Kalman Filter)</strong>: 더 정교한 융합
+                <ul>
+                    <li>예측 + 측정 업데이트</li>
+                    <li>GPS, 기압계 등 추가 센서 통합</li>
+                </ul>
+            </li>
+            <li><strong>Madgwick / Mahony 필터</strong>: 쿼터니언 기반
+                <ul>
+                    <li>짐벌 락 (Gimbal Lock) 방지</li>
+                    <li>ArduPilot, PX4에서 사용</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>4.2.3 좌표계</h3>
+
+        <p>
+            드론은 두 가지 주요 좌표계를 사용합니다:
+        </p>
+
+        <ul>
+            <li><strong>기체 좌표계 (Body Frame)</strong>:
+                <ul>
+                    <li>X축: 전진 방향</li>
+                    <li>Y축: 우측 방향</li>
+                    <li>Z축: 하방 (NED) 또는 상방 (ENU)</li>
+                </ul>
+            </li>
+            <li><strong>지구 좌표계 (Earth Frame)</strong>:
+                <ul>
+                    <li>NED: North-East-Down (항공 표준)</li>
+                    <li>ENU: East-North-Up (로봇 공학)</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>4.3 GPS 및 위치 시스템</h2>
+
+        <p>
+            GPS는 드론의 절대 위치를 제공하여 자율 비행과 귀환 기능을 가능하게 합니다.
+        </p>
+
+        <h3>4.3.1 GNSS 시스템</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>시스템</th>
+                    <th>국가</th>
+                    <th>위성 수</th>
+                    <th>정확도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>GPS</td>
+                    <td>미국</td>
+                    <td>31개</td>
+                    <td>5~10m</td>
+                </tr>
+                <tr>
+                    <td>GLONASS</td>
+                    <td>러시아</td>
+                    <td>24개</td>
+                    <td>5~10m</td>
+                </tr>
+                <tr>
+                    <td>Galileo</td>
+                    <td>유럽</td>
+                    <td>30개</td>
+                    <td>1~5m</td>
+                </tr>
+                <tr>
+                    <td>BeiDou</td>
+                    <td>중국</td>
+                    <td>35개</td>
+                    <td>5~10m</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            현대 드론은 멀티 GNSS를 지원하여 더 많은 위성을 포착, 정확도와 신뢰성을 향상시킵니다.
+        </p>
+
+        <h3>4.3.2 RTK (Real-Time Kinematic)</h3>
+
+        <p>
+            RTK는 센티미터 급 정확도를 제공하는 고급 GPS 기술입니다:
+        </p>
+
+        <ul>
+            <li><strong>작동 원리</strong>: 고정 기지국의 보정 데이터를 이용해 오차 제거</li>
+            <li><strong>정확도</strong>: 수평 1~2cm, 수직 2~3cm</li>
+            <li><strong>용도</strong>: 정밀 측량, 농업, 건설</li>
+            <li><strong>예시</strong>: DJI Matrice 300 RTK, Emlid Reach M2</li>
+            <li><strong>요구사항</strong>: 기지국 또는 NTRIP 서비스 (인터넷 기반)</li>
+        </ul>
+
+        <h3>4.3.3 GPS 기반 비행 모드</h3>
+
+        <ul>
+            <li><strong>Position Hold (Loiter)</strong>: GPS로 위치 고정, 바람 보정</li>
+            <li><strong>Return to Home (RTH)</strong>: 자동 귀환</li>
+            <li><strong>Waypoint Navigation</strong>: 미리 정의된 경로 자동 비행</li>
+            <li><strong>Follow Me</strong>: 조종자 추적</li>
+            <li><strong>Orbit</strong>: 특정 지점 중심 원형 비행</li>
+        </ul>
+
+        <h2>4.4 PID 제어</h2>
+
+        <p>
+            PID (Proportional-Integral-Derivative)는 드론 안정화의 핵심 알고리즘입니다.
+        </p>
+
+        <h3>4.4.1 PID 구성 요소</h3>
+
+        <ul>
+            <li><strong>P (Proportional, 비례)</strong>:
+                <ul>
+                    <li>현재 오차에 비례하여 반응</li>
+                    <li>높은 P: 빠른 반응, 오버슈트 가능</li>
+                    <li>낮은 P: 느린 반응, 안정적</li>
+                </ul>
+            </li>
+            <li><strong>I (Integral, 적분)</strong>:
+                <ul>
+                    <li>누적 오차를 제거 (바람, 무게 불균형)</li>
+                    <li>높은 I: 강한 보정, 진동 유발 가능</li>
+                    <li>낮은 I: 드리프트 발생</li>
+                </ul>
+            </li>
+            <li><strong>D (Derivative, 미분)</strong>:
+                <ul>
+                    <li>오차 변화율에 반응, 댐핑 효과</li>
+                    <li>높은 D: 부드러운 비행, 잡음에 민감</li>
+                    <li>낮은 D: 오버슈트, 진동</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>4.4.2 PID 튜닝</h3>
+
+        <p>
+            드론마다 최적의 PID 값이 다릅니다. 일반적인 튜닝 순서:
+        </p>
+
+        <ol>
+            <li><strong>P 튜닝</strong>: 진동이 시작될 때까지 증가, 그 후 약간 감소</li>
+            <li><strong>D 튜닝</strong>: 오버슈트와 진동 억제</li>
+            <li><strong>I 튜닝</strong>: 드리프트 제거, 과도하지 않게</li>
+            <li><strong>반복 조정</strong>: 비행 테스트 후 미세 조정</li>
+        </ol>
+
+        <div class="code-block">
+예시 PID 값 (5인치 레이싱 쿼드):
+Roll/Pitch:
+  P: 60~80
+  I: 70~90
+  D: 40~60
+
+Yaw:
+  P: 80~100
+  I: 90~110
+  D: 0~10
+        </div>
+
+        <h3>4.4.3 Betaflight PID 튜닝 도구</h3>
+
+        <ul>
+            <li><strong>블랙박스 로그 분석</strong>: 비행 데이터 기록, PID 성능 분석</li>
+            <li><strong>PID 튜닝 슬라이더</strong>: 초보자용 간편 조정</li>
+            <li><strong>프리셋</strong>: 일반적인 드론 유형별 기본값</li>
+            <li><strong>필터 설정</strong>: 자이로 및 D-term 필터로 잡음 제거</li>
+        </ul>
+
+        <h2>4.5 비행 모드</h2>
+
+        <h3>4.5.1 기본 비행 모드</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>모드</th>
+                    <th>설명</th>
+                    <th>난이도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Acro (Manual)</strong></td>
+                    <td>자이로만 사용, 자동 수평 없음</td>
+                    <td>고급 (레이싱, 프리스타일)</td>
+                </tr>
+                <tr>
+                    <td><strong>Angle (Stabilized)</strong></td>
+                    <td>자동 수평 유지, 최대 기울기 제한</td>
+                    <td>초보자</td>
+                </tr>
+                <tr>
+                    <td><strong>Horizon</strong></td>
+                    <td>중간 - 중앙에서 Angle, 끝에서 Acro</td>
+                    <td>중급</td>
+                </tr>
+                <tr>
+                    <td><strong>GPS Hold</strong></td>
+                    <td>GPS로 위치 고정</td>
+                    <td>자동 (GPS 필요)</td>
+                </tr>
+                <tr>
+                    <td><strong>Altitude Hold</strong></td>
+                    <td>기압계로 고도 유지</td>
+                    <td>초보자</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>4.5.2 고급 비행 모드 (ArduPilot/PX4)</h3>
+
+        <ul>
+            <li><strong>Auto</strong>: 웨이포인트 미션 자동 수행</li>
+            <li><strong>Guided</strong>: 지상 제어 스테이션(GCS)에서 실시간 명령</li>
+            <li><strong>Circle</strong>: 특정 지점 원형 비행</li>
+            <li><strong>Land</strong>: 자동 착륙</li>
+            <li><strong>RTL (Return to Launch)</strong>: 이륙 지점 자동 귀환</li>
+            <li><strong>Follow</strong>: GPS 비콘 추적</li>
+        </ul>
+
+        <h2>4.6 안전 기능 (Failsafe)</h2>
+
+        <p>
+            비상 상황에서 드론과 주변을 보호하는 기능들입니다.
+        </p>
+
+        <h3>4.6.1 주요 Failsafe 시나리오</h3>
+
+        <ul>
+            <li><strong>RC 신호 손실</strong>:
+                <ul>
+                    <li>옵션: 착륙, RTH, 호버링</li>
+                    <li>일반적: 2초 신호 손실 후 활성화</li>
+                </ul>
+            </li>
+            <li><strong>배터리 저전압</strong>:
+                <ul>
+                    <li>경고 단계: 경고음/LED</li>
+                    <li>크리티컬 단계: 강제 착륙 또는 RTH</li>
+                </ul>
+            </li>
+            <li><strong>GPS 손실</strong>:
+                <ul>
+                    <li>GPS 모드에서 Angle 모드로 전환</li>
+                    <li>또는 호버링 후 착륙</li>
+                </ul>
+            </li>
+            <li><strong>지오펜스 (Geofence)</strong>:
+                <ul>
+                    <li>최대 고도/거리 제한</li>
+                    <li>경계 침범 시 귀환</li>
+                </ul>
+            </li>
+        </ul>
+
+        <div class="warning-box">
+            <h4>⚠️ Failsafe 테스트</h4>
+            <p>
+                모든 failsafe 기능은 실제 비행 전 안전한 환경에서 테스트해야 합니다.
+                송신기 전원 OFF, 배터리 저전압 시뮬레이션 등을 통해 검증하세요.
+            </p>
+        </div>
+
+        <h2>4.7 기압계 및 고도 유지</h2>
+
+        <p>
+            기압계는 기압 변화로 고도를 추정합니다:
+        </p>
+
+        <ul>
+            <li><strong>센서</strong>: BMP280, MS5611 등</li>
+            <li><strong>정확도</strong>: ±0.5m (정적), ±2m (동적)</li>
+            <li><strong>드리프트</strong>: 날씨 변화로 장시간 비행 시 오차 누적</li>
+            <li><strong>고도 유지 모드</strong>: 스로틀 중립 시 고도 고정</li>
+        </ul>
+
+        <h2>4.8 원격 조종 수신기 (RC Receiver)</h2>
+
+        <h3>4.8.1 RC 프로토콜</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>프로토콜</th>
+                    <th>지연시간</th>
+                    <th>특징</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>PWM</strong></td>
+                    <td>~20ms</td>
+                    <td>구형, 채널당 1개 선</td>
+                </tr>
+                <tr>
+                    <td><strong>PPM</strong></td>
+                    <td>~20ms</td>
+                    <td>다중 채널 1개 선</td>
+                </tr>
+                <tr>
+                    <td><strong>SBUS (Futaba)</strong></td>
+                    <td>~7ms</td>
+                    <td>16채널, 1개 선, 디지털</td>
+                </tr>
+                <tr>
+                    <td><strong>CRSF (Crossfire)</strong></td>
+                    <td>~5ms</td>
+                    <td>장거리, 텔레메트리</td>
+                </tr>
+                <tr>
+                    <td><strong>ELRS (ExpressLRS)</strong></td>
+                    <td>~4ms (500Hz)</td>
+                    <td>오픈소스, 초저지연</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>4.8.2 장거리 RC 시스템</h3>
+
+        <ul>
+            <li><strong>TBS Crossfire</strong>: 868/915MHz, 최대 80km+</li>
+            <li><strong>ExpressLRS (ELRS)</strong>: 2.4GHz/900MHz, 오픈소스, 저비용</li>
+            <li><strong>FrSky R9</strong>: 900MHz, 장거리</li>
+        </ul>
+
+        <h2>4.9 요약</h2>
+
+        <p>
+            비행 제어 시스템은 드론의 두뇌로, IMU로 자세를 감지하고
+            PID 알고리즘으로 모터를 제어하여 안정적인 비행을 실현합니다.
+        </p>
+
+        <p>
+            GPS는 자율 비행과 귀환 기능을 가능하게 하며,
+            RTK를 통해 센티미터 급 정확도도 달성할 수 있습니다.
+            PID 튜닝은 드론의 비행 특성을 결정하는 중요한 과정이며,
+            failsafe 기능은 비상 상황에서 안전을 보장합니다.
+        </p>
+
+        <p>
+            다음 챕터에서는 드론과 조종자 간 통신 시스템을 살펴보겠습니다.
+        </p>
+
+        <div class="nav-buttons">
+            <a href="chapter-03.html" class="btn btn-secondary">← 이전: 센서 및 페이로드</a>
+            <a href="chapter-05.html" class="btn">다음: 통신 시스템 →</a>
+        </div>
+    </div>
+</body>
+</html>

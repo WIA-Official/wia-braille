@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>2장: 마스터 데이터 모델링 및 설계 | WIA-DATA-009</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .nav { display: flex; justify-content: space-between; margin-bottom: 2rem; }
+        .nav a { color: #10B981; text-decoration: none; }
+        h1 { font-size: 2.5rem; color: #10B981; margin-bottom: 2rem; }
+        h2 { font-size: 1.8rem; color: #10B981; margin-top: 3rem; margin-bottom: 1rem; }
+        h3 { font-size: 1.4rem; color: #10B981; margin-top: 2rem; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; }
+        ul { margin-left: 2rem; margin-bottom: 1.5rem; color: #cbd5e1; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 0.75rem; border: 1px solid #334155; }
+        th { background: #1e293b; color: #10B981; }
+        .highlight-box { background: #1e293b; border-left: 4px solid #10B981; padding: 1.5rem; margin: 2rem 0; }
+        pre { background: #1e293b; border: 2px solid #334155; padding: 1.5rem; border-radius: 0.5rem; overflow-x: auto; margin: 1.5rem 0; color: #cbd5e1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav"><a href="chapter-01.html">← 이전</a><a href="chapter-03.html">다음 →</a></div>
+        <h1>2장: 마스터 데이터 모델링 및 설계</h1>
+        
+        <p>효과적인 마스터 데이터 관리는 신중한 데이터 모델링과 설계에서 시작됩니다. 잘 설계된 마스터 데이터 모델은 MDM 구현의 청사진 역할을 하며, 중요한 비즈니스 엔터티를 관리하는 구조, 관계 및 비즈니스 규칙을 정의합니다.</p>
+
+        <h2>1. 엔터티-관계 모델링 이해</h2>
+        <p>마스터 데이터 모델링은 MDM의 고유한 요구사항에 맞게 조정된 엔터티-관계(ER) 모델링 기법을 사용합니다. 트랜잭션 데이터베이스 설계와 달리, MDM 모델은 다음을 수용해야 합니다:</p>
+        <ul>
+            <li><strong>다중 소스 시스템:</strong> 서로 다른 스키마와 비즈니스 규칙을 가진 시스템들</li>
+            <li><strong>시간적 차원:</strong> 시간 경과에 따른 변경 사항 추적</li>
+            <li><strong>데이터 품질 메타데이터:</strong> 신뢰도 점수 및 데이터 계보 포함</li>
+            <li><strong>복잡한 계층 및 관계:</strong> 컨텍스트에 따라 달라질 수 있는 관계</li>
+            <li><strong>확장성:</strong> 미래의 요구사항 변화에 대응 가능한 구조</li>
+        </ul>
+
+        <h2>2. 고객 마스터 데이터 모델</h2>
+        <p>고객 마스터 데이터는 비즈니스와 상호작용하는 개인 및 조직을 나타냅니다. 포괄적인 고객 모델에는 다음이 포함됩니다:</p>
+        
+        <table>
+            <thead><tr><th>엔터티</th><th>주요 속성</th><th>관계</th></tr></thead>
+            <tbody>
+                <tr><td><strong>파티 (Party)</strong></td><td>PartyID, PartyType, CreatedDate</td><td>Person 및 Organization의 기본 엔터티</td></tr>
+                <tr><td><strong>개인 (Person)</strong></td><td>이름, 성, 생년월일, 성별</td><td>Party 확장, 주소, 연락처 보유</td></tr>
+                <tr><td><strong>조직 (Organization)</strong></td><td>법인명, 사업자번호, 업종, 직원수</td><td>Party 확장, 위치, 관계 보유</td></tr>
+                <tr><td><strong>주소 (Address)</strong></td><td>도로명, 시, 구, 우편번호</td><td>Party에 속함, AddressType 보유</td></tr>
+                <tr><td><strong>연락처 (ContactMethod)</strong></td><td>ContactType, ContactValue, IsPrimary</td><td>이메일, 전화, 소셜미디어 핸들</td></tr>
+            </tbody>
+        </table>
+
+        <h3>고객 모델 설계 원칙</h3>
+        <ul>
+            <li><strong>파티 모델 패턴:</strong> 개인과 조직을 통합하는 상위 파티 엔터티 사용</li>
+            <li><strong>주소 분리:</strong> 주소를 별도 엔터티로 관리하여 재사용 가능</li>
+            <li><strong>연락처 유연성:</strong> 다양한 연락처 유형을 지원하는 확장 가능한 구조</li>
+            <li><strong>관계 추적:</strong> 고객 간의 관계(가족, 회사 계층) 모델링</li>
+        </ul>
+
+        <h2>3. 제품 마스터 데이터 모델</h2>
+        <p>제품 마스터 데이터는 조직이 제공하는 상품과 서비스를 포함합니다. 제품 계층 구조는 다음과 같이 표현됩니다:</p>
+        
+        <pre>제품 계층 구조:
+
+카테고리 (Category)
+  └─ 제품군 (Product Family)
+      └─ 제품 라인 (Product Line)
+          └─ 기본 제품 (Base Product)
+              └─ 제품 변형 (Product Variant / SKU)
+                  └─ 품목 (Item - 시리얼화)
+
+실제 예시:
+전자제품
+  └─ 컴퓨터
+      └─ 노트북
+          └─ MacBook Pro
+              └─ MacBook Pro 16" M3 512GB 스페이스 그레이
+                  └─ 시리얼번호: C02XK12345</pre>
+
+        <h3>제품 속성 유형</h3>
+        <ul>
+            <li><strong>식별 속성:</strong> SKU, UPC, GTIN, 부품 번호, 바코드</li>
+            <li><strong>설명 속성:</strong> 이름, 설명, 브랜드, 사양, 특징</li>
+            <li><strong>분류 속성:</strong> 카테고리, 제품 라인, 자재 그룹</li>
+            <li><strong>상업 속성:</strong> 가격, 원가, 통화, 세금 카테고리</li>
+            <li><strong>운영 속성:</strong> 무게, 치수, 위험물 등급, 유통기한</li>
+        </ul>
+
+        <h2>4. 공급업체 마스터 데이터 모델</h2>
+        <p>공급업체 마스터 데이터는 조직에 상품이나 서비스를 제공하는 외부 조직을 추적합니다:</p>
+        
+        <table>
+            <thead><tr><th>데이터 영역</th><th>주요 속성</th><th>비즈니스 목적</th></tr></thead>
+            <tbody>
+                <tr><td><strong>법인 정보</strong></td><td>법인명, 등록번호, 세금 식별자</td><td>법적 식별 및 규정 준수</td></tr>
+                <tr><td><strong>재무 정보</strong></td><td>결제 조건, 은행 계좌, 신용 한도</td><td>결제 처리 및 위험 관리</td></tr>
+                <tr><td><strong>규정 준수</strong></td><td>인증, 감사 결과, 위험 등급</td><td>공급업체 적격성 검증</td></tr>
+                <tr><td><strong>성과 지표</strong></td><td>정시 배송률, 품질 점수, 지출 이력</td><td>공급업체 평가 및 선정</td></tr>
+                <tr><td><strong>계약 정보</strong></td><td>계약 기간, 협상 요율, SLA</td><td>계약 관리 및 준수</td></tr>
+            </tbody>
+        </table>
+
+        <h2>5. 정규 데이터 모델 (CDM) 설계</h2>
+        <p>정규 데이터 모델(Canonical Data Model, CDM)은 조직 내 마스터 데이터의 "표준" 구조를 나타냅니다. CDM은 여러 목적을 제공합니다:</p>
+        
+        <div class="highlight-box">
+            <strong>CDM의 이점:</strong>
+            <ul style="margin-top: 1rem; margin-bottom: 0;">
+                <li>비즈니스 및 IT 이해관계자 간 공통 언어 제공</li>
+                <li>데이터 교환을 위한 표준 구조 정의로 통합 단순화</li>
+                <li>점대점 통합의 복잡성 감소 (N-to-N이 N-to-1로)</li>
+                <li>데이터 품질 규칙을 한 번 정의하고 일관되게 적용</li>
+                <li>권위 있는 데이터 정의 수립으로 규정 준수 촉진</li>
+            </ul>
+        </div>
+
+        <h3>CDM 설계 원칙</h3>
+        <ul>
+            <li><strong>비즈니스 주도:</strong> 기술 구현이 아닌 비즈니스 개념 반영</li>
+            <li><strong>소스 불가지론:</strong> 한 소스 시스템의 구조를 다른 시스템보다 선호하지 않음</li>
+            <li><strong>미래 지향:</strong> 예상되는 비즈니스 변화 및 새로운 데이터 소스 수용</li>
+            <li><strong>적절한 정규화:</strong> 사용성을 유지하면서 중복성 감소</li>
+            <li><strong>확장 가능:</strong> 핵심 모델을 손상시키지 않고 사용자 정의 속성 허용</li>
+        </ul>
+
+        <h2>6. 복잡한 관계 처리</h2>
+        <p>마스터 데이터는 종종 신중하게 모델링해야 하는 복잡한 관계를 포함합니다:</p>
+
+        <h3>계층 구조 (Hierarchies)</h3>
+        <p>계층 구조는 도메인 내의 부모-자식 관계를 나타냅니다:</p>
+        <ul>
+            <li><strong>제품 계층:</strong> 카테고리 → 제품군 → 라인 → 제품 → SKU</li>
+            <li><strong>조직 계층:</strong> 기업 → 사업부 → 부서 → 팀</li>
+            <li><strong>고객 계층:</strong> 글로벌 계정 → 지역 사무소 → 지점</li>
+            <li><strong>위치 계층:</strong> 국가 → 지역 → 시 → 사이트 → 건물 → 층</li>
+        </ul>
+
+        <h3>고급 계층 모델링 요구사항</h3>
+        <ul>
+            <li><strong>다중 계층:</strong> 동일 엔터티가 다른 계층에 존재 (판매 지역 vs 지원 지역)</li>
+            <li><strong>시간 변화 계층:</strong> 시간에 따른 계층 변경 (조직 재편)</li>
+            <li><strong>다중 부모:</strong> 엔터티가 여러 부모 노드에 속함 (매트릭스 조직)</li>
+            <li><strong>순환 참조:</strong> 순환 부모-자식 관계 감지 및 방지</li>
+        </ul>
+
+        <h3>다대다 관계</h3>
+        <p>일부 비즈니스 관계는 다대다이며 연관 엔터티가 필요합니다:</p>
+        <pre>예시: 제품-공급업체 관계
+
+제품 ←→ 제품공급업체 ←→ 공급업체
+
+제품공급업체 속성:
+  - 제품ID (FK)
+  - 공급업체ID (FK)
+  - 우선공급업체 (Boolean)
+  - 리드타임일수 (Integer)
+  - 최소주문수량 (Decimal)
+  - 단가 (Decimal)
+  - 유효일자 (Date)
+  - 만료일자 (Date)</pre>
+
+        <h2>7. 시간적 모델링 (Temporal Modeling)</h2>
+        <p>마스터 데이터는 시간에 따라 변경되며, MDM 시스템은 이러한 변경 사항을 추적해야 합니다. 세 가지 주요 접근 방식이 있습니다:</p>
+
+        <h3>유형 1: 덮어쓰기</h3>
+        <table>
+            <thead><tr><th>특성</th><th>설명</th><th>적용 사례</th></tr></thead>
+            <tbody>
+                <tr><td><strong>방식</strong></td><td>새 값으로 레코드 업데이트</td><td>오류 수정, 중요하지 않은 속성</td></tr>
+                <tr><td><strong>장점</strong></td><td>단순, 저장 공간 오버헤드 없음</td><td>구현 및 쿼리 용이</td></tr>
+                <tr><td><strong>단점</strong></td><td>과거 데이터 손실, 과거 상태 재구성 불가</td><td>감사 추적 부족</td></tr>
+            </tbody>
+        </table>
+
+        <h3>유형 2: 새 행 추가</h3>
+        <table>
+            <thead><tr><th>특성</th><th>설명</th><th>적용 사례</th></tr></thead>
+            <tbody>
+                <tr><td><strong>방식</strong></td><td>변경 발생 시 새 버전 생성</td><td>규제 요구사항, 감사 추적</td></tr>
+                <tr><td><strong>장점</strong></td><td>완전한 이력, 모든 시점 재구성 가능</td><td>추세 분석, 규정 준수</td></tr>
+                <tr><td><strong>단점</strong></td><td>증가된 저장 공간, 더 복잡한 쿼리</td><td>성능 영향 고려 필요</td></tr>
+            </tbody>
+        </table>
+
+        <h3>유형 3: 새 열 추가</h3>
+        <table>
+            <thead><tr><th>특성</th><th>설명</th><th>적용 사례</th></tr></thead>
+            <tbody>
+                <tr><td><strong>방식</strong></td><td>현재 및 이전 값 추적을 위한 별도 열 추가</td><td>특정 속성 변경 추적</td></tr>
+                <tr><td><strong>장점</strong></td><td>쿼리 용이, 제한된 저장 공간</td><td>고객 세그먼트 변경 등</td></tr>
+                <tr><td><strong>단점</strong></td><td>제한된 이력 (일반적으로 1-2개 이전 값)</td><td>장기 추세 분석 불가</td></tr>
+            </tbody>
+        </table>
+
+        <h2>8. 데이터 품질 속성</h2>
+        <p>마스터 데이터 모델에는 데이터 품질을 추적하는 메타데이터가 포함되어야 합니다:</p>
+        
+        <table>
+            <thead><tr><th>속성</th><th>목적</th><th>예시 값</th></tr></thead>
+            <tbody>
+                <tr><td><strong>SourceSystem</strong></td><td>데이터 출처 식별</td><td>CRM, ERP, 전자상거래</td></tr>
+                <tr><td><strong>SourceSystemID</strong></td><td>소스 시스템의 원래 식별자</td><td>CRM-12345, ERP-98765</td></tr>
+                <tr><td><strong>DataQualityScore</strong></td><td>전체 품질 등급</td><td>0-100</td></tr>
+                <tr><td><strong>CompletenessScore</strong></td><td>필수 필드가 채워진 비율</td><td>0-100</td></tr>
+                <tr><td><strong>TrustScore</strong></td><td>데이터 정확성에 대한 신뢰도</td><td>0-100</td></tr>
+                <tr><td><strong>LastVerifiedDate</strong></td><td>데이터가 마지막으로 확인된 날짜</td><td>2025-12-26</td></tr>
+                <tr><td><strong>CreatedBy</strong></td><td>레코드를 생성한 사용자 또는 시스템</td><td>hong@company.com</td></tr>
+                <tr><td><strong>CreatedDate</strong></td><td>레코드 생성 시간</td><td>2025-12-26T10:30:00Z</td></tr>
+                <tr><td><strong>ModifiedBy</strong></td><td>마지막으로 수정한 사용자 또는 시스템</td><td>data.steward@company.com</td></tr>
+                <tr><td><strong>ModifiedDate</strong></td><td>레코드가 마지막으로 업데이트된 시간</td><td>2025-12-26T14:22:15Z</td></tr>
+            </tbody>
+        </table>
+
+        <h2>9. 확장성 및 사용자 정의</h2>
+        <p>데이터 모델은 조직별 및 산업별 요구사항을 수용해야 합니다. 일반적인 확장성 패턴은 다음과 같습니다:</p>
+
+        <h3>1. 사용자 정의 속성 테이블</h3>
+        <pre>CREATE TABLE CustomerCustomAttribute (
+    CustomerID VARCHAR(50),
+    AttributeName VARCHAR(100),
+    AttributeValue VARCHAR(4000),
+    DataType VARCHAR(20),
+    EffectiveDate DATE,
+    ExpirationDate DATE
+);</pre>
+
+        <h3>2. JSON/XML 확장 필드</h3>
+        <pre>CREATE TABLE Customer (
+    CustomerID VARCHAR(50) PRIMARY KEY,
+    FirstName VARCHAR(100),
+    LastName VARCHAR(100),
+    -- ... 표준 필드 ...
+    CustomAttributes JSON,
+    ExtensionData XML
+);</pre>
+
+        <h3>3. 유형별 확장 테이블</h3>
+        <pre>-- 공통 속성을 가진 기본 고객 테이블
+CREATE TABLE Customer ( ... );
+
+-- 의료 산업별 확장
+CREATE TABLE CustomerHealthcare (
+    CustomerID VARCHAR(50) PRIMARY KEY,
+    PatientID VARCHAR(50),
+    PrimaryPhysician VARCHAR(100),
+    InsuranceProvider VARCHAR(100),
+    FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
+);</pre>
+
+        <h2>10. 모델 검증 및 테스트</h2>
+        <p>데이터 모델을 구현하기 전에 실제 시나리오에 대해 검증하십시오:</p>
+        
+        <div class="highlight-box">
+            <strong>데이터 모델 검증 체크리스트:</strong>
+            <ul style="margin-top: 1rem; margin-bottom: 0;">
+                <li>모델이 알려진 모든 사용 사례를 수용할 수 있습니까?</li>
+                <li>필요한 보고 및 분석을 지원합니까?</li>
+                <li>예상 데이터 볼륨 및 쿼리 부하를 처리할 수 있습니까?</li>
+                <li>관련 규정 및 표준을 준수합니까?</li>
+                <li>예상되는 미래 요구사항에 충분히 유연합니까?</li>
+                <li>소스 시스템 데이터를 중요한 정보 손실 없이 모델에 매핑할 수 있습니까?</li>
+                <li>모든 관계가 적절하게 정의되고 시행됩니까?</li>
+                <li>모델이 문서화되고 비즈니스 이해관계자가 이해할 수 있습니까?</li>
+                <li>변경 관리 프로세스가 수립되어 있습니까?</li>
+                <li>모델이 조직의 데이터 거버넌스 정책과 일치합니까?</li>
+            </ul>
+        </div>
+
+        <h2>요약</h2>
+        <p>잘 설계된 마스터 데이터 모델은 MDM 성공의 기반입니다. 표준화와 유연성의 균형을 맞추고, 통합 뷰를 제공하면서 여러 소스 시스템을 수용하며, 현재 및 미래의 비즈니스 요구사항을 모두 지원해야 합니다.</p>
+
+        <p>다음 장에서는 데이터 품질 및 거버넌스 프로세스를 통합하여 마스터 데이터의 지속적인 무결성과 신뢰성을 보장하는 방법을 살펴보겠습니다.</p>
+    </div>
+</body>
+</html>

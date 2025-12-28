@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: API and Interfaces - WIA-QUA-016</title>
+    <style>
+        :root { --primary: #8B5CF6; --primary-dark: #7C3AED; --primary-light: #A78BFA; --background: #0F172A; --surface: #1E293B; --surface-light: #334155; --text: #F1F5F9; --text-secondary: #CBD5E1; --border: #475569; --success: #10B981; --warning: #F59E0B; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: var(--text); background: var(--background); padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 3px solid var(--primary); }
+        h2 { color: var(--primary-light); font-size: 2rem; margin-top: 3rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--surface-light); }
+        h3 { color: var(--text); font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem; }
+        p { margin-bottom: 1rem; color: var(--text-secondary); }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: var(--surface); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: var(--surface-light); }
+        .code-block { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; font-family: 'Courier New', monospace; color: var(--primary-light); }
+        .summary { background: linear-gradient(135deg, var(--surface) 0%, var(--surface-light) 100%); padding: 2rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--success); }
+        .summary h3 { color: var(--success); margin-top: 0; }
+        .review { background: var(--surface); padding: 2rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--warning); }
+        .review h3 { color: var(--warning); margin-top: 0; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: 6px; transition: background 0.3s; }
+        .btn:hover { background: var(--primary-dark); }
+        ul, ol { margin-left: 1.5rem; color: var(--text-secondary); }
+        li { margin: 0.5rem 0; }
+    </style>
+</head>
+<body>
+    <h1>Chapter 3: API and Interfaces</h1>
+
+    <h2>3.1 FTL Communication API Architecture</h2>
+    
+    <p>The WIA-QUA-016 standard defines a comprehensive API for FTL communication systems, designed to abstract the underlying physical mechanism (tachyonic, Alcubierre, subspace, etc.) and provide a unified interface for applications. This enables software to be written once and work with any compliant FTL implementation.</p>
+
+    <h3>3.1.1 Core API Components</h3>
+    
+    <div class="code-block">
+FTL Communication Stack:
+
++---------------------------+
+|   Application Layer       |  User applications
++---------------------------+
+|   Message Layer          |  Encoding, routing, reliability
++---------------------------+
+|   Protocol Layer         |  FTL-specific protocols
++---------------------------+
+|   Transport Layer        |  Causality protection, error correction
++---------------------------+
+|   Physical Layer         |  Tachyon/Alcubierre/Subspace hardware
++---------------------------+
+    </div>
+
+    <h3>3.1.2 TypeScript SDK Interface</h3>
+
+    <div class="code-block">
+// Core FTL Communication Interface
+interface FTLTransmitter {
+    // Configuration
+    method: 'tachyonic' | 'alcubierre' | 'subspace' | 'quantum';
+    destination: CosmicCoordinates;
+    bandwidth: number; // bits per second
+    
+    // Transmission
+    send(message: Buffer, priority: Priority): Promise<TransmissionResult>;
+    sendStream(stream: ReadableStream): Promise<void>;
+    
+    // Status
+    getLatency(): number; // should be ~0 for true FTL
+    getEnergyRequirement(): number; // joules
+    getCausalityRisk(): number; // 0-1 paradox probability
+}
+
+interface FTLReceiver {
+    // Reception
+    receive(filter?: MessageFilter): AsyncIterator<FTLMessage>;
+    
+    // Causality Protection
+    validateCausality(message: FTLMessage): CausalityCheck;
+    rejectParadoxical(): void;
+}
+
+interface CausalityCheck {
+    isConsistent: boolean;
+    timelineConflict: boolean;
+    recommendedAction: 'accept' | 'reject' | 'defer';
+    confidence: number;
+}
+    </div>
+
+    <h2>3.2 Method-Specific Interfaces</h2>
+
+    <h3>3.2.1 Tachyonic Communication API</h3>
+
+    <div class="code-block">
+interface TachyonTransmitter extends FTLTransmitter {
+    // Tachyon-specific configuration
+    tachyonMass: number; // imaginary mass in eV/c²
+    emissionEnergy: number; // joules per tachyon
+    modulationScheme: 'AM' | 'FM' | 'PM';
+    
+    // Field control
+    generateTachyonField(intensity: number): Promise<FieldStatus>;
+    modulateField(signal: Buffer): Promise<void>;
+    
+    // Detection
+    detectorSensitivity: number; // minimum detectable flux
+    backgroundRejection: number; // S/N ratio
+}
+
+// Example usage
+const transmitter = new TachyonTransmitter({
+    destination: { ra: 180.5, dec: -45.2, distance: 4.2 }, // Proxima Centauri
+    tachyonMass: 1e9, // 1 GeV imaginary mass
+    modulationScheme: 'PM',
+    bandwidth: 1e6 // 1 Mbps
+});
+
+await transmitter.send(Buffer.from("Hello, Alpha Centauri!"), Priority.HIGH);
+    </div>
+
+    <h3>3.2.2 Alcubierre Metric API</h3>
+
+    <div class="code-block">
+interface AlcubierreTransmitter extends FTLTransmitter {
+    // Warp bubble configuration
+    bubbleRadius: number; // meters
+    warpFactor: number; // multiple of c
+    exoticMatterMass: number; // kg equivalent
+    
+    // Metric control
+    createWarpBubble(params: WarpParams): Promise<Bubble>;
+    modulateBubble(signal: Buffer): Promise<void>;
+    collapseWarpBubble(): Promise<void>;
+    
+    // Safety
+    causality Protection: boolean;
+    hawkingRadiationShielding: number;
+}
+
+interface WarpParams {
+    shapeFunction: (r: number) => number;
+    wallThickness: number;
+    velocity: number; // target velocity in m/s
+    trajectory: Vector3[];
+}
+    </div>
+
+    <h2>3.3 Message Protocol Specification</h2>
+
+    <h3>3.3.1 FTL Message Format</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Field</th>
+                <th>Size</th>
+                <th>Description</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Magic Number</td>
+                <td>4 bytes</td>
+                <td>0xFTL0 (0x46544C30)</td>
+                <td>Protocol identification</td>
+            </tr>
+            <tr>
+                <td>Version</td>
+                <td>2 bytes</td>
+                <td>Major.Minor (e.g., 1.0)</td>
+                <td>Compatibility check</td>
+            </tr>
+            <tr>
+                <td>Method</td>
+                <td>1 byte</td>
+                <td>0x01=Tachyon, 0x02=Alcubierre, etc.</td>
+                <td>Physical mechanism</td>
+            </tr>
+            <tr>
+                <td>Timestamp</td>
+                <td>8 bytes</td>
+                <td>Nanoseconds since epoch (preferred frame)</td>
+                <td>Causality tracking</td>
+            </tr>
+            <tr>
+                <td>Source</td>
+                <td>16 bytes</td>
+                <td>Cosmic coordinates (RA, Dec, Distance)</td>
+                <td>Origin identification</td>
+            </tr>
+            <tr>
+                <td>Destination</td>
+                <td>16 bytes</td>
+                <td>Cosmic coordinates</td>
+                <td>Routing</td>
+            </tr>
+            <tr>
+                <td>Sequence Number</td>
+                <td>8 bytes</td>
+                <td>Incrementing counter</td>
+                <td>Ordering, deduplication</td>
+            </tr>
+            <tr>
+                <td>Payload Length</td>
+                <td>4 bytes</td>
+                <td>Bytes in payload</td>
+                <td>Data boundary</td>
+            </tr>
+            <tr>
+                <td>Error Correction</td>
+                <td>Variable</td>
+                <td>Reed-Solomon or Turbo code</td>
+                <td>Reliability</td>
+            </tr>
+            <tr>
+                <td>Payload</td>
+                <td>Variable</td>
+                <td>Application data</td>
+                <td>Information content</td>
+            </tr>
+            <tr>
+                <td>Checksum</td>
+                <td>32 bytes</td>
+                <td>SHA-256 hash</td>
+                <td>Integrity verification</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>3.3.2 Causality Protection Headers</h3>
+
+    <div class="code-block">
+// Extended headers for causality protection
+interface CausalityHeader {
+    parentMessageID: UUID; // Reference to causal predecessor
+    timelineID: UUID; // Identifies consistent timeline
+    causalityChain: UUID[]; // Full chain of causation
+    paradoxPrevention: {
+        checkBeforeSend: boolean;
+        rejectIfInconsistent: boolean;
+        preferredFrame: ReferenceFrame;
+    };
+}
+
+// Reference frame specification (for causality)
+interface ReferenceFrame {
+    origin: CosmicCoordinates;
+    velocity: Vector3; // relative to CMB rest frame
+    rotationAxis: Vector3;
+    rotationRate: number; // rad/s
+}
+    </div>
+
+    <h2>3.4 API Error Handling</h2>
+
+    <h3>3.4.1 Error Classification</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Error Code</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Recovery Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>E_CAUSALITY_VIOLATION</td>
+                <td>Causality Violation</td>
+                <td>Message would create temporal paradox</td>
+                <td>Reject transmission</td>
+            </tr>
+            <tr>
+                <td>E_INSUFFICIENT_ENERGY</td>
+                <td>Insufficient Energy</td>
+                <td>Not enough exotic matter/energy</td>
+                <td>Reduce payload or wait</td>
+            </tr>
+            <tr>
+                <td>E_VACUUM_INSTABILITY</td>
+                <td>Vacuum Instability</td>
+                <td>Tachyonic mode destabilizing vacuum</td>
+                <td>Emergency shutdown</td>
+            </tr>
+            <tr>
+                <td>E_CTC_DETECTED</td>
+                <td>CTC Formation</td>
+                <td>Closed timelike curve forming</td>
+                <td>Abort, chronology protection</td>
+            </tr>
+            <tr>
+                <td>E_DIMENSION_INACCESSIBLE</td>
+                <td>Extra Dimension Error</td>
+                <td>Cannot couple to KK modes</td>
+                <td>Switch to different method</td>
+            </tr>
+            <tr>
+                <td>E_HAWKING_RADIATION</td>
+                <td>Excessive Radiation</td>
+                <td>Warp bubble emitting dangerous radiation</td>
+                <td>Increase shielding</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>3.4.2 Exception Handling Examples</h3>
+
+    <div class="code-block">
+try {
+    const result = await ftlTransmitter.send(message, Priority.URGENT);
+    console.log(`Message sent successfully: ${result.transmissionID}`);
+} catch (error) {
+    if (error instanceof CausalityViolationError) {
+        // Message would create paradox
+        console.error("Causality violation detected:");
+        console.error(`Timeline conflict: ${error.timelineID}`);
+        console.error(`Recommended: ${error.alternativeRoute}`);
+        
+        // Optionally defer to later time
+        await scheduler.defer(message, error.safeTimestamp);
+        
+    } else if (error instanceof InsufficientEnergyError) {
+        // Not enough exotic matter
+        console.error(`Need ${error.requiredEnergy} J`);
+        console.error(`Available: ${error.availableEnergy} J`);
+        
+        // Wait for energy accumulation
+        await energySystem.waitForCharge(error.requiredEnergy);
+        return ftlTransmitter.send(message, Priority.URGENT);
+        
+    } else if (error instanceof VacuumInstabilityError) {
+        // Critical safety issue
+        console.error("VACUUM INSTABILITY DETECTED!");
+        await ftlTransmitter.emergencyShutdown();
+        await evacuate();
+        throw error; // Propagate to safety systems
+    }
+}
+    </div>
+
+    <h2>3.5 REST API Endpoints</h2>
+
+    <h3>3.5.1 HTTP Interface for FTL Communication</h3>
+
+    <div class="code-block">
+// Base URL: https://ftl-gateway.example.com/api/v1
+
+// Send FTL Message
+POST /transmit
+Request:
+{
+    "method": "tachyonic",
+    "destination": {"ra": 180.5, "dec": -45.2, "distance": 4.2},
+    "payload": "base64-encoded-data",
+    "priority": "HIGH",
+    "causalityCheck": true
+}
+Response:
+{
+    "transmissionID": "uuid",
+    "status": "SENT",
+    "estimatedArrivalTime": "2025-12-27T15:30:00Z",
+    "energyConsumed": 1.5e26,
+    "causalityRisk": 0.001
+}
+
+// Receive FTL Messages
+GET /receive?filter=source:proxima-centauri
+Response:
+{
+    "messages": [
+        {
+            "id": "uuid",
+            "source": {"ra": 180.5, "dec": -45.2, "distance": 4.2},
+            "timestamp": "2025-12-27T15:30:05Z",
+            "payload": "base64-encoded-data",
+            "method": "tachyonic"
+        }
+    ]
+}
+
+// Check Causality
+POST /causality/check
+Request:
+{
+    "proposedMessage": {...},
+    "timeline": "current"
+}
+Response:
+{
+    "safe": true,
+    "paradoxProbability": 0.0,
+    "recommendation": "PROCEED"
+}
+
+// System Status
+GET /status
+Response:
+{
+    "method": "alcubierre",
+    "exoticMatterReserve": 1500.5, // kg
+    "maxBandwidth": 1e9, // bps
+    "causalityFirewall": "ACTIVE",
+    "uptime": 86400 // seconds
+}
+    </div>
+
+    <div class="summary">
+        <h3>Key Takeaways</h3>
+        <ul>
+            <li><strong>Unified API abstraction:</strong> The FTL Communication API provides a consistent interface across different physical mechanisms (tachyonic, Alcubierre, subspace), enabling application portability and method-agnostic software development.</li>
+            <li><strong>Causality protection is built-in:</strong> Every message includes causality headers with timeline IDs, parent message references, and reference frame specifications to prevent paradoxes at the protocol level.</li>
+            <li><strong>Method-specific extensions:</strong> While the core API is uniform, each FTL method (tachyonic, Alcubierre, subspace) has specialized interfaces for configuring physical parameters like tachyon mass, warp bubble radius, or extra-dimensional coupling.</li>
+            <li><strong>Comprehensive error handling:</strong> The API defines specific exception types for causality violations, vacuum instability, CTC formation, and energy insufficiency, with clear recovery strategies for each error condition.</li>
+            <li><strong>Message format standardization:</strong> FTL messages follow a strict format with magic numbers, version fields, timestamps in preferred reference frame, cosmic coordinates, sequence numbers, and cryptographic checksums for integrity.</li>
+            <li><strong>RESTful HTTP gateway:</strong> For systems that cannot directly interface with FTL hardware, a REST API provides HTTP endpoints for transmission, reception, causality checking, and status monitoring with JSON payloads.</li>
+        </ul>
+    </div>
+
+    <div class="review">
+        <h3>Review Questions</h3>
+        <ol>
+            <li><strong>Design a TypeScript interface</strong> for a subspace communication system that couples electromagnetic signals to Kaluza-Klein modes. What parameters would you need to expose?</li>
+            <li><strong>Explain the purpose of the timeline ID field</strong> in the causality protection header. How would multiple FTL transceivers use this to maintain consistency?</li>
+            <li><strong>Implement error handling logic</strong> for the case where an Alcubierre transmitter runs out of exotic matter mid-transmission. Should you retry, defer, or fail? Justify your choice.</li>
+            <li><strong>What information must be in the preferred reference frame?</strong> Why is specifying a reference frame necessary for causality protection in FTL networks?</li>
+            <li><strong>Design a message queueing system</strong> that buffers FTL messages and reorders them if they arrive out of causal sequence. What data structures would you use?</li>
+            <li><strong>Calculate the overhead percentage</strong> introduced by the FTL message format headers (excluding payload and error correction). Is this acceptable for different payload sizes?</li>
+            <li><strong>How would you implement</strong> the causality checking endpoint? What algorithm would determine if a proposed transmission creates a paradox?</li>
+        </ol>
+    </div>
+
+    <div class="nav-buttons">
+        <a href="chapter-02.html" class="btn">← Previous: Challenges</a>
+        <a href="chapter-04.html" class="btn">Next: Implementation →</a>
+    </div>
+
+</body>
+</html>

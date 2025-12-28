@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Format Transformation Engines - WIA-CORE-003</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 3rem; border-radius: 15px; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #6B7280; text-decoration: none; padding: 0.75rem 1.5rem; background: #0f172a; border-radius: 8px; }
+        .back-link:hover { background: #334155; }
+        .chapter-header { border-bottom: 3px solid #6B7280; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #6B7280; font-size: 1.2rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        h1 { font-size: 2.5rem; color: #e2e8f0; margin-top: 0.5rem; line-height: 1.3; }
+        h2 { color: #6B7280; margin: 2.5rem 0 1.5rem; font-size: 1.8rem; }
+        h3 { color: #94a3b8; margin: 2rem 0 1rem; font-size: 1.4rem; }
+        p { margin-bottom: 1.5rem; font-size: 1.1rem; }
+        .highlight-box { background: #0f172a; padding: 2rem; border-radius: 10px; border-left: 4px solid #6B7280; margin: 2rem 0; }
+        .code-block { background: #0f172a; padding: 1.5rem; border-radius: 8px; font-family: 'Monaco', monospace; overflow-x: auto; margin: 1.5rem 0; font-size: 0.95rem; }
+        ul, ol { margin: 1.5rem 0 1.5rem 2rem; }
+        li { margin-bottom: 0.75rem; font-size: 1.05rem; }
+        .navigation { display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav-button { padding: 1rem 2rem; background: #6B7280; color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s; }
+        .nav-button:hover { background: #4B5563; transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Table of Contents</a>
+        <div class="chapter-header">
+            <div class="chapter-number">Chapter 4</div>
+            <h1>Format Transformation Engines</h1>
+        </div>
+
+        <p>At the heart of universal data exchange lies the transformation engine—the component responsible for converting data between formats while preserving semantics, structure, and metadata. This chapter explores how WIA-CORE-003's transformation engines work, from basic format conversion to advanced semantic mapping and AI-powered inference.</p>
+
+        <h2>Codec Architecture</h2>
+
+        <p>A codec (encoder/decoder) is a pair of functions that serialize data to a specific format and deserialize it back. WIA-CORE-003 maintains a registry of codecs for 99+ formats, each implementing a standard interface that enables composition and chaining.</p>
+
+        <div class="code-block">
+// Codec Interface
+interface Codec&lt;F: Format&gt; {
+    // Deserialize from format F to universal representation
+    fn decode(input: &[u8], schema: &Schema) -> Result&lt;UniversalData&gt;
+
+    // Serialize from universal representation to format F
+    fn encode(data: &UniversalData, schema: &Schema) -> Result&lt;Vec&lt;u8&gt;&gt;
+
+    // Validate that data conforms to format F's rules
+    fn validate(input: &[u8], schema: &Schema) -> ValidationResult
+
+    // Detect schema from sample data (optional)
+    fn infer_schema(samples: &[&[u8]]) -> Option&lt;Schema&gt;
+}
+
+// Example: JSON Codec
+struct JsonCodec;
+
+impl Codec&lt;JsonFormat&gt; for JsonCodec {
+    fn decode(input: &[u8], schema: &Schema) -> Result&lt;UniversalData&gt; {
+        let json_value = serde_json::from_slice(input)?;
+        convert_json_to_universal(json_value, schema)
+    }
+
+    fn encode(data: &UniversalData, schema: &Schema) -> Result&lt;Vec&lt;u8&gt;&gt; {
+        let json_value = convert_universal_to_json(data, schema)?;
+        Ok(serde_json::to_vec(&json_value)?)
+    }
+
+    fn validate(input: &[u8], schema: &Schema) -> ValidationResult {
+        match serde_json::from_slice::&lt;Value&gt;(input) {
+            Ok(value) => validate_against_schema(&value, schema),
+            Err(e) => ValidationResult::Invalid(vec![format!("Invalid JSON: {}", e)])
+        }
+    }
+}
+        </div>
+
+        <h2>Transformation Strategies</h2>
+
+        <h3>Direct Codec-to-Codec</h3>
+        <p>For lossless conversions between similar formats (e.g., JSON to YAML), direct transformation bypasses the universal representation for performance. The transformation engine detects when this optimization is safe and automatically applies it.</p>
+
+        <h3>Universal Representation Bridge</h3>
+        <p>Most transformations use the universal representation as an intermediate: source format → universal → target format. This ensures semantic preservation and enables complex schema mappings.</p>
+
+        <h3>Multi-Hop Transformation</h3>
+        <p>Some conversions require multiple steps. For example, CSV to Protocol Buffers might go: CSV → universal → JSON schema inference → protobuf schema generation → protobuf encoding.</p>
+
+        <h2>Type System Mapping</h2>
+
+        <p>Different formats support different type systems. JSON has strings, numbers, booleans, arrays, and objects. Protocol Buffers adds enums, oneofs, and precise numeric types (int32, int64, float, double). XML has strings and attributes. The transformation engine maps between these type systems while preserving semantics.</p>
+
+        <div class="code-block">
+// Type Mapping Examples
+
+// JSON number to various targets
+{"age": 25}
+→ XML: &lt;age&gt;25&lt;/age&gt; or &lt;person age="25"/&gt;
+→ Protobuf: int32 age = 1; // value: 25
+→ Avro: {"name": "age", "type": "int"} // value: 25
+→ CSV: age\n25
+
+// JSON array to various targets
+{"tags": ["new", "featured"]}
+→ XML: &lt;tags&gt;&lt;tag&gt;new&lt;/tag&gt;&lt;tag&gt;featured&lt;/tag&gt;&lt;/tags&gt;
+→ Protobuf: repeated string tags = 2; // values: ["new", "featured"]
+→ Avro: {"name": "tags", "type": {"type": "array", "items": "string"}}
+→ CSV: tags\n"new,featured"  // Requires escaping
+
+// Complex nested structure
+{
+    "user": {
+        "name": "Alice",
+        "contacts": [
+            {"type": "email", "value": "alice@example.com"},
+            {"type": "phone", "value": "+1-555-0123"}
+        ]
+    }
+}
+
+// Protocol Buffers representation
+message User {
+    string name = 1;
+    repeated Contact contacts = 2;
+}
+message Contact {
+    string type = 1;
+    string value = 2;
+}
+        </div>
+
+        <h2>Semantic Mapping</h2>
+
+        <p>Structural transformation isn't enough when schemas differ. Semantic mapping handles field renaming, restructuring, value transformation, and business logic application during conversion.</p>
+
+        <div class="code-block">
+// Mapping Definition Language (MDL)
+
+mapping OrderMapping {
+    source: schema OrderV1
+    target: schema OrderV2
+
+    // Simple field mapping
+    map order_id -> orderId
+
+    // Type conversion
+    map customer_id -> customerId {
+        transform: string_to_int
+    }
+
+    // Restructuring
+    map {
+        first_name,
+        last_name
+    } -> customer.name {
+        transform: (first, last) => {
+            full_name: concat(first, " ", last),
+            given_name: first,
+            family_name: last
+        }
+    }
+
+    // Conditional mapping
+    map status -> orderStatus {
+        transform: match value {
+            "pending" | "new" => "PENDING",
+            "shipped" => "IN_TRANSIT",
+            "delivered" => "COMPLETED",
+            "cancelled" => "CANCELLED",
+            _ => "UNKNOWN"
+        }
+    }
+
+    // Computed fields
+    derive total_with_tax {
+        compute: source.subtotal * (1 + source.tax_rate)
+    }
+
+    // Array transformation
+    map items -> lineItems {
+        transform: items.map(item => {
+            productId: item.product_id,
+            quantity: item.qty,
+            unitPrice: {
+                amount: item.price,
+                currency: source.currency
+            }
+        })
+    }
+
+    // Default values for missing fields
+    map payment_method -> paymentInfo.method {
+        default: "CREDIT_CARD"
+    }
+
+    // Validation rules
+    validate {
+        require: target.customerId > 0
+        require: target.lineItems.length > 0
+        require: target.total_with_tax >= 0
+    }
+}
+        </div>
+
+        <h2>Performance Optimization</h2>
+
+        <h3>Zero-Copy Techniques</h3>
+        <p>For binary formats like Protocol Buffers and Avro, the engine uses zero-copy deserialization where possible, referencing data in place rather than copying it into new structures.</p>
+
+        <h3>Streaming Processing</h3>
+        <p>Large datasets are processed in streams rather than loading entirely into memory. The transformation engine supports streaming JSON, streaming CSV, and chunked processing for formats that don't naturally stream.</p>
+
+        <div class="code-block">
+// Streaming Transformation API
+
+// Stream large JSON array
+let input_stream = File::open("large_dataset.json")?;
+let transformer = StreamingTransformer::new(
+    JsonCodec::streaming(),
+    ProtobufCodec::new()
+);
+
+let output_stream = transformer.transform_stream(
+    input_stream,
+    source_schema,
+    target_schema,
+    mapping
+);
+
+// Process chunks incrementally
+for chunk_result in output_stream {
+    let chunk = chunk_result?;
+    write_to_destination(chunk)?;
+}
+        </div>
+
+        <h3>Parallel Processing</h3>
+        <p>Independent records can be transformed in parallel. The engine automatically detects when parallelization is safe and distributes work across CPU cores.</p>
+
+        <h2>Error Handling and Recovery</h2>
+
+        <p>Transformation errors are inevitable—malformed data, schema mismatches, validation failures. The engine provides comprehensive error handling with multiple recovery strategies:</p>
+
+        <ul>
+            <li><strong>Fail-fast:</strong> Stop on first error (default for critical pipelines)</li>
+            <li><strong>Skip invalid:</strong> Log error and continue with next record</li>
+            <li><strong>Best effort:</strong> Transform partial data, marking fields that couldn't be converted</li>
+            <li><strong>Fallback values:</strong> Use default values for missing or invalid fields</li>
+            <li><strong>Dead letter queue:</strong> Route failed transformations to separate stream for manual review</li>
+        </ul>
+
+        <div class="code-block">
+// Error Handling Configuration
+
+let transformer = Transformer::builder()
+    .source_format(JsonFormat)
+    .target_format(ProtobufFormat)
+    .error_strategy(ErrorStrategy::SkipInvalid {
+        max_errors: 100,  // Stop after 100 errors
+        log_samples: true,  // Log first 10 failures
+        dead_letter_queue: Some("errors.jsonl")
+    })
+    .validation_mode(ValidationMode::Strict)
+    .build()?;
+
+let results = transformer.transform_batch(records)?;
+println!("Successful: {}", results.success_count);
+println!("Failed: {}", results.error_count);
+println!("Error rate: {:.2}%", results.error_rate() * 100.0);
+        </div>
+
+        <h2>Format-Specific Considerations</h2>
+
+        <h3>JSON Peculiarities</h3>
+        <p>JSON's limited type system requires semantic hints. Numbers might represent integers, floats, or decimals. Strings might represent dates, UUIDs, or binary data. The transformation engine uses schema annotations to preserve type information during conversion.</p>
+
+        <h3>XML Challenges</h3>
+        <p>XML conflates elements and attributes, supports mixed content (text with nested elements), and uses namespaces. The engine provides configurable strategies for mapping XML constructs to other formats.</p>
+
+        <h3>Binary Format Efficiency</h3>
+        <p>Protocol Buffers, Avro, and Parquet are binary formats optimized for compactness and speed. The engine leverages their native serialization libraries and avoids unnecessary conversions to text formats.</p>
+
+        <h3>CSV Limitations</h3>
+        <p>CSV is flat and positional, lacking type information and nested structure support. Converting from CSV requires schema hints. Converting to CSV often requires flattening nested structures.</p>
+
+        <div class="highlight-box">
+            <h3>Best Practices for Transformation</h3>
+            <ul>
+                <li>Always provide schemas—don't rely on inference for production</li>
+                <li>Test mappings with diverse data samples including edge cases</li>
+                <li>Monitor transformation metrics: throughput, latency, error rates</li>
+                <li>Version mappings alongside schemas</li>
+                <li>Use semantic types to preserve meaning across formats</li>
+                <li>Configure appropriate error handling for your use case</li>
+                <li>Validate output data against target schema</li>
+                <li>Document business logic in mapping definitions</li>
+            </ul>
+        </div>
+
+        <p>Transformation engines are the workhorses of universal data exchange. Understanding their capabilities, limitations, and optimization strategies is key to building high-performance data pipelines. In the next chapter, we'll explore how to integrate these transformations into real-world systems and architectures.</p>
+
+        <div class="navigation">
+            <a href="chapter3.html" class="nav-button">← Previous Chapter</a>
+            <a href="chapter5.html" class="nav-button">Next Chapter →</a>
+        </div>
+    </div>
+</body>
+</html>

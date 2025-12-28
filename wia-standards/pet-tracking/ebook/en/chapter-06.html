@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 6: Data Privacy and Security - WIA-PET-TRACKING</title>
+</head>
+<body>
+<p><a href="index.html">← Table of Contents</a></p>
+
+<h1>Chapter 6: Data Privacy and Security</h1>
+
+<blockquote>
+"弘益人間: Protecting pet location data protects families—privacy and security are not optional, but fundamental rights."
+</blockquote>
+
+<hr>
+
+<h2>6.1 Privacy Principles</h2>
+
+<p>Pet tracking systems collect highly sensitive location data about pets and, by extension, their owners and homes. The WIA-PET-TRACKING standard establishes strict privacy principles that all implementations MUST follow.</p>
+
+<h3>Core Privacy Principles</h3>
+
+<table border="1">
+<tr>
+<th>Principle</th>
+<th>Description</th>
+<th>Implementation Requirement</th>
+</tr>
+<tr>
+<td>Data Minimization</td>
+<td>Collect only necessary data</td>
+<td>No collection beyond location, timestamp, device metadata</td>
+</tr>
+<tr>
+<td>Purpose Limitation</td>
+<td>Use data only for stated purposes</td>
+<td>No use for advertising, marketing without explicit consent</td>
+</tr>
+<tr>
+<td>Transparency</td>
+<td>Clear disclosure of data practices</td>
+<td>Publicly accessible privacy policy, easy to understand</td>
+</tr>
+<tr>
+<td>User Control</td>
+<td>Users control their data</td>
+<td>Export, delete, and pause tracking features required</td>
+</tr>
+<tr>
+<td>Security</td>
+<td>Protect data from unauthorized access</td>
+<td>Encryption in transit and at rest (see 6.2)</td>
+</tr>
+<tr>
+<td>Data Retention</td>
+<td>Keep data only as long as necessary</td>
+<td>Default 90-day retention, user-configurable</td>
+</tr>
+<tr>
+<td>Accountability</td>
+<td>Responsible for data protection</td>
+<td>Regular security audits, breach notification</td>
+</tr>
+</table>
+
+<h3>Privacy-by-Design Architecture</h3>
+
+<pre>
+PRIVACY-PRESERVING ARCHITECTURE
+================================
+
+Edge Processing (on device):
+  ✓ Motion detection on-device (accelerometer)
+  ✓ Basic geofence checks locally when possible
+  ✓ Minimize cloud transmissions
+  ✓ Local caching reduces data sent
+
+Data Transmission:
+  ✓ TLS 1.3 encryption for all API calls
+  ✓ Certificate pinning to prevent MITM
+  ✓ Minimal payload (no extraneous data)
+  ✓ Batch uploads when appropriate
+
+Cloud Storage:
+  ✓ AES-256 encryption at rest
+  ✓ Separate encryption keys per user
+  ✓ Key management via HSM or KMS
+  ✓ Database-level encryption
+
+Data Access:
+  ✓ Role-based access control (RBAC)
+  ✓ Audit logging of all access
+  ✓ Multi-factor authentication required
+  ✓ Principle of least privilege
+
+Data Deletion:
+  ✓ Immediate soft delete on user request
+  ✓ Hard delete within 30 days
+  ✓ Backup purge within 90 days
+  ✓ Cryptographic erasure (delete keys)
+</pre>
+
+<h3>GDPR and Privacy Law Compliance</h3>
+
+<p>The standard is designed to comply with major privacy regulations:</p>
+
+<table border="1">
+<tr>
+<th>Regulation</th>
+<th>Jurisdiction</th>
+<th>Key Requirements</th>
+<th>WIA-PET-TRACKING Compliance</th>
+</tr>
+<tr>
+<td>GDPR</td>
+<td>European Union</td>
+<td>Consent, right to erasure, data portability</td>
+<td>✓ Explicit consent, export/delete APIs, data minimization</td>
+</tr>
+<tr>
+<td>CCPA/CPRA</td>
+<td>California, USA</td>
+<td>Data disclosure, opt-out, access rights</td>
+<td>✓ Privacy policy, data control features, access APIs</td>
+</tr>
+<tr>
+<td>PIPEDA</td>
+<td>Canada</td>
+<td>Consent, data accuracy, security</td>
+<td>✓ User consent, data accuracy tools, encryption</td>
+</tr>
+<tr>
+<td>LGPD</td>
+<td>Brazil</td>
+<td>Legitimate purpose, user rights</td>
+<td>✓ Purpose limitation, user control interfaces</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>6.2 Security Architecture</h2>
+
+<p>Robust security prevents unauthorized access to pet location data and protects against various attack vectors.</p>
+
+<h3>Authentication and Authorization</h3>
+
+<pre>
+AUTHENTICATION FLOW
+===================
+
+1. User Registration:
+   POST /api/v1/auth/register
+   {
+     "email": "owner@example.com",
+     "password": "secure_password_hash",
+     "mfa": {
+       "method": "totp",
+       "deviceId": "MFA-DEVICE-123"
+     }
+   }
+
+   Response:
+   {
+     "userId": "USER-123456",
+     "verificationRequired": true,
+     "verificationMethod": "email"
+   }
+
+2. Email Verification:
+   User clicks link in email
+   → Account activated
+
+3. Login:
+   POST /api/v1/auth/login
+   {
+     "email": "owner@example.com",
+     "password": "secure_password_hash"
+   }
+
+   Response:
+   {
+     "mfaRequired": true,
+     "mfaChallenge": "TOTP-CHALLENGE"
+   }
+
+4. MFA Verification:
+   POST /api/v1/auth/mfa-verify
+   {
+     "userId": "USER-123456",
+     "code": "123456"
+   }
+
+   Response:
+   {
+     "accessToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+     "refreshToken": "refresh_token_here",
+     "expiresIn": 3600
+   }
+
+5. API Request (authenticated):
+   GET /api/v1/tracking/location
+   Headers:
+     Authorization: Bearer {accessToken}
+
+TOKEN SECURITY
+==============
+
+Access Token:
+  - Format: JWT (RS256 signed)
+  - Expiration: 1 hour
+  - Payload: userId, permissions, deviceId
+  - Verified on every API call
+
+Refresh Token:
+  - Opaque token, stored in secure database
+  - Expiration: 30 days
+  - Single-use (rotated on refresh)
+  - Revocable by user or admin
+
+Device Binding:
+  - Tokens bound to specific device IDs
+  - Prevents token theft cross-device
+  - User can revoke device access
+
+AUTHORIZATION (RBAC)
+====================
+
+Roles:
+  - Owner: Full control of own pets/trackers
+  - Shared User: View-only or limited control
+  - Admin: System administration
+  - Support: Limited access for troubleshooting
+
+Permissions:
+  - tracking:read:own
+  - tracking:write:own
+  - tracking:delete:own
+  - geofence:manage:own
+  - device:configure:own
+  - data:export:own
+  - data:delete:own
+
+Access Control Check:
+  IF user.role includes required permission:
+    ALLOW access
+  ELSE:
+    DENY (HTTP 403 Forbidden)
+</pre>
+
+<h3>Data Encryption</h3>
+
+<table border="1">
+<tr>
+<th>Layer</th>
+<th>Method</th>
+<th>Key Length</th>
+<th>Rotation</th>
+</tr>
+<tr>
+<td>Transport (HTTPS)</td>
+<td>TLS 1.3</td>
+<td>2048-bit RSA or 256-bit ECC</td>
+<td>Cert renewal annually</td>
+</tr>
+<tr>
+<td>Database (at rest)</td>
+<td>AES-256-GCM</td>
+<td>256-bit</td>
+<td>90 days</td>
+</tr>
+<tr>
+<td>Backups</td>
+<td>AES-256-GCM</td>
+<td>256-bit</td>
+<td>Per backup</td>
+</tr>
+<tr>
+<td>File Storage</td>
+<td>AES-256-GCM</td>
+<td>256-bit</td>
+<td>90 days</td>
+</tr>
+<tr>
+<td>Device-Cloud</td>
+<td>TLS 1.3 + Application-level</td>
+<td>256-bit symmetric</td>
+<td>Per session</td>
+</tr>
+</table>
+
+<h3>Threat Modeling</h3>
+
+<pre>
+THREAT ANALYSIS
+===============
+
+Threat 1: Unauthorized Location Access
+  Risk Level: CRITICAL
+  Attack Vector: Stolen credentials, API abuse
+  Mitigation:
+    - Multi-factor authentication (required)
+    - Rate limiting on location queries
+    - Anomaly detection (unusual access patterns)
+    - IP allowlisting (optional)
+
+Threat 2: Man-in-the-Middle (MITM)
+  Risk Level: HIGH
+  Attack Vector: Network interception
+  Mitigation:
+    - TLS 1.3 with certificate pinning
+    - HSTS (HTTP Strict Transport Security)
+    - No fallback to HTTP
+    - Mutual TLS for device-server communication
+
+Threat 3: Data Breach (Server Compromise)
+  Risk Level: CRITICAL
+  Attack Vector: Server hacking, insider threat
+  Mitigation:
+    - Encryption at rest (keys in HSM/KMS)
+    - Database access controls
+    - Audit logging
+    - Regular security audits
+    - Incident response plan
+
+Threat 4: Physical Device Theft
+  Risk Level: MEDIUM
+  Attack Vector: Stolen tracker or phone
+  Mitigation:
+    - Device-specific credentials
+    - Remote device deactivation
+    - No sensitive data stored on device
+    - Tamper detection
+
+Threat 5: Social Engineering
+  Risk Level: MEDIUM
+  Attack Vector: Phishing, pretexting
+  Mitigation:
+    - User security awareness
+    - Multi-factor authentication
+    - No phone/email account recovery
+    - Verified support channels only
+
+Threat 6: Denial of Service (DoS)
+  Risk Level: MEDIUM
+  Attack Vector: API flooding, network attacks
+  Mitigation:
+    - Rate limiting (per user, per IP)
+    - CDN and DDoS protection
+    - Autoscaling infrastructure
+    - Graceful degradation
+
+Threat 7: GPS Spoofing
+  Risk Level: LOW-MEDIUM
+  Attack Vector: Fake GPS signals
+  Mitigation:
+    - Multi-GNSS cross-validation
+    - Plausibility checking (speed, distance)
+    - Cellular/Wi-Fi verification
+    - Anomaly detection algorithms
+</pre>
+
+<hr>
+
+<h2>6.3 Data Sharing and Consent</h2>
+
+<p>Pet owners may need to share tracking data with family members, pet sitters, or veterinarians. The standard defines granular sharing controls.</p>
+
+<h3>Sharing Permission Levels</h3>
+
+<table border="1">
+<tr>
+<th>Permission Level</th>
+<th>Capabilities</th>
+<th>Use Case</th>
+</tr>
+<tr>
+<td>View Only</td>
+<td>See current location and history</td>
+<td>Family members, friends</td>
+</tr>
+<tr>
+<td>View + Alerts</td>
+<td>View + receive geofence alerts</td>
+<td>Co-owners, frequent caretakers</td>
+</tr>
+<tr>
+<td>View + Control</td>
+<td>View + configure geofences, settings</td>
+<td>Primary caretakers, pet sitters</td>
+</tr>
+<tr>
+<td>Full Access</td>
+<td>All capabilities except delete account</td>
+<td>Co-owners, trusted family</td>
+</tr>
+<tr>
+<td>Temporary Link</td>
+<td>Time-limited view-only access via link</td>
+<td>Dog walkers, emergency contacts</td>
+</tr>
+<tr>
+<td>Emergency Only</td>
+<td>Access only when lost pet mode activated</td>
+<td>Emergency contacts, rescue volunteers</td>
+</tr>
+</table>
+
+<h3>Data Sharing API</h3>
+
+<pre>
+CREATE SHARE INVITATION
+========================
+
+POST /api/v1/sharing/invite
+
+Request:
+{
+  "petId": "PET-789XYZ",
+  "invitee": {
+    "email": "family@example.com",
+    "name": "Jane Smith"
+  },
+  "permissions": {
+    "level": "view+alerts",
+    "capabilities": [
+      "tracking:read",
+      "geofence:read",
+      "alerts:receive"
+    ],
+    "restrictions": {
+      "historyDays": 30,
+      "liveTracking": true,
+      "geofenceEdit": false
+    }
+  },
+  "expiration": {
+    "enabled": true,
+    "expiresAt": "2026-01-15T00:00:00Z"
+  },
+  "conditions": {
+    "requireMFA": true,
+    "allowedIPs": [],
+    "notifyOwner": true
+  }
+}
+
+Response:
+{
+  "shareId": "SHARE-ABC123",
+  "invitationLink": "https://app.example.com/invite/SHARE-ABC123",
+  "invitationCode": "BUD-XY9Z-2025",
+  "expiresAt": "2026-01-15T00:00:00Z",
+  "status": "pending",
+  "notificationSent": true
+}
+
+ACCEPT INVITATION
+=================
+
+POST /api/v1/sharing/accept
+
+Request:
+{
+  "invitationCode": "BUD-XY9Z-2025",
+  "userId": "USER-654321"
+}
+
+Response:
+{
+  "shareId": "SHARE-ABC123",
+  "status": "active",
+  "pet": {
+    "id": "PET-789XYZ",
+    "name": "Buddy",
+    "species": "dog"
+  },
+  "permissions": {
+    "level": "view+alerts",
+    "capabilities": [...]
+  },
+  "grantedAt": "2025-12-25T10:00:00Z"
+}
+
+REVOKE ACCESS
+=============
+
+DELETE /api/v1/sharing/{shareId}
+
+Response:
+{
+  "status": "revoked",
+  "revokedAt": "2025-12-25T12:00:00Z",
+  "notificationSent": true
+}
+</pre>
+
+<h3>Audit Trail</h3>
+
+<p>All data access should be logged for transparency and security:</p>
+
+<pre>
+{
+  "auditLog": [
+    {
+      "timestamp": "2025-12-25T10:30:00Z",
+      "userId": "USER-654321",
+      "action": "tracking:read",
+      "resource": "PET-789XYZ",
+      "ipAddress": "192.0.2.1",
+      "userAgent": "WIAPetTrack-iOS/1.2.3",
+      "result": "success"
+    },
+    {
+      "timestamp": "2025-12-25T10:32:15Z",
+      "userId": "USER-654321",
+      "action": "geofence:create",
+      "resource": "PET-789XYZ/geofences",
+      "ipAddress": "192.0.2.1",
+      "result": "denied",
+      "reason": "insufficient_permissions"
+    }
+  ]
+}
+</pre>
+
+<hr>
+
+<h2>6.4 Data Retention and Deletion</h2>
+
+<p>Users must be able to control how long their data is retained and completely delete it when desired.</p>
+
+<h3>Retention Policies</h3>
+
+<table border="1">
+<tr>
+<th>Data Type</th>
+<th>Default Retention</th>
+<th>User-Configurable</th>
+<th>Legal Minimum</th>
+</tr>
+<tr>
+<td>Location History</td>
+<td>90 days</td>
+<td>7 days - 365 days</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Geofence Events</td>
+<td>180 days</td>
+<td>30 days - 730 days</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Lost Pet Reports</td>
+<td>365 days</td>
+<td>90 days - Indefinite</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Account Information</td>
+<td>Until deleted</td>
+<td>Delete anytime</td>
+<td>Billing: 7 years</td>
+</tr>
+<tr>
+<td>Audit Logs</td>
+<td>365 days</td>
+<td>Not configurable</td>
+<td>365 days (security)</td>
+</tr>
+<tr>
+<td>Anonymized Analytics</td>
+<td>Indefinite</td>
+<td>Opt-out available</td>
+<td>None</td>
+</tr>
+</table>
+
+<h3>Data Deletion Process</h3>
+
+<pre>
+USER-INITIATED DELETION
+=======================
+
+Step 1: Request Deletion
+  POST /api/v1/data/delete-request
+  {
+    "scope": "all",
+    "confirmDeletion": true,
+    "keepAnonymizedData": false
+  }
+
+Step 2: Verification
+  - Email sent with confirmation link
+  - 24-hour grace period before deletion starts
+
+Step 3: Soft Delete (Day 1)
+  - Data marked as deleted
+  - Inaccessible to user and APIs
+  - Account deactivated
+  - Billing stopped
+
+Step 4: Hard Delete (Days 1-30)
+  - Production databases purged
+  - Search indexes cleared
+  - File storage deleted
+  - Shared data access revoked
+
+Step 5: Backup Purge (Days 30-90)
+  - Backup systems purged
+  - Archive storage cleared
+  - Encryption keys deleted
+
+Step 6: Completion (Day 90)
+  - Final confirmation email
+  - Certificate of deletion (optional)
+  - Audit trail retained (pseudonymized)
+
+RIGHT TO BE FORGOTTEN (GDPR)
+=============================
+
+Users can request complete data deletion:
+  1. Submit deletion request
+  2. Verify identity
+  3. Receive confirmation of deletion
+  4. Data fully removed within 90 days
+  5. Exceptions: Legal obligations, anonymized analytics
+
+ACCOUNT EXPORT (GDPR DATA PORTABILITY)
+=======================================
+
+POST /api/v1/data/export
+
+Response:
+{
+  "exportId": "EXP-20251225-123",
+  "status": "processing",
+  "estimatedCompletion": "2025-12-25T11:00:00Z",
+  "format": "JSON",
+  "includesData": [
+    "account_info",
+    "pet_profiles",
+    "location_history",
+    "geofences",
+    "alerts",
+    "device_info"
+  ]
+}
+
+Export Formats:
+  - JSON (structured data)
+  - CSV (location history)
+  - GPX (GPS tracks)
+  - KML (Google Earth)
+</pre>
+
+<hr>
+
+<h2>6.5 Anonymization and Analytics</h2>
+
+<p>Anonymized data can provide valuable insights for improving pet safety without compromising privacy.</p>
+
+<h3>Anonymization Techniques</h3>
+
+<pre>
+ANONYMIZATION PROCESS
+=====================
+
+Original Data:
+{
+  "userId": "USER-123456",
+  "petId": "PET-789XYZ",
+  "petName": "Buddy",
+  "location": {
+    "latitude": 37.774929,
+    "longitude": -122.419418,
+    "timestamp": "2025-12-25T10:30:00Z"
+  }
+}
+
+Anonymized Data:
+{
+  "anonymousId": "hash(USER-123456 + salt)",
+  "petSpecies": "dog",
+  "petBreedCategory": "large_retriever",
+  "locationGridId": "grid_sf_downtown_sector_42",
+  "timestamp": "2025-12-25T10:00:00Z",
+  "geohash": "9q8yy"
+}
+
+Anonymization Steps:
+1. Remove PII:
+   - User names, emails, phone numbers
+   - Pet names
+   - Exact addresses
+
+2. Reduce Precision:
+   - GPS coordinates → grid sectors (500m×500m)
+   - Timestamps → hour precision
+   - Ages → age ranges (0-2, 3-5, 6-10, 11+)
+
+3. Generalize Categories:
+   - Specific breeds → breed categories
+   - Exact weights → weight ranges
+
+4. Add Noise:
+   - K-anonymity: Ensure at least K records match
+   - Differential privacy: Add statistical noise
+
+5. Remove Linkability:
+   - Prevent re-identification by cross-referencing
+   - Aggregate data when possible
+
+PERMITTED ANALYTICS
+===================
+
+✓ Lost pet recovery statistics (anonymized)
+✓ Popular pet park locations (aggregate)
+✓ Typical pet movement patterns (generalized)
+✓ Geofence effectiveness metrics (aggregate)
+✓ Battery life statistics (device model level)
+✓ Network coverage quality (grid level)
+
+✗ Individual pet tracking patterns
+✗ Specific household locations
+✗ Personally identifiable behavior
+✗ Data sold to third parties
+✗ Advertising profiles
+</pre>
+
+<hr>
+
+<h2>6.6 Security Best Practices</h2>
+
+<p>Guidelines for implementers to maintain robust security:</p>
+
+<h3>Development Security</h3>
+
+<ul>
+<li><strong>Secure Coding</strong>: Follow OWASP Top 10, use security linters, code review</li>
+<li><strong>Dependency Management</strong>: Regular updates, vulnerability scanning, SBOM</li>
+<li><strong>Secrets Management</strong>: Never hardcode credentials, use vaults (HashiCorp, AWS Secrets Manager)</li>
+<li><strong>Input Validation</strong>: Validate and sanitize all inputs, prevent injection attacks</li>
+<li><strong>Testing</strong>: Security unit tests, penetration testing, fuzzing</li>
+</ul>
+
+<h3>Operational Security</h3>
+
+<ul>
+<li><strong>Infrastructure</strong>: Hardened servers, security patches, network segmentation</li>
+<li><strong>Monitoring</strong>: Real-time security monitoring, SIEM, intrusion detection</li>
+<li><strong>Incident Response</strong>: Documented plan, breach notification procedures, forensics</li>
+<li><strong>Access Control</strong>: Principle of least privilege, regular access reviews, MFA required</li>
+<li><strong>Backups</strong>: Encrypted, tested regularly, offline copies, ransomware protection</li>
+</ul>
+
+<h3>User Security Education</h3>
+
+<pre>
+USER SECURITY RECOMMENDATIONS
+==============================
+
+Strong Passwords:
+  - Minimum 12 characters
+  - Mix of upper, lower, numbers, symbols
+  - Unique per service (use password manager)
+  - Never share passwords
+
+Multi-Factor Authentication:
+  - Always enable MFA
+  - Use authenticator app (not SMS when possible)
+  - Keep backup codes secure
+
+Device Security:
+  - Keep phone/computer OS updated
+  - Use screen lock (PIN, biometric)
+  - Enable "Find My Device" features
+  - Don't jailbreak/root devices
+
+Public Networks:
+  - Avoid tracking on public Wi-Fi
+  - Use VPN if necessary
+  - Verify HTTPS connection
+
+Suspicious Activity:
+  - Report unknown logins immediately
+  - Review audit logs regularly
+  - Revoke unused shared access
+  - Monitor for unusual pet locations
+</pre>
+
+<hr>
+
+<h2>Chapter Summary</h2>
+
+<p><strong>Key Takeaways:</strong></p>
+
+<ol>
+<li><strong>Privacy by Design</strong>: Privacy must be built into the system architecture from the start, not added later—encryption, data minimization, and user control are fundamental.</li>
+<li><strong>Layered Security</strong>: Multiple security layers (authentication, authorization, encryption, monitoring) provide defense in depth against various attack vectors.</li>
+<li><strong>User Control</strong>: Users must have granular control over their data: who can access it, how long it's retained, and the ability to export or delete it completely.</li>
+<li><strong>Compliance</strong>: Adherence to privacy regulations (GDPR, CCPA) is not optional—the standard provides mechanisms to comply with major privacy laws.</li>
+<li><strong>Transparency</strong>: Clear privacy policies, audit trails, and user notifications build trust and enable informed decision-making about data sharing.</li>
+</ol>
+
+<hr>
+
+<h2>Review Questions</h2>
+
+<ol>
+<li>What are the seven core privacy principles in the WIA-PET-TRACKING standard, and why is each important?</li>
+<li>Describe the multi-factor authentication flow. Why is MFA critical for pet tracking systems?</li>
+<li>What is the difference between soft delete and hard delete? Why is there a 30-90 day deletion process?</li>
+<li>Explain how data anonymization works. What techniques ensure that anonymized data cannot be re-identified?</li>
+<li>What are the six permission levels for data sharing? Provide appropriate use cases for each level.</li>
+<li>Describe three major security threats to pet tracking systems and the mitigations for each.</li>
+</ol>
+
+<hr>
+
+<p><a href="chapter-07.html">Next Chapter: Network and Communication →</a></p>
+
+<p><a href="index.html">← Back to Table of Contents</a></p>
+
+<hr>
+
+<p><strong>弘益人間 · Benefit All Humanity</strong></p>
+<p>© 2025 WIA - World Certification Industry Association | MIT License</p>
+
+</body>
+</html>

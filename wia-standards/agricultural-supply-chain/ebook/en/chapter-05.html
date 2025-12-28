@@ -1,0 +1,37 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Chapter 5: Phase 2 - API Interface</title><style>body{font-family:-apple-system,sans-serif;background:#0f172a;color:#f8fafc;line-height:1.8;max-width:900px;margin:0 auto;padding:40px 20px}h1,h2{color:#84CC16;margin-top:2em}h1{border-bottom:3px solid #84CC16;padding-bottom:10px}a{color:#60a5fa;text-decoration:none}.nav{display:flex;justify-content:space-between;margin:20px 0;padding:20px 0;border-top:1px solid #334155;border-bottom:1px solid #334155}.info-box{background:#1e293b;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #84CC16}pre{background:#1e293b;padding:15px;border-radius:6px;overflow-x:auto;font-size:0.9em}code{color:#10b981}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{padding:12px;border:1px solid #334155}th{background:#1e293b;color:#84CC16}footer{margin-top:60px;padding-top:20px;border-top:1px solid #334155;text-align:center;color:#94a3b8}</style></head><body><div class="nav"><a href="chapter-04.html">← Previous</a><a href="chapter-06.html">Next →</a></div><h1>Chapter 5: Phase 2 - API Interface</h1><div class="info-box"><strong>Overview:</strong> REST APIs for shipment management, cold chain monitoring, provenance verification, and quality control.</div><h2>5.1 Shipment Management APIs</h2><h3>Create Shipment</h3><p><strong>Endpoint:</strong> POST /shipments</p><pre><code>curl -X POST https://api.wia.org/v1/shipments \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productInfo": {
+      "productName": "Organic Tomatoes",
+      "quantity": 500
+    },
+    "origin": {"farmId": "FARM-001"},
+    "destination": {"facilityId": "RETAIL-001"}
+  }'
+</code></pre><h3>Get Shipment Status</h3><p><strong>Endpoint:</strong> GET /shipments/{shipmentId}</p><pre><code>curl https://api.wia.org/v1/shipments/SHIP-2025-001 \
+  -H "Authorization: Bearer TOKEN"
+</code></pre><h2>5.2 Cold Chain APIs</h2><h3>Submit Sensor Data</h3><p><strong>Endpoint:</strong> POST /cold-chain/data</p><pre><code>{
+  "shipmentId": "SHIP-2025-001",
+  "deviceId": "SENSOR-001",
+  "temperature": 4.2,
+  "humidity": 75
+}
+</code></pre><h3>Get Cold Chain History</h3><p><strong>Endpoint:</strong> GET /cold-chain/history/{shipmentId}</p><p>Returns time-series data with statistics (avg, min, max temperature).</p><h2>5.3 Provenance APIs</h2><h3>Record Provenance Event</h3><p><strong>Endpoint:</strong> POST /provenance/events</p><pre><code>{
+  "productId": "PROD-001",
+  "stage": "HARVEST",
+  "timestamp": "2025-01-01T08:00:00Z"
+}
+</code></pre><h3>Verify Provenance</h3><p><strong>Endpoint:</strong> GET /provenance/verify/{productId}</p><p>Returns blockchain-verified traceability history.</p><h2>5.4 Quality Control APIs</h2><h3>Submit Quality Check</h3><p><strong>Endpoint:</strong> POST /quality-control/checks</p><pre><code>{
+  "shipmentId": "SHIP-2025-001",
+  "stage": "PRE_SHIPMENT",
+  "passed": true,
+  "rating": "GRADE_A"
+}
+</code></pre><h2>5.5 Authentication</h2><p>All APIs require Bearer token authentication:</p><pre><code>Authorization: Bearer <your_access_token>
+</code></pre><h2>5.6 Error Handling</h2><table><tr><th>Code</th><th>Status</th><th>Meaning</th></tr><tr><td>400</td><td>Bad Request</td><td>Invalid data format</td></tr><tr><td>401</td><td>Unauthorized</td><td>Missing/invalid token</td></tr><tr><td>404</td><td>Not Found</td><td>Shipment doesn't exist</td></tr><tr><td>429</td><td>Rate Limit</td><td>Too many requests</td></tr><tr><td>500</td><td>Server Error</td><td>Internal error</td></tr></table><h2>5.7 Webhooks</h2><p>Register webhooks for real-time notifications:</p><pre><code>POST /webhooks
+{
+  "url": "https://your-server.com/webhook",
+  "events": ["shipment.status_changed", "cold_chain.alert"]
+}
+</code></pre><h2>Chapter Summary</h2><div class="info-box"><h3>Key Takeaways:</h3><ol><li>REST APIs provide CRUD operations for all data types</li><li>Authentication via Bearer tokens ensures security</li><li>Webhooks enable real-time event notifications</li><li>Error codes follow HTTP standards</li><li>Rate limiting prevents abuse (100 req/min standard)</li></ol></div><div class="nav"><a href="chapter-04.html">← Previous</a><a href="chapter-06.html">Next →</a></div><footer><p>© 2025 WIA · 弘익人間</p></footer></body></html>

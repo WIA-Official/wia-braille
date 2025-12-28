@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-SPACE-026: Space Debris Tracking - Simulator</title>
+    <style>
+        :root {
+            --primary: #06B6D4;
+            --primary-dark: #0891B2;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .nav-home {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav-home:hover { color: var(--primary); }
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--primary); }
+        .breadcrumb .sep { color: var(--border); }
+        .breadcrumb .current { color: var(--primary); font-weight: 500; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--primary); }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .lang-switch { display: flex; gap: 10px; }
+        .lang-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .lang-btn:hover { border-color: var(--primary); }
+        .hero {
+            text-align: center;
+            padding: 40px 0;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+        }
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab:hover { color: var(--primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        pre {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            overflow-x: auto;
+            color: var(--text);
+            font-size: 0.85rem;
+        }
+        .output {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            min-height: 100px;
+        }
+        #qrcode { display: flex; justify-content: center; margin: 20px 0; }
+        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0; }
+        .metric-box {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary);
+        }
+        .metric-label { font-size: 0.85rem; color: var(--text-muted); }
+        .metric-value { font-size: 1.5rem; font-weight: bold; color: var(--primary); margin-top: 5px; }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .status-safe { background: var(--secondary); color: white; }
+        .status-warning { background: var(--warning); color: white; }
+        .status-danger { background: var(--danger); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="top-nav">
+            <div class="nav-left">
+                <a href="../" class="nav-home">
+                    <span>🏠</span>
+                    <span>WIA-SPACE-026</span>
+                </a>
+                <div class="breadcrumb">
+                    <a href="/">Standards</a>
+                    <span class="sep">/</span>
+                    <a href="../">Space Debris Tracking</a>
+                    <span class="sep">/</span>
+                    <span class="current">Simulator</span>
+                </div>
+            </div>
+            <div class="nav-links">
+                <a href="../spec/WIA-SPACE-026-v1.0.md">📄 Spec</a>
+                <a href="../api/typescript/">💻 API</a>
+                <a href="https://github.com/WIA-Official/wia-standards">GitHub</a>
+            </div>
+        </nav>
+
+        <header>
+            <div class="logo">🛰️ Space Debris Tracking Simulator</div>
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('ko')">한국어</button>
+            </div>
+        </header>
+
+        <div class="hero">
+            <h1>WIA-SPACE-026: Space Debris Tracking</h1>
+            <p>Comprehensive monitoring and cataloging of space debris in Earth orbit</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab(0)">📊 Data Format</button>
+            <button class="tab" onclick="switchTab(1)">🔢 Algorithms</button>
+            <button class="tab" onclick="switchTab(2)">📡 Protocol</button>
+            <button class="tab" onclick="switchTab(3)">🔗 Integration</button>
+            <button class="tab" onclick="switchTab(4)">🧪 Test</button>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div class="tab-content active">
+            <div class="card">
+                <h3>Space Object TLE (Two-Line Element) Format</h3>
+                <p>Standard format for representing orbital elements</p>
+                <pre>{
+  "object": {
+    "noradId": "number",
+    "name": "string",
+    "intlDesignator": "string",
+    "classification": "Payload | RocketBody | Debris | Unknown",
+    "mass": "number (kg, optional)",
+    "size": "number (cm, estimated)"
+  },
+  "orbit": {
+    "epoch": "ISO8601",
+    "meanMotion": "number (revs/day)",
+    "eccentricity": "number (0-1)",
+    "inclination": "number (degrees)",
+    "raan": "number (degrees, Right Ascension)",
+    "argPerigee": "number (degrees)",
+    "meanAnomaly": "number (degrees)",
+    "bstar": "number (drag term)",
+    "ephemerisType": "number",
+    "elementSetNumber": "number",
+    "revolutionNumber": "number"
+  },
+  "tle": {
+    "line1": "string (69 chars)",
+    "line2": "string (69 chars)"
+  },
+  "tracking": {
+    "lastObservation": "ISO8601",
+    "observationQuality": "High | Medium | Low",
+    "positionError": "number (meters)",
+    "velocityError": "number (m/s)"
+  }
+}</pre>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div class="tab-content">
+            <div class="card">
+                <h3>Collision Probability Calculator</h3>
+                <div class="form-group">
+                    <label>Miss Distance (km):</label>
+                    <input type="number" id="missDistance" value="0.5" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Position Uncertainty (m):</label>
+                    <input type="number" id="posUncertainty" value="100" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Combined Hard Body Radius (m):</label>
+                    <input type="number" id="hardBodyRadius" value="10" min="1">
+                </div>
+                <button class="btn btn-primary" onclick="calculateCollisionProb()">Calculate Probability</button>
+                <div class="output" id="collision-output"></div>
+            </div>
+
+            <div class="card">
+                <h3>Orbit Decay Estimator</h3>
+                <div class="form-group">
+                    <label>Altitude (km):</label>
+                    <input type="number" id="altitude" value="400" min="100" max="2000">
+                </div>
+                <div class="form-group">
+                    <label>Object Mass (kg):</label>
+                    <input type="number" id="debrisMass" value="500" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Cross-sectional Area (m²):</label>
+                    <input type="number" id="crossSection" value="10" min="0.1" step="0.1">
+                </div>
+                <button class="btn btn-primary" onclick="calculateDecay()">Estimate Decay Time</button>
+                <div class="output" id="decay-output"></div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div class="tab-content">
+            <div class="card">
+                <h3>Conjunction Data Message (CDM) API</h3>
+                <div class="form-group">
+                    <label>Object 1 (NORAD ID):</label>
+                    <input type="text" id="obj1" value="25544">
+                </div>
+                <div class="form-group">
+                    <label>Object 2 (NORAD ID):</label>
+                    <input type="text" id="obj2" value="39766">
+                </div>
+                <div class="form-group">
+                    <label>Time of Closest Approach (TCA):</label>
+                    <input type="datetime-local" id="tca">
+                </div>
+                <div class="form-group">
+                    <label>Miss Distance (m):</label>
+                    <input type="number" id="missDist" value="500" min="1">
+                </div>
+                <button class="btn btn-primary" onclick="generateCDM()">Generate CDM</button>
+                <div class="output" id="cdm-output"></div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div class="tab-content">
+            <div class="card">
+                <h3>Space Situational Awareness Dashboard</h3>
+                <div class="metric-grid">
+                    <div class="metric-box">
+                        <div class="metric-label">Tracked Objects</div>
+                        <div class="metric-value">47,000+</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Active Satellites</div>
+                        <div class="metric-value">9,000+</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Debris Objects</div>
+                        <div class="metric-value">34,000+</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Conjunctions/Day</div>
+                        <div class="metric-value">~1,000</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Collision Avoidance Scenario</h3>
+                <p>Simulate a conjunction event between two satellites</p>
+                <button class="btn btn-primary" onclick="runCollisionScenario()">Run Scenario</button>
+                <div class="output" id="scenario-output"></div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Test -->
+        <div class="tab-content">
+            <div class="card">
+                <h3>QR Code & Validation</h3>
+                <div id="qrcode"></div>
+                <button class="btn btn-primary" onclick="generateQR()">Generate QR Code</button>
+            </div>
+
+            <div class="card">
+                <h3>TLE Validation</h3>
+                <div class="form-group">
+                    <label>TLE Line 1:</label>
+                    <input type="text" id="tle1" value="1 25544U 98067A   24001.50000000  .00016717  00000-0  10270-3 0  9005">
+                </div>
+                <div class="form-group">
+                    <label>TLE Line 2:</label>
+                    <input type="text" id="tle2" value="2 25544  51.6442 247.4627 0000871 65.4321 294.6974 15.50093860123456">
+                </div>
+                <button class="btn btn-primary" onclick="validateTLE()">Validate TLE</button>
+                <div class="output" id="validation-output"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        function switchTab(index) {
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab-content').forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+        }
+
+        function calculateCollisionProb() {
+            const missDist = parseFloat(document.getElementById('missDistance').value) * 1000; // km to m
+            const posError = parseFloat(document.getElementById('posUncertainty').value);
+            const hbr = parseFloat(document.getElementById('hardBodyRadius').value);
+
+            // Simple 2D Gaussian approximation
+            const sigma = posError / Math.sqrt(2);
+            const threshold = hbr + missDist;
+            const pc = Math.exp(-Math.pow(threshold, 2) / (2 * Math.pow(sigma, 2)));
+
+            let status = 'safe';
+            let action = 'No action required';
+
+            if (pc > 1e-3) {
+                status = 'danger';
+                action = 'URGENT: Maneuver recommended immediately';
+            } else if (pc > 1e-4) {
+                status = 'warning';
+                action = 'Collision avoidance maneuver advised';
+            }
+
+            document.getElementById('collision-output').innerHTML = `
+                <h4>Collision Probability Analysis</h4>
+                <p><strong>Miss Distance:</strong> ${(missDist/1000).toFixed(2)} km (${missDist.toFixed(0)} m)</p>
+                <p><strong>Position Uncertainty:</strong> ±${posError} m</p>
+                <p><strong>Hard Body Radius:</strong> ${hbr} m</p>
+                <p><strong>Probability of Collision:</strong> ${pc.toExponential(2)} (1 in ${(1/pc).toExponential(0)})</p>
+                <p><strong>Status:</strong> <span class="status-badge status-${status}">${status.toUpperCase()}</span></p>
+                <p><strong>Recommendation:</strong> ${action}</p>
+                <h5>Thresholds:</h5>
+                <ul>
+                    <li>Green (Safe): Pc < 1 in 10,000</li>
+                    <li>Yellow (Warning): 1 in 10,000 < Pc < 1 in 1,000</li>
+                    <li>Red (Danger): Pc > 1 in 1,000</li>
+                </ul>
+            `;
+        }
+
+        function calculateDecay() {
+            const alt = parseFloat(document.getElementById('altitude').value);
+            const mass = parseFloat(document.getElementById('debrisMass').value);
+            const area = parseFloat(document.getElementById('crossSection').value);
+
+            const ballisticCoeff = mass / area;
+
+            // Approximate decay rates (simplified)
+            let daysToDecay;
+            if (alt < 200) {
+                daysToDecay = alt * 0.5;
+            } else if (alt < 400) {
+                daysToDecay = alt * 2;
+            } else if (alt < 600) {
+                daysToDecay = alt * 10;
+            } else {
+                daysToDecay = alt * 50;
+            }
+
+            // Adjust for ballistic coefficient
+            daysToDecay *= (ballisticCoeff / 100);
+
+            const yearsToDecay = daysToDecay / 365.25;
+
+            document.getElementById('decay-output').innerHTML = `
+                <h4>Orbit Decay Estimate</h4>
+                <p><strong>Altitude:</strong> ${alt} km</p>
+                <p><strong>Mass:</strong> ${mass} kg</p>
+                <p><strong>Cross-section:</strong> ${area} m²</p>
+                <p><strong>Ballistic Coefficient:</strong> ${ballisticCoeff.toFixed(1)} kg/m²</p>
+                <p><strong>Estimated Decay Time:</strong> ${daysToDecay.toFixed(0)} days (~${yearsToDecay.toFixed(1)} years)</p>
+                <p><em>Note: Simplified model. Actual decay depends on solar activity, atmospheric density variations, and object orientation.</em></p>
+                <h5>25-Year Rule Compliance:</h5>
+                <p>${yearsToDecay <= 25 ? '✓ Compliant with IADC guidelines' : '✗ Exceeds 25-year disposal limit'}</p>
+            `;
+        }
+
+        function generateCDM() {
+            const obj1 = document.getElementById('obj1').value;
+            const obj2 = document.getElementById('obj2').value;
+            const tca = document.getElementById('tca').value || new Date().toISOString();
+            const missDist = parseFloat(document.getElementById('missDist').value);
+
+            const cdm = {
+                CCSDS_CDM_VERS: "1.0",
+                CREATION_DATE: new Date().toISOString(),
+                ORIGINATOR: "WIA-SPACE-026",
+                MESSAGE_ID: "CDM-" + Date.now(),
+                TCA: tca,
+                MISS_DISTANCE: missDist,
+                OBJECT1: {
+                    OBJECT_DESIGNATOR: obj1,
+                    CATALOG_NAME: "SATCAT",
+                    OBJECT_NAME: `Object ${obj1}`
+                },
+                OBJECT2: {
+                    OBJECT_DESIGNATOR: obj2,
+                    CATALOG_NAME: "SATCAT",
+                    OBJECT_NAME: `Object ${obj2}`
+                },
+                RELATIVE_SPEED: 14000,
+                COLLISION_PROBABILITY: 1.5e-4
+            };
+
+            document.getElementById('cdm-output').innerHTML = `
+                <h4>Conjunction Data Message (CDM)</h4>
+                <pre>${JSON.stringify(cdm, null, 2)}</pre>
+                <p><strong>Status:</strong> <span class="status-badge status-warning">CDM Issued</span></p>
+                <p>Operators of both objects have been notified.</p>
+            `;
+        }
+
+        function runCollisionScenario() {
+            document.getElementById('scenario-output').innerHTML = `
+                <h4>Conjunction Event Scenario: Starlink vs. OneWeb</h4>
+                <p><strong>Date:</strong> 2024-03-15</p>
+                <p><strong>Object 1:</strong> Starlink-1234 (NORAD ID: 45678)</p>
+                <p><strong>Object 2:</strong> OneWeb-0234 (NORAD ID: 47890)</p>
+                <h5>Timeline:</h5>
+                <ul>
+                    <li><strong>T-48 hours:</strong> Initial CDM issued (Pc = 1/50,000)</li>
+                    <li><strong>T-24 hours:</strong> Updated CDM (Pc = 1/5,000) - Warning threshold</li>
+                    <li><strong>T-12 hours:</strong> Updated CDM (Pc = 1/1,200) - Maneuver recommended</li>
+                    <li><strong>T-6 hours:</strong> Starlink executes avoidance maneuver (Delta-V = 0.5 m/s)</li>
+                    <li><strong>T-1 hour:</strong> Final CDM (Pc = 1/100,000) - Safe</li>
+                    <li><strong>TCA:</strong> Closest approach: 2.5 km separation - NO COLLISION</li>
+                </ul>
+                <h5>Maneuver Details:</h5>
+                <p>Starlink autonomous system executed collision avoidance:</p>
+                <ul>
+                    <li>Lowered orbit by 500 meters</li>
+                    <li>Propellant used: 0.2 kg</li>
+                    <li>Return to nominal orbit: T+48 hours</li>
+                </ul>
+                <p><strong>Outcome:</strong> <span class="status-badge status-safe">Conjunction avoided successfully</span></p>
+            `;
+        }
+
+        function generateQR() {
+            const qrData = {
+                standard: "WIA-SPACE-026",
+                version: "1.0",
+                url: "https://github.com/WIA-Official/wia-standards/tree/main/space-debris-track",
+                philosophy: "弘益人間 - Benefit All Humanity"
+            };
+
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById('qrcode'), {
+                text: JSON.stringify(qrData),
+                width: 256,
+                height: 256,
+                colorDark: '#06B6D4',
+                colorLight: '#0f172a'
+            });
+        }
+
+        function validateTLE() {
+            const line1 = document.getElementById('tle1').value;
+            const line2 = document.getElementById('tle2').value;
+            const errors = [];
+
+            if (line1.length !== 69) errors.push('Line 1 must be 69 characters');
+            if (line2.length !== 69) errors.push('Line 2 must be 69 characters');
+            if (!line1.startsWith('1 ')) errors.push('Line 1 must start with "1 "');
+            if (!line2.startsWith('2 ')) errors.push('Line 2 must start with "2 "');
+
+            if (errors.length === 0) {
+                document.getElementById('validation-output').innerHTML = `
+                    <p style="color: var(--secondary);">✓ TLE format valid!</p>
+                    <pre>Line 1: ${line1}\nLine 2: ${line2}</pre>
+                    <p><strong>NORAD ID:</strong> ${line1.substring(2, 7)}</p>
+                    <p><strong>Epoch:</strong> ${line1.substring(18, 32)}</p>
+                    <p><strong>Inclination:</strong> ${line2.substring(8, 16)}°</p>
+                `;
+            } else {
+                document.getElementById('validation-output').innerHTML = `
+                    <p style="color: var(--danger);">✗ Validation failed:</p>
+                    <ul>${errors.map(e => '<li>' + e + '</li>').join('')}</ul>
+                `;
+            }
+        }
+
+        // Initialize TCA field
+        const now = new Date();
+        now.setHours(now.getHours() + 24);
+        document.getElementById('tca').value = now.toISOString().slice(0, 16);
+    </script>
+</body>
+</html>

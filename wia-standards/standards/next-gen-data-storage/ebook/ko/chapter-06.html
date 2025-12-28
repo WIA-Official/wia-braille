@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제6장: Phase 3: 통합 | WIA-NEXT_GEN_D</title>
+    <style>
+        :root { --bg: #0f172a; --bg-secondary: #1e293b; --bg-tertiary: #334155; --primary: #8B5CF6; --text: #f1f5f9; --text-secondary: #cbd5e1; --border: #475569; --success: #10b981; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-secondary); padding: 3rem; border-radius: 10px; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: var(--bg-tertiary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--primary); font-weight: bold; }
+        tr:hover { background: var(--bg-tertiary); }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: var(--bg); text-decoration: none; border-radius: 5px; transition: all 0.3s ease; }
+        .btn:hover { background: var(--success); transform: translateY(-2px); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', monospace; color: var(--success); }
+        pre { background: var(--bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1.5rem 0; border: 1px solid var(--border); }
+        pre code { background: transparent; padding: 0; }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+        .stat-card { background: var(--bg); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid var(--primary); }
+        .stat-number { font-size: 2rem; color: var(--primary); font-weight: bold; }
+        .stat-label { color: var(--text-secondary); margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">제6장</p>
+        <h1>🔗 Phase 3: 통합</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            차세대 데이터 저장소 시스템과 기존 인프라의 통합 전략 및 다중 클라우드 연동 방법을 학습합니다.
+        </p>
+
+        <h2>엔터프라이즈 시스템 통합</h2>
+        <p>
+            차세대 저장소 기술을 기존 엔터프라이즈 환경에 통합하려면 레거시 시스템과의 호환성, 데이터 마이그레이션 전략, API 게이트웨이 구성이 필요합니다. WIA-NEXT_GEN_D 표준은 이러한 통합을 위한 표준화된 인터페이스와 프로토콜을 정의합니다.
+        </p>
+
+        <h3>통합 아키텍처 패턴</h3>
+        <p>
+            엔터프라이즈 통합에서 가장 많이 사용되는 패턴은 어댑터 패턴, 파사드 패턴, 그리고 이벤트 기반 통합입니다. DNA 저장소와 같은 비동기적 특성을 가진 시스템의 경우 이벤트 기반 아키텍처가 특히 효과적입니다.
+        </p>
+
+        <pre><code>// 통합 어댑터 구현 예시
+interface StorageAdapter {
+    connect(): Promise&lt;void&gt;;
+    store(data: Buffer, metadata: Metadata): Promise&lt;string&gt;;
+    retrieve(id: string): Promise&lt;Buffer&gt;;
+    delete(id: string): Promise&lt;void&gt;;
+}
+
+class DNAStorageAdapter implements StorageAdapter {
+    private synthesizer: DNASynthesizer;
+    private sequencer: DNASequencer;
+
+    async store(data: Buffer, metadata: Metadata): Promise&lt;string&gt; {
+        const encoded = this.encoder.encode(data);
+        const jobId = await this.synthesizer.synthesize(encoded);
+        await this.indexer.register(jobId, metadata);
+        return jobId;
+    }
+
+    async retrieve(id: string): Promise&lt;Buffer&gt; {
+        const sample = await this.sampleManager.locate(id);
+        const sequence = await this.sequencer.read(sample);
+        return this.decoder.decode(sequence);
+    }
+}</code></pre>
+
+        <table>
+            <thead>
+                <tr><th>통합 패턴</th><th>사용 시나리오</th><th>장점</th><th>단점</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>동기 API</td><td>플래시/SSD 통합</td><td>단순한 구현</td><td>차단 호출</td></tr>
+                <tr><td>비동기 메시징</td><td>DNA 저장소</td><td>확장성</td><td>복잡성 증가</td></tr>
+                <tr><td>이벤트 소싱</td><td>감사 추적</td><td>완전한 이력</td><td>저장 공간</td></tr>
+                <tr><td>CQRS</td><td>읽기/쓰기 분리</td><td>성능 최적화</td><td>일관성 관리</td></tr>
+            </tbody>
+        </table>
+
+        <h2>클라우드 플랫폼 통합</h2>
+        <p>
+            주요 클라우드 제공업체(AWS, Azure, GCP)와의 통합은 하이브리드 저장소 전략의 핵심입니다. 각 클라우드는 객체 저장소, 블록 저장소, 아카이브 저장소를 제공하며, 차세대 저장소는 이들과 상호 보완적으로 작동합니다.
+        </p>
+
+        <h3>AWS 통합</h3>
+        <div class="info-box">
+            <p><strong>AWS 서비스 매핑:</strong></p>
+            <ul>
+                <li><strong>S3 Glacier Deep Archive:</strong> DNA 저장소 대기 계층</li>
+                <li><strong>Lambda:</strong> DNA 인코딩/디코딩 처리</li>
+                <li><strong>Step Functions:</strong> 워크플로우 오케스트레이션</li>
+                <li><strong>SQS:</strong> 비동기 작업 큐</li>
+                <li><strong>CloudWatch:</strong> 통합 모니터링</li>
+            </ul>
+        </div>
+
+        <pre><code>// AWS Lambda DNA 인코딩 핸들러
+import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+
+export const handler = async (event: S3Event) => {
+    const s3 = new S3Client({ region: 'ap-northeast-2' });
+
+    for (const record of event.Records) {
+        const input = await s3.send(new GetObjectCommand({
+            Bucket: record.s3.bucket.name,
+            Key: record.s3.object.key
+        }));
+
+        const encoded = await dnaEncoder.encode(
+            await streamToBuffer(input.Body)
+        );
+
+        await s3.send(new PutObjectCommand({
+            Bucket: 'dna-synthesis-queue',
+            Key: `${record.s3.object.key}.dna`,
+            Body: JSON.stringify(encoded)
+        }));
+    }
+};</code></pre>
+
+        <h3>Azure 통합</h3>
+        <p>
+            Microsoft Azure와의 통합에서는 Azure Blob Storage, Azure Functions, Event Grid가 핵심 서비스입니다. 특히 Project Silica(유리 기반 홀로그래픽 저장소)와의 네이티브 통합이 가능합니다.
+        </p>
+
+        <table>
+            <thead>
+                <tr><th>Azure 서비스</th><th>차세대 저장소 연동</th><th>사용 사례</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Blob Storage (Archive)</td><td>DNA 저장 인덱스</td><td>메타데이터 관리</td></tr>
+                <tr><td>Azure Functions</td><td>변환 파이프라인</td><td>인코딩/디코딩</td></tr>
+                <tr><td>Event Grid</td><td>이벤트 라우팅</td><td>워크플로우 트리거</td></tr>
+                <tr><td>Cosmos DB</td><td>분산 인덱스</td><td>글로벌 검색</td></tr>
+            </tbody>
+        </table>
+
+        <h2>데이터 마이그레이션</h2>
+        <p>
+            기존 저장 시스템에서 차세대 저장소로의 마이그레이션은 단계적으로 진행되어야 합니다. 대용량 콜드 데이터의 경우 DNA 저장소로의 마이그레이션이 비용 효율적이며, 중간 접근 빈도의 데이터는 홀로그래픽 저장소가 적합합니다.
+        </p>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-number">10PB+</div>
+                <div class="stat-label">마이그레이션 가능 용량</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">90%</div>
+                <div class="stat-label">비용 절감</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1000년</div>
+                <div class="stat-label">데이터 수명</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">99.9999%</div>
+                <div class="stat-label">내구성</div>
+            </div>
+        </div>
+
+        <h3>마이그레이션 전략</h3>
+        <ol>
+            <li><strong>평가 단계:</strong> 데이터 분류, 접근 패턴 분석, 비용 모델링</li>
+            <li><strong>파일럿 단계:</strong> 소규모 데이터 세트로 검증, 성능 벤치마크</li>
+            <li><strong>점진적 마이그레이션:</strong> 우선순위 기반 단계적 이전</li>
+            <li><strong>검증 및 정리:</strong> 무결성 검증, 원본 데이터 아카이브</li>
+        </ol>
+
+        <h2>API 게이트웨이 설계</h2>
+        <p>
+            통합 API 게이트웨이는 다양한 저장 백엔드에 대한 일관된 인터페이스를 제공합니다. 클라이언트 애플리케이션은 저장소 유형에 관계없이 동일한 API를 사용하여 데이터를 저장하고 검색할 수 있습니다.
+        </p>
+
+        <pre><code>// 통합 저장소 API 게이트웨이
+class UnifiedStorageGateway {
+    private routers: Map&lt;string, StorageAdapter&gt;;
+
+    constructor() {
+        this.routers = new Map([
+            ['hot', new FlashStorageAdapter()],
+            ['warm', new HolographicStorageAdapter()],
+            ['cold', new DNAStorageAdapter()],
+            ['quantum', new QuantumMemoryAdapter()]
+        ]);
+    }
+
+    async store(data: Buffer, policy: StoragePolicy): Promise&lt;StorageReceipt&gt; {
+        const tier = this.policyEngine.selectTier(policy);
+        const adapter = this.routers.get(tier);
+
+        const objectId = await adapter.store(data, policy.metadata);
+
+        return {
+            objectId,
+            tier,
+            timestamp: new Date(),
+            estimatedRetrieval: this.calculateRetrievalTime(tier)
+        };
+    }
+}</code></pre>
+
+        <h2>보안 통합</h2>
+        <p>
+            통합 환경에서의 보안은 인증, 권한 부여, 암호화, 감사의 네 가지 축으로 구성됩니다. 엔터프라이즈 ID 제공자(IdP)와의 통합, 역할 기반 접근 제어, 종단간 암호화가 필수적입니다.
+        </p>
+
+        <div class="highlight-box">
+            <h3>보안 통합 체크리스트</h3>
+            <ul>
+                <li>SAML 2.0 / OAuth 2.0 / OIDC 지원</li>
+                <li>Active Directory / LDAP 연동</li>
+                <li>mTLS (상호 TLS) 인증</li>
+                <li>KMS 통합 (AWS KMS, Azure Key Vault, HashiCorp Vault)</li>
+                <li>감사 로그 SIEM 연동 (Splunk, ELK, Sentinel)</li>
+            </ul>
+        </div>
+
+        <h2>모니터링 및 관찰성</h2>
+        <p>
+            통합 시스템의 효과적인 운영을 위해서는 종합적인 모니터링과 관찰성이 필요합니다. 메트릭, 로그, 트레이스의 세 가지 신호를 통합하여 시스템 상태를 실시간으로 파악합니다.
+        </p>
+
+        <table>
+            <thead>
+                <tr><th>관찰성 계층</th><th>도구</th><th>핵심 지표</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>메트릭</td><td>Prometheus, InfluxDB</td><td>지연시간, 처리량, 오류율</td></tr>
+                <tr><td>로그</td><td>ELK Stack, Loki</td><td>오류 추적, 감사 로그</td></tr>
+                <tr><td>트레이스</td><td>Jaeger, Zipkin</td><td>분산 요청 추적</td></tr>
+                <tr><td>대시보드</td><td>Grafana, Datadog</td><td>통합 시각화</td></tr>
+            </tbody>
+        </table>
+
+        <h2>GCP 통합</h2>
+        <p>
+            Google Cloud Platform과의 통합에서는 Cloud Storage, Cloud Functions, Pub/Sub가 핵심 서비스입니다. BigQuery와의 연동을 통해 저장된 데이터에 대한 분석 워크로드도 지원합니다.
+        </p>
+
+        <pre><code>// GCP Cloud Functions DNA 처리 핸들러
+const { Storage } = require('@google-cloud/storage');
+const { PubSub } = require('@google-cloud/pubsub');
+
+exports.processDNAStorage = async (event, context) => {
+    const storage = new Storage();
+    const pubsub = new PubSub();
+
+    const bucket = event.bucket;
+    const file = event.name;
+
+    // DNA 인코딩 처리
+    const [contents] = await storage.bucket(bucket).file(file).download();
+    const encoded = await dnaEncoder.encode(contents);
+
+    // 합성 큐로 발행
+    const topic = pubsub.topic('dna-synthesis-queue');
+    await topic.publish(Buffer.from(JSON.stringify({
+        sourceFile: file,
+        encodedSequence: encoded,
+        timestamp: new Date().toISOString()
+    })));
+
+    console.log(`Processed ${file} for DNA synthesis`);
+};</code></pre>
+
+        <table>
+            <thead>
+                <tr><th>GCP 서비스</th><th>차세대 저장소 연동</th><th>사용 사례</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Cloud Storage (Archive)</td><td>DNA 인덱스 저장</td><td>메타데이터 관리</td></tr>
+                <tr><td>Cloud Functions</td><td>서버리스 처리</td><td>인코딩/디코딩</td></tr>
+                <tr><td>Pub/Sub</td><td>비동기 메시징</td><td>작업 큐</td></tr>
+                <tr><td>BigQuery</td><td>분석 쿼리</td><td>사용 패턴 분석</td></tr>
+            </tbody>
+        </table>
+
+        <h2>멀티 클라우드 전략</h2>
+        <p>
+            단일 클라우드 벤더에 대한 종속성을 피하고 최적의 서비스를 활용하기 위해 멀티 클라우드 전략이 권장됩니다. 추상화 계층을 통해 클라우드 간 이식성을 확보하고, 데이터 주권 요구사항도 충족할 수 있습니다.
+        </p>
+
+        <div class="info-box">
+            <h3>멀티 클라우드 모범 사례</h3>
+            <ul>
+                <li><strong>추상화 계층:</strong> 클라우드 특정 API 대신 표준화된 인터페이스 사용</li>
+                <li><strong>데이터 복제:</strong> 크로스 클라우드 데이터 동기화 전략</li>
+                <li><strong>네트워크 연결:</strong> 클라우드 간 전용 연결 또는 VPN</li>
+                <li><strong>통합 모니터링:</strong> 모든 클라우드를 아우르는 관찰성 플랫폼</li>
+                <li><strong>비용 관리:</strong> FinOps 도구를 통한 멀티 클라우드 비용 최적화</li>
+            </ul>
+        </div>
+
+        <h2>요약</h2>
+        <p>
+            이 장에서는 차세대 데이터 저장소 시스템과 기존 엔터프라이즈 인프라 및 클라우드 플랫폼의 통합 전략을 다루었습니다. AWS, Azure, GCP와의 네이티브 통합과 멀티 클라우드 전략을 통해 유연하고 확장 가능한 아키텍처를 구현할 수 있습니다.
+        </p>
+        <p>
+            WIA-NEXT_GEN_D 표준 기반의 통합은 벤더 중립적이고 확장 가능한 아키텍처를 보장합니다. 다음 장에서는 통합된 시스템의 성능 최적화 전략을 살펴봅니다.
+        </p>
+
+        <div class="highlight-box">
+            <h3>핵심 요점</h3>
+            <ol>
+                <li>어댑터 패턴으로 다양한 저장소 기술 통합</li>
+                <li>AWS, Azure, GCP와의 네이티브 클라우드 통합</li>
+                <li>단계적 마이그레이션으로 리스크 최소화</li>
+                <li>통합 API 게이트웨이로 일관된 인터페이스 제공</li>
+                <li>종합적 관찰성으로 운영 효율성 확보</li>
+            </ol>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="chapter-05.html" class="btn">← 이전</a>
+            <a href="index.html" class="btn">📚 목차</a>
+            <a href="chapter-07.html" class="btn">다음 →</a>
+        </div>
+    </div>
+</body>
+</html>

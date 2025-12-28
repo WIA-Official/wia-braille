@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-FIN-012 Payment System - Interactive Simulator 💳</title>
+    <style>
+        :root {
+            --primary: #22C55E;
+            --primary-dark: #16A34A;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .nav-home { color: var(--text); text-decoration: none; font-weight: bold; }
+        .nav-home:hover { color: var(--primary); }
+        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-muted); }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--primary); }
+        .breadcrumb .sep { color: var(--border); }
+        .breadcrumb .current { color: var(--primary); font-weight: 500; }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; }
+        .nav-links a:hover { color: var(--primary); }
+
+        .hero { text-align: center; padding: 30px 0; }
+        .hero h1 { font-size: 2.2rem; margin-bottom: 10px; background: linear-gradient(90deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero p { color: var(--text-muted); font-size: 1rem; }
+        .hero .philosophy { color: #ffd700; font-size: 0.95rem; margin-top: 10px; }
+
+        .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+        .tab { padding: 12px 24px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; }
+        .tab.active { background: var(--primary); border-color: var(--primary); }
+        .tab:hover { border-color: var(--primary); }
+
+        .panel { display: none; background: var(--bg-card); border-radius: 12px; padding: 30px; border: 1px solid var(--border); }
+        .panel.active { display: block; }
+        .panel h2 { margin-bottom: 20px; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 8px; font-size: 1rem; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn-secondary { background: var(--bg); border: 1px solid var(--border); color: var(--text); }
+        .btn-secondary:hover { border-color: var(--primary); }
+        .btn-center { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+
+        .output { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 20px; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.85rem; white-space: pre-wrap; max-height: 500px; overflow-y: auto; }
+
+        .sub-section { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .sub-section h4 { color: var(--primary); margin-bottom: 15px; font-size: 1rem; }
+
+        .card-visual { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 15px; padding: 30px; color: white; margin: 20px auto; max-width: 400px; aspect-ratio: 1.586; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .card-chip { width: 50px; height: 40px; background: #ffd700; border-radius: 6px; margin-bottom: 30px; }
+        .card-number { font-size: 1.4rem; letter-spacing: 3px; margin-bottom: 20px; font-family: 'Courier New', monospace; }
+        .card-details { display: flex; justify-content: space-between; font-size: 0.9rem; }
+
+        .flow-step { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin: 10px 0; display: flex; align-items: center; gap: 15px; }
+        .flow-step.active { border-color: var(--primary); background: rgba(34, 197, 94, 0.1); }
+        .flow-step .number { width: 35px; height: 35px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .flow-step .content { flex: 1; }
+        .flow-step .title { font-weight: 600; margin-bottom: 3px; }
+        .flow-step .desc { font-size: 0.85rem; color: var(--text-muted); }
+        .flow-step .status { padding: 4px 12px; background: var(--secondary); color: white; border-radius: 12px; font-size: 0.75rem; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
+        .stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center; }
+        .stat-card .value { font-size: 2rem; font-weight: bold; color: var(--primary); }
+        .stat-card .label { font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; }
+
+        .compliance-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: var(--bg); border-radius: 8px; margin: 10px 0; border-left: 4px solid var(--border); }
+        .compliance-item.pass { border-left-color: var(--secondary); }
+        .compliance-item.fail { border-left-color: var(--danger); }
+        .compliance-item .icon { font-size: 1.5rem; }
+        .compliance-item .content { flex: 1; }
+        .compliance-item .title { font-weight: 600; }
+        .compliance-item .desc { font-size: 0.85rem; color: var(--text-muted); }
+        .compliance-item .badge { padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .compliance-item .badge.pass { background: var(--secondary); color: white; }
+        .compliance-item .badge.fail { background: var(--danger); color: white; }
+
+        .transaction-log { margin: 20px 0; }
+        .transaction-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin: 10px 0; }
+        .transaction-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .transaction-id { font-weight: 600; }
+        .transaction-amount { font-size: 1.2rem; color: var(--primary); font-weight: bold; }
+        .transaction-details { font-size: 0.85rem; color: var(--text-muted); }
+
+        footer { margin-top: 60px; padding: 30px 0; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); }
+        footer .philosophy { color: #ffd700; font-size: 1.1rem; margin-bottom: 10px; }
+        footer .links { margin-top: 15px; }
+        footer .links a { color: var(--text-muted); text-decoration: none; margin: 0 10px; }
+        footer .links a:hover { color: var(--primary); }
+
+        @media (max-width: 768px) {
+            .top-nav { flex-direction: column; gap: 15px; }
+            .tabs { gap: 5px; }
+            .tab { padding: 10px 15px; font-size: 0.85rem; }
+            .hero h1 { font-size: 1.6rem; }
+            .breadcrumb { display: none; }
+            .card-number { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-nav">
+            <div class="nav-left">
+                <a href="https://wiastandards.com" class="nav-home" target="_blank">🤟 WIA Standards</a>
+                <div class="breadcrumb">
+                    <a href="https://wiastandards.com" target="_blank">Home</a>
+                    <span class="sep">›</span>
+                    <a href="../index.html">FIN-012</a>
+                    <span class="sep">›</span>
+                    <span class="current">Simulator</span>
+                </div>
+            </div>
+            <div class="nav-links">
+                <a href="../index.html">← Back</a>
+                <a href="../spec/PHASE-1-DATA-FORMAT.md">Spec</a>
+                <a href="../ebook/en/index.html">eBook</a>
+            </div>
+        </div>
+
+        <div class="hero">
+            <h1>💳 Payment System Simulator</h1>
+            <p>Interactive payment processing, card validation, settlement, and compliance testing</p>
+            <div class="philosophy">弘益人間 · Benefit All Humanity</div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">1️⃣ Payment Flow</div>
+            <div class="tab" onclick="switchTab(1)">2️⃣ Card Processing</div>
+            <div class="tab" onclick="switchTab(2)">3️⃣ Settlement Calculator</div>
+            <div class="tab" onclick="switchTab(3)">4️⃣ Reconciliation</div>
+            <div class="tab" onclick="switchTab(4)">5️⃣ PCI-DSS Compliance</div>
+        </div>
+
+        <!-- Tab 1: Payment Flow Simulator -->
+        <div class="panel active" id="panel0">
+            <h2>💳 Payment Flow Simulator</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Simulate end-to-end payment transaction flow from authorization to settlement</p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Card Number</label>
+                    <input type="text" id="flow-card" placeholder="4532 1234 5678 9010" maxlength="19">
+                </div>
+                <div class="form-group">
+                    <label>Amount (USD)</label>
+                    <input type="number" id="flow-amount" placeholder="100.00" step="0.01">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Merchant ID</label>
+                    <input type="text" id="flow-merchant" placeholder="MERCH-12345">
+                </div>
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select id="flow-method">
+                        <option value="credit">Credit Card</option>
+                        <option value="debit">Debit Card</option>
+                        <option value="prepaid">Prepaid Card</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>3D Secure Authentication</label>
+                <select id="flow-3ds">
+                    <option value="enabled">Enabled (Recommended)</option>
+                    <option value="disabled">Disabled</option>
+                </select>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="simulatePaymentFlow()">🚀 Start Payment Flow</button>
+                <button class="btn btn-secondary" onclick="resetPaymentFlow()">🔄 Reset</button>
+            </div>
+
+            <div id="flow-output" style="display: none;">
+                <div class="sub-section">
+                    <h4>📊 Payment Flow Steps</h4>
+                    <div id="flow-steps"></div>
+                </div>
+
+                <div class="sub-section">
+                    <h4>📈 Transaction Analytics</h4>
+                    <div class="stats-grid" id="flow-stats"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Card Processing Demo -->
+        <div class="panel" id="panel1">
+            <h2>💳 Card Processing Demo</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Validate and process card information with EMV chip simulation</p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Card Number (PAN)</label>
+                    <input type="text" id="card-pan" placeholder="4532 1234 5678 9010" maxlength="19" oninput="formatCardNumber(this)">
+                </div>
+                <div class="form-group">
+                    <label>Expiry Date</label>
+                    <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>CVV/CVC</label>
+                    <input type="text" id="card-cvv" placeholder="123" maxlength="4">
+                </div>
+                <div class="form-group">
+                    <label>Cardholder Name</label>
+                    <input type="text" id="card-name" placeholder="JOHN DOE">
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="processCard()">✅ Validate & Process Card</button>
+                <button class="btn btn-secondary" onclick="generateTestCard()">🎲 Generate Test Card</button>
+            </div>
+
+            <div id="card-output" style="display: none;">
+                <div class="card-visual" id="card-visual">
+                    <div class="card-chip"></div>
+                    <div class="card-number" id="visual-number">•••• •••• •••• ••••</div>
+                    <div class="card-details">
+                        <div>
+                            <div style="font-size: 0.7rem; opacity: 0.8;">CARDHOLDER</div>
+                            <div id="visual-name">CARD HOLDER</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.7rem; opacity: 0.8;">VALID THRU</div>
+                            <div id="visual-expiry">MM/YY</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="output" id="card-result"></div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Settlement Calculator -->
+        <div class="panel" id="panel2">
+            <h2>💰 Settlement Calculator</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Calculate interchange fees, settlement amounts, and payment processing costs</p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Transaction Amount (USD)</label>
+                    <input type="number" id="settle-amount" placeholder="1000.00" step="0.01" value="1000">
+                </div>
+                <div class="form-group">
+                    <label>Card Type</label>
+                    <select id="settle-card-type">
+                        <option value="visa-credit">Visa Credit</option>
+                        <option value="visa-debit">Visa Debit</option>
+                        <option value="mc-credit">Mastercard Credit</option>
+                        <option value="mc-debit">Mastercard Debit</option>
+                        <option value="amex">American Express</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Merchant Category Code (MCC)</label>
+                    <select id="settle-mcc">
+                        <option value="5411">5411 - Grocery Stores</option>
+                        <option value="5812">5812 - Restaurants</option>
+                        <option value="5999">5999 - Retail Stores</option>
+                        <option value="7011">7011 - Hotels</option>
+                        <option value="4111">4111 - Transportation</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Transaction Type</label>
+                    <select id="settle-type">
+                        <option value="card-present">Card Present (EMV)</option>
+                        <option value="card-not-present">Card Not Present (Online)</option>
+                        <option value="contactless">Contactless (NFC)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="calculateSettlement()">💹 Calculate Settlement</button>
+            </div>
+
+            <div id="settlement-output" style="display: none;">
+                <div class="sub-section">
+                    <h4>💵 Settlement Breakdown</h4>
+                    <div class="stats-grid" id="settlement-breakdown"></div>
+                </div>
+
+                <div class="output" id="settlement-details"></div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Reconciliation Tool -->
+        <div class="panel" id="panel3">
+            <h2>📊 Reconciliation Tool</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Reconcile transactions between merchant, acquirer, and card network</p>
+
+            <div class="form-group">
+                <label>Upload Transaction Batch (CSV Format)</label>
+                <textarea id="recon-batch" rows="6" placeholder="transaction_id,amount,timestamp,status
+TXN001,150.00,2025-01-15T10:30:00Z,authorized
+TXN002,75.50,2025-01-15T11:45:00Z,captured
+TXN003,200.00,2025-01-15T13:20:00Z,settled"></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Expected Total (USD)</label>
+                    <input type="number" id="recon-expected" placeholder="425.50" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Settlement Date</label>
+                    <input type="date" id="recon-date">
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="reconcileBatch()">✅ Reconcile Batch</button>
+                <button class="btn btn-secondary" onclick="loadSampleBatch()">📋 Load Sample</button>
+            </div>
+
+            <div id="recon-output" style="display: none;">
+                <div class="sub-section">
+                    <h4>📈 Reconciliation Summary</h4>
+                    <div class="stats-grid" id="recon-stats"></div>
+                </div>
+
+                <div class="sub-section">
+                    <h4>📋 Transaction Log</h4>
+                    <div class="transaction-log" id="recon-log"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: PCI-DSS Compliance Checker -->
+        <div class="panel" id="panel4">
+            <h2>🔒 PCI-DSS Compliance Checker</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Validate PCI-DSS compliance requirements for payment processing</p>
+
+            <div class="sub-section">
+                <h4>🛡️ Security Configuration</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Encryption Standard</label>
+                        <select id="pci-encryption">
+                            <option value="aes256">AES-256</option>
+                            <option value="aes128">AES-128</option>
+                            <option value="3des">3DES (Deprecated)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>TLS Version</label>
+                        <select id="pci-tls">
+                            <option value="tls13">TLS 1.3</option>
+                            <option value="tls12">TLS 1.2</option>
+                            <option value="tls11">TLS 1.1 (Deprecated)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tokenization</label>
+                        <select id="pci-tokenization">
+                            <option value="enabled">Enabled</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Access Control</label>
+                        <select id="pci-access">
+                            <option value="mfa">Multi-Factor Auth</option>
+                            <option value="password">Password Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Logging & Monitoring</label>
+                        <select id="pci-logging">
+                            <option value="enabled">Enabled</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Vulnerability Scanning</label>
+                        <select id="pci-scanning">
+                            <option value="quarterly">Quarterly</option>
+                            <option value="annual">Annual</option>
+                            <option value="none">None</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="checkPCICompliance()">🔍 Check Compliance</button>
+            </div>
+
+            <div id="pci-output" style="display: none;">
+                <div class="sub-section">
+                    <h4>📊 Compliance Score</h4>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="value" id="pci-score">0</div>
+                            <div class="label">Overall Score</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value" id="pci-passed">0</div>
+                            <div class="label">Tests Passed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value" id="pci-failed">0</div>
+                            <div class="label">Tests Failed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value" id="pci-level">N/A</div>
+                            <div class="label">PCI Level</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sub-section">
+                    <h4>✅ Compliance Requirements</h4>
+                    <div id="pci-requirements"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="philosophy">弘益人間 (Benefit All Humanity)</div>
+            <p>© 2025 SmileStory Inc. / WIA</p>
+            <div class="links">
+                <a href="https://wiastandards.com" target="_blank">WIA Standards</a>
+                <a href="https://github.com/WIA-Official" target="_blank">GitHub</a>
+                <a href="../index.html">Back to FIN-012</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function switchTab(index) {
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.panel').forEach((panel, i) => {
+                panel.classList.toggle('active', i === index);
+            });
+        }
+
+        // Tab 1: Payment Flow Simulator
+        function simulatePaymentFlow() {
+            const card = document.getElementById('flow-card').value;
+            const amount = document.getElementById('flow-amount').value;
+            const merchant = document.getElementById('flow-merchant').value;
+            const method = document.getElementById('flow-method').value;
+            const tds = document.getElementById('flow-3ds').value;
+
+            if (!card || !amount || !merchant) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const output = document.getElementById('flow-output');
+            output.style.display = 'block';
+
+            const steps = [
+                { title: 'Card Validation', desc: 'Luhn algorithm check, BIN lookup', time: '50ms' },
+                { title: '3D Secure Auth', desc: tds === 'enabled' ? 'Customer authenticated via SMS/App' : 'Skipped', time: tds === 'enabled' ? '2.5s' : '0ms' },
+                { title: 'Authorization Request', desc: 'ISO 8583 message to issuer via card network', time: '150ms' },
+                { title: 'Fraud Check', desc: 'Risk scoring, velocity checks, geo-validation', time: '200ms' },
+                { title: 'Issuer Authorization', desc: 'Funds available, auth code generated', time: '300ms' },
+                { title: 'Authorization Response', desc: 'Approved - Auth Code: ' + generateAuthCode(), time: '100ms' },
+                { title: 'Capture', desc: 'Transaction marked for settlement', time: '50ms' },
+                { title: 'Settlement', desc: 'Batch processing at end of day', time: 'T+1' }
+            ];
+
+            const stepsHtml = steps.map((step, i) => `
+                <div class="flow-step active">
+                    <div class="number">${i + 1}</div>
+                    <div class="content">
+                        <div class="title">${step.title}</div>
+                        <div class="desc">${step.desc}</div>
+                    </div>
+                    <div class="status">${step.time}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('flow-steps').innerHTML = stepsHtml;
+
+            const stats = [
+                { value: amount, label: 'Transaction Amount' },
+                { value: '99.2%', label: 'Success Rate' },
+                { value: '3.2s', label: 'Total Time' },
+                { value: tds === 'enabled' ? 'Yes' : 'No', label: '3DS Protected' }
+            ];
+
+            const statsHtml = stats.map(stat => `
+                <div class="stat-card">
+                    <div class="value">${stat.value}</div>
+                    <div class="label">${stat.label}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('flow-stats').innerHTML = statsHtml;
+        }
+
+        function resetPaymentFlow() {
+            document.getElementById('flow-output').style.display = 'none';
+            document.getElementById('flow-card').value = '';
+            document.getElementById('flow-amount').value = '';
+            document.getElementById('flow-merchant').value = '';
+        }
+
+        function generateAuthCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        // Tab 2: Card Processing Demo
+        function formatCardNumber(input) {
+            let value = input.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            input.value = formattedValue;
+        }
+
+        function processCard() {
+            const pan = document.getElementById('card-pan').value.replace(/\s/g, '');
+            const expiry = document.getElementById('card-expiry').value;
+            const cvv = document.getElementById('card-cvv').value;
+            const name = document.getElementById('card-name').value;
+
+            if (!pan || !expiry || !cvv || !name) {
+                alert('Please fill in all card details');
+                return;
+            }
+
+            const output = document.getElementById('card-output');
+            output.style.display = 'block';
+
+            // Update card visual
+            document.getElementById('visual-number').textContent = document.getElementById('card-pan').value || '•••• •••• •••• ••••';
+            document.getElementById('visual-name').textContent = name || 'CARD HOLDER';
+            document.getElementById('visual-expiry').textContent = expiry || 'MM/YY';
+
+            const cardType = detectCardType(pan);
+            const isValid = luhnCheck(pan);
+            const bin = pan.substring(0, 6);
+            const last4 = pan.substring(pan.length - 4);
+
+            const result = `Card Processing Result:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Card Network: ${cardType}
+BIN (Bank Identification): ${bin}
+Last 4 Digits: ${last4}
+Luhn Check: ${isValid ? '✅ VALID' : '❌ INVALID'}
+
+EMV Chip Data:
+  Application ID: A0000000031010
+  Application Label: ${cardType}
+  Terminal Capabilities: E0F8C8
+  TVR (Terminal Verification): 0000000000
+
+Card Validation:
+  ✅ PAN Length: Valid (${pan.length} digits)
+  ${isValid ? '✅' : '❌'} Luhn Algorithm: ${isValid ? 'Pass' : 'Fail'}
+  ✅ Expiry Date: Valid
+  ✅ CVV Format: Valid
+
+Tokenization:
+  Card Token: tok_${Math.random().toString(36).substring(2, 15)}
+  Token Expiry: 30 days
+  ✅ Original PAN securely stored
+
+Ready for Authorization: ${isValid ? '✅ YES' : '❌ NO'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+            document.getElementById('card-result').textContent = result;
+        }
+
+        function generateTestCard() {
+            const testCards = [
+                { pan: '4532 1234 5678 9010', name: 'JOHN DOE', expiry: '12/28', cvv: '123' },
+                { pan: '5425 2334 3010 9903', name: 'JANE SMITH', expiry: '06/27', cvv: '456' },
+                { pan: '3782 822463 10005', name: 'BOB JOHNSON', expiry: '09/26', cvv: '7890' }
+            ];
+            const card = testCards[Math.floor(Math.random() * testCards.length)];
+            document.getElementById('card-pan').value = card.pan;
+            document.getElementById('card-name').value = card.name;
+            document.getElementById('card-expiry').value = card.expiry;
+            document.getElementById('card-cvv').value = card.cvv;
+        }
+
+        function detectCardType(pan) {
+            if (pan.startsWith('4')) return 'Visa';
+            if (pan.startsWith('5')) return 'Mastercard';
+            if (pan.startsWith('3')) return 'American Express';
+            return 'Unknown';
+        }
+
+        function luhnCheck(pan) {
+            let sum = 0;
+            let isEven = false;
+            for (let i = pan.length - 1; i >= 0; i--) {
+                let digit = parseInt(pan[i]);
+                if (isEven) {
+                    digit *= 2;
+                    if (digit > 9) digit -= 9;
+                }
+                sum += digit;
+                isEven = !isEven;
+            }
+            return sum % 10 === 0;
+        }
+
+        // Tab 3: Settlement Calculator
+        function calculateSettlement() {
+            const amount = parseFloat(document.getElementById('settle-amount').value);
+            const cardType = document.getElementById('settle-card-type').value;
+            const mcc = document.getElementById('settle-mcc').value;
+            const txType = document.getElementById('settle-type').value;
+
+            if (!amount) {
+                alert('Please enter transaction amount');
+                return;
+            }
+
+            // Fee rates (example)
+            const interchangeRates = {
+                'visa-credit': 1.51,
+                'visa-debit': 0.80,
+                'mc-credit': 1.58,
+                'mc-debit': 0.85,
+                'amex': 2.50
+            };
+
+            const assessmentRate = 0.14; // Network assessment fee
+            const processorRate = 0.25; // Payment processor markup
+
+            const interchangeFee = (amount * (interchangeRates[cardType] / 100));
+            const assessmentFee = (amount * (assessmentRate / 100));
+            const processorFee = (amount * (processorRate / 100));
+            const totalFees = interchangeFee + assessmentFee + processorFee;
+            const netSettlement = amount - totalFees;
+
+            const output = document.getElementById('settlement-output');
+            output.style.display = 'block';
+
+            const breakdown = [
+                { value: '$' + amount.toFixed(2), label: 'Transaction Amount' },
+                { value: '$' + interchangeFee.toFixed(2), label: 'Interchange Fee' },
+                { value: '$' + assessmentFee.toFixed(2), label: 'Assessment Fee' },
+                { value: '$' + processorFee.toFixed(2), label: 'Processor Fee' },
+                { value: '$' + totalFees.toFixed(2), label: 'Total Fees' },
+                { value: '$' + netSettlement.toFixed(2), label: 'Net Settlement' }
+            ];
+
+            const breakdownHtml = breakdown.map(item => `
+                <div class="stat-card">
+                    <div class="value">${item.value}</div>
+                    <div class="label">${item.label}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('settlement-breakdown').innerHTML = breakdownHtml;
+
+            const details = `Settlement Calculation Details:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Transaction Details:
+  Amount: $${amount.toFixed(2)}
+  Card Type: ${cardType}
+  MCC: ${mcc}
+  Transaction Type: ${txType}
+
+Fee Breakdown:
+  Interchange Fee: $${interchangeFee.toFixed(2)} (${interchangeRates[cardType]}%)
+  Network Assessment: $${assessmentFee.toFixed(2)} (${assessmentRate}%)
+  Processor Markup: $${processorFee.toFixed(2)} (${processorRate}%)
+  ─────────────────────────────────
+  Total Fees: $${totalFees.toFixed(2)} (${((totalFees/amount)*100).toFixed(2)}%)
+
+Settlement:
+  Gross Amount: $${amount.toFixed(2)}
+  Less Fees: $${totalFees.toFixed(2)}
+  ─────────────────────────────────
+  Net Settlement: $${netSettlement.toFixed(2)}
+
+Settlement Timeline:
+  T+0: Transaction authorized
+  T+1: Batch settlement initiated
+  T+2: Funds deposited to merchant account
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+            document.getElementById('settlement-details').textContent = details;
+        }
+
+        // Tab 4: Reconciliation Tool
+        function loadSampleBatch() {
+            const sample = `transaction_id,amount,timestamp,status
+TXN001,150.00,2025-01-15T10:30:00Z,authorized
+TXN002,75.50,2025-01-15T11:45:00Z,captured
+TXN003,200.00,2025-01-15T13:20:00Z,settled
+TXN004,50.25,2025-01-15T14:10:00Z,authorized
+TXN005,125.75,2025-01-15T15:30:00Z,captured`;
+            document.getElementById('recon-batch').value = sample;
+            document.getElementById('recon-expected').value = '601.50';
+        }
+
+        function reconcileBatch() {
+            const batch = document.getElementById('recon-batch').value;
+            const expected = parseFloat(document.getElementById('recon-expected').value);
+
+            if (!batch || !expected) {
+                alert('Please provide batch data and expected total');
+                return;
+            }
+
+            const lines = batch.trim().split('\n').slice(1); // Skip header
+            let total = 0;
+            let count = 0;
+            const transactions = [];
+
+            lines.forEach(line => {
+                const [id, amount, timestamp, status] = line.split(',');
+                if (amount) {
+                    const amt = parseFloat(amount);
+                    total += amt;
+                    count++;
+                    transactions.push({ id, amount: amt, timestamp, status });
+                }
+            });
+
+            const variance = total - expected;
+            const isBalanced = Math.abs(variance) < 0.01;
+
+            const output = document.getElementById('recon-output');
+            output.style.display = 'block';
+
+            const stats = [
+                { value: count, label: 'Transactions' },
+                { value: '$' + total.toFixed(2), label: 'Actual Total' },
+                { value: '$' + expected.toFixed(2), label: 'Expected Total' },
+                { value: '$' + variance.toFixed(2), label: 'Variance' },
+                { value: isBalanced ? 'Balanced' : 'Unbalanced', label: 'Status' }
+            ];
+
+            const statsHtml = stats.map(stat => `
+                <div class="stat-card">
+                    <div class="value" style="color: ${stat.label === 'Status' ? (isBalanced ? 'var(--secondary)' : 'var(--danger)') : 'var(--primary)'}">${stat.value}</div>
+                    <div class="label">${stat.label}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('recon-stats').innerHTML = statsHtml;
+
+            const logHtml = transactions.map(tx => `
+                <div class="transaction-item">
+                    <div class="transaction-header">
+                        <span class="transaction-id">${tx.id}</span>
+                        <span class="transaction-amount">$${tx.amount.toFixed(2)}</span>
+                    </div>
+                    <div class="transaction-details">
+                        ${tx.timestamp} • Status: ${tx.status}
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('recon-log').innerHTML = logHtml;
+        }
+
+        // Tab 5: PCI-DSS Compliance Checker
+        function checkPCICompliance() {
+            const encryption = document.getElementById('pci-encryption').value;
+            const tls = document.getElementById('pci-tls').value;
+            const tokenization = document.getElementById('pci-tokenization').value;
+            const access = document.getElementById('pci-access').value;
+            const logging = document.getElementById('pci-logging').value;
+            const scanning = document.getElementById('pci-scanning').value;
+
+            const requirements = [
+                { id: 1, title: 'Install and maintain firewall configuration', check: true, critical: true },
+                { id: 2, title: 'Do not use vendor-supplied defaults', check: access === 'mfa', critical: true },
+                { id: 3, title: 'Protect stored cardholder data', check: encryption === 'aes256', critical: true },
+                { id: 4, title: 'Encrypt transmission of cardholder data', check: tls === 'tls13' || tls === 'tls12', critical: true },
+                { id: 5, title: 'Use and regularly update anti-virus', check: true, critical: false },
+                { id: 6, title: 'Develop and maintain secure systems', check: scanning === 'quarterly', critical: true },
+                { id: 7, title: 'Restrict access to cardholder data', check: access === 'mfa', critical: true },
+                { id: 8, title: 'Assign unique ID to each user', check: access === 'mfa', critical: true },
+                { id: 9, title: 'Restrict physical access to cardholder data', check: true, critical: false },
+                { id: 10, title: 'Track and monitor all access', check: logging === 'enabled', critical: true },
+                { id: 11, title: 'Regularly test security systems', check: scanning === 'quarterly', critical: true },
+                { id: 12, title: 'Maintain information security policy', check: true, critical: false }
+            ];
+
+            const passed = requirements.filter(r => r.check).length;
+            const failed = requirements.length - passed;
+            const score = Math.round((passed / requirements.length) * 100);
+
+            let level = 'N/A';
+            if (score >= 95) level = 'Level 1';
+            else if (score >= 80) level = 'Level 2';
+            else if (score >= 60) level = 'Level 3';
+            else level = 'Level 4';
+
+            const output = document.getElementById('pci-output');
+            output.style.display = 'block';
+
+            document.getElementById('pci-score').textContent = score + '%';
+            document.getElementById('pci-score').style.color = score >= 80 ? 'var(--secondary)' : 'var(--danger)';
+            document.getElementById('pci-passed').textContent = passed;
+            document.getElementById('pci-failed').textContent = failed;
+            document.getElementById('pci-level').textContent = level;
+
+            const reqHtml = requirements.map(req => `
+                <div class="compliance-item ${req.check ? 'pass' : 'fail'}">
+                    <div class="icon">${req.check ? '✅' : '❌'}</div>
+                    <div class="content">
+                        <div class="title">Requirement ${req.id}: ${req.title}</div>
+                        <div class="desc">${req.critical ? '⚠️ Critical Requirement' : 'Standard Requirement'}</div>
+                    </div>
+                    <div class="badge ${req.check ? 'pass' : 'fail'}">${req.check ? 'PASS' : 'FAIL'}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('pci-requirements').innerHTML = reqHtml;
+        }
+    </script>
+</body>
+</html>

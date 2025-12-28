@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제7장: 통합 및 배포 | WIA-TIME-001</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #06B6D4; --text: #f1f5f9; --text-dim: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 3rem; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 1rem; border-bottom: 3px solid var(--primary); padding-bottom: 1rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2rem 0 1rem 0; }
+        h3 { color: var(--text); font-size: 1.3rem; margin: 1.5rem 0 0.75rem 0; }
+        p { margin-bottom: 1rem; text-align: justify; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: var(--bg); }
+        th, td { padding: 1rem; text-align: left; border: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        .summary { background: var(--bg); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; }
+        .summary h3 { color: var(--primary); margin-top: 0; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin-bottom: 0.5rem; }
+        .nav-links { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .nav-links a { color: var(--primary); text-decoration: none; padding: 0.75rem 1.5rem; border: 1px solid var(--primary); border-radius: 6px; transition: all 0.3s; }
+        .nav-links a:hover { background: var(--primary); color: white; }
+        code { background: var(--bg); color: var(--primary); padding: 0.2rem 0.4rem; border-radius: 3px; font-family: 'Courier New', monospace; }
+        pre { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; overflow-x: auto; margin: 1.5rem 0; font-family: 'Courier New', monospace; font-size: 0.9rem; color: var(--text); }
+        .callout { background: rgba(6, 182, 212, 0.1); border-left: 4px solid var(--primary); padding: 1rem 1.5rem; margin: 1.5rem 0; }
+        .questions { background: var(--bg); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
+        .architecture-box { background: var(--bg); border: 2px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>제7장: 통합 및 배포</h1>
+
+        <p>WIA-TIME-001 시스템의 성공적인 구현은 신중한 아키텍처 설계, 체계적인 통합 프로세스, 견고한 배포 전략을 필요로 합니다. 이 장에서는 시간 변위 시스템을 기존 인프라에 통합하고, 다양한 환경에 배포하며, 지속적인 운영을 위한 모니터링 및 유지 관리 체계를 구축하는 방법을 상세히 다룹니다. 한국의 세계적인 IT 인프라와 데이터 센터 기술을 활용한 구현 사례도 함께 소개합니다.</p>
+
+        <p>WIA-TIME-001 4단계 명세는 시스템 통합을 위한 표준화된 접근 방식을 정의합니다. 이 단계는 이전 단계에서 정의된 데이터 형식, API, 프로토콜, 보안 요구 사항을 실제 운영 환경에서 구현하는 방법을 다룹니다. 弘益人間(홍익인간)의 정신에 따라, 이 표준은 기술의 이점이 전 인류에게 안전하고 공정하게 제공되도록 설계되었습니다.</p>
+
+        <h2>시스템 아키텍처</h2>
+
+        <p>WIA-TIME-001 호환 시스템은 마이크로서비스 아키텍처를 기반으로 설계됩니다. 각 서비스는 특정 기능을 담당하며, 잘 정의된 인터페이스를 통해 통신합니다. 이 접근 방식은 확장성, 유지 관리성, 장애 격리를 제공합니다.</p>
+
+        <div class="architecture-box">
+            <h3>핵심 서비스 구성</h3>
+            <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                    API 게이트웨이                            │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+    ┌─────────────────┼─────────────────┐
+    │                 │                 │
+    ▼                 ▼                 ▼
+┌───────────┐   ┌───────────┐   ┌───────────┐
+│ 계산 서비스│   │인과성 서비스│   │변위 서비스 │
+└─────┬─────┘   └─────┬─────┘   └─────┬─────┘
+      │               │               │
+      └───────────────┼───────────────┘
+                      │
+              ┌───────┴───────┐
+              │  이벤트 버스   │
+              └───────┬───────┘
+                      │
+    ┌─────────────────┼─────────────────┐
+    ▼                 ▼                 ▼
+┌───────────┐   ┌───────────┐   ┌───────────┐
+│ 감사 서비스│   │알림 서비스 │   │모니터링   │
+└───────────┘   └───────────┘   └───────────┘
+            </pre>
+        </div>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 7.1: 핵심 서비스 정의</caption>
+            <thead>
+                <tr>
+                    <th>서비스</th>
+                    <th>책임</th>
+                    <th>의존성</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>API 게이트웨이</td><td>인증, 라우팅, 속도 제한</td><td>인증 서비스</td></tr>
+                <tr><td>계산 서비스</td><td>변위 계산, 에너지 추정</td><td>없음</td></tr>
+                <tr><td>인과성 서비스</td><td>역설 검사, 타임라인 검증</td><td>계산 서비스</td></tr>
+                <tr><td>변위 서비스</td><td>변위 실행 조율</td><td>계산, 인과성 서비스</td></tr>
+                <tr><td>감사 서비스</td><td>불변 로깅</td><td>이벤트 버스</td></tr>
+                <tr><td>알림 서비스</td><td>경보 및 알림 발송</td><td>이벤트 버스</td></tr>
+                <tr><td>모니터링 서비스</td><td>시스템 상태 추적</td><td>모든 서비스</td></tr>
+            </tbody>
+        </table>
+
+        <h2>이벤트 버스 통합</h2>
+
+        <p>WIA-TIME-001 시스템은 이벤트 기반 아키텍처를 사용하여 서비스 간 느슨한 결합을 유지합니다. 이벤트 버스는 시스템의 모든 중요한 이벤트를 중앙에서 관리하며, 관심 있는 서비스에 이벤트를 배포합니다. 카카오와 네이버의 대규모 메시징 시스템에서 검증된 Apache Kafka 기반 구현을 권장합니다.</p>
+
+        <pre>이벤트 스키마 예:
+
+{
+  "eventId": "EVT-2025-001-ALPHA",
+  "eventType": "DISPLACEMENT_COMPLETED",
+  "timestamp": "2025-01-15T14:30:00Z",
+  "source": "displacement-service",
+  "correlationId": "TD-2025-001-ALPHA",
+  "payload": {
+    "operationId": "TD-2025-001-ALPHA",
+    "status": "SUCCESS",
+    "travelerStatus": "HEALTHY",
+    "timelineIntegrity": 0.9999
+  },
+  "metadata": {
+    "version": "1.0",
+    "priority": "HIGH",
+    "retryCount": 0
+  }
+}</pre>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 7.2: 표준 이벤트 유형</caption>
+            <thead>
+                <tr>
+                    <th>이벤트 유형</th>
+                    <th>발행 서비스</th>
+                    <th>구독자</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>CALCULATION_COMPLETED</td><td>계산 서비스</td><td>인과성, UI</td></tr>
+                <tr><td>CAUSALITY_APPROVED</td><td>인과성 서비스</td><td>변위, 알림</td></tr>
+                <tr><td>DISPLACEMENT_STARTED</td><td>변위 서비스</td><td>모니터링, 알림</td></tr>
+                <tr><td>DISPLACEMENT_COMPLETED</td><td>변위 서비스</td><td>감사, 알림, UI</td></tr>
+                <tr><td>EMERGENCY_TRIGGERED</td><td>모니터링</td><td>모든 서비스</td></tr>
+                <tr><td>TIMELINE_ANOMALY</td><td>인과성 서비스</td><td>알림, 비상 대응</td></tr>
+            </tbody>
+        </table>
+
+        <h2>환경별 배포 구성</h2>
+
+        <p>WIA-TIME-001 시스템은 개발, 테스트, 스테이징, 운영의 4가지 표준 환경을 정의합니다. 각 환경은 격리되어 있으며, 환경 간 코드 승격은 엄격한 프로세스를 따릅니다.</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 7.3: 환경별 구성</caption>
+            <thead>
+                <tr>
+                    <th>환경</th>
+                    <th>목적</th>
+                    <th>실제 변위</th>
+                    <th>데이터</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>개발</td><td>기능 개발</td><td>불가</td><td>모의 데이터</td></tr>
+                <tr><td>테스트</td><td>자동화 테스트</td><td>불가</td><td>테스트 데이터</td></tr>
+                <tr><td>스테이징</td><td>운영 전 검증</td><td>시뮬레이션만</td><td>익명화 데이터</td></tr>
+                <tr><td>운영</td><td>실제 작업</td><td>가능</td><td>실제 데이터</td></tr>
+            </tbody>
+        </table>
+
+        <h3>컨테이너화 및 오케스트레이션</h3>
+
+        <p>모든 WIA-TIME-001 서비스는 컨테이너화되어 Kubernetes에서 실행됩니다. 삼성SDS와 LG CNS의 클라우드 인프라 경험을 바탕으로 설계된 이 아키텍처는 높은 가용성과 자동 복구 기능을 제공합니다.</p>
+
+        <pre>Kubernetes 배포 예 (displacement-service):
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: displacement-service
+  namespace: wia-time-production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: displacement-service
+  template:
+    metadata:
+      labels:
+        app: displacement-service
+    spec:
+      containers:
+      - name: displacement-service
+        image: wia-time/displacement:v1.0.0
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2"
+          limits:
+            memory: "8Gi"
+            cpu: "4"
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: LOG_LEVEL
+          value: "INFO"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5</pre>
+
+        <h2>모니터링 및 관측성</h2>
+
+        <p>WIA-TIME-001 시스템은 포괄적인 모니터링과 관측성을 요구합니다. 메트릭, 로그, 추적의 세 가지 관측성 기둥이 통합되어 시스템의 전체적인 상태를 실시간으로 파악할 수 있습니다.</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 7.4: 핵심 모니터링 메트릭</caption>
+            <thead>
+                <tr>
+                    <th>메트릭</th>
+                    <th>설명</th>
+                    <th>임계값</th>
+                    <th>경보 레벨</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>api_latency_p99</td><td>API 99퍼센타일 지연</td><td>&gt; 1초</td><td>경고</td></tr>
+                <tr><td>calculation_error_rate</td><td>계산 오류율</td><td>&gt; 0.1%</td><td>위험</td></tr>
+                <tr><td>timeline_integrity</td><td>타임라인 무결성</td><td>&lt; 0.999</td><td>위험</td></tr>
+                <tr><td>energy_consumption</td><td>에너지 사용량</td><td>&gt; 90% 용량</td><td>경고</td></tr>
+                <tr><td>displacement_success_rate</td><td>변위 성공률</td><td>&lt; 99.9%</td><td>위험</td></tr>
+                <tr><td>queue_depth</td><td>이벤트 큐 깊이</td><td>&gt; 10000</td><td>경고</td></tr>
+            </tbody>
+        </table>
+
+        <h3>대시보드 구성</h3>
+
+        <p>운영 대시보드는 시스템 상태를 한눈에 파악할 수 있도록 구성됩니다. Grafana 기반 대시보드는 실시간 메트릭, 경보 상태, 진행 중인 작업을 시각화합니다.</p>
+
+        <div class="callout">
+            <strong>한국 데이터 센터 요구사항:</strong> WIA-TIME-001 운영 환경은 정보통신망법 및 개인정보보호법을 준수해야 합니다. 국내 데이터 센터는 KISA 보안 인증을 획득해야 하며, 전력 공급은 한국전력공사(KEPCO)의 특별 고신뢰 회선을 사용해야 합니다. 대전 정부통합전산센터와 같은 시설이 적합합니다.
+        </div>
+
+        <h2>고가용성 및 재해 복구</h2>
+
+        <p>시간 변위 시스템은 99.999% (Five Nines) 가용성을 목표로 합니다. 이를 위해 다중 가용 영역 배포, 자동 장애 조치, 정기적인 재해 복구 테스트가 필요합니다.</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 7.5: 가용성 요구사항</caption>
+            <thead>
+                <tr>
+                    <th>구성 요소</th>
+                    <th>RPO</th>
+                    <th>RTO</th>
+                    <th>복제 방식</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>API 게이트웨이</td><td>0</td><td>&lt; 30초</td><td>활성-활성</td></tr>
+                <tr><td>계산 서비스</td><td>0</td><td>&lt; 1분</td><td>활성-대기</td></tr>
+                <tr><td>인과성 서비스</td><td>0</td><td>&lt; 30초</td><td>활성-활성</td></tr>
+                <tr><td>감사 로그</td><td>0</td><td>&lt; 5분</td><td>동기 복제</td></tr>
+                <tr><td>데이터베이스</td><td>&lt; 1초</td><td>&lt; 5분</td><td>동기 복제</td></tr>
+            </tbody>
+        </table>
+
+        <h2>CI/CD 파이프라인</h2>
+
+        <p>WIA-TIME-001 시스템의 배포는 완전히 자동화된 CI/CD 파이프라인을 통해 이루어집니다. 그러나 운영 환경 배포는 항상 수동 승인을 필요로 합니다.</p>
+
+        <pre>배포 파이프라인 단계:
+
+1. 코드 커밋 → 자동 빌드
+2. 단위 테스트 (커버리지 80% 필수)
+3. 통합 테스트
+4. 보안 스캔 (SAST, DAST)
+5. 스테이징 배포
+6. 성능 테스트
+7. 승인 대기 (최소 2명 승인)
+8. 운영 배포 (청녹 배포)
+9. 연기 테스트
+10. 모니터링 및 롤백 대기</pre>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 7.6: 배포 승인 요구사항</caption>
+            <thead>
+                <tr>
+                    <th>변경 유형</th>
+                    <th>승인자</th>
+                    <th>최소 대기 시간</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>버그 수정</td><td>기술 리드 1명</td><td>1시간</td></tr>
+                <tr><td>기능 추가</td><td>기술 리드 + 운영 담당</td><td>24시간</td></tr>
+                <tr><td>보안 패치</td><td>보안 담당자</td><td>즉시 (긴급)</td></tr>
+                <tr><td>인프라 변경</td><td>인프라 팀 + 보안 팀</td><td>48시간</td></tr>
+                <tr><td>코어 알고리즘</td><td>수석 과학자 + CTO</td><td>1주</td></tr>
+            </tbody>
+        </table>
+
+        <h2>유지 관리 절차</h2>
+
+        <p>WIA-TIME-001 시스템의 정기적인 유지 관리는 시스템 안정성과 보안을 보장합니다. 유지 관리 작업은 사전에 계획되고 공지되어야 하며, 변위 작업이 진행 중인 동안에는 수행될 수 없습니다.</p>
+
+        <table>
+            <caption style="caption-side: top; color: var(--text-dim); padding: 0.5rem;">표 7.7: 정기 유지 관리 일정</caption>
+            <thead>
+                <tr>
+                    <th>작업</th>
+                    <th>주기</th>
+                    <th>다운타임</th>
+                    <th>담당</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>보안 패치</td><td>월간</td><td>0 (롤링)</td><td>보안 팀</td></tr>
+                <tr><td>백업 검증</td><td>주간</td><td>0</td><td>운영 팀</td></tr>
+                <tr><td>성능 튜닝</td><td>분기별</td><td>0</td><td>성능 팀</td></tr>
+                <tr><td>재해 복구 테스트</td><td>반년</td><td>계획된</td><td>전체 팀</td></tr>
+                <tr><td>보안 감사</td><td>연간</td><td>0</td><td>외부 감사</td></tr>
+            </tbody>
+        </table>
+
+        <div class="summary">
+            <h3>장 요약</h3>
+            <p><strong>핵심 내용:</strong></p>
+            <ol>
+                <li>WIA-TIME-001 시스템은 마이크로서비스 아키텍처를 기반으로 하며, 핵심 서비스(계산, 인과성, 변위, 감사 등)가 잘 정의된 인터페이스를 통해 통신합니다.</li>
+                <li>이벤트 버스는 서비스 간 느슨한 결합을 유지하며, 표준화된 이벤트 스키마를 통해 시스템 전체의 이벤트를 관리합니다.</li>
+                <li>4가지 표준 환경(개발, 테스트, 스테이징, 운영)이 정의되며, 실제 변위 작업은 운영 환경에서만 가능합니다.</li>
+                <li>Kubernetes 기반 컨테이너 오케스트레이션은 높은 가용성, 자동 복구, 수평적 확장을 제공합니다.</li>
+                <li>포괄적인 모니터링과 관측성(메트릭, 로그, 추적)은 시스템 상태를 실시간으로 파악하고 문제를 신속하게 대응할 수 있게 합니다.</li>
+                <li>CI/CD 파이프라인은 자동화되어 있지만 운영 배포는 다중 승인을 필요로 하며, 모든 변경은 철저한 테스트와 검증을 거칩니다.</li>
+            </ol>
+        </div>
+
+        <div class="questions">
+            <h3>복습 문제</h3>
+            <ol>
+                <li>마이크로서비스 아키텍처가 시간 변위 시스템에 적합한 이유를 설명하십시오. 모놀리식 아키텍처와 비교하여 어떤 장점이 있습니까?</li>
+                <li>이벤트 버스가 시스템 통합에서 수행하는 역할을 설명하십시오. 동기 통신 대신 이벤트 기반 통신을 사용하는 이유는 무엇입니까?</li>
+                <li>운영 환경에서만 실제 변위 작업이 가능한 이유를 분석하십시오. 스테이징 환경에서 시뮬레이션만 허용되는 이유는 무엇입니까?</li>
+                <li>RPO와 RTO 개념을 설명하고, 감사 로그에 RPO 0이 필요한 이유를 논하십시오.</li>
+                <li>코어 알고리즘 변경에 1주의 대기 시간이 필요한 이유를 설명하십시오. 이것이 시스템 안전에 어떻게 기여합니까?</li>
+                <li>Five Nines(99.999%) 가용성을 달성하기 위해 필요한 기술적 요소들을 나열하고 설명하십시오.</li>
+            </ol>
+        </div>
+
+        <div class="callout">
+            <h3>다음 장 미리보기</h3>
+            <p>제8장에서는 WIA-TIME-001의 미래 전망과 결론을 다룹니다. 시간 변위 기술의 발전 방향, 표준의 진화, 그리고 弘益人間(홍익인간) 정신에 기반한 기술의 윤리적 사용에 대해 논의합니다.</p>
+        </div>
+
+        <div class="nav-links">
+            <a href="chapter-06.html">← 이전 장</a>
+            <a href="chapter-08.html">다음 장 →</a>
+        </div>
+    </div>
+</body>
+</html>

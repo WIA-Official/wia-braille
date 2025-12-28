@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: Phase 3 Communication Protocol - WIA AAC Standard Ebook</title>
+</head>
+<body>
+
+<p><a href="index.html">[AAC] WIA AAC Standard Ebook</a> | Chapter 6 of 8</p>
+
+<hr>
+
+<h1>[AAC] Chapter 6: Phase 3 - Communication Protocol</h1>
+
+<blockquote>
+<p><strong>Hongik Ingan (弘益人間)</strong></p>
+<p>"Every connection matters."</p>
+<p>Phase 3 ensures reliable communication between sensors and software across all transport methods.</p>
+</blockquote>
+
+<hr>
+
+<h2>6.1 Overview of Phase 3</h2>
+
+<h3>6.1.1 Purpose</h3>
+
+<p>Phase 3 defines the Communication Protocol - specifications for how AAC sensors physically connect and transmit data to host systems. This layer ensures consistent, reliable communication regardless of the transport method used.</p>
+
+<h3>6.1.2 Supported Transports</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Transport</th>
+            <th>Use Case</th>
+            <th>Typical Sensors</th>
+            <th>Latency</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Bluetooth LE</strong></td>
+            <td>Wireless sensors</td>
+            <td>Switches, EMG, BCI headsets</td>
+            <td>10-50ms</td>
+        </tr>
+        <tr>
+            <td><strong>USB HID</strong></td>
+            <td>Wired sensors</td>
+            <td>Eye trackers, head mice</td>
+            <td>1-10ms</td>
+        </tr>
+        <tr>
+            <td><strong>WiFi/TCP</strong></td>
+            <td>Network sensors</td>
+            <td>Networked devices, cameras</td>
+            <td>5-100ms</td>
+        </tr>
+        <tr>
+            <td><strong>Serial</strong></td>
+            <td>Legacy sensors</td>
+            <td>Older AAC equipment</td>
+            <td>5-50ms</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>6.2 Bluetooth LE Protocol</h2>
+
+<h3>6.2.1 GATT Profile Overview</h3>
+
+<pre>
+WIA AAC Bluetooth LE GATT Profile:
+
+Service: WIA AAC Service
+UUID: 0000AAC0-0000-1000-8000-00805F9B34FB
+
+Characteristics:
+  +-- Signal Characteristic (Notify)
+  |   UUID: 0000AAC1-0000-1000-8000-00805F9B34FB
+  |   Properties: Notify
+  |   Description: Streams sensor signals
+  |
+  +-- Command Characteristic (Write)
+  |   UUID: 0000AAC2-0000-1000-8000-00805F9B34FB
+  |   Properties: Write, Write Without Response
+  |   Description: Receives commands from host
+  |
+  +-- Status Characteristic (Read, Notify)
+  |   UUID: 0000AAC3-0000-1000-8000-00805F9B34FB
+  |   Properties: Read, Notify
+  |   Description: Device status information
+  |
+  +-- Config Characteristic (Read, Write)
+      UUID: 0000AAC4-0000-1000-8000-00805F9B34FB
+      Properties: Read, Write
+      Description: Configuration parameters
+</pre>
+
+<h3>6.2.2 Signal Characteristic Format</h3>
+
+<pre>
+Signal Notification Packet Format:
+
+Byte 0: Packet Type
+  0x01 = Signal data
+  0x02 = Signal continuation
+  0x03 = Heartbeat
+  0x04 = Error
+
+Bytes 1-2: Sequence Number (uint16, little-endian)
+
+Byte 3: Sensor Type
+  0x01 = eye_tracker
+  0x02 = switch
+  0x03 = emg
+  0x04 = eeg_bci
+  0x05 = breath
+  0x06 = head_movement
+
+Byte 4: Payload Length
+
+Bytes 5-N: Payload (Signal Data)
+
+Example (Switch Press):
+[0x01, 0x2A, 0x00, 0x02, 0x04, 0x01, 0x01, 0x96, 0x00]
+ Type  Seq#        Switch Len  ID  State Duration(150ms)
+</pre>
+
+<h3>6.2.3 Command Characteristic Format</h3>
+
+<pre>
+Command Packet Format:
+
+Byte 0: Command Type
+  0x10 = Start streaming
+  0x11 = Stop streaming
+  0x20 = Calibrate
+  0x21 = Cancel calibration
+  0x30 = Get device info
+  0x40 = Set configuration
+  0x41 = Get configuration
+  0xF0 = Reset device
+
+Bytes 1-N: Command Parameters (if any)
+
+Example Commands:
+
+Start Streaming:
+[0x10]
+
+Start Calibration (5-point):
+[0x20, 0x05]
+
+Set Dwell Time (800ms):
+[0x40, 0x01, 0x20, 0x03]  // Config ID 1, Value 800
+</pre>
+
+<h3>6.2.4 Connection Procedure</h3>
+
+<pre>
+BLE Connection Flow:
+
+1. Discovery
+   - Scan for devices advertising WIA AAC Service UUID
+   - Filter by service data or manufacturer data
+
+2. Connection
+   - Connect to peripheral
+   - Discover services and characteristics
+   - Enable notifications on Signal characteristic
+
+3. Configuration
+   - Read device info from Status characteristic
+   - Load/apply configuration via Config characteristic
+
+4. Streaming
+   - Send Start Streaming command
+   - Process Signal notifications
+   - Handle reconnection on disconnect
+
+5. Shutdown
+   - Send Stop Streaming command
+   - Disconnect gracefully
+
+Connection Parameters (Recommended):
+  - Connection Interval: 7.5ms - 30ms
+  - Slave Latency: 0
+  - Supervision Timeout: 4000ms
+  - MTU: Request maximum (up to 517 bytes)
+</pre>
+
+<hr>
+
+<h2>6.3 USB HID Protocol</h2>
+
+<h3>6.3.1 HID Report Descriptor</h3>
+
+<pre>
+WIA AAC USB HID Report Descriptor:
+
+Usage Page (Vendor Defined)    0x06, 0x00, 0xFF
+Usage (AAC Device)             0x09, 0x01
+Collection (Application)       0xA1, 0x01
+
+  // Input Report (Sensor Data)
+  Report ID (1)                0x85, 0x01
+  Usage (Signal Data)          0x09, 0x20
+  Logical Minimum (0)          0x15, 0x00
+  Logical Maximum (255)        0x26, 0xFF, 0x00
+  Report Size (8)              0x75, 0x08
+  Report Count (63)            0x95, 0x3F
+  Input (Data, Variable)       0x81, 0x02
+
+  // Output Report (Commands)
+  Report ID (2)                0x85, 0x02
+  Usage (Command Data)         0x09, 0x21
+  Logical Minimum (0)          0x15, 0x00
+  Logical Maximum (255)        0x26, 0xFF, 0x00
+  Report Size (8)              0x75, 0x08
+  Report Count (63)            0x95, 0x3F
+  Output (Data, Variable)      0x91, 0x02
+
+  // Feature Report (Configuration)
+  Report ID (3)                0x85, 0x03
+  Usage (Config Data)          0x09, 0x22
+  Logical Minimum (0)          0x15, 0x00
+  Logical Maximum (255)        0x26, 0xFF, 0x00
+  Report Size (8)              0x75, 0x08
+  Report Count (63)            0x95, 0x3F
+  Feature (Data, Variable)     0xB1, 0x02
+
+End Collection                 0xC0
+</pre>
+
+<h3>6.3.2 Input Report Format</h3>
+
+<pre>
+USB HID Input Report (64 bytes):
+
+Byte 0: Report ID (0x01)
+
+Byte 1: Signal Type
+  Same as BLE sensor type codes
+
+Byte 2: Flags
+  Bit 0: Valid data
+  Bit 1: Continuation packet
+  Bit 2: Calibration data
+  Bit 3-7: Reserved
+
+Bytes 3-4: Timestamp offset (ms from last full timestamp)
+
+Bytes 5-6: Data length
+
+Bytes 7-63: Signal data (JSON or binary)
+
+For larger signals, multiple reports with continuation flag.
+</pre>
+
+<h3>6.3.3 Feature Report Configuration</h3>
+
+<pre>
+Feature Report Structure:
+
+Byte 0: Report ID (0x03)
+
+Byte 1: Operation
+  0x01 = Read configuration
+  0x02 = Write configuration
+  0x03 = Read device info
+  0x04 = Read calibration
+  0x05 = Write calibration
+
+Byte 2: Config Category
+  0x01 = Sensor settings
+  0x02 = Communication settings
+  0x03 = User preferences
+  0x04 = System settings
+
+Bytes 3-63: Configuration data
+
+Example - Set Eye Tracker Sensitivity:
+[0x03, 0x02, 0x01, 0x01, 0x50]  // Write, Sensor, ID 1, Value 80%
+</pre>
+
+<hr>
+
+<h2>6.4 WiFi/TCP Protocol</h2>
+
+<h3>6.4.1 WebSocket Connection</h3>
+
+<pre>
+WebSocket Endpoint:
+
+URL: ws://[device-ip]:8080/wia-aac
+Protocol: wia-aac-v1
+
+Connection Headers:
+  Sec-WebSocket-Protocol: wia-aac-v1
+  X-WIA-Client-ID: [client-uuid]
+  X-WIA-Client-Version: [sdk-version]
+
+Message Format: JSON
+
+Example Connection (JavaScript):
+const ws = new WebSocket('ws://192.168.1.100:8080/wia-aac', 'wia-aac-v1');
+
+ws.onopen = () =&gt; {
+    // Send identification
+    ws.send(JSON.stringify({
+        type: 'identify',
+        clientId: 'client-uuid-here',
+        version: '1.0.0'
+    }));
+};
+
+ws.onmessage = (event) =&gt; {
+    const message = JSON.parse(event.data);
+    handleMessage(message);
+};
+</pre>
+
+<h3>6.4.2 Message Types</h3>
+
+<pre>
+WebSocket Message Types:
+
+1. Signal Message (Device to Host)
+{
+    "type": "signal",
+    "timestamp": 1702468800000,
+    "sequence": 12345,
+    "signal": {
+        // WIA AAC Signal format (Phase 1)
+    }
+}
+
+2. Command Message (Host to Device)
+{
+    "type": "command",
+    "command": "start_streaming",
+    "params": {
+        "sensorTypes": ["eye_tracker"],
+        "sampleRate": 60
+    },
+    "requestId": "req-uuid-001"
+}
+
+3. Response Message (Device to Host)
+{
+    "type": "response",
+    "requestId": "req-uuid-001",
+    "success": true,
+    "data": { }
+}
+
+4. Error Message
+{
+    "type": "error",
+    "code": "E001",
+    "message": "Connection timeout",
+    "requestId": "req-uuid-001"
+}
+
+5. Status Message
+{
+    "type": "status",
+    "device": {
+        "connected": true,
+        "battery": 85,
+        "signalQuality": 0.92
+    }
+}
+</pre>
+
+<h3>6.4.3 REST API Endpoints</h3>
+
+<pre>
+REST API (for configuration, not real-time data):
+
+Base URL: http://[device-ip]:8080/api/v1
+
+GET /device
+  Returns device information
+
+GET /status
+  Returns current device status
+
+GET /config
+  Returns current configuration
+
+PUT /config
+  Updates configuration
+  Body: { "dwellTime": 800, ... }
+
+POST /calibrate
+  Starts calibration process
+  Body: { "points": 9 }
+
+GET /calibration
+  Returns calibration data
+
+POST /calibration
+  Uploads calibration data
+
+POST /stream/start
+  Starts signal streaming (WebSocket required)
+
+POST /stream/stop
+  Stops signal streaming
+</pre>
+
+<hr>
+
+<h2>6.5 Serial Protocol</h2>
+
+<h3>6.5.1 Connection Parameters</h3>
+
+<pre>
+Serial Port Configuration:
+
+Baud Rate: 115200 (default), configurable 9600-921600
+Data Bits: 8
+Parity: None
+Stop Bits: 1
+Flow Control: None (default), RTS/CTS optional
+
+Connection Detection:
+  - Send: "WIA-AAC-PING\r\n"
+  - Expect: "WIA-AAC-PONG [device-id]\r\n"
+  - Timeout: 1000ms
+</pre>
+
+<h3>6.5.2 Packet Format</h3>
+
+<pre>
+Serial Packet Structure:
+
++--------+--------+--------+--------+--------+--------+
+| Header | Length | Type   | Seq    | Data   | CRC16  |
+| (2)    | (2)    | (1)    | (2)    | (N)    | (2)    |
++--------+--------+--------+--------+--------+--------+
+
+Header: 0xAA 0x55 (magic bytes)
+Length: Total packet length (little-endian)
+Type:   Packet type code
+Seq:    Sequence number (little-endian)
+Data:   Payload bytes
+CRC16:  CRC-16-CCITT checksum
+
+Packet Types:
+  0x01 = Signal data
+  0x02 = Command
+  0x03 = Response
+  0x04 = Status
+  0x05 = Error
+  0x06 = Heartbeat
+  0x0F = Reset
+
+Example Signal Packet (hex):
+AA 55 0F 00 01 2A 00 [signal data bytes] [CRC16]
+</pre>
+
+<h3>6.5.3 Flow Control</h3>
+
+<pre>
+Software Flow Control:
+
+XON/XOFF:
+  - XOFF (0x13): Pause transmission
+  - XON (0x11): Resume transmission
+
+Packet Acknowledgment:
+  - ACK (0x06): Packet received OK
+  - NAK (0x15): Packet error, retransmit
+
+Retransmission:
+  - Max retries: 3
+  - Retry timeout: 100ms
+  - After max retries: Report error
+
+Heartbeat:
+  - Interval: 1000ms
+  - Timeout: 5000ms (connection lost)
+</pre>
+
+<hr>
+
+<h2>6.6 Protocol Selection Guidelines</h2>
+
+<h3>6.6.1 Selection Matrix</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Factor</th>
+            <th>BLE</th>
+            <th>USB</th>
+            <th>WiFi</th>
+            <th>Serial</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Latency</td>
+            <td>Medium</td>
+            <td>Best</td>
+            <td>Variable</td>
+            <td>Good</td>
+        </tr>
+        <tr>
+            <td>Throughput</td>
+            <td>Low</td>
+            <td>High</td>
+            <td>High</td>
+            <td>Medium</td>
+        </tr>
+        <tr>
+            <td>Power</td>
+            <td>Best</td>
+            <td>N/A</td>
+            <td>Poor</td>
+            <td>Good</td>
+        </tr>
+        <tr>
+            <td>Range</td>
+            <td>10m</td>
+            <td>Cable</td>
+            <td>Network</td>
+            <td>Cable</td>
+        </tr>
+        <tr>
+            <td>Complexity</td>
+            <td>Medium</td>
+            <td>Low</td>
+            <td>High</td>
+            <td>Low</td>
+        </tr>
+        <tr>
+            <td>Platform Support</td>
+            <td>Good</td>
+            <td>Best</td>
+            <td>Best</td>
+            <td>Good</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>6.6.2 Recommendations by Sensor</h3>
+
+<pre>
+Recommended Protocols by Sensor Type:
+
+Eye Tracker:
+  Primary: USB HID (lowest latency)
+  Alternative: WiFi/TCP (remote setup)
+
+Switch:
+  Primary: Bluetooth LE (mobility)
+  Alternative: USB HID (reliability)
+
+EMG:
+  Primary: Bluetooth LE (wearable)
+  Alternative: USB HID (stationary)
+
+BCI/EEG:
+  Primary: USB HID (data throughput)
+  Alternative: Bluetooth LE (consumer devices)
+
+Breath Sensor:
+  Primary: Bluetooth LE (mobility)
+  Alternative: USB HID (medical grade)
+
+Head Movement:
+  Primary: USB HID (latency critical)
+  Alternative: Bluetooth LE (wireless mounting)
+</pre>
+
+<hr>
+
+<h2>6.7 Security Considerations</h2>
+
+<h3>6.7.1 Transport Security</h3>
+
+<pre>
+Security by Transport:
+
+Bluetooth LE:
+  - Use Secure Connections (LE Secure Connections)
+  - Enable bonding for persistent pairing
+  - Use MITM protection when possible
+  - Randomize advertising address
+
+USB:
+  - Inherently secure (physical connection)
+  - Validate device descriptors
+  - Check for device tampering
+
+WiFi/TCP:
+  - Use TLS 1.3 (wss:// for WebSocket)
+  - Certificate pinning recommended
+  - Token-based authentication
+  - Encrypt REST API calls (HTTPS)
+
+Serial:
+  - Physical security only
+  - Not recommended for sensitive data
+  - Use in controlled environments
+</pre>
+
+<h3>6.7.2 Data Protection</h3>
+
+<pre>
+Signal Data Protection:
+
+1. Encryption at Rest
+   - Calibration data encrypted
+   - User profiles encrypted
+   - Use AES-256 for storage
+
+2. Encryption in Transit
+   - TLS for WiFi
+   - BLE encryption (AES-CCM)
+   - USB: OS-level security
+
+3. Privacy Considerations
+   - Eye tracking data is biometric
+   - BCI data is highly sensitive
+   - Minimize data retention
+   - User consent required
+
+4. Access Control
+   - Device pairing authorization
+   - Profile authentication
+   - Session tokens
+</pre>
+
+<hr>
+
+<h2>6.8 Implementation Checklist</h2>
+
+<h3>6.8.1 Device Manufacturer Checklist</h3>
+
+<pre>
+[  ] Phase 3 Compliance Checklist
+
+Transport Implementation:
+[ ] Implement at least one transport
+[ ] Follow packet format specification
+[ ] Handle all command types
+[ ] Implement proper error responses
+
+Connection Handling:
+[ ] Advertise/enumerate correctly
+[ ] Handle connection/disconnection gracefully
+[ ] Implement reconnection support
+[ ] Maintain connection state
+
+Signal Streaming:
+[ ] Stream signals at specified rate
+[ ] Include sequence numbers
+[ ] Handle backpressure
+[ ] Implement heartbeat
+
+Configuration:
+[ ] Expose device information
+[ ] Allow configuration read/write
+[ ] Persist configuration
+[ ] Support calibration storage
+
+Security:
+[ ] Implement transport security
+[ ] Protect sensitive data
+[ ] Validate commands
+[ ] Handle authentication
+</pre>
+
+<hr>
+
+<h2>6.9 Chapter Summary</h2>
+
+<p>[OK] <strong>Key Takeaways:</strong></p>
+
+<ol>
+    <li><strong>Four Transports:</strong> Bluetooth LE, USB HID, WiFi/TCP, Serial</li>
+    <li><strong>BLE GATT:</strong> Custom service with signal, command, status, config characteristics</li>
+    <li><strong>USB HID:</strong> Vendor-defined usage page with input/output/feature reports</li>
+    <li><strong>WiFi/TCP:</strong> WebSocket for streaming, REST for configuration</li>
+    <li><strong>Serial:</strong> Simple packet format for legacy support</li>
+    <li><strong>Security:</strong> Transport-appropriate encryption and authentication</li>
+</ol>
+
+<hr>
+
+<h2>6.10 Review Questions</h2>
+
+<ol>
+    <li>What are the four transport types supported by WIA AAC?</li>
+    <li>Describe the four characteristics in the BLE GATT profile.</li>
+    <li>What report types are defined in the USB HID descriptor?</li>
+    <li>How does the WiFi protocol separate real-time data from configuration?</li>
+    <li>What is the packet structure for serial communication?</li>
+    <li>Why is eye tracking data considered biometric and sensitive?</li>
+</ol>
+
+<hr>
+
+<p><strong>Chapter 6 Complete</strong> | Approximate pages: 14</p>
+
+<p><a href="chapter-05.html">Previous: Chapter 5</a> | <a href="chapter-07.html">Next: Chapter 7 - Phase 4: Ecosystem Integration</a></p>
+
+<hr>
+
+<p><strong>WIA - World Certification Industry Association</strong></p>
+<p>Hongik Ingan - Benefit All Humanity</p>
+<p><a href="https://wia.live">https://wia.live</a></p>
+
+</body>
+</html>

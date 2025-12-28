@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Error Propagation | WIA-CORE-010</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: rgba(30, 41, 59, 0.4); padding: 3rem; border-radius: 15px; border: 2px solid #6B7280; }
+        .chapter-header { border-bottom: 3px solid #6B7280; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #6B7280; font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #6B7280; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; color: #6B7280; margin: 2.5rem 0 1.5rem 0; border-left: 4px solid #6B7280; padding-left: 1rem; }
+        h3 { font-size: 1.5rem; color: #94a3b8; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; font-size: 1.1rem; }
+        .code-example { background: #0f172a; border: 2px solid #475569; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto; }
+        .code-example pre { color: #94a3b8; font-family: 'Courier New', monospace; font-size: 0.95rem; line-height: 1.6; }
+        ul, ol { margin: 1.5rem 0 1.5rem 2rem; color: #cbd5e1; }
+        li { margin: 0.75rem 0; line-height: 1.6; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #475569; }
+        .nav-button { padding: 1rem 2rem; background: linear-gradient(135deg, #6B7280 0%, #4b5563 100%); border: none; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: all 0.3s; }
+        .nav-button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(107, 114, 128, 0.4); }
+        strong { color: #6B7280; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 5</div>
+            <h1>Error Propagation in Distributed Systems</h1>
+        </div>
+
+        <h2>5.1 The Challenge of Error Propagation</h2>
+
+        <p>In distributed systems, errors don't stay local - they propagate across service boundaries, through message queues, over HTTP APIs, and between different programming languages. Without standardized error handling, critical context is lost at each hop.</p>
+
+        <p>Consider a typical request flow: Frontend → API Gateway → Auth Service → Payment Service → Database. An error in the database needs to propagate all the way back to the frontend with complete context, through multiple services written in different languages.</p>
+
+        <h2>5.2 Correlation IDs and Distributed Tracing</h2>
+
+        <p>Every WIA error includes a correlation ID that links related errors across the entire request chain:</p>
+
+        <div class="code-example">
+            <pre>
+// Service A (JavaScript)
+const correlationId = generateUUID();
+
+try {
+  await callServiceB({ data, correlationId });
+} catch (error) {
+  throw new WIAError({
+    code: 'WIA-API-INTERNAL-001',
+    message: 'Service B call failed',
+    severity: 'ERROR',
+    recovery: 'RETRY_WITH_BACKOFF',
+    correlationId,  // Preserve correlation ID
+    context: {
+      service: 'ServiceA',
+      operation: 'processOrder',
+      causedBy: error  // Nest original error
+    }
+  });
+}
+
+// Service B (Python)
+def process_request(data, correlation_id):
+    try:
+        db.execute(query)
+    except Exception as e:
+        raise WIAError(
+            code="WIA-DB-TIMEOUT-015",
+            message="Database timeout",
+            severity="ERROR",
+            recovery="RETRY_WITH_BACKOFF",
+            correlation_id=correlation_id,  // Same ID
+            context={
+                "service": "ServiceB",
+                "query": query[:100]
+            }
+        )
+
+// All errors share the same correlation ID for full trace
+            </pre>
+        </div>
+
+        <h2>5.3 Error Context Preservation</h2>
+
+        <p>As errors propagate, context must be preserved and enriched at each layer:</p>
+
+        <div class="code-example">
+            <pre>
+{
+  "code": "WIA-NET-TIMEOUT-015",
+  "message": "Network request timeout",
+  "severity": "ERROR",
+  "recovery": "RETRY_WITH_BACKOFF",
+  "timestamp": "2025-12-27T10:30:45.123Z",
+  "correlationId": "trace-abc123",
+  "stackTrace": "...",
+  "context": {
+    "service": "api-gateway",
+    "operation": "checkout",
+    "userId": "user_123",
+    "orderId": "order_456"
+  },
+  "propagationPath": [
+    {
+      "service": "frontend",
+      "timestamp": "2025-12-27T10:30:40.000Z",
+      "operation": "submitOrder"
+    },
+    {
+      "service": "api-gateway",
+      "timestamp": "2025-12-27T10:30:41.000Z",
+      "operation": "routeRequest"
+    },
+    {
+      "service": "payment-service",
+      "timestamp": "2025-12-27T10:30:43.000Z",
+      "operation": "processPayment"
+    }
+  ],
+  "causedBy": {
+    // Nested original error from payment service
+    "code": "WIA-API-TIMEOUT-015",
+    "message": "Payment provider timeout",
+    "service": "payment-service"
+  }
+}
+            </pre>
+        </div>
+
+        <h2>5.4 Cross-Language Error Handling</h2>
+
+        <p>WIA-CORE-010 enables seamless error propagation across different programming languages:</p>
+
+        <div class="code-example">
+            <pre>
+// Frontend (TypeScript) → API (Go) → Service (Python) → Database
+
+// TypeScript Frontend
+try {
+  const result = await api.post('/orders', orderData);
+} catch (error) {
+  if (error.code === 'WIA-DB-TIMEOUT-015') {
+    // Show user-friendly message
+    toast.error('Order processing delayed. Please wait...');
+    // Automatic retry from recovery strategy
+    setTimeout(() => retry(), 2000);
+  }
+}
+
+// Go API Gateway
+func handleOrder(w http.ResponseWriter, r *http.Request) {
+    result, err := paymentService.Process(orderData)
+    if err != nil {
+        if wiaErr, ok := err.(*wia.Error); ok {
+            // Preserve WIA error across language boundary
+            http.Error(w, wiaErr.ToJSON(), wiaErr.HTTPStatus())
+            return
+        }
+    }
+}
+
+// Python Payment Service
+def process_payment(order_data):
+    try:
+        db.execute("INSERT INTO payments ...")
+    except TimeoutError:
+        raise WIAError(
+            code="WIA-DB-TIMEOUT-015",
+            message="Payment database timeout",
+            severity="ERROR",
+            recovery="RETRY_WITH_BACKOFF"
+        )
+
+// Same error code flows seamlessly through all three languages
+            </pre>
+        </div>
+
+        <h2>5.5 HTTP Error Mapping</h2>
+
+        <p>WIA errors map to HTTP status codes for REST APIs:</p>
+
+        <div class="code-example">
+            <pre>
+WIA Error Code                 → HTTP Status
+WIA-AUTH-INVALID-*            → 401 Unauthorized
+WIA-AUTH-PERMISSION-*         → 403 Forbidden
+WIA-*-NOTFOUND-*              → 404 Not Found
+WIA-VALIDATE-INVALID-*        → 400 Bad Request
+WIA-*-CONFLICT-*              → 409 Conflict
+WIA-API-RATE_LIMIT-*          → 429 Too Many Requests
+WIA-*-TIMEOUT-*               → 504 Gateway Timeout
+WIA-*-INTERNAL-*              → 500 Internal Server Error
+WIA-*-*                       → 503 Service Unavailable (if CRITICAL)
+
+// Implementation
+function toHTTPStatus(wiaError) {
+  const codeMap = {
+    'WIA-AUTH-INVALID': 401,
+    'WIA-AUTH-PERMISSION': 403,
+    'WIA-NOTFOUND': 404,
+    'WIA-VALIDATE-INVALID': 400,
+    'WIA-CONFLICT': 409,
+    'WIA-RATE_LIMIT': 429,
+    'WIA-TIMEOUT': 504
+  };
+
+  for (const [pattern, status] of Object.entries(codeMap)) {
+    if (wiaError.code.includes(pattern)) {
+      return status;
+    }
+  }
+
+  return wiaError.severity === 'CRITICAL' ? 503 : 500;
+}
+            </pre>
+        </div>
+
+        <h2>5.6 Message Queue Error Handling</h2>
+
+        <p>Errors in async message processing require special handling:</p>
+
+        <div class="code-example">
+            <pre>
+class MessageProcessor {
+  async process(message) {
+    try {
+      await this.handleMessage(message);
+      await this.queue.ack(message);
+    } catch (error) {
+      const wiaError = this.toWIAError(error, message);
+
+      // Recovery strategy from error
+      switch (wiaError.recovery) {
+        case 'RETRY_WITH_BACKOFF':
+          // Re-queue with delay
+          await this.queue.nack(message, {
+            delay: this.calculateBackoff(message.retryCount),
+            maxRetries: 5
+          });
+          break;
+
+        case 'FAIL_FAST':
+          // Move to dead letter queue
+          await this.deadLetterQueue.send(message, wiaError);
+          await this.queue.ack(message);
+          break;
+
+        case 'MANUAL':
+          // Alert ops team, keep in queue
+          await this.alerting.notify(wiaError);
+          await this.queue.nack(message, { delay: 300000 }); // 5 min
+          break;
+
+        default:
+          // Unknown recovery, move to DLQ
+          await this.deadLetterQueue.send(message, wiaError);
+          await this.queue.ack(message);
+      }
+
+      // Log with full context
+      logger.error('Message processing failed', {
+        error: wiaError,
+        messageId: message.id,
+        retryCount: message.retryCount
+      });
+    }
+  }
+}
+            </pre>
+        </div>
+
+        <h2>5.7 Error Aggregation and Analysis</h2>
+
+        <p>Centralized error tracking becomes powerful with standardized error codes:</p>
+
+        <div class="code-example">
+            <pre>
+// Error Aggregation Pipeline
+class ErrorAggregator {
+  async track(error) {
+    // Store in time-series database
+    await this.influx.write({
+      measurement: 'errors',
+      tags: {
+        code: error.code,
+        domain: this.extractDomain(error.code),
+        category: this.extractCategory(error.code),
+        severity: error.severity,
+        service: error.context.service,
+        recovery: error.recovery
+      },
+      fields: {
+        message: error.message,
+        correlationId: error.correlationId,
+        count: 1
+      },
+      timestamp: error.timestamp
+    });
+
+    // Update real-time metrics
+    this.prometheus.increment('errors_total', {
+      code: error.code,
+      severity: error.severity
+    });
+
+    // Check for patterns
+    await this.detectAnomalies(error);
+  }
+
+  async detectAnomalies(error) {
+    // Get error rate for this code in last 5 minutes
+    const recentCount = await this.getRecentCount(error.code, '5m');
+
+    // Get baseline for this code
+    const baseline = await this.getBaseline(error.code);
+
+    // Alert if 10x baseline
+    if (recentCount > baseline * 10) {
+      await this.alerting.send({
+        title: `Error spike detected: ${error.code}`,
+        severity: 'WARNING',
+        current: recentCount,
+        baseline,
+        errors: await this.getRecentErrors(error.code, '5m')
+      });
+    }
+  }
+}
+
+// Query errors by pattern
+SELECT COUNT(*) FROM errors
+WHERE code LIKE 'WIA-AUTH-%'
+  AND severity = 'ERROR'
+  AND time > now() - 1h
+GROUP BY service
+
+// All services use same error codes - single query!
+            </pre>
+        </div>
+
+        <h2>5.8 Error Transformation at Boundaries</h2>
+
+        <p>Transform internal errors to user-friendly messages at system boundaries:</p>
+
+        <div class="code-example">
+            <pre>
+const errorMessages = {
+  'WIA-AUTH-INVALID-001': {
+    user: 'Invalid username or password. Please try again.',
+    internal: 'Authentication failed: credential mismatch',
+    httpStatus: 401
+  },
+  'WIA-DB-TIMEOUT-015': {
+    user: 'Service temporarily unavailable. Please try again in a moment.',
+    internal: 'Database query timeout after 30s',
+    httpStatus: 504
+  },
+  'WIA-API-RATE_LIMIT-007': {
+    user: 'Too many requests. Please wait a moment before trying again.',
+    internal: 'Rate limit exceeded: 100 req/min',
+    httpStatus: 429
+  }
+};
+
+class ErrorTransformer {
+  toUserMessage(wiaError) {
+    const mapping = errorMessages[wiaError.code];
+    if (!mapping) {
+      return 'An error occurred. Please contact support.';
+    }
+    return mapping.user;
+  }
+
+  toAPIResponse(wiaError, includeInternals = false) {
+    const mapping = errorMessages[wiaError.code];
+
+    return {
+      error: {
+        code: wiaError.code,
+        message: includeInternals ? mapping.internal : mapping.user,
+        severity: wiaError.severity,
+        correlationId: wiaError.correlationId,
+        // Include recovery hint for API clients
+        recovery: wiaError.recovery,
+        // Only include context in dev/staging
+        ...(includeInternals && { context: wiaError.context })
+      }
+    };
+  }
+}
+            </pre>
+        </div>
+
+        <h2>5.9 Propagation Best Practices</h2>
+
+        <ol>
+            <li><strong>Always Include Correlation ID:</strong> Generate at entry point, propagate everywhere</li>
+            <li><strong>Preserve Original Error:</strong> Wrap, don't replace. Keep causedBy chain</li>
+            <li><strong>Enrich at Each Layer:</strong> Add service name, operation, local context</li>
+            <li><strong>Log Before Propagating:</strong> Each service logs errors before re-throwing</li>
+            <li><strong>Transform at Boundaries:</strong> Internal details → user messages at API edge</li>
+            <li><strong>Use Structured Logging:</strong> JSON format for machine parsing</li>
+            <li><strong>Implement Timeouts:</strong> Don't let errors propagate indefinitely</li>
+            <li><strong>Monitor Propagation Depth:</strong> Alert on excessively deep error chains</li>
+        </ol>
+
+        <div class="nav-buttons">
+            <a href="04-recovery-strategies.html" class="nav-button">← Chapter 4</a>
+            <a href="06-multi-language-support.html" class="nav-button">Chapter 6: Languages →</a>
+        </div>
+    </div>
+</body>
+</html>

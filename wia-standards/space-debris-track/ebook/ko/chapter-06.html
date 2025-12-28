@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: 궤도 결정 및 예측 - WIA-SPACE-026</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; background: #1a1a2e; color: #eee; line-height: 1.8; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        header { text-align: center; margin-bottom: 50px; padding-bottom: 30px; border-bottom: 3px solid #e94560; }
+        .standard-id { color: #e94560; font-size: 1.2em; font-weight: bold; margin-bottom: 10px; }
+        h1 { font-size: 2.5em; color: #fff; margin: 20px 0; }
+        .chapter-info { color: #aaa; font-size: 1.1em; }
+        .content { background: rgba(255, 255, 255, 0.05); padding: 40px; border-radius: 10px; border-left: 4px solid #e94560; margin: 30px 0; }
+        h2 { color: #e94560; margin: 30px 0 20px 0; font-size: 1.8em; }
+        h3 { color: #ff6b9d; margin: 25px 0 15px 0; font-size: 1.4em; }
+        p { margin: 15px 0; text-align: justify; }
+        ul, ol { margin: 15px 0 15px 30px; }
+        li { margin: 10px 0; }
+        .highlight { background: rgba(233, 69, 96, 0.2); padding: 20px; border-left: 3px solid #e94560; border-radius: 5px; margin: 20px 0; }
+        .note { background: rgba(100, 200, 255, 0.1); padding: 15px; border-left: 3px solid #64c8ff; border-radius: 5px; margin: 20px 0; }
+        .code-box { background: rgba(50, 50, 50, 0.5); padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; margin: 20px 0; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(255, 255, 255, 0.03); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(233, 69, 96, 0.3); }
+        th { background: rgba(233, 69, 96, 0.2); color: #e94560; font-weight: bold; }
+        .navigation { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 30px; border-top: 2px solid #e94560; }
+        .nav-button { padding: 12px 24px; background: rgba(233, 69, 96, 0.2); border: 2px solid #e94560; border-radius: 5px; text-decoration: none; color: #eee; transition: all 0.3s ease; }
+        .nav-button:hover { background: rgba(233, 69, 96, 0.4); transform: translateY(-2px); }
+        footer { text-align: center; margin-top: 60px; padding-top: 30px; border-top: 2px solid #e94560; color: #888; }
+        @media (max-width: 768px) { h1 { font-size: 2em; } .content { padding: 20px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="standard-id">WIA-SPACE-026</div>
+            <h1>Chapter 6</h1>
+            <div class="chapter-info">궤도 결정 및 예측 (Orbit Determination and Prediction)</div>
+        </header>
+
+        <div class="content">
+            <h2>6.1 Two-Line Element (TLE) 세트</h2>
+
+            <p>TLE는 우주 물체의 궤도를 간결하게 표현하는 표준 포맷입니다. 1960년대부터 사용되어 온 이 형식은 여전히 우주 물체 추적의 기본입니다.</p>
+
+            <h3>6.1.1 TLE 형식</h3>
+
+            <p>TLE는 3줄로 구성됩니다:</p>
+
+            <div class="code-box">
+ISS (ZARYA)
+1 25544U 98067A   23001.50000000  .00016717  00000-0  10270-3 0  9005
+2 25544  51.6433 129.6113 0002785 353.3062 140.9421 15.54225995376367
+            </div>
+
+            <p>각 라인의 의미:</p>
+
+            <ul>
+                <li><strong>Line 0:</strong> 물체 이름 (ISS)</li>
+                <li><strong>Line 1:</strong> 카탈로그 번호, 분류, 원기시각(epoch), 평균 운동 변화율 등</li>
+                <li><strong>Line 2:</strong> 궤도 경사각, 승교점 적경, 이심률, 근지점 편각, 평균 근점 이각, 평균 운동(일일 공전 수)</li>
+            </ul>
+
+            <h3>6.1.2 TLE 상세 해석</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>요소</th>
+                        <th>의미</th>
+                        <th>ISS 예시값</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>카탈로그 번호</td>
+                        <td>NORAD 카탈로그 ID</td>
+                        <td>25544</td>
+                    </tr>
+                    <tr>
+                        <td>분류</td>
+                        <td>U=비밀해제, C=비밀</td>
+                        <td>U</td>
+                    </tr>
+                    <tr>
+                        <td>국제 지정자</td>
+                        <td>발사년도+번호+파트</td>
+                        <td>98067A</td>
+                    </tr>
+                    <tr>
+                        <td>원기</td>
+                        <td>데이터 기준 시각</td>
+                        <td>23001.5 (2023년 1월 1일 12:00)</td>
+                    </tr>
+                    <tr>
+                        <td>경사각 (i)</td>
+                        <td>적도 대비 궤도면 각도</td>
+                        <td>51.6433°</td>
+                    </tr>
+                    <tr>
+                        <td>승교점 적경 (Ω)</td>
+                        <td>궤도면과 적도면 교차점</td>
+                        <td>129.6113°</td>
+                    </tr>
+                    <tr>
+                        <td>이심률 (e)</td>
+                        <td>궤도의 타원 정도</td>
+                        <td>0.0002785</td>
+                    </tr>
+                    <tr>
+                        <td>근지점 편각 (ω)</td>
+                        <td>근지점의 위치</td>
+                        <td>353.3062°</td>
+                    </tr>
+                    <tr>
+                        <td>평균 근점 이각 (M)</td>
+                        <td>궤도상 위치</td>
+                        <td>140.9421°</td>
+                    </tr>
+                    <tr>
+                        <td>평균 운동 (n)</td>
+                        <td>하루 공전 횟수</td>
+                        <td>15.54225995 (약 92.9분/공전)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight">
+                <h3>TLE의 한계</h3>
+                <p>TLE는 편리하지만 다음과 같은 한계가 있습니다:</p>
+                <ul>
+                    <li><strong>정확도 제한:</strong> 수백 미터~수 킬로미터 오차</li>
+                    <li><strong>유효 기간:</strong> 며칠~1주일 후에는 부정확</li>
+                    <li><strong>단순화된 모델:</strong> 복잡한 섭동력을 단순화</li>
+                    <li><strong>저궤도 편향:</strong> 고궤도 물체에는 덜 정확</li>
+                </ul>
+            </div>
+
+            <h2>6.2 SGP4/SDP4 궤도 전파 모델</h2>
+
+            <p>TLE 데이터를 이용하여 미래 위치를 예측하는 표준 알고리즘이 SGP4(Simplified General Perturbations 4)와 SDP4(Simplified Deep Space Perturbations 4)입니다.</p>
+
+            <h3>6.2.1 SGP4 모델 (저궤도용)</h3>
+
+            <p>SGP4는 고도 225km 이하의 근지점을 가진 물체에 사용됩니다:</p>
+
+            <ul>
+                <li><strong>대기 저항:</strong> 고도에 따른 대기 밀도 모델 적용</li>
+                <li><strong>J2 섭동:</strong> 지구 편평 효과 (적도 부풀림)</li>
+                <li><strong>간단한 계산:</strong> 실시간 처리에 적합</li>
+                <li><strong>속도:</strong> 밀리초 단위로 계산 가능</li>
+            </ul>
+
+            <h3>6.2.2 SDP4 모델 (고궤도용)</h3>
+
+            <p>SDP4는 근지점이 225km 이상인 물체에 사용됩니다:</p>
+
+            <ul>
+                <li><strong>태양/달 섭동:</strong> 제3체 중력 효과 고려</li>
+                <li><strong>태양 복사압:</strong> 빛 압력에 의한 궤도 변화</li>
+                <li><strong>공진 효과:</strong> 특정 궤도의 장기 섭동</li>
+                <li><strong>정밀도 향상:</strong> 저궤도보다 장기 예측 정확</li>
+            </ul>
+
+            <h3>6.2.3 SGP4 계산 과정</h3>
+
+            <p>SGP4는 다음 단계로 궤도를 계산합니다:</p>
+
+            <ol>
+                <li><strong>입력:</strong> TLE 데이터와 목표 시각</li>
+                <li><strong>평균 궤도 요소 계산:</strong> 원기로부터 시간 경과 적용</li>
+                <li><strong>섭동 보정:</strong> J2, 대기 저항 등 적용</li>
+                <li><strong>케플러 궤도 계산:</strong> 보정된 요소로 위치 계산</li>
+                <li><strong>좌표 변환:</strong> 관성 좌표계로 변환</li>
+                <li><strong>출력:</strong> 위치(x, y, z)와 속도(vx, vy, vz) 벡터</li>
+            </ol>
+
+            <div class="note">
+                <h3>오픈소스 SGP4 구현</h3>
+                <p>다양한 프로그래밍 언어로 SGP4 구현이 공개되어 있습니다:</p>
+                <ul>
+                    <li><strong>Python:</strong> sgp4, skyfield 라이브러리</li>
+                    <li><strong>C/C++:</strong> predict, cspice</li>
+                    <li><strong>JavaScript:</strong> satellite.js</li>
+                    <li><strong>Matlab:</strong> Aerospace Toolbox</li>
+                </ul>
+            </div>
+
+            <h2>6.3 고정밀 궤도 결정 (POD)</h2>
+
+            <p>중요한 위성이나 정밀 분석이 필요한 경우, TLE/SGP4보다 훨씬 정확한 고정밀 궤도 결정(Precise Orbit Determination)을 수행합니다.</p>
+
+            <h3>6.3.1 POD의 특징</h3>
+
+            <ul>
+                <li><strong>정밀도:</strong> 수 센티미터~수 미터 (TLE의 1000배 이상 정확)</li>
+                <li><strong>복잡한 모델:</strong> 모든 섭동력을 상세히 모델링</li>
+                <li><strong>다중 관측:</strong> 여러 센서의 데이터를 통합</li>
+                <li><strong>수치 적분:</strong> 운동 방정식을 직접 수치 해법</li>
+                <li><strong>반복 최적화:</strong> 관측 데이터에 최적 맞춤</li>
+            </ul>
+
+            <h3>6.3.2 POD 섭동력 모델</h3>
+
+            <p>정밀 궤도 결정은 다음 모든 힘을 고려합니다:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>섭동력</th>
+                        <th>설명</th>
+                        <th>영향 크기</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>지구 중력장</td>
+                        <td>JGM-3, EGM96 등 고차 조화 모델</td>
+                        <td>매우 큼</td>
+                    </tr>
+                    <tr>
+                        <td>대기 저항</td>
+                        <td>MSIS, JB2008 등 대기 밀도 모델</td>
+                        <td>LEO에서 큼</td>
+                    </tr>
+                    <tr>
+                        <td>태양 복사압</td>
+                        <td>위성 표면적과 반사율 고려</td>
+                        <td>GEO에서 큼</td>
+                    </tr>
+                    <tr>
+                        <td>달/태양 인력</td>
+                        <td>제3체 중력</td>
+                        <td>고궤도에서 큼</td>
+                    </tr>
+                    <tr>
+                        <td>지구 조석</td>
+                        <td>고체 지구 조석, 해양 조석</td>
+                        <td>작음</td>
+                    </tr>
+                    <tr>
+                        <td>상대론 효과</td>
+                        <td>일반 상대성 이론 보정</td>
+                        <td>매우 작음</td>
+                    </tr>
+                    <tr>
+                        <td>지구 반사광</td>
+                        <td>알베도 복사압</td>
+                        <td>매우 작음</td>
+                    </tr>
+                    <tr>
+                        <td>열 방출</td>
+                        <td>위성 자체 열 복사 반작용</td>
+                        <td>극소</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.3.3 POD 소프트웨어</h3>
+
+            <p>전문적인 POD 소프트웨어들:</p>
+
+            <ul>
+                <li><strong>ODTK (Orbit Determination Tool Kit):</strong> AGI의 상업용 소프트웨어</li>
+                <li><strong>GEODYN:</strong> NASA Goddard의 과학용 POD</li>
+                <li><strong>Bernese GNSS Software:</strong> GNSS 위성 정밀 궤도</li>
+                <li><strong>GIPSY-OASIS:</strong> JPL의 고정밀 궤도 결정</li>
+                <li><strong>Orekit:</strong> 오픈소스 우주 역학 라이브러리 (Java)</li>
+            </ul>
+
+            <h2>6.4 카탈로그 관리 및 상관</h2>
+
+            <p>수만 개의 우주 물체를 추적하려면 효율적인 카탈로그 관리가 필수적입니다.</p>
+
+            <h3>6.4.1 SSN 카탈로그 구조</h3>
+
+            <p>SSN 카탈로그는 각 물체에 대해 다음 정보를 포함합니다:</p>
+
+            <ul>
+                <li><strong>식별 정보:</strong> NORAD 카탈로그 번호, 국제 지정자, 이름</li>
+                <li><strong>궤도 정보:</strong> 최신 TLE, 궤도 이력</li>
+                <li><strong>물리적 특성:</strong> 크기, RCS, 질량 (알려진 경우)</li>
+                <li><strong>소속:</strong> 발사국, 운영자, 임무</li>
+                <li><strong>상태:</strong> 운용 중, 디커미션, 파편 등</li>
+                <li><strong>관측 이력:</strong> 최근 관측 시각, 빈도</li>
+            </ul>
+
+            <h3>6.4.2 물체 상관 (Object Correlation)</h3>
+
+            <p>새로운 관측 데이터를 기존 카탈로그의 물체와 연결하는 과정입니다:</p>
+
+            <ol>
+                <li><strong>관측 데이터 수신:</strong> 센서로부터 위치/속도 데이터</li>
+                <li><strong>초기 궤도 결정:</strong> 2-3개 관측으로 임시 궤도 계산</li>
+                <li><strong>카탈로그 검색:</strong> 유사한 궤도의 기존 물체 찾기</li>
+                <li><strong>통계적 테스트:</strong> 같은 물체인지 확률 계산</li>
+                <li><strong>확정 또는 신규 등록:</strong> 기존 물체 업데이트 또는 새 물체 추가</li>
+            </ol>
+
+            <div class="highlight">
+                <h3>상관의 어려움</h3>
+                <p>다음과 같은 경우 상관이 어렵습니다:</p>
+                <ul>
+                    <li><strong>기동 위성:</strong> 궤도를 자주 변경하는 위성</li>
+                    <li><strong>파편화 사건:</strong> 한 물체가 수백~수천 조각으로 분해</li>
+                    <li><strong>밀집 군집:</strong> Starlink 등 가까운 궤도의 다수 위성</li>
+                    <li><strong>일시적 물체:</strong> 로켓 상단 등 빠르게 재진입하는 물체</li>
+                </ul>
+            </div>
+
+            <h3>6.4.3 AI 기반 상관</h3>
+
+            <p>최근에는 머신러닝을 활용한 자동 상관 시스템이 개발되고 있습니다:</p>
+
+            <ul>
+                <li><strong>패턴 인식:</strong> 신경망으로 궤도 패턴 학습</li>
+                <li><strong>이상 탐지:</strong> 기존 물체와 다른 새 물체 자동 식별</li>
+                <li><strong>예측 개선:</strong> 역사적 데이터로 궤도 예측 모델 훈련</li>
+                <li><strong>분류:</strong> 위성 유형, 로켓 본체, 파편 자동 분류</li>
+            </ul>
+
+            <h2>6.5 궤도 예측의 불확실성</h2>
+
+            <p>궤도 예측은 항상 불확실성을 동반합니다.</p>
+
+            <h3>6.5.1 불확실성의 원인</h3>
+
+            <ul>
+                <li><strong>관측 오차:</strong> 센서의 측정 정밀도 한계</li>
+                <li><strong>모델 오차:</strong> 대기 밀도, 태양 활동 등 정확히 모델링 불가</li>
+                <li><strong>초기 조건 오차:</strong> 출발 시점의 위치/속도 불확실성</li>
+                <li><strong>미래 불확실성:</strong> 시간이 지날수록 오차 증폭</li>
+                <li><strong>예상치 못한 사건:</strong> 기동, 충돌, 파편화 등</li>
+            </ul>
+
+            <h3>6.5.2 공분산 행렬</h3>
+
+            <p>궤도 불확실성은 공분산 행렬로 표현됩니다:</p>
+
+            <ul>
+                <li><strong>6×6 행렬:</strong> 위치(x,y,z)와 속도(vx,vy,vz)의 불확실성</li>
+                <li><strong>타원체:</strong> 3차원 공간에서 오차 타원체로 시각화</li>
+                <li><strong>시간 전파:</strong> 미래로 갈수록 타원체 커짐</li>
+                <li><strong>충돌 분석:</strong> 두 물체의 오차 타원체 겹침 확인</li>
+            </ul>
+
+            <h3>6.5.3 불확실성 감소 방법</h3>
+
+            <p>궤도 예측 정확도를 높이는 방법들:</p>
+
+            <ol>
+                <li><strong>빈번한 관측:</strong> 더 자주 추적하여 데이터 업데이트</li>
+                <li><strong>다중 센서:</strong> 여러 센서의 데이터 융합</li>
+                <li><strong>고정밀 센서:</strong> SLR 등 정밀 측정 기술 활용</li>
+                <li><strong>개선된 모델:</strong> 더 정확한 대기 모델, 중력장 모델</li>
+                <li><strong>위성 협력:</strong> 위성으로부터 직접 궤도 정보 수신</li>
+            </ol>
+
+            <h2>6.6 특수 궤도의 추적</h2>
+
+            <p>일부 궤도는 특별한 추적 기법이 필요합니다.</p>
+
+            <h3>6.6.1 정지궤도 (GEO)</h3>
+
+            <ul>
+                <li><strong>느린 시간 변화:</strong> 섭동이 천천히 축적</li>
+                <li><strong>장기 예측 가능:</strong> 몇 주~몇 달 예측 가능</li>
+                <li><strong>광학 추적 우세:</strong> 레이더로는 거리가 너무 멈</li>
+                <li><strong>스테이션 유지:</strong> 기동 모니터링 중요</li>
+            </ul>
+
+            <h3>6.6.2 저궤도 (LEO)</h3>
+
+            <ul>
+                <li><strong>빠른 대기 저항:</strong> 고도에 따라 하루 수백 미터 강하</li>
+                <li><strong>태양 활동 민감:</strong> 태양 폭풍 시 대기 팽창으로 급격한 변화</li>
+                <li><strong>빈번한 업데이트:</strong> 매일 또는 더 자주 TLE 갱신 필요</li>
+                <li><strong>재진입 예측:</strong> 최종 단계 정밀 추적 필요</li>
+            </ul>
+
+            <h3>6.6.3 고이심률 궤도 (HEO)</h3>
+
+            <ul>
+                <li><strong>복잡한 섭동:</strong> 근지점과 원지점의 환경 크게 다름</li>
+                <li><strong>태양/달 영향:</strong> 제3체 중력 강하게 작용</li>
+                <li><strong>장기 변화:</strong> 궤도 요소의 장주기 변화</li>
+            </ul>
+
+            <h2>6.7 미래 궤도 결정 기술</h2>
+
+            <p>궤도 결정 기술도 계속 발전하고 있습니다.</p>
+
+            <h3>6.7.1 AI/ML 기반 궤도 예측</h3>
+
+            <ul>
+                <li><strong>신경망 모델:</strong> 역사적 데이터로 학습한 예측 모델</li>
+                <li><strong>실시간 대기 보정:</strong> 위성 데이터로 대기 밀도 실시간 추정</li>
+                <li><strong>이상 탐지:</strong> 예상치 못한 기동이나 사건 자동 감지</li>
+                <li><strong>빠른 계산:</strong> GPU 가속으로 수백만 물체 실시간 처리</li>
+            </ul>
+
+            <h3>6.7.2 위성 협력 추적</h3>
+
+            <p>위성 자체가 추적에 참여하는 방법:</p>
+
+            <ul>
+                <li><strong>GPS 탑재:</strong> 위성이 자신의 정밀 궤도 전송</li>
+                <li><strong>위성 간 측정:</strong> 위성끼리 서로의 거리 측정</li>
+                <li><strong>협력 기동:</strong> 충돌 회피 계획 공유</li>
+                <li><strong>표준 프로토콜:</strong> 자동 데이터 교환 표준</li>
+            </ul>
+
+            <h3>6.7.3 양자 기술</h3>
+
+            <ul>
+                <li><strong>양자 시계:</strong> 초정밀 시간 측정으로 정확도 향상</li>
+                <li><strong>양자 센서:</strong> 중력장 직접 측정</li>
+                <li><strong>양자 통신:</strong> 보안 궤도 데이터 전송</li>
+            </ul>
+
+            <div class="note">
+                <h3>2030년대 전망</h3>
+                <p>향후 10년 내에 다음이 실현될 것으로 예상됩니다:</p>
+                <ul>
+                    <li>모든 새 위성에 GPS 및 자동 추적 송신기 탑재 의무화</li>
+                    <li>AI로 수백만 개의 작은 파편까지 자동 카탈로그화</li>
+                    <li>실시간 글로벌 우주 교통 관제 시스템</li>
+                    <li>밀리미터급 정밀도의 대중적 궤도 결정 서비스</li>
+                </ul>
+            </div>
+
+            <h2>6.8 결론</h2>
+
+            <p>궤도 결정 및 예측은 우주 쓰레기 추적의 핵심입니다. TLE/SGP4는 간편하지만 제한적이며, 중요한 응용에는 고정밀 궤도 결정이 필요합니다. 카탈로그 관리와 물체 상관은 수만 개의 물체를 효율적으로 추적하는 데 필수적입니다. AI와 위성 협력 기술의 발전으로 미래에는 더욱 정확하고 실시간에 가까운 궤도 예측이 가능할 것입니다.</p>
+
+            <p>다음 장에서는 이러한 궤도 정보를 활용하여 충돌 위험을 평가하고 경보하는 시스템에 대해 알아보겠습니다.</p>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-05.html" class="nav-button">← 이전 장</a>
+            <a href="chapter-07.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / WIA</p>
+            <p><strong>弘益人間</strong> (홍익인간) &middot; Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제7장: Phase 4 - 생태계 통합 - WIA 전자책</title>
+</head>
+<body>
+
+<p><a href="chapter-06.html">이전 장</a> | <a href="index.html">목차</a> | <a href="chapter-08.html">다음 장</a></p>
+
+<hr>
+
+<h1>제7장: Phase 4 - 생태계 통합</h1>
+
+<blockquote>
+<p><strong>홍익인간 (弘益人間)</strong></p>
+<p>"널리 인간을 이롭게 하라"</p>
+<p>자격증명 표준은 더 넓은 생태계와 통합될 때만 그 잠재력을 달성합니다. 이 장에서는 인도주의 기관, 교육 기관, 고용주 및 기타 WIA 표준과의 통합을 다룹니다.</p>
+</blockquote>
+
+<hr>
+
+<h2>7.1 WIA 가족 통합</h2>
+
+<p>난민 자격증명은 다른 WIA 표준과 통합됩니다:</p>
+
+<h3>WIA 표준 생태계</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>표준</strong></td>
+        <td><strong>통합 목적</strong></td>
+    </tr>
+    <tr>
+        <td>WIA-INTENT</td>
+        <td>자연어 자격증명 쿼리</td>
+    </tr>
+    <tr>
+        <td>WIA-OMNI-API</td>
+        <td>범용 API 접근 계층</td>
+    </tr>
+    <tr>
+        <td>WIA-AIR-SHIELD</td>
+        <td>프라이버시 보호 검증</td>
+    </tr>
+    <tr>
+        <td>WIA-SOCIAL</td>
+        <td>커뮤니티 및 동료 네트워크</td>
+    </tr>
+    <tr>
+        <td>WIA-HOME</td>
+        <td>통합 대시보드</td>
+    </tr>
+    <tr>
+        <td>WIA-LLM-INTEROP</td>
+        <td>AI 지원 자격증명 처리</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>7.2 WIA-INTENT 자연어</h2>
+
+<p>자연어를 사용한 자격증명 쿼리 활성화:</p>
+
+<h3>자연어 명령</h3>
+
+<pre>
+사용자 입력 예시:
+
+"내 자격증명 상태 보여줘"
+"2005-2010 다마스쿠스 대학 동료 찾기"
+"독일에서 어떤 직업에 자격이 있어?"
+"신뢰도 점수를 어떻게 올릴 수 있어?"
+"의료 역량 평가 예약해줘"
+
+INTENT 처리:
+{
+  "intent": "credential_query",
+  "action": "get_status",
+  "entities": {
+    "credential_type": "refugee_credential",
+    "holder": "self"
+  }
+}
+</pre>
+
+<h3>다국어 지원</h3>
+
+<pre>
+지원 입력 언어:
+- 아랍어: "자격증명 상태 보여줘"
+- 우크라이나어: "자격증명 상태 보여줘"
+- 페르시아어: "자격증명 상태 보여줘"
+- 파슈토어: "자격증명 상태 보여줘"
+- 영어, 프랑스어, 독일어, 스페인어, 터키어...
+
+모든 입력이 표준 INTENT 형식으로 처리됨
+응답은 사용자의 선호 언어로 반환됨
+</pre>
+
+<hr>
+
+<h2>7.3 WIA-OMNI-API 범용 접근</h2>
+
+<p>모든 자격증명 작업을 위한 단일 진입점:</p>
+
+<h3>OMNI-API 구조</h3>
+
+<pre>
+POST /omni-api/v1/execute
+
+요청:
+{
+  "domain": "refugee-credential",
+  "operation": "verify",
+  "parameters": {
+    "credentialId": "550e8400-...",
+    "targetLevel": 3
+  },
+  "context": {
+    "requester": "did:wia:org:employer123",
+    "purpose": "employment_verification"
+  }
+}
+
+응답:
+{
+  "status": "success",
+  "result": {
+    "verified": true,
+    "confidence": 78,
+    "level": 2,
+    "details": { ... }
+  }
+}
+</pre>
+
+<h3>교차 표준 작업</h3>
+
+<pre>
+결합 쿼리 예시:
+
+{
+  "operations": [
+    {
+      "domain": "refugee-credential",
+      "operation": "get_education"
+    },
+    {
+      "domain": "wia-social",
+      "operation": "find_mentors",
+      "parameters": {
+        "field": "medicine",
+        "language": "arabic"
+      }
+    }
+  ]
+}
+</pre>
+
+<hr>
+
+<h2>7.4 프라이버시 보호 (AIR-SHIELD)</h2>
+
+<p>민감한 시나리오를 위한 영지식 검증:</p>
+
+<h3>선택적 공개</h3>
+
+<pre>
+시나리오: 고용주가 "의학 학위 보유" 검증 원함
+공개하지 않음: 특정 대학, 성적, 날짜
+
+영지식 증명 요청:
+{
+  "claim": "has_credential_type",
+  "credentialType": "medical_degree",
+  "level": "doctorate",
+  "minConfidence": 70
+}
+
+ZK 증명 응답:
+{
+  "proofValid": true,
+  "claim": "has_credential_type",
+  "confidence": 78,
+  "proof": "zk:...",  // 암호화 증명
+  "revealed": {
+    "credentialType": "medical_degree",
+    "level": "doctorate"
+  },
+  "hidden": [
+    "institution",
+    "graduation_date",
+    "gpa"
+  ]
+}
+</pre>
+
+<h3>프라이버시 수준</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>수준</strong></td>
+        <td><strong>공개됨</strong></td>
+        <td><strong>숨겨짐</strong></td>
+    </tr>
+    <tr>
+        <td>전체</td>
+        <td>모든 것</td>
+        <td>없음</td>
+    </tr>
+    <tr>
+        <td>표준</td>
+        <td>자격증명, 수준</td>
+        <td>성적, 구체적 날짜</td>
+    </tr>
+    <tr>
+        <td>최소</td>
+        <td>예/아니오 주장만</td>
+        <td>모든 세부사항</td>
+    </tr>
+    <tr>
+        <td>익명</td>
+        <td>집계 통계만</td>
+        <td>모든 신원 정보</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>7.5 UNHCR 통합</h2>
+
+<p>UN 난민기구 시스템과의 통합:</p>
+
+<h3>UNHCR 데이터 교환</h3>
+
+<pre>
+UNHCR proGres 통합:
+
+1. 등록 연결
+   - WIA 자격증명을 UNHCR 사례 번호와 연결
+   - 난민 지위 검증
+   - 기본 인구 통계 데이터 가져오기
+
+2. 문서 저장소
+   - UNHCR이 보유한 문서 접근
+   - UNHCR 파일에 새 문서 추가
+   - 공유 검증 상태
+
+3. 의뢰 시스템
+   - UNHCR로부터 의뢰 수신
+   - 재정착을 위한 자격증명 상태 공유
+   - 보완적 경로와의 통합
+</pre>
+
+<h3>API 통합</h3>
+
+<pre>
+POST /integrations/unhcr/link
+
+요청:
+{
+  "credentialId": "550e8400-...",
+  "unhcrCaseNumber": "UKR-2022-00001234",
+  "consentToken": "보유자로부터의 동의 토큰"
+}
+
+응답:
+{
+  "linked": true,
+  "unhcrStatus": "registered",
+  "sharedData": [
+    "registration_date",
+    "country_of_origin",
+    "current_location"
+  ]
+}
+</pre>
+
+<hr>
+
+<h2>7.6 대학 파트너십</h2>
+
+<p>고등 교육 기관과의 통합:</p>
+
+<h3>대학 인정 흐름</h3>
+
+<pre>
+1단계: 학생이 대학에 WIA 자격증명 제출
+
+2단계: 대학이 자격증명 쿼리
+GET /credentials/{id}/academic-summary
+
+3단계: 시스템이 형식화된 학력 기록 반환
+{
+  "educationRecords": [...],
+  "equivalencyMapping": {
+    "originalDegree": "의학사",
+    "equivalentTo": "MB ChB (UK) / MD (US)",
+    "confidence": 82
+  },
+  "recommendedActions": [
+    "의료 윤리 브릿지 코스",
+    "오리엔테이션을 위한 임상 실습"
+  ]
+}
+
+4단계: 대학이 입학 결정
+</pre>
+
+<h3>파트너 대학</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>지역</strong></td>
+        <td><strong>파트너 유형</strong></td>
+        <td><strong>혜택</strong></td>
+    </tr>
+    <tr>
+        <td>유럽</td>
+        <td>ENIC-NARIC 회원</td>
+        <td>신속한 인정</td>
+    </tr>
+    <tr>
+        <td>북미</td>
+        <td>WES 파트너</td>
+        <td>사전 평가된 자격증명</td>
+    </tr>
+    <tr>
+        <td>중동</td>
+        <td>지역 대학</td>
+        <td>동료 검증 네트워크</td>
+    </tr>
+    <tr>
+        <td>글로벌</td>
+        <td>온라인 대학</td>
+        <td>브릿지 프로그램</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>7.7 고용주 네트워크</h2>
+
+<p>HR 시스템 및 고용주와의 통합:</p>
+
+<h3>고용주 검증 포털</h3>
+
+<pre>
+고용주 워크플로우:
+
+1. 지원자가 자격증명 링크 공유
+   https://verify.wia.live/c/550e8400...
+
+2. 고용주가 검증 포털 접근
+   - 자격증명 요약 보기
+   - 신뢰도 점수 확인
+   - 직무별 자격 확인
+
+3. 시스템이 채용 추천 제공
+{
+  "candidateMatch": {
+    "jobRequirements": "소프트웨어 개발자",
+    "educationMatch": 90,
+    "experienceMatch": 75,
+    "skillsMatch": 85,
+    "overallMatch": 83,
+    "recommendation": "강력한 후보",
+    "gaps": [
+      "특정 클라우드 인증 누락"
+    ]
+  }
+}
+</pre>
+
+<h3>ATS 통합</h3>
+
+<pre>
+지원자 추적 시스템 통합:
+
+지원 ATS 플랫폼:
+- Workday
+- SAP SuccessFactors
+- Oracle HCM
+- Greenhouse
+- Lever
+
+통합 방법:
+- OAuth 2.0 연결
+- 웹훅 알림
+- 직접 API 통합
+- 파일 기반 가져오기/내보내기
+</pre>
+
+<hr>
+
+<h2>7.8 정부 시스템</h2>
+
+<p>국가 자격증명 인정 시스템과의 통합:</p>
+
+<h3>정부 통합 유형</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>시스템 유형</strong></td>
+        <td><strong>통합</strong></td>
+        <td><strong>데이터 흐름</strong></td>
+    </tr>
+    <tr>
+        <td>이민</td>
+        <td>기술 평가</td>
+        <td>WIA에서 이민으로</td>
+    </tr>
+    <tr>
+        <td>전문 면허</td>
+        <td>자격증명 검증</td>
+        <td>양방향</td>
+    </tr>
+    <tr>
+        <td>사회 서비스</td>
+        <td>취업 자격</td>
+        <td>WIA에서 서비스로</td>
+    </tr>
+    <tr>
+        <td>교육부</td>
+        <td>학위 인정</td>
+        <td>양방향</td>
+    </tr>
+</table>
+
+<h3>예시: 독일 인정</h3>
+
+<pre>
+anabin (독일 자격증명 데이터베이스)과 통합:
+
+1. 동등성 쿼리
+GET /integrations/de/anabin/equivalency
+
+요청:
+{
+  "educationRecord": { ... },
+  "targetProfession": "Arzt (의사)"
+}
+
+응답:
+{
+  "anabinClassification": "H+",
+  "equivalentTo": "Approbation 자격",
+  "nextSteps": [
+    "Approbation 신청",
+    "Kenntnisprufung (지식 시험) 통과",
+    "필요시 Anpassungslehrgang 완료"
+  ],
+  "estimatedTimeline": "6-12개월"
+}
+</pre>
+
+<hr>
+
+<h2>7.9 모바일 SDK</h2>
+
+<p>모바일 애플리케이션을 위한 네이티브 SDK:</p>
+
+<h3>SDK 기능</h3>
+
+<pre>
+WIA 난민 자격증명 SDK
+
+기능:
+- 자격증명 지갑 관리
+- 생체 인증
+- 오프라인 자격증명 접근
+- QR 코드 생성/스캔
+- 동료 검증 처리
+- 평가 통합
+- 푸시 알림
+
+플랫폼:
+- iOS (Swift)
+- Android (Kotlin)
+- React Native
+- Flutter
+</pre>
+
+<h3>SDK 사용 예시</h3>
+
+<pre>
+// Android Kotlin 예시
+
+val wiaSDK = WIARefugeeCredential.initialize(context, apiKey)
+
+// 자격증명 가져오기
+val credential = wiaSDK.getCredential(credentialId)
+
+// 검증 QR 생성
+val qrCode = wiaSDK.generateVerificationQR(
+    credentialId = credential.id,
+    disclosureLevel = DisclosureLevel.STANDARD,
+    validFor = Duration.hours(24)
+)
+
+// 동료 검증 요청 처리
+wiaSDK.onPeerVerificationRequest { request ->
+    showPeerVerificationUI(request)
+}
+</pre>
+
+<hr>
+
+<h2>7.10 IoT 및 생체 기기</h2>
+
+<p>신원 검증 하드웨어와의 통합:</p>
+
+<h3>지원 기기</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>기기 유형</strong></td>
+        <td><strong>사용 사례</strong></td>
+        <td><strong>프로토콜</strong></td>
+    </tr>
+    <tr>
+        <td>지문 스캐너</td>
+        <td>생체 바인딩</td>
+        <td>FIDO2/WebAuthn</td>
+    </tr>
+    <tr>
+        <td>문서 스캐너</td>
+        <td>증거 캡처</td>
+        <td>REST API</td>
+    </tr>
+    <tr>
+        <td>NFC 리더</td>
+        <td>빠른 검증</td>
+        <td>NFC-F</td>
+    </tr>
+    <tr>
+        <td>카메라</td>
+        <td>얼굴 검증</td>
+        <td>REST API</td>
+    </tr>
+</table>
+
+<h3>NFC 검증</h3>
+
+<pre>
+NFC 태그 형식:
+
+NDEF 레코드:
+  유형: application/wia-credential
+  페이로드:
+    - 버전: 1
+    - 자격증명 ID: (8 바이트)
+    - 검증 URL: (잘린)
+    - 빠른 검증 해시: (16 바이트)
+
+스캔 프로세스:
+1. NFC 태그 탭
+2. 앱이 NDEF 레코드 읽기
+3. 로컬에서 빠른 해시 검증
+4. 선택적으로 전체 세부정보 가져오기
+5. 검증 상태 표시
+</pre>
+
+<hr>
+
+<h2>7.11 AI/LLM 통합</h2>
+
+<p>향상된 처리를 위한 AI 시스템과의 통합:</p>
+
+<h3>LLM 사용 사례</h3>
+
+<pre>
+AI 지원 기능:
+
+1. 문서 이해
+   - OCR 향상
+   - 다국어 추출
+   - 컨텍스트 해석
+
+2. 동료 검증 분석
+   - 일관성 검사
+   - 담합 탐지
+   - 신뢰도 보정
+
+3. 경력 안내
+   - 기술 격차 분석
+   - 학습 추천
+   - 직업 매칭
+
+4. 자연어 인터페이스
+   - 쿼리 이해
+   - 응답 생성
+   - 다국어 지원
+</pre>
+
+<h3>WIA-LLM-INTEROP 프로토콜</h3>
+
+<pre>
+{
+  "llmRequest": {
+    "task": "analyze_credential",
+    "credential": { ... },
+    "analysis": [
+      "employment_suitability",
+      "skill_gaps",
+      "verification_recommendations"
+    ],
+    "outputLanguage": "ko"
+  }
+}
+</pre>
+
+<hr>
+
+<h2>7.12 장 요약</h2>
+
+<p>이 장의 핵심 내용:</p>
+
+<ul>
+    <li>[REF] WIA 표준 가족과의 완전한 통합</li>
+    <li>[REF] INTENT가 자연어 자격증명 쿼리 활성화</li>
+    <li>[REF] AIR-SHIELD가 영지식 프라이버시 보호 제공</li>
+    <li>[REF] 인도주의 조정을 위한 UNHCR 통합</li>
+    <li>[REF] 인정을 위한 대학 및 고용주 네트워크</li>
+    <li>[REF] 공식 인정을 위한 정부 시스템 통합</li>
+    <li>[REF] 모바일 SDK 및 IoT 기기 지원</li>
+</ul>
+
+<hr>
+
+<p><a href="chapter-06.html">이전: 통신 프로토콜</a> | <a href="index.html">목차</a> | <a href="chapter-08.html">다음: 구현 가이드</a></p>
+
+<hr>
+
+<p><strong>Copyright 2025 Smilestory Inc. / WIA</strong></p>
+<p>MIT 라이선스로 배포</p>
+
+</body>
+</html>

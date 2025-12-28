@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: Schema Definition and Evolution - WIA-CORE-003</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.8;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #1e293b;
+            padding: 3rem;
+            border-radius: 15px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 2rem;
+            color: #6B7280;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            background: #0f172a;
+            border-radius: 8px;
+        }
+        .back-link:hover { background: #334155; }
+        .chapter-header {
+            border-bottom: 3px solid #6B7280;
+            padding-bottom: 2rem;
+            margin-bottom: 3rem;
+        }
+        .chapter-number {
+            color: #6B7280;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: #e2e8f0;
+            margin-top: 0.5rem;
+            line-height: 1.3;
+        }
+        h2 {
+            color: #6B7280;
+            margin: 2.5rem 0 1.5rem;
+            font-size: 1.8rem;
+        }
+        h3 {
+            color: #94a3b8;
+            margin: 2rem 0 1rem;
+            font-size: 1.4rem;
+        }
+        p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+        .highlight-box {
+            background: #0f172a;
+            padding: 2rem;
+            border-radius: 10px;
+            border-left: 4px solid #6B7280;
+            margin: 2rem 0;
+        }
+        .code-block {
+            background: #0f172a;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Monaco', monospace;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+        ul, ol {
+            margin: 1.5rem 0 1.5rem 2rem;
+        }
+        li {
+            margin-bottom: 0.75rem;
+            font-size: 1.05rem;
+        }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 2px solid #334155;
+        }
+        .nav-button {
+            padding: 1rem 2rem;
+            background: #6B7280;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .nav-button:hover {
+            background: #4B5563;
+            transform: translateY(-2px);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+        th {
+            background: #0f172a;
+            color: #6B7280;
+            font-weight: bold;
+        }
+        tr:hover {
+            background: #0f172a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Table of Contents</a>
+
+        <div class="chapter-header">
+            <div class="chapter-number">Chapter 3</div>
+            <h1>Schema Definition and Evolution</h1>
+        </div>
+
+        <p>
+            Schemas are the contracts that define data structure, types, and constraints. In traditional systems,
+            schemas are often treated as implementation details—database tables, API response structures, or
+            configuration file formats. But in universal data exchange, schemas become first-class architectural
+            components that enable interoperability, validation, and evolution.
+        </p>
+
+        <h2>The Universal Schema Language</h2>
+
+        <p>
+            WIA-CORE-003 defines a unified schema language that can express data structures from any format.
+            This language supports the type systems of JSON Schema, XML Schema, Protocol Buffers, Avro, and
+            dozens of other formats, providing a common vocabulary for schema definition regardless of the
+            underlying serialization format.
+        </p>
+
+        <h3>Core Type System</h3>
+
+        <p>
+            The universal schema language supports a rich type system that includes primitive types, composite
+            types, and semantic types with constraints and metadata.
+        </p>
+
+        <div class="code-block">
+// Universal Schema Definition Language (USDL)
+
+schema UserProfile {
+    // Primitive types with constraints
+    user_id: Integer(min: 1, max: 9999999999)
+    username: String(min_length: 3, max_length: 20, pattern: "^[a-zA-Z0-9_]+$")
+    email: Email  // Semantic type with built-in validation
+    age: Integer(min: 13, max: 120, optional: true)
+
+    // Timestamp with timezone support
+    created_at: Timestamp(timezone: "UTC")
+    last_login: Timestamp(optional: true)
+
+    // Enumeration
+    account_status: Enum("active", "suspended", "deleted")
+
+    // Nested record
+    address: Record {
+        street: String
+        city: String
+        state: String(length: 2)  // US state code
+        postal_code: PostalCode
+        country: CountryCode  // ISO 3166-1 alpha-2
+    }
+
+    // Array of records
+    phone_numbers: Array&lt;Record {
+        number: PhoneNumber
+        type: Enum("mobile", "home", "work")
+        is_verified: Boolean
+    }&gt;
+
+    // Map/dictionary
+    preferences: Map&lt;String, String&gt;
+
+    // Optional complex type
+    payment_methods: Optional&lt;Array&lt;PaymentMethod&gt;&gt;
+
+    // Metadata annotations
+    @deprecated(since: "2.0", use: "profile_v2")
+    legacy_field: String(optional: true)
+
+    @pii(category: "contact")
+    @encrypted(algorithm: "AES-256-GCM")
+    sensitive_data: Bytes(optional: true)
+}
+
+// Semantic types for common patterns
+semantic_type Email = String(
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+)
+
+semantic_type PhoneNumber = String(
+    pattern: "^\\+?[1-9]\\d{1,14}$"  // E.164 format
+)
+
+semantic_type PostalCode = String | Integer  // Flexible for international
+
+semantic_type CountryCode = String(
+    length: 2,
+    pattern: "^[A-Z]{2}$"
+)
+        </div>
+
+        <h3>Schema Composition and Reuse</h3>
+
+        <p>
+            Real-world schemas are rarely defined in isolation. They reference common types, extend base schemas,
+            and compose multiple schemas together. The universal schema language supports these patterns through
+            imports, inheritance, and composition.
+        </p>
+
+        <div class="code-block">
+// Import common types
+import "wia://schemas/common/address.usdl" as Address
+import "wia://schemas/common/contact.usdl" as Contact
+
+// Extend base schema
+schema EnterpriseUser extends UserProfile {
+    // Add enterprise-specific fields
+    employee_id: String(pattern: "^EMP-\\d{6}$")
+    department: String
+    manager_id: Optional&lt;Integer&gt;
+
+    // Override constraint
+    override email: Email @required  // Make mandatory for enterprise
+
+    // Add additional validation
+    @validate(custom: "validateCorporateEmail")
+    corporate_email: Email
+}
+
+// Compose multiple schemas
+schema CustomerOrder {
+    order_id: UUID
+    customer: UserProfile  // Embedded schema
+    shipping_address: Address.StandardAddress  // Reference imported type
+    billing_address: Address.StandardAddress
+    contact_info: Contact.ContactDetails
+
+    items: Array&lt;OrderItem&gt;
+    total_amount: Decimal(precision: 10, scale: 2)
+    currency: CurrencyCode  // ISO 4217
+
+    status: OrderStatus
+}
+
+schema OrderItem {
+    product_id: String
+    quantity: Integer(min: 1)
+    unit_price: Decimal(precision: 10, scale: 2)
+    discount: Optional&lt;Decimal(min: 0, max: 1)&gt;  // 0.0 to 1.0
+}
+
+enum OrderStatus {
+    PENDING,
+    CONFIRMED,
+    PROCESSING,
+    SHIPPED,
+    DELIVERED,
+    CANCELLED,
+    REFUNDED
+}
+        </div>
+
+        <h2>Schema Versioning</h2>
+
+        <p>
+            Software evolves, and so do schemas. Requirements change, new features are added, and legacy fields
+            become obsolete. Managing schema changes without breaking existing integrations is one of the hardest
+            problems in distributed systems. WIA-CORE-003 provides comprehensive versioning support with clear
+            compatibility rules and automated validation.
+        </p>
+
+        <h3>Semantic Versioning for Schemas</h3>
+
+        <p>
+            Schema versions follow semantic versioning (MAJOR.MINOR.PATCH) with well-defined compatibility
+            guarantees at each level:
+        </p>
+
+        <ul>
+            <li><strong>PATCH version</strong>: Documentation changes, adding optional fields with defaults, relaxing constraints</li>
+            <li><strong>MINOR version</strong>: Adding optional fields without defaults, adding new enum values (when using open enums)</li>
+            <li><strong>MAJOR version</strong>: Removing fields, changing field types, renaming fields, making optional fields required</li>
+        </ul>
+
+        <div class="code-block">
+// Version 1.0.0 - Initial release
+schema Product@1.0.0 {
+    id: String
+    name: String
+    price: Decimal(precision: 10, scale: 2)
+    description: String(optional: true)
+}
+
+// Version 1.1.0 - Minor: Add optional fields
+schema Product@1.1.0 {
+    id: String
+    name: String
+    price: Decimal(precision: 10, scale: 2)
+    description: String(optional: true)
+
+    // New optional fields (backward compatible)
+    category: String(optional: true)
+    tags: Array&lt;String&gt;(default: [])
+
+    @since("1.1.0")
+    image_url: URL(optional: true)
+}
+
+// Version 1.1.1 - Patch: Relax constraints
+schema Product@1.1.1 {
+    id: String
+    name: String
+    price: Decimal(precision: 10, scale: 2)  // Constraint unchanged
+    description: String(optional: true, max_length: 5000)  // Relaxed from 1000
+
+    category: String(optional: true)
+    tags: Array&lt;String&gt;(default: [])
+    image_url: URL(optional: true)
+}
+
+// Version 2.0.0 - Major: Breaking changes
+schema Product@2.0.0 {
+    id: UUID  // Changed type from String to UUID
+
+    // Split name into separate fields (breaking change)
+    display_name: String
+    internal_name: String
+
+    // Restructured pricing (breaking change)
+    pricing: Record {
+        amount: Decimal(precision: 10, scale: 2)
+        currency: CurrencyCode
+        tax_inclusive: Boolean
+    }
+
+    description: String(optional: true, max_length: 5000)
+    category_id: Integer  // Changed from String to Integer (breaking)
+    tags: Array&lt;String&gt;(default: [])
+
+    // Renamed field (breaking change)
+    primary_image_url: URL(optional: true)
+
+    @since("2.0.0")
+    additional_images: Array&lt;URL&gt;(default: [])
+}
+        </div>
+
+        <h3>Compatibility Modes</h3>
+
+        <p>
+            Different systems have different evolution requirements. WIA-CORE-003 supports four compatibility
+            modes that can be enforced by the schema registry:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Mode</th>
+                    <th>New Schema Can Read</th>
+                    <th>Old Schema Can Read</th>
+                    <th>Use Case</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Backward</strong></td>
+                    <td>Old data ✓</td>
+                    <td>New data ✗</td>
+                    <td>Consumer-first, upgrade consumers before producers</td>
+                </tr>
+                <tr>
+                    <td><strong>Forward</strong></td>
+                    <td>Old data ✗</td>
+                    <td>New data ✓</td>
+                    <td>Producer-first, upgrade producers before consumers</td>
+                </tr>
+                <tr>
+                    <td><strong>Full</strong></td>
+                    <td>Old data ✓</td>
+                    <td>New data ✓</td>
+                    <td>Rolling upgrades, mixed versions in production</td>
+                </tr>
+                <tr>
+                    <td><strong>None</strong></td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                    <td>Breaking changes allowed, coordinated deployment required</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Schema Migration Strategies</h2>
+
+        <p>
+            When making breaking schema changes, you need a migration strategy to transition existing data and
+            deployments from the old schema to the new one. WIA-CORE-003 provides several approaches.
+        </p>
+
+        <h3>Dual Schema Support</h3>
+
+        <p>
+            Services support both old and new schema versions simultaneously during a transition period. Incoming
+            data is accepted in either format, and responses are generated in the version that the client requests
+            (via content negotiation or explicit versioning headers).
+        </p>
+
+        <div class="code-block">
+// Service supports both Product@1.1.1 and Product@2.0.0
+
+// Request with old schema
+POST /api/products
+Content-Type: application/json; schema=Product@1.1.1
+Accept: application/json; schema=Product@1.1.1
+
+{
+    "id": "prod-12345",
+    "name": "Widget",
+    "price": 29.99
+}
+
+// Service internally converts to Product@2.0.0
+{
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "display_name": "Widget",
+    "internal_name": "Widget",
+    "pricing": {
+        "amount": 29.99,
+        "currency": "USD",
+        "tax_inclusive": false
+    }
+}
+
+// Response converted back to Product@1.1.1 for client
+{
+    "id": "prod-12345",
+    "name": "Widget",
+    "price": 29.99
+}
+        </div>
+
+        <h3>Schema Translation Rules</h3>
+
+        <p>
+            For automated migration, define explicit translation rules that map old schema fields to new schema
+            fields. These rules handle renaming, restructuring, type conversion, and value transformation.
+        </p>
+
+        <div class="code-block">
+// Translation from Product@1.1.1 to Product@2.0.0
+
+translation Product@1.1.1 -> Product@2.0.0 {
+    // Generate UUID from old string ID
+    id: uuid_from_string(source.id)
+
+    // Simple mapping
+    display_name: source.name
+    internal_name: source.name
+
+    // Restructure pricing
+    pricing.amount: source.price
+    pricing.currency: infer_currency(source)  // Custom function
+    pricing.tax_inclusive: false  // Default value
+
+    // Map category string to ID via lookup table
+    category_id: lookup_category_id(source.category)
+
+    // Direct copy
+    description: source.description
+    tags: source.tags
+
+    // Rename
+    primary_image_url: source.image_url
+
+    // Default for new field
+    additional_images: []
+}
+
+// Reverse translation for backward compatibility
+translation Product@2.0.0 -> Product@1.1.1 {
+    id: string_from_uuid(source.id)
+    name: source.display_name
+    price: source.pricing.amount
+    description: source.description
+
+    // Lookup category name from ID
+    category: lookup_category_name(source.category_id)
+
+    tags: source.tags
+    image_url: source.primary_image_url
+}
+        </div>
+
+        <h3>Data Migration Pipelines</h3>
+
+        <p>
+            For large-scale data migration, build pipelines that read data in the old schema, transform it to
+            the new schema using translation rules, validate the result, and write it to the destination. These
+            pipelines support:
+        </p>
+
+        <ul>
+            <li>Incremental migration: Transform data in batches over time</li>
+            <li>Validation: Verify that transformed data meets new schema constraints</li>
+            <li>Rollback: Reverse transformations if issues are detected</li>
+            <li>Dual-write: Write to both old and new storage during transition</li>
+            <li>Shadow testing: Compare old and new implementations before cutover</li>
+        </ul>
+
+        <h2>Schema Registry</h2>
+
+        <p>
+            The schema registry is the central repository for all schema definitions in your organization. It
+            provides schema storage, versioning, compatibility checking, and discovery services.
+        </p>
+
+        <h3>Registry Operations</h3>
+
+        <div class="code-block">
+// Register a new schema
+POST /registry/schemas
+{
+    "name": "UserProfile",
+    "namespace": "com.example.users",
+    "version": "1.0.0",
+    "compatibility_mode": "BACKWARD",
+    "definition": { /* USDL schema */ }
+}
+
+// Get schema by ID
+GET /registry/schemas/{schema_id}
+
+// Get latest version
+GET /registry/schemas/com.example.users.UserProfile/versions/latest
+
+// Get specific version
+GET /registry/schemas/com.example.users.UserProfile/versions/1.0.0
+
+// Check compatibility
+POST /registry/schemas/com.example.users.UserProfile/compatibility
+{
+    "version": "1.1.0",
+    "definition": { /* proposed new schema */ }
+}
+-> { "compatible": true, "issues": [] }
+
+// List all versions
+GET /registry/schemas/com.example.users.UserProfile/versions
+
+// Search schemas
+GET /registry/schemas?namespace=com.example&amp;tags=user,profile
+        </div>
+
+        <h3>Schema Governance</h3>
+
+        <p>
+            Enterprise schema registries enforce governance policies:
+        </p>
+
+        <ul>
+            <li><strong>Naming conventions:</strong> Enforce consistent schema and field naming</li>
+            <li><strong>Required metadata:</strong> Every schema must have owner, description, and documentation</li>
+            <li><strong>Approval workflows:</strong> Breaking changes require architectural review</li>
+            <li><strong>Deprecation policies:</strong> Schemas must be supported for minimum duration before removal</li>
+            <li><strong>Compliance tagging:</strong> Mark fields containing PII, financial data, or regulated information</li>
+        </ul>
+
+        <h2>Best Practices</h2>
+
+        <div class="highlight-box">
+            <h3>Schema Design Guidelines</h3>
+            <ul>
+                <li><strong>Be explicit:</strong> Prefer explicit types over generic (use Email instead of String)</li>
+                <li><strong>Use constraints:</strong> Define min/max, patterns, and allowed values</li>
+                <li><strong>Document semantics:</strong> Explain what fields mean, not just their type</li>
+                <li><strong>Plan for evolution:</strong> Make fields optional by default, use extensible enums</li>
+                <li><strong>Avoid nesting too deep:</strong> More than 3-4 levels becomes hard to maintain</li>
+                <li><strong>Use semantic types:</strong> Create reusable types for common patterns</li>
+                <li><strong>Version from day one:</strong> Even initial schemas should be explicitly versioned</li>
+                <li><strong>Mark PII:</strong> Tag personally identifiable information for compliance</li>
+            </ul>
+        </div>
+
+        <p>
+            Schema design is both an art and a science. Well-designed schemas enable seamless integration,
+            graceful evolution, and long-term maintainability. In the next chapter, we'll explore how to
+            transform data between schemas using WIA-CORE-003's transformation engines.
+        </p>
+
+        <div class="navigation">
+            <a href="chapter2.html" class="nav-button">← Previous Chapter</a>
+            <a href="chapter4.html" class="nav-button">Next Chapter →</a>
+        </div>
+    </div>
+</body>
+</html>

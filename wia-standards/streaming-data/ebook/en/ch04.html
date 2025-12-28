@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Real-time Data Processing Engines - WIA-DATA-013</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; line-height: 1.8; max-width: 1000px; margin: 0 auto; padding: 40px 20px; background: #0f172a; color: #e2e8f0; }
+        h1, h2, h3 { color: #10B981; margin-top: 40px; }
+        h1 { font-size: 2.5em; border-bottom: 3px solid #10B981; padding-bottom: 15px; }
+        h2 { font-size: 2em; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        code { background: #1e293b; padding: 2px 6px; border-radius: 4px; color: #10B981; font-family: 'Courier New', monospace; }
+        pre { background: #1e293b; border-left: 4px solid #10B981; padding: 20px; border-radius: 8px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #1e293b; }
+        th, td { padding: 12px; text-align: left; border: 1px solid #334155; }
+        th { background: #10B981; color: #0f172a; font-weight: bold; }
+        .highlight { background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10B981; padding: 15px; margin: 20px 0; border-radius: 8px; }
+        ul, ol { margin: 15px 0; padding-left: 30px; }
+        li { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Chapter 4: Real-time Data Processing Engines</h1>
+
+    <h2>4.1 Stream Processing Landscape</h2>
+    <p>Stream processing engines transform raw event streams into actionable insights through real-time computations, aggregations, and enrichments.</p>
+
+    <table>
+        <tr><th>Engine</th><th>Processing Model</th><th>Key Strength</th><th>Best For</th></tr>
+        <tr><td>Apache Flink</td><td>True streaming</td><td>Exactly-once, stateful</td><td>Complex event processing</td></tr>
+        <tr><td>Apache Spark Streaming</td><td>Micro-batch</td><td>Unified batch/stream</td><td>Mixed workloads</td></tr>
+        <tr><td>Apache Storm</td><td>True streaming</td><td>Low latency</td><td>Simple transformations</td></tr>
+        <tr><td>Kafka Streams</td><td>True streaming</td><td>Kafka integration</td><td>Kafka-centric pipelines</td></tr>
+    </table>
+
+    <h2>4.2 Apache Flink</h2>
+    <p>Apache Flink is a stateful stream processing framework with exactly-once semantics and event-time processing.</p>
+
+    <h3>4.2.1 Flink Architecture</h3>
+    <pre><code>// Flink Job Components
+DataStream API / Table API / SQL
+        ↓
+Job Manager (coordinates)
+        ↓
+Task Managers (workers)
+        ↓
+State Backends (RocksDB/Memory)</code></pre>
+
+    <h3>4.2.2 DataStream API Example</h3>
+    <pre><code>StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+DataStream<Event> events = env
+    .addSource(new FlinkKafkaConsumer<>("events", schema, properties));
+
+DataStream<Alert> alerts = events
+    .filter(e -> e.getValue() > threshold)
+    .keyBy(Event::getUserId)
+    .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+    .aggregate(new EventAggregator())
+    .filter(agg -> agg.getCount() > 10)
+    .map(agg -> new Alert(agg));
+
+alerts.addSink(new FlinkKafkaProducer<>("alerts", schema, properties));
+env.execute("Anomaly Detection Job");</code></pre>
+
+    <h3>4.2.3 State Management</h3>
+    <ul>
+        <li><strong>Keyed State:</strong> Scoped to specific keys</li>
+        <li><strong>Operator State:</strong> Scoped to operator instances</li>
+        <li><strong>State Backends:</strong> Memory, FsStateBackend, RocksDBStateBackend</li>
+        <li><strong>Checkpointing:</strong> Periodic snapshots for fault tolerance</li>
+    </ul>
+
+    <h3>4.2.4 Windowing Strategies</h3>
+    <table>
+        <tr><th>Window Type</th><th>Description</th><th>Use Case</th></tr>
+        <tr><td>Tumbling</td><td>Fixed, non-overlapping</td><td>5-minute aggregations</td></tr>
+        <tr><td>Sliding</td><td>Fixed, overlapping</td><td>Moving averages</td></tr>
+        <tr><td>Session</td><td>Gap-based</td><td>User session analysis</td></tr>
+        <tr><td>Global</td><td>All events</td><td>Custom triggers</td></tr>
+    </table>
+
+    <h2>4.3 Apache Spark Streaming</h2>
+    <p>Spark Streaming extends Apache Spark to handle streaming data using micro-batches.</p>
+
+    <h3>4.3.1 Structured Streaming</h3>
+    <pre><code>// Structured Streaming with Spark 3.x
+val df = spark
+  .readStream
+  .format("kafka")
+  .option("kafka.bootstrap.servers", "localhost:9092")
+  .option("subscribe", "events")
+  .load()
+
+val processed = df
+  .selectExpr("CAST(value AS STRING) as json")
+  .select(from_json($"json", schema).as("data"))
+  .where($"data.amount" > 1000)
+  .groupBy($"data.userId", window($"data.timestamp", "5 minutes"))
+  .agg(count("*").as("count"), sum($"data.amount").as("total"))
+
+processed
+  .writeStream
+  .outputMode("update")
+  .format("console")
+  .start()
+  .awaitTermination()</code></pre>
+
+    <h3>4.3.2 Micro-batch Processing</h3>
+    <ul>
+        <li>Treats streams as series of small batches</li>
+        <li>Batch interval configurable (e.g., 1 second)</li>
+        <li>Leverages Spark's batch processing engine</li>
+        <li>Higher latency than true streaming (100ms+)</li>
+    </ul>
+
+    <h2>4.4 Kafka Streams</h2>
+    <p>Kafka Streams is a client library for building applications that process data stored in Kafka.</p>
+
+    <h3>4.4.1 Stream Processing Topology</h3>
+    <pre><code>StreamsBuilder builder = new StreamsBuilder();
+
+KStream<String, Transaction> transactions = builder.stream("transactions");
+
+// Stateless transformations
+KStream<String, Transaction> filtered = transactions
+    .filter((key, tx) -> tx.getAmount() > 100)
+    .mapValues(tx -> tx.withEnriched(true));
+
+// Stateful operations
+KTable<String, Long> aggregated = transactions
+    .groupBy((key, tx) -> tx.getUserId())
+    .windowedBy(TimeWindows.of(Duration.ofMinutes(5)))
+    .count();
+
+// Join streams
+KStream<String, Enriched> joined = transactions
+    .join(userTable, (tx, user) -> enrich(tx, user));
+
+// Output
+filtered.to("filtered-transactions");
+
+KafkaStreams streams = new KafkaStreams(builder.build(), config);
+streams.start();</code></pre>
+
+    <h3>4.4.2 KStream vs KTable</h3>
+    <table>
+        <tr><th>Aspect</th><th>KStream</th><th>KTable</th></tr>
+        <tr><td>Semantics</td><td>Stream of events</td><td>Changelog/snapshot</td></tr>
+        <tr><td>Updates</td><td>Inserts only</td><td>Inserts + updates</td></tr>
+        <tr><td>Use Case</td><td>Event processing</td><td>Latest state per key</td></tr>
+    </table>
+
+    <h2>4.5 Apache Storm</h2>
+    <h3>4.5.1 Storm Topology</h3>
+    <pre><code>// Storm components
+TopologyBuilder builder = new TopologyBuilder();
+
+// Spout (data source)
+builder.setSpout("kafka-spout", new KafkaSpout(spoutConfig), 3);
+
+// Bolts (processing logic)
+builder.setBolt("parser", new ParserBolt(), 5)
+       .shuffleGrouping("kafka-spout");
+
+builder.setBolt("enricher", new EnricherBolt(), 5)
+       .fieldsGrouping("parser", new Fields("userId"));
+
+builder.setBolt("aggregator", new AggregatorBolt(), 3)
+       .fieldsGrouping("enricher", new Fields("userId"));
+
+// Submit topology
+StormSubmitter.submitTopology("analytics", config, builder.createTopology());</code></pre>
+
+    <h2>4.6 Comparison and Selection</h2>
+    <table>
+        <tr><th>Criteria</th><th>Flink</th><th>Spark</th><th>Kafka Streams</th><th>Storm</th></tr>
+        <tr><td>Latency</td><td>Low (ms)</td><td>Medium (sec)</td><td>Low (ms)</td><td>Very low (ms)</td></tr>
+        <tr><td>Throughput</td><td>High</td><td>Very high</td><td>High</td><td>Medium</td></tr>
+        <tr><td>State Management</td><td>Excellent</td><td>Good</td><td>Excellent</td><td>Basic</td></tr>
+        <tr><td>Exactly-once</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Trident only</td></tr>
+        <tr><td>Learning Curve</td><td>Steep</td><td>Moderate</td><td>Moderate</td><td>Steep</td></tr>
+        <tr><td>Deployment</td><td>Standalone/YARN</td><td>Various</td><td>Embedded</td><td>Standalone</td></tr>
+    </table>
+
+    <h2>4.7 Windowing Deep Dive</h2>
+    <h3>4.7.1 Tumbling Windows</h3>
+    <pre><code>// Non-overlapping fixed windows
+[00:00-00:05] [00:05-00:10] [00:10-00:15]
+Event at 00:03 → Window 1
+Event at 00:07 → Window 2</code></pre>
+
+    <h3>4.7.2 Sliding Windows</h3>
+    <pre><code>// Overlapping windows (5 min window, 1 min slide)
+[00:00-00:05]
+  [00:01-00:06]
+    [00:02-00:07]
+Event at 00:03 → Windows 1, 2, 3, 4</code></pre>
+
+    <h3>4.7.3 Session Windows</h3>
+    <pre><code>// Gap-based windows (30 min timeout)
+Event at 10:00 → Session 1 starts
+Event at 10:15 → Session 1 continues
+[30 min gap]
+Event at 10:50 → Session 2 starts</code></pre>
+
+    <h2>4.8 Time Semantics</h2>
+    <table>
+        <tr><th>Time Type</th><th>Definition</th><th>Use Case</th></tr>
+        <tr><td>Event Time</td><td>When event occurred</td><td>Accurate temporal analysis</td></tr>
+        <tr><td>Processing Time</td><td>When system processes</td><td>Simple, low latency</td></tr>
+        <tr><td>Ingestion Time</td><td>When entered system</td><td>Middle ground</td></tr>
+    </table>
+
+    <h3>4.8.1 Watermarks</h3>
+    <pre><code>// Watermark handling late events
+Watermark = max_event_time - allowed_lateness
+
+Events:
+10:00:00 (on time)
+10:00:05 (on time)
+10:00:02 (late, but within watermark)
+09:59:50 (too late, dropped)</code></pre>
+
+    <h2>4.9 Advanced Patterns</h2>
+    <h3>4.9.1 Stream Joins</h3>
+    <pre><code>// Join two streams
+DataStream<Order> orders = ...;
+DataStream<Payment> payments = ...;
+
+orders.join(payments)
+    .where(Order::getOrderId)
+    .equalTo(Payment::getOrderId)
+    .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+    .apply((order, payment) -> new Fulfillment(order, payment));</code></pre>
+
+    <h3>4.9.2 Pattern Detection (CEP)</h3>
+    <pre><code>// Complex Event Processing with Flink CEP
+Pattern<Event, ?> pattern = Pattern.<Event>begin("start")
+    .where(e -> e.getType().equals("LOGIN"))
+    .next("middle")
+    .where(e -> e.getType().equals("PURCHASE"))
+    .within(Time.minutes(10));
+
+PatternStream<Event> patternStream = CEP.pattern(events, pattern);
+patternStream.select((map) -> {
+    return new Alert("Purchase after login", map.get("middle"));
+});</code></pre>
+
+    <h2>4.10 Performance Optimization</h2>
+    <ul>
+        <li><strong>Parallelism:</strong> Configure optimal number of parallel instances</li>
+        <li><strong>Checkpointing:</strong> Balance frequency vs overhead</li>
+        <li><strong>State backend:</strong> Choose based on state size</li>
+        <li><strong>Network buffers:</strong> Tune for throughput</li>
+        <li><strong>Backpressure:</strong> Monitor and address bottlenecks</li>
+    </ul>
+
+    <h2>4.11 Monitoring and Debugging</h2>
+    <table>
+        <tr><th>Metric</th><th>What to Monitor</th><th>Action</th></tr>
+        <tr><td>Lag</td><td>Consumer offset lag</td><td>Scale up consumers</td></tr>
+        <tr><td>Throughput</td><td>Records/sec processed</td><td>Optimize processing</td></tr>
+        <tr><td>Latency</td><td>End-to-end delay</td><td>Reduce window size</td></tr>
+        <tr><td>Checkpoints</td><td>Duration, failures</td><td>Optimize state size</td></tr>
+        <tr><td>Backpressure</td><td>Task saturation</td><td>Increase parallelism</td></tr>
+    </table>
+
+    <div class="highlight">
+        <strong>Looking Ahead:</strong> Chapter 5 explores Event Sourcing and CQRS patterns for building event-driven systems with complete audit trails.
+    </div>
+
+    <p style="text-align: center; margin-top: 50px; color: #64748b;">
+        © 2025 SmileStory Inc. / WIA · 弘益人間 (홍익인간) · Benefit All Humanity
+    </p>
+</body>
+</html>

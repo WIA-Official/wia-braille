@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Phase 2 - Algorithms - WIA Ebook</title>
+</head>
+<body>
+
+<p><a href="chapter-04.html">Previous Chapter</a> | <a href="index.html">Table of Contents</a> | <a href="chapter-06.html">Next Chapter</a></p>
+
+<hr>
+
+<h1>Chapter 5: Phase 2 - Algorithms</h1>
+
+<blockquote>
+<p><strong>Hongik Ingan</strong></p>
+<p>"Benefit all humanity"</p>
+<p>Algorithms are the heart of credential verification. This chapter details the core algorithms that transform evidence into confidence scores, match peers, and assess competencies.</p>
+</blockquote>
+
+<hr>
+
+<h2>5.1 Confidence Calculation Algorithm</h2>
+
+<p>The primary algorithm for computing credential confidence:</p>
+
+<h3>Algorithm Overview</h3>
+
+<pre>
+def calculate_confidence(credential: RefugeeCredential) -> float:
+    """
+    Calculate overall confidence score for a credential.
+
+    Returns:
+        float: Confidence score between 0 and 99
+    """
+    # Start with base level confidence
+    level = credential.verification.level
+    base_confidence = get_base_confidence(level)
+
+    # Calculate bonuses
+    bonuses = calculate_bonuses(credential)
+
+    # Calculate penalties
+    penalties = calculate_penalties(credential)
+
+    # Combine with bounds
+    final = base_confidence + bonuses - penalties
+    return max(0, min(99, final))  # Cap at 99%, never 100%
+
+
+def get_base_confidence(level: int) -> float:
+    """Base confidence by verification level."""
+    BASE_SCORES = {
+        1: 30.0,   # Self-declaration
+        2: 60.0,   # Peer verified
+        3: 80.0,   # Assessment based
+        4: 95.0    # Document verified
+    }
+    return BASE_SCORES.get(level, 0)
+</pre>
+
+<h3>Bonus Calculations</h3>
+
+<pre>
+def calculate_bonuses(credential: RefugeeCredential) -> float:
+    """Calculate all applicable bonuses."""
+    bonus = 0.0
+
+    # Multiple peer verifications (max +15%)
+    peer_count = count_peer_verifications(credential)
+    if peer_count > 2:
+        bonus += min(15, (peer_count - 2) * 5)
+
+    # High assessment scores (+5-10%)
+    avg_score = get_average_assessment_score(credential)
+    if avg_score and avg_score >= 90:
+        bonus += 10
+    elif avg_score and avg_score >= 80:
+        bonus += 5
+
+    # Consistency bonus (+10%)
+    if check_information_consistency(credential):
+        bonus += 10
+
+    # Digital evidence bonus (+5%)
+    if has_digital_evidence(credential):
+        bonus += 5
+
+    return bonus
+</pre>
+
+<h3>Penalty Calculations</h3>
+
+<pre>
+def calculate_penalties(credential: RefugeeCredential) -> float:
+    """Calculate all applicable penalties."""
+    penalty = 0.0
+
+    # Conflicting information (-10% each)
+    conflicts = count_conflicts(credential)
+    penalty += conflicts * 10
+
+    # Age of verification (-1% per year)
+    years_old = get_verification_age_years(credential)
+    penalty += min(20, years_old)  # Cap at 20% penalty
+
+    # Incomplete information (-5%)
+    if has_incomplete_fields(credential):
+        penalty += 5
+
+    return penalty
+</pre>
+
+<hr>
+
+<h2>5.2 Peer Matching Algorithm</h2>
+
+<p>Algorithm to find potential peer verifiers:</p>
+
+<h3>Matching Process</h3>
+
+<pre>
+def find_peer_verifiers(
+    holder: HolderIdentity,
+    claim: EducationRecord | WorkExperience,
+    peer_network: PeerNetwork
+) -> List[PotentialPeer]:
+    """
+    Find potential peer verifiers for a credential claim.
+
+    Args:
+        holder: The credential holder
+        claim: The specific claim to verify
+        peer_network: Access to the peer registry
+
+    Returns:
+        List of potential peers ranked by relevance
+    """
+    candidates = []
+
+    # Search by institution/employer
+    institution_peers = peer_network.search_by_institution(
+        institution_id=claim.institution.wiaId,
+        start_date=claim.startDate,
+        end_date=claim.endDate,
+        exclude_did=holder.did
+    )
+
+    # Filter for overlapping time periods
+    for peer in institution_peers:
+        overlap = calculate_overlap(
+            claim.startDate, claim.endDate,
+            peer.startDate, peer.endDate
+        )
+        if overlap >= MIN_OVERLAP_MONTHS:
+            candidates.append(PotentialPeer(
+                peer=peer,
+                overlap_months=overlap,
+                relevance_score=calculate_relevance(peer, claim)
+            ))
+
+    # Sort by relevance
+    candidates.sort(key=lambda x: x.relevance_score, reverse=True)
+
+    # Return top candidates
+    return candidates[:MAX_PEER_SUGGESTIONS]
+</pre>
+
+<h3>Relevance Scoring</h3>
+
+<pre>
+def calculate_relevance(peer: Peer, claim: Claim) -> float:
+    """
+    Calculate how relevant a peer is for verification.
+
+    Factors:
+    - Time overlap
+    - Same department/field
+    - Peer's own verification level
+    - Previous successful verifications
+    """
+    score = 0.0
+
+    # Time overlap (0-30 points)
+    overlap = calculate_overlap_months(peer, claim)
+    score += min(30, overlap * 2)
+
+    # Same department (0-25 points)
+    if peer.department == claim.department:
+        score += 25
+    elif peer.faculty == claim.faculty:
+        score += 15
+
+    # Peer verification level (0-25 points)
+    score += peer.verification_level * 6.25
+
+    # Track record (0-20 points)
+    success_rate = peer.verification_success_rate
+    score += success_rate * 20
+
+    return score
+</pre>
+
+<h3>Anti-Collusion Measures</h3>
+
+<pre>
+Blind Verification Protocol:
+
+1. Peer receives verification request
+2. Peer sees ONLY:
+   - Institution name
+   - Time period
+   - General field of study
+3. Peer does NOT see:
+   - Other peers' responses
+   - Holder's exact claims
+   - Specific dates or grades
+4. Peer provides their recollection:
+   - Did they know this person?
+   - What was their role/position?
+   - What time period?
+   - Any specific memories?
+5. System compares peer responses to holder claims
+6. Matches and discrepancies analyzed
+</pre>
+
+<hr>
+
+<h2>5.3 Competency Assessment System</h2>
+
+<p>Algorithms for skills-based verification:</p>
+
+<h3>Assessment Selection</h3>
+
+<pre>
+def select_assessment(
+    credential: RefugeeCredential,
+    target_competency: str
+) -> Assessment:
+    """
+    Select appropriate assessment for competency verification.
+    """
+    # Get domain from ESCO code
+    domain = get_domain_from_esco(target_competency)
+
+    # Find available assessments
+    assessments = assessment_registry.find_by_domain(domain)
+
+    # Filter by language availability
+    holder_languages = [l.language for l in credential.languages
+                       if l.overall >= 'B2']
+    assessments = [a for a in assessments
+                  if a.language in holder_languages]
+
+    # Select based on claimed level
+    claimed_level = get_claimed_level(credential, target_competency)
+
+    # Return appropriate difficulty
+    return select_by_difficulty(assessments, claimed_level)
+</pre>
+
+<h3>Assessment Domains</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>Domain</strong></td>
+        <td><strong>Assessment Types</strong></td>
+        <td><strong>Duration</strong></td>
+    </tr>
+    <tr>
+        <td>Medical</td>
+        <td>Clinical reasoning, anatomy, procedures</td>
+        <td>3-4 hours</td>
+    </tr>
+    <tr>
+        <td>Engineering</td>
+        <td>Technical problems, design, calculations</td>
+        <td>2-3 hours</td>
+    </tr>
+    <tr>
+        <td>Teaching</td>
+        <td>Pedagogy, lesson planning, classroom scenarios</td>
+        <td>2 hours</td>
+    </tr>
+    <tr>
+        <td>IT/Software</td>
+        <td>Coding challenges, system design</td>
+        <td>2-4 hours</td>
+    </tr>
+    <tr>
+        <td>Accounting</td>
+        <td>Financial analysis, regulations, calculations</td>
+        <td>2 hours</td>
+    </tr>
+    <tr>
+        <td>Legal</td>
+        <td>Case analysis, legal reasoning</td>
+        <td>3 hours</td>
+    </tr>
+</table>
+
+<h3>Score to Confidence Mapping</h3>
+
+<pre>
+def assessment_to_confidence(
+    score: float,
+    max_score: float,
+    assessment_difficulty: str
+) -> float:
+    """
+    Convert assessment score to confidence contribution.
+    """
+    percentage = (score / max_score) * 100
+
+    # Difficulty multiplier
+    multipliers = {
+        'basic': 0.8,
+        'intermediate': 1.0,
+        'advanced': 1.2,
+        'expert': 1.4
+    }
+
+    # Base confidence from score
+    if percentage >= 90:
+        base = 85
+    elif percentage >= 80:
+        base = 75
+    elif percentage >= 70:
+        base = 65
+    elif percentage >= 60:
+        base = 55
+    else:
+        base = 40  # Minimum for completing
+
+    return min(95, base * multipliers[assessment_difficulty])
+</pre>
+
+<hr>
+
+<h2>5.4 Document Verification Algorithm</h2>
+
+<p>AI-powered document authentication:</p>
+
+<h3>Verification Pipeline</h3>
+
+<pre>
+def verify_document(document: DocumentScan) -> VerificationResult:
+    """
+    Multi-stage document verification process.
+    """
+    result = VerificationResult()
+
+    # Stage 1: Image quality check
+    quality = check_image_quality(document)
+    if quality.score < MIN_QUALITY:
+        result.add_warning("Low image quality")
+
+    # Stage 2: Document type classification
+    doc_type = classify_document_type(document)
+    result.document_type = doc_type
+
+    # Stage 3: OCR extraction
+    extracted_text = perform_ocr(document, doc_type.language)
+    result.extracted_data = parse_extracted_text(extracted_text, doc_type)
+
+    # Stage 4: Tampering detection
+    tampering = detect_tampering(document)
+    if tampering.detected:
+        result.add_error("Tampering detected", tampering.details)
+        return result
+
+    # Stage 5: Cross-reference check
+    if doc_type.institution_id:
+        institution_check = check_institution_records(
+            doc_type.institution_id,
+            result.extracted_data
+        )
+        result.institution_verified = institution_check.verified
+
+    # Stage 6: Calculate confidence
+    result.confidence = calculate_document_confidence(result)
+
+    return result
+</pre>
+
+<h3>Tampering Detection</h3>
+
+<pre>
+def detect_tampering(document: DocumentScan) -> TamperingResult:
+    """
+    AI-powered tampering detection.
+
+    Checks for:
+    - Digital manipulation artifacts
+    - Font inconsistencies
+    - Seal/stamp anomalies
+    - Date format inconsistencies
+    - Paper texture irregularities
+    """
+    checks = []
+
+    # ELA (Error Level Analysis)
+    ela_result = perform_ela_analysis(document)
+    checks.append(('ela', ela_result))
+
+    # Font analysis
+    font_result = analyze_font_consistency(document)
+    checks.append(('font', font_result))
+
+    # Seal verification
+    seal_result = verify_seal_authenticity(document)
+    checks.append(('seal', seal_result))
+
+    # Metadata analysis
+    meta_result = analyze_metadata(document)
+    checks.append(('metadata', meta_result))
+
+    # Aggregate results
+    tampering_score = aggregate_tampering_checks(checks)
+
+    return TamperingResult(
+        detected=tampering_score > TAMPERING_THRESHOLD,
+        score=tampering_score,
+        details=generate_tampering_report(checks)
+    )
+</pre>
+
+<hr>
+
+<h2>5.5 Multi-Source Aggregation</h2>
+
+<p>Combining evidence from multiple sources:</p>
+
+<h3>Evidence Aggregation</h3>
+
+<pre>
+def aggregate_evidence(evidence_list: List[Evidence]) -> AggregatedResult:
+    """
+    Aggregate multiple pieces of evidence into unified confidence.
+
+    Uses weighted combination with diminishing returns
+    and consistency bonuses.
+    """
+    if not evidence_list:
+        return AggregatedResult(confidence=0)
+
+    # Group by type
+    by_type = group_evidence_by_type(evidence_list)
+
+    # Calculate per-type confidence
+    type_confidences = {}
+    for etype, evidence in by_type.items():
+        type_confidences[etype] = calculate_type_confidence(evidence)
+
+    # Apply weights
+    weights = {
+        'document_scan': 0.30,
+        'peer_attestation': 0.25,
+        'assessment_result': 0.25,
+        'institutional_record': 0.30,
+        'digital_footprint': 0.10,
+        'portfolio': 0.10
+    }
+
+    weighted_sum = sum(
+        type_confidences.get(t, 0) * w
+        for t, w in weights.items()
+    )
+
+    # Normalize
+    total_weight = sum(
+        w for t, w in weights.items()
+        if t in type_confidences
+    )
+
+    base_confidence = weighted_sum / total_weight if total_weight > 0 else 0
+
+    # Consistency bonus
+    consistency = check_cross_source_consistency(evidence_list)
+    bonus = consistency * 10  # Up to +10%
+
+    return AggregatedResult(
+        confidence=min(99, base_confidence + bonus),
+        type_breakdown=type_confidences,
+        consistency_score=consistency
+    )
+</pre>
+
+<h3>Consistency Checking</h3>
+
+<pre>
+def check_cross_source_consistency(evidence: List[Evidence]) -> float:
+    """
+    Check if evidence from different sources is consistent.
+
+    Returns: Consistency score 0-1
+    """
+    # Extract claims from each evidence
+    claims = [extract_claims(e) for e in evidence]
+
+    # Compare dates
+    date_consistency = compare_dates(claims)
+
+    # Compare names/titles
+    title_consistency = compare_titles(claims)
+
+    # Compare institutions
+    institution_consistency = compare_institutions(claims)
+
+    # Weighted average
+    return (
+        date_consistency * 0.3 +
+        title_consistency * 0.3 +
+        institution_consistency * 0.4
+    )
+</pre>
+
+<hr>
+
+<h2>5.6 Eligibility Determination</h2>
+
+<p>Algorithms for determining eligibility for various opportunities:</p>
+
+<h3>Employment Eligibility</h3>
+
+<pre>
+def check_employment_eligibility(
+    credential: RefugeeCredential,
+    job_requirements: JobRequirements
+) -> EligibilityResult:
+    """
+    Check if credential holder is eligible for employment.
+    """
+    result = EligibilityResult()
+
+    # Check education requirements
+    if job_requirements.education:
+        edu_match = match_education(
+            credential.education,
+            job_requirements.education
+        )
+        result.education_met = edu_match.meets_requirements
+        result.education_confidence = edu_match.confidence
+
+    # Check experience requirements
+    if job_requirements.experience_years:
+        exp_match = match_experience(
+            credential.workExperience,
+            job_requirements.experience_years,
+            job_requirements.experience_field
+        )
+        result.experience_met = exp_match.meets_requirements
+        result.experience_confidence = exp_match.confidence
+
+    # Check competency requirements
+    if job_requirements.competencies:
+        comp_match = match_competencies(
+            credential.competencies,
+            job_requirements.competencies
+        )
+        result.competencies_met = comp_match.meets_requirements
+        result.competencies_confidence = comp_match.confidence
+
+    # Check language requirements
+    if job_requirements.languages:
+        lang_match = match_languages(
+            credential.languages,
+            job_requirements.languages
+        )
+        result.languages_met = lang_match.meets_requirements
+
+    # Overall eligibility
+    result.eligible = (
+        result.education_met and
+        result.experience_met and
+        result.competencies_met and
+        result.languages_met
+    )
+
+    result.overall_confidence = calculate_overall_confidence(result)
+
+    return result
+</pre>
+
+<hr>
+
+<h2>5.7 Performance Requirements</h2>
+
+<p>All algorithms must meet performance standards:</p>
+
+<h3>Latency Requirements</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>Operation</strong></td>
+        <td><strong>Max Latency</strong></td>
+        <td><strong>p99 Target</strong></td>
+    </tr>
+    <tr>
+        <td>Confidence calculation</td>
+        <td>100ms</td>
+        <td>50ms</td>
+    </tr>
+    <tr>
+        <td>Peer matching</td>
+        <td>500ms</td>
+        <td>200ms</td>
+    </tr>
+    <tr>
+        <td>Document verification</td>
+        <td>5s</td>
+        <td>3s</td>
+    </tr>
+    <tr>
+        <td>Assessment scoring</td>
+        <td>200ms</td>
+        <td>100ms</td>
+    </tr>
+    <tr>
+        <td>Eligibility check</td>
+        <td>300ms</td>
+        <td>150ms</td>
+    </tr>
+</table>
+
+<h3>Accuracy Requirements</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>Algorithm</strong></td>
+        <td><strong>Metric</strong></td>
+        <td><strong>Target</strong></td>
+    </tr>
+    <tr>
+        <td>Tampering detection</td>
+        <td>True positive rate</td>
+        <td>>95%</td>
+    </tr>
+    <tr>
+        <td>Tampering detection</td>
+        <td>False positive rate</td>
+        <td><5%</td>
+    </tr>
+    <tr>
+        <td>Peer matching</td>
+        <td>Relevant results in top 10</td>
+        <td>>80%</td>
+    </tr>
+    <tr>
+        <td>Document OCR</td>
+        <td>Character accuracy</td>
+        <td>>98%</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>5.8 Chapter Summary</h2>
+
+<p>Key takeaways from this chapter:</p>
+
+<ul>
+    <li>[REF] Confidence calculation combines base level, bonuses, and penalties</li>
+    <li>[REF] Peer matching uses relevance scoring with anti-collusion measures</li>
+    <li>[REF] Competency assessments are domain-specific with language support</li>
+    <li>[REF] Document verification uses multi-stage AI analysis</li>
+    <li>[REF] Multi-source aggregation provides consistency bonuses</li>
+    <li>[REF] Strict performance requirements ensure responsiveness</li>
+</ul>
+
+<hr>
+
+<p><a href="chapter-04.html">Previous: Data Format</a> | <a href="index.html">Table of Contents</a> | <a href="chapter-06.html">Next: Communication Protocol</a></p>
+
+<hr>
+
+<p><strong>Copyright 2025 Smilestory Inc. / WIA</strong></p>
+<p>Released under MIT License</p>
+
+</body>
+</html>

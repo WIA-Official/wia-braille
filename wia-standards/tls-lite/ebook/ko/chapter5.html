@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제5장 - WIA TLS-Lite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #e0e0e0; line-height: 1.8; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: rgba(236, 72, 153, 0.1); border-bottom: 3px solid #EC4899; padding: 30px 0; margin-bottom: 40px; }
+        h1 { color: #EC4899; font-size: 2.5em; margin-bottom: 10px; text-shadow: 0 0 20px rgba(236, 72, 153, 0.5); }
+        h2 { color: #EC4899; font-size: 2em; margin: 40px 0 20px 0; border-left: 5px solid #EC4899; padding-left: 15px; }
+        h3 { color: #EC4899; font-size: 1.5em; margin: 30px 0 15px 0; }
+        .breadcrumb { color: #808080; margin-bottom: 20px; }
+        .breadcrumb a { color: #EC4899; text-decoration: none; }
+        .content-section { background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 30px; margin-bottom: 30px; border: 1px solid rgba(236, 72, 153, 0.2); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(0, 0, 0, 0.3); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(236, 72, 153, 0.2); }
+        th { background: rgba(236, 72, 153, 0.3); color: #EC4899; font-weight: bold; }
+        tr:hover { background: rgba(236, 72, 153, 0.1); }
+        code { background: rgba(0, 0, 0, 0.5); padding: 2px 6px; border-radius: 4px; color: #EC4899; font-family: 'Courier New', monospace; }
+        pre { background: rgba(0, 0, 0, 0.5); border-left: 4px solid #EC4899; padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; }
+        pre code { background: none; padding: 0; color: #e0e0e0; }
+        .api-endpoint { background: rgba(236, 72, 153, 0.1); border-left: 4px solid #EC4899; padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .api-endpoint .method { display: inline-block; background: #EC4899; color: #fff; padding: 5px 15px; border-radius: 5px; font-weight: bold; margin-right: 10px; }
+        .certification-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin: 20px 0; }
+        .cert-item { background: rgba(236, 72, 153, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(236, 72, 153, 0.3); }
+        .cert-item h4 { color: #EC4899; margin-bottom: 8px; }
+        .navigation { display: flex; justify-content: space-between; margin: 40px 0; gap: 20px; }
+        .nav-button { background: rgba(236, 72, 153, 0.2); color: #EC4899; padding: 15px 30px; border-radius: 8px; text-decoration: none; border: 2px solid #EC4899; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-button:hover { background: #EC4899; color: #fff; transform: translateY(-2px); }
+        footer { text-align: center; padding: 30px 0; margin-top: 60px; border-top: 2px solid rgba(236, 72, 153, 0.3); color: #808080; }
+        footer .korean-text { color: #EC4899; font-size: 1.3em; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="breadcrumb"><a href="index.html">홈</a> / 제5장</div>
+            <h1>제5장: IoT를 위한 DTLS</h1>
+        </header>
+
+        <div class="content-section">
+            <h2>개요</h2>
+            <p>이 장에서는 WIA TLS-Lite 표준의 UDP 기반 IoT 통신을 위한 데이터그램 TLS을 다룹니다.</p>
+            <p>TLS-Lite는 강력한 보안을 유지하면서 IoT 장치의 제약 조건을 해결하도록 설계되었습니다. 최적화된 암호화 작업, 감소된 메모리 사용량 및 효율적인 전력 소비를 제공합니다.</p>
+        </div>
+
+        <div class="content-section">
+            <h2>주요 개념</h2>
+            <h3>표 1: 핵심 기능 비교</h3>
+            <table>
+                <thead>
+                    <tr><th>기능</th><th>표준 TLS</th><th>TLS-Lite</th><th>개선율</th><th>장치 클래스</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>핸드셰이크 RTT</td><td>2-RTT</td><td>1-RTT</td><td>50%</td><td>모든 클래스</td></tr>
+                    <tr><td>메모리 사용량</td><td>128KB+</td><td>50KB</td><td>60%</td><td>Class 2+</td></tr>
+                    <tr><td>인증서 크기</td><td>1024-2048B</td><td>256B</td><td>75%</td><td>Class 2+</td></tr>
+                    <tr><td>전력 소비</td><td>높음</td><td>낮음</td><td>40%</td><td>모든 클래스</td></tr>
+                    <tr><td>코드 크기</td><td>100KB+</td><td>24-64KB</td><td>65%</td><td>프로필별</td></tr>
+                </tbody>
+            </table>
+
+            <h3>표 2: 프로토콜 파라미터</h3>
+            <table>
+                <thead>
+                    <tr><th>파라미터</th><th>최소값</th><th>권장값</th><th>최대값</th><th>설명</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>암호 스위트</td><td>1</td><td>3</td><td>15</td><td>지원되는 암호화 알고리즘</td></tr>
+                    <tr><td>세션 캐시</td><td>2</td><td>8</td><td>32</td><td>캐시된 세션 수</td></tr>
+                    <tr><td>최대 프래그먼트</td><td>512B</td><td>1024B</td><td>4096B</td><td>레코드 크기 제한</td></tr>
+                    <tr><td>세션 수명</td><td>300s</td><td>86400s</td><td>604800s</td><td>세션 유효 기간</td></tr>
+                    <tr><td>재전송 시간</td><td>1s</td><td>3s</td><td>60s</td><td>DTLS 재전송 타임아웃</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="content-section">
+            <h2>구현 예제</h2>
+            <h3>코드 예제 1: 핵심 알고리즘 구현</h3>
+            <pre><code>/**
+ * WIA TLS-Lite 핵심 암호화 구현
+ * ARM Cortex-M 마이크로컨트롤러에 최적화됨
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdbool.h&gt;
+
+#define TLS_LITE_VERSION 0x0304
+#define MAX_CIPHER_SUITES 8
+#define SESSION_ID_LEN 32
+
+// TLS-Lite 컨텍스트 구조체
+typedef struct {
+    uint16_t version;
+    uint16_t cipher_suite;
+    uint8_t session_id[SESSION_ID_LEN];
+    uint8_t master_secret[48];
+    uint8_t client_random[32];
+    uint8_t server_random[32];
+    bool session_valid;
+    uint32_t creation_time;
+} tls_lite_context_t;
+
+/**
+ * TLS-Lite 컨텍스트 초기화
+ */
+int tls_lite_init(tls_lite_context_t *ctx) {
+    if (!ctx) return -1;
+
+    memset(ctx, 0, sizeof(tls_lite_context_t));
+    ctx->version = TLS_LITE_VERSION;
+    ctx->session_valid = false;
+
+    // 클라이언트 랜덤 생성
+    if (csprng_generate(ctx->client_random, 32) != 0) {
+        return -2;
+    }
+
+    ctx->creation_time = get_current_time();
+    return 0;
+}
+
+/**
+ * 암호 스위트 설정
+ */
+int tls_lite_set_cipher_suite(tls_lite_context_t *ctx, uint16_t suite) {
+    // 지원되는 암호 스위트 확인
+    switch (suite) {
+        case 0x1301:  // TLS_AES_128_GCM_SHA256
+        case 0x1302:  // TLS_AES_256_GCM_SHA384
+        case 0xCCA8:  // TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+        case 0xCCA9:  // TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+            ctx->cipher_suite = suite;
+            return 0;
+        default:
+            return -1;  // 지원되지 않는 암호 스위트
+    }
+}
+
+/**
+ * 키 유도 함수
+ */
+int tls_lite_derive_keys(tls_lite_context_t *ctx,
+                        uint8_t *client_write_key,
+                        uint8_t *server_write_key) {
+    uint8_t seed[64];
+
+    // 시드 준비: client_random + server_random
+    memcpy(seed, ctx->client_random, 32);
+    memcpy(seed + 32, ctx->server_random, 32);
+
+    // HKDF를 사용한 키 유도
+    uint8_t derived[64];
+    if (hkdf(derived, 64, ctx->master_secret, 48, seed, 64,
+             (uint8_t*)"key expansion", 13) != 0) {
+        return -1;
+    }
+
+    // 클라이언트 및 서버 쓰기 키 추출
+    memcpy(client_write_key, derived, 16);
+    memcpy(server_write_key, derived + 16, 16);
+
+    return 0;
+}
+</code></pre>
+
+            <h3>코드 예제 2: 프로토콜 핸들러</h3>
+            <pre><code>/**
+ * TLS-Lite 프로토콜 메시지 핸들러
+ */
+
+#include &lt;stdint.h&gt;
+
+typedef enum {
+    MSG_CLIENT_HELLO = 1,
+    MSG_SERVER_HELLO = 2,
+    MSG_CERTIFICATE = 11,
+    MSG_SERVER_HELLO_DONE = 14,
+    MSG_CERTIFICATE_VERIFY = 15,
+    MSG_CLIENT_KEY_EXCHANGE = 16,
+    MSG_FINISHED = 20
+} handshake_msg_type_t;
+
+/**
+ * ClientHello 메시지 생성
+ */
+int create_client_hello(tls_lite_context_t *ctx,
+                       uint8_t *buffer, size_t *length) {
+    size_t pos = 0;
+
+    // 핸드셰이크 헤더
+    buffer[pos++] = MSG_CLIENT_HELLO;
+
+    // 메시지 길이 (나중에 채움)
+    size_t len_pos = pos;
+    pos += 3;
+
+    // 클라이언트 버전
+    buffer[pos++] = (ctx->version >> 8) & 0xFF;
+    buffer[pos++] = ctx->version & 0xFF;
+
+    // 클라이언트 랜덤
+    memcpy(buffer + pos, ctx->client_random, 32);
+    pos += 32;
+
+    // 세션 ID 길이
+    buffer[pos++] = SESSION_ID_LEN;
+
+    // 세션 ID
+    memcpy(buffer + pos, ctx->session_id, SESSION_ID_LEN);
+    pos += SESSION_ID_LEN;
+
+    // 암호 스위트 (2바이트)
+    buffer[pos++] = (ctx->cipher_suite >> 8) & 0xFF;
+    buffer[pos++] = ctx->cipher_suite & 0xFF;
+
+    // 압축 방법 (없음)
+    buffer[pos++] = 0x00;
+
+    // 메시지 길이 채우기
+    size_t msg_len = pos - len_pos - 3;
+    buffer[len_pos] = (msg_len >> 16) & 0xFF;
+    buffer[len_pos + 1] = (msg_len >> 8) & 0xFF;
+    buffer[len_pos + 2] = msg_len & 0xFF;
+
+    *length = pos;
+    return 0;
+}
+
+/**
+ * ServerHello 메시지 파싱
+ */
+int parse_server_hello(tls_lite_context_t *ctx,
+                      const uint8_t *data, size_t length) {
+    if (length < 38) return -1;  // 최소 크기 확인
+
+    size_t pos = 0;
+
+    // 메시지 타입 확인
+    if (data[pos++] != MSG_SERVER_HELLO) {
+        return -2;
+    }
+
+    // 메시지 길이 건너뛰기
+    pos += 3;
+
+    // 서버 버전 확인
+    uint16_t server_version = (data[pos] << 8) | data[pos + 1];
+    pos += 2;
+
+    if (server_version != ctx->version) {
+        return -3;  // 버전 불일치
+    }
+
+    // 서버 랜덤 복사
+    memcpy(ctx->server_random, data + pos, 32);
+    pos += 32;
+
+    // 세션 ID 길이
+    uint8_t session_id_len = data[pos++];
+    if (session_id_len > 0) {
+        memcpy(ctx->session_id, data + pos, session_id_len);
+        pos += session_id_len;
+    }
+
+    // 선택된 암호 스위트
+    uint16_t selected_suite = (data[pos] << 8) | data[pos + 1];
+    ctx->cipher_suite = selected_suite;
+
+    return 0;
+}
+</code></pre>
+
+            <h3>코드 예제 3: 보안 통신</h3>
+            <pre><code>/**
+ * 보안 데이터 전송 및 수신
+ */
+
+#include &lt;stdint.h&gt;
+
+#define MAX_RECORD_SIZE 16384
+#define RECORD_HEADER_SIZE 5
+
+/**
+ * 애플리케이션 데이터 암호화 및 전송
+ */
+int tls_lite_send(tls_lite_context_t *ctx,
+                 const uint8_t *plaintext, size_t plaintext_len,
+                 int (*send_func)(const uint8_t*, size_t)) {
+    if (!ctx->session_valid) {
+        return -1;  // 세션이 유효하지 않음
+    }
+
+    if (plaintext_len > MAX_RECORD_SIZE) {
+        return -2;  // 데이터가 너무 큼
+    }
+
+    uint8_t encrypted[MAX_RECORD_SIZE + 64];
+    size_t encrypted_len;
+
+    // 클라이언트 쓰기 키로 암호화
+    uint8_t nonce[12];
+    generate_nonce(ctx, nonce);
+
+    int result = aead_encrypt(
+        ctx->client_write_key, 16,
+        nonce, 12,
+        plaintext, plaintext_len,
+        NULL, 0,  // 추가 데이터 없음
+        encrypted, &encrypted_len
+    );
+
+    if (result != 0) {
+        return -3;  // 암호화 실패
+    }
+
+    // TLS 레코드 헤더 추가
+    uint8_t record[MAX_RECORD_SIZE + 128];
+    record[0] = 0x17;  // 애플리케이션 데이터
+    record[1] = (ctx->version >> 8) & 0xFF;
+    record[2] = ctx->version & 0xFF;
+    record[3] = (encrypted_len >> 8) & 0xFF;
+    record[4] = encrypted_len & 0xFF;
+
+    memcpy(record + RECORD_HEADER_SIZE, encrypted, encrypted_len);
+
+    // 네트워크로 전송
+    return send_func(record, RECORD_HEADER_SIZE + encrypted_len);
+}
+
+/**
+ * 수신 데이터 복호화
+ */
+int tls_lite_recv(tls_lite_context_t *ctx,
+                 uint8_t *plaintext, size_t *plaintext_len,
+                 int (*recv_func)(uint8_t*, size_t)) {
+    if (!ctx->session_valid) {
+        return -1;
+    }
+
+    uint8_t record[MAX_RECORD_SIZE + 128];
+    ssize_t record_len = recv_func(record, sizeof(record));
+
+    if (record_len < RECORD_HEADER_SIZE) {
+        return -2;  // 불완전한 레코드
+    }
+
+    // 레코드 헤더 확인
+    if (record[0] != 0x17) {  // 애플리케이션 데이터
+        return -3;  // 잘못된 레코드 타입
+    }
+
+    uint16_t encrypted_len = (record[3] << 8) | record[4];
+
+    // 서버 쓰기 키로 복호화
+    uint8_t nonce[12];
+    extract_nonce_from_record(record, nonce);
+
+    int result = aead_decrypt(
+        ctx->server_write_key, 16,
+        nonce, 12,
+        record + RECORD_HEADER_SIZE, encrypted_len,
+        NULL, 0,
+        plaintext, plaintext_len
+    );
+
+    return result;
+}
+</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>API 엔드포인트</h2>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/device/capabilities</code><p>장치 기능 정보 조회</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/tls/init</code><p>TLS-Lite 스택 초기화</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/tls/ciphersuites</code><p>지원되는 암호 스위트 목록 조회</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/session/create</code><p>새 TLS-Lite 세션 생성</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/session/{id}/status</code><p>활성 세션 상태 조회</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/session/{id}/resume</code><p>캐시된 세션 재개</p></div>
+            <div class="api-endpoint"><span class="method">DELETE</span><code>/api/v1/session/{id}</code><p>활성 세션 종료</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/entropy/status</code><p>엔트로피 풀 상태 확인</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/crypto/encrypt</code><p>데이터 암호화</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/crypto/decrypt</code><p>데이터 복호화</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/memory/usage</code><p>메모리 사용 통계</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/config/update</code><p>구성 설정 업데이트</p></div>
+        </div>
+
+        <div class="content-section">
+            <h2>JSON 구성 스키마</h2>
+            <pre><code>{
+  "\$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WIA TLS-Lite 구성",
+  "description": "TLS-Lite 장치 구성 스키마",
+  "type": "object",
+  "required": ["device_info", "security_profile"],
+  "properties": {
+    "device_info": {
+      "type": "object",
+      "properties": {
+        "device_id": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{16}\$"
+        },
+        "device_class": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "manufacturer": { "type": "string" },
+        "model": { "type": "string" },
+        "firmware_version": { "type": "string" }
+      }
+    },
+    "security_profile": {
+      "type": "object",
+      "properties": {
+        "profile_type": {
+          "type": "string",
+          "enum": ["minimal", "standard", "enhanced"]
+        },
+        "authentication_mode": {
+          "type": "string",
+          "enum": ["psk", "certificate", "hybrid"]
+        },
+        "session_resumption": {
+          "type": "boolean",
+          "default": true
+        },
+        "max_session_cache": {
+          "type": "integer",
+          "default": 8
+        }
+      }
+    },
+    "cipher_suites": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "TLS_PSK_WITH_CHACHA20_POLY1305_SHA256",
+          "TLS_ECDHE_ECDSA_WITH_AES_128_CCM",
+          "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+        ]
+      }
+    },
+    "network_settings": {
+      "type": "object",
+      "properties": {
+        "max_fragment_length": {
+          "type": "integer",
+          "enum": [512, 1024, 2048],
+          "default": 1024
+        },
+        "use_dtls": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>인증 요구사항</h2>
+            <div class="certification-list">
+                <div class="cert-item"><h4>CERT-KO-001: 장치 기능 평가</h4><p>정확한 RAM, 플래시, 처리 능력 보고</p></div>
+                <div class="cert-item"><h4>CERT-KO-002: 암호화 알고리즘</h4><p>프로필별 승인된 암호 스위트 구현</p></div>
+                <div class="cert-item"><h4>CERT-KO-003: 난수 생성</h4><p>NIST SP 800-22 통계 테스트 통과</p></div>
+                <div class="cert-item"><h4>CERT-KO-004: 상호 인증</h4><p>PSK 또는 인증서를 사용한 상호 인증</p></div>
+                <div class="cert-item"><h4>CERT-KO-005: 세션 재개</h4><p>세션 캐싱 및 재개 적절한 구현</p></div>
+                <div class="cert-item"><h4>CERT-KO-006: 메모리 안전성</h4><p>정상 작동 중 버퍼 오버플로우 또는 메모리 누수 없음</p></div>
+                <div class="cert-item"><h4>CERT-KO-007: 타이밍 공격 저항</h4><p>상수 시간 암호화 작업 구현</p></div>
+                <div class="cert-item"><h4>CERT-KO-008: 인증서 검증</h4><p>적절한 X.509 인증서 체인 검증 (지원되는 경우)</p></div>
+                <div class="cert-item"><h4>CERT-KO-009: 프로토콜 버전</h4><p>TLS 1.3 또는 TLS-Lite 1.0 이상 지원</p></div>
+                <div class="cert-item"><h4>CERT-KO-010: 재생 공격 방지</h4><p>nonce 기반 신선도 메커니즘 구현</p></div>
+                <div class="cert-item"><h4>CERT-KO-011: DoS 완화</h4><p>DTLS 연결을 위한 쿠키 기반 클라이언트 검증</p></div>
+                <div class="cert-item"><h4>CERT-KO-012: 데이터 무결성</h4><p>인증 태그를 사용한 AEAD 암호 스위트 지원</p></div>
+                <div class="cert-item"><h4>CERT-KO-013: 순방향 비밀성</h4><p>향상된 프로필을 위한 임시 키 교환(ECDHE) 지원</p></div>
+                <div class="cert-item"><h4>CERT-KO-014: 키 유도</h4><p>TLS 1.3 사양에 따른 HKDF 기반 키 유도</p></div>
+                <div class="cert-item"><h4>CERT-KO-015: 보안 저장소</h4><p>사전 공유 키 및 개인 키를 위한 보호된 저장소</p></div>
+                <div class="cert-item"><h4>CERT-KO-016: 오류 처리</h4><p>정보 유출 없는 적절한 오류 처리</p></div>
+                <div class="cert-item"><h4>CERT-KO-017: 상호 운용성</h4><p>참조 TLS-Lite 구현과 성공적인 핸드셰이크</p></div>
+                <div class="cert-item"><h4>CERT-KO-018: 성능 벤치마크</h4><p>지정된 시간 제한 내 핸드셰이크 완료</p></div>
+                <div class="cert-item"><h4>CERT-KO-019: 전력 소비</h4><p>장치 클래스에 대해 정의된 제한 내 에너지 소비</p></div>
+                <div class="cert-item"><h4>CERT-KO-020: 펌웨어 업데이트</h4><p>서명 검증을 통한 보안 펌웨어 업데이트 메커니즘</p></div>
+                <div class="cert-item"><h4>CERT-KO-021: API 준수</h4><p>필수 TLS-Lite API 엔드포인트 구현</p></div>
+                <div class="cert-item"><h4>CERT-KO-022: 문서</h4><p>구현에 대한 완전한 기술 문서</p></div>
+                <div class="cert-item"><h4>CERT-KO-023: 부채널 저항</h4><p>전력 및 타이밍 분석에 대한 기본 대응책</p></div>
+                <div class="cert-item"><h4>CERT-KO-024: 규정 준수 테스트</h4><p>모든 필수 테스트 벡터 및 규정 준수 테스트 통과</p></div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter4.html" class="nav-button">← 이전</a>
+            <a href="chapter6.html" class="nav-button">다음 →</a>
+        </div>
+
+        <footer>
+            <div class="korean-text">弘益人間</div>
+            <p>널리 인간을 이롭게 하라</p>
+            <p>&copy; 2025 WIA (Wireless IoT Alliance). All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

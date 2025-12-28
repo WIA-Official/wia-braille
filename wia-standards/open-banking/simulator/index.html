@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Banking Simulator - WIA-FIN-022</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: rgba(30, 41, 59, 0.8);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #22c55e;
+            text-decoration: none;
+        }
+
+        .logo span {
+            opacity: 0.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .tab:hover {
+            border-color: rgba(34, 197, 94, 0.5);
+            color: #cbd5e1;
+        }
+
+        .tab.active {
+            background: #22c55e;
+            color: #0f172a;
+            border-color: #22c55e;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #22c55e;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #22c55e;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #22c55e;
+            color: #0f172a;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background: #16a34a;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #22c55e;
+            color: #22c55e;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .result-box {
+            background: #0f172a;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .result-box pre {
+            color: #22c55e;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .api-card {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .api-card:hover {
+            border-color: #22c55e;
+            transform: translateY(-2px);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 6px;
+            color: #22c55e;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .status-badge.pending {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+        }
+
+        .status-badge.error {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .account-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.1);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .account-item:hover {
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .balance-display {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #22c55e;
+            margin: 1rem 0;
+        }
+
+        .transaction-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.1);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .success {
+            color: #22c55e;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+
+        .info-box {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 4px solid #22c55e;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            color: #cbd5e1;
+            margin: 0.5rem 0;
+        }
+
+        .oauth-flow {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            overflow-x: auto;
+        }
+
+        .oauth-step {
+            flex: 1;
+            min-width: 150px;
+            padding: 1.5rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 2px solid rgba(34, 197, 94, 0.2);
+            border-radius: 12px;
+            text-align: center;
+            position: relative;
+        }
+
+        .oauth-step.active {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .oauth-step::after {
+            content: '→';
+            position: absolute;
+            right: -1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #22c55e;
+            font-size: 1.5rem;
+        }
+
+        .oauth-step:last-child::after {
+            display: none;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .metric-card {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #22c55e;
+        }
+
+        .metric-label {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .code-snippet {
+            background: #0f172a;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .code-snippet code {
+            color: #22c55e;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .oauth-flow {
+                flex-direction: column;
+            }
+
+            .oauth-step::after {
+                content: '↓';
+                right: 50%;
+                top: auto;
+                bottom: -1.5rem;
+                transform: translateX(50%);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <a href="../index.html" class="logo">
+                🏦 <span>WIA-FIN-022</span> Open Banking Simulator
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('overview')">📋 Overview</div>
+            <div class="tab" onclick="switchTab('testing')">🧪 Testing</div>
+            <div class="tab" onclick="switchTab('validation')">✅ Validation</div>
+            <div class="tab" onclick="switchTab('results')">📊 Results</div>
+            <div class="tab" onclick="switchTab('integration')">🔌 Integration</div>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="card">
+                <h2 class="card-title">Open Banking API Overview</h2>
+                <div class="info-box">
+                    <p><strong>What is Open Banking?</strong></p>
+                    <p>Open Banking allows third-party providers to access financial data and initiate payments with customer consent, following PSD2 and other regulatory frameworks.</p>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Key APIs</h3>
+                <div class="grid-2">
+                    <div class="api-card">
+                        <h4 style="color: #22c55e; margin-bottom: 1rem;">📊 Account Information (AISP)</h4>
+                        <p style="color: #94a3b8;">Access account balances, transactions, and details with customer consent.</p>
+                        <div style="margin-top: 1rem;">
+                            <div style="font-size: 0.875rem; color: #64748b;">
+                                <strong>Endpoints:</strong><br>
+                                GET /accounts<br>
+                                GET /accounts/{id}/balance<br>
+                                GET /accounts/{id}/transactions
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="api-card">
+                        <h4 style="color: #22c55e; margin-bottom: 1rem;">💸 Payment Initiation (PISP)</h4>
+                        <p style="color: #94a3b8;">Initiate payments directly from customer bank accounts.</p>
+                        <div style="margin-top: 1rem;">
+                            <div style="font-size: 0.875rem; color: #64748b;">
+                                <strong>Endpoints:</strong><br>
+                                POST /payments<br>
+                                GET /payments/{id}<br>
+                                POST /payments/{id}/authorize
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="api-card">
+                        <h4 style="color: #22c55e; margin-bottom: 1rem;">✓ Confirmation of Funds (CBPII)</h4>
+                        <p style="color: #94a3b8;">Check if sufficient funds are available for a transaction.</p>
+                        <div style="margin-top: 1rem;">
+                            <div style="font-size: 0.875rem; color: #64748b;">
+                                <strong>Endpoints:</strong><br>
+                                POST /funds-confirmations<br>
+                                GET /funds-confirmations/{id}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="api-card">
+                        <h4 style="color: #22c55e; margin-bottom: 1rem;">🔁 Variable Recurring Payments</h4>
+                        <p style="color: #94a3b8;">Set up flexible recurring payments with variable amounts.</p>
+                        <div style="margin-top: 1rem;">
+                            <div style="font-size: 0.875rem; color: #64748b;">
+                                <strong>Endpoints:</strong><br>
+                                POST /vrp/consents<br>
+                                POST /vrp/payments<br>
+                                GET /vrp/payments/{id}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">OAuth 2.0 Authorization Flow</h3>
+                <div class="oauth-flow">
+                    <div class="oauth-step">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">1️⃣</div>
+                        <strong>Authorization Request</strong>
+                        <p style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">TPP redirects user to bank</p>
+                    </div>
+                    <div class="oauth-step">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">2️⃣</div>
+                        <strong>User Authentication</strong>
+                        <p style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">Customer logs in to bank</p>
+                    </div>
+                    <div class="oauth-step">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">3️⃣</div>
+                        <strong>Consent Grant</strong>
+                        <p style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">User approves access</p>
+                    </div>
+                    <div class="oauth-step">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">4️⃣</div>
+                        <strong>Authorization Code</strong>
+                        <p style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">Bank returns code to TPP</p>
+                    </div>
+                    <div class="oauth-step">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">5️⃣</div>
+                        <strong>Access Token</strong>
+                        <p style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">TPP exchanges code for token</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Testing Tab -->
+        <div id="testing" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">API Testing Sandbox</h2>
+
+                <div class="form-group">
+                    <label for="apiType">Select API Type</label>
+                    <select id="apiType" onchange="updateApiForm()">
+                        <option value="accounts">Account Information (AISP)</option>
+                        <option value="payments">Payment Initiation (PISP)</option>
+                        <option value="funds">Confirmation of Funds (CBPII)</option>
+                        <option value="vrp">Variable Recurring Payments</option>
+                    </select>
+                </div>
+
+                <div id="accountsForm">
+                    <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Account Information Request</h3>
+                    <div class="form-group">
+                        <label for="accountId">Account ID</label>
+                        <input type="text" id="accountId" value="ACC-2025-001" placeholder="Enter account ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="consentId">Consent ID</label>
+                        <input type="text" id="consentId" value="CNS-2025-12345" placeholder="Enter consent ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="dateRange">Date Range</label>
+                        <select id="dateRange">
+                            <option value="30">Last 30 days</option>
+                            <option value="60">Last 60 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="180">Last 180 days</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="testAccountInfo()">Get Account Information</button>
+                </div>
+
+                <div id="paymentsForm" style="display: none;">
+                    <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Payment Initiation Request</h3>
+                    <div class="form-group">
+                        <label for="paymentAmount">Amount</label>
+                        <input type="number" id="paymentAmount" value="100.00" step="0.01" placeholder="Enter amount">
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentCurrency">Currency</label>
+                        <select id="paymentCurrency">
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="GBP">GBP - British Pound</option>
+                            <option value="USD">USD - US Dollar</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="creditorName">Creditor Name</label>
+                        <input type="text" id="creditorName" value="Coffee Shop Ltd" placeholder="Enter creditor name">
+                    </div>
+                    <div class="form-group">
+                        <label for="creditorIban">Creditor IBAN</label>
+                        <input type="text" id="creditorIban" value="GB29NWBK60161331926819" placeholder="Enter IBAN">
+                    </div>
+                    <button class="btn" onclick="testPaymentInit()">Initiate Payment</button>
+                </div>
+
+                <div id="fundsForm" style="display: none;">
+                    <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Funds Confirmation Request</h3>
+                    <div class="form-group">
+                        <label for="fundsAmount">Amount to Check</label>
+                        <input type="number" id="fundsAmount" value="250.00" step="0.01" placeholder="Enter amount">
+                    </div>
+                    <div class="form-group">
+                        <label for="fundsCurrency">Currency</label>
+                        <select id="fundsCurrency">
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="GBP">GBP - British Pound</option>
+                            <option value="USD">USD - US Dollar</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="debtorAccount">Debtor Account</label>
+                        <input type="text" id="debtorAccount" value="GB29NWBK60161331926819" placeholder="Enter account identifier">
+                    </div>
+                    <button class="btn" onclick="testFundsConfirmation()">Check Funds</button>
+                </div>
+
+                <div id="vrpForm" style="display: none;">
+                    <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Variable Recurring Payment Setup</h3>
+                    <div class="form-group">
+                        <label for="vrpMaxAmount">Maximum Amount per Payment</label>
+                        <input type="number" id="vrpMaxAmount" value="500.00" step="0.01" placeholder="Enter max amount">
+                    </div>
+                    <div class="form-group">
+                        <label for="vrpFrequency">Payment Frequency</label>
+                        <select id="vrpFrequency">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="vrpValidUntil">Valid Until</label>
+                        <input type="date" id="vrpValidUntil" value="2026-12-31">
+                    </div>
+                    <button class="btn" onclick="testVRP()">Setup VRP Consent</button>
+                </div>
+
+                <div id="testResult" class="result-box" style="display: none;">
+                    <pre id="testOutput"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Validation Tab -->
+        <div id="validation" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Security & Compliance Validation</h2>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">OAuth 2.0 Token Validation</h3>
+                <div class="form-group">
+                    <label for="accessToken">Access Token (JWT)</label>
+                    <textarea id="accessToken" placeholder="Paste your JWT access token here">eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0cHAtMTIzNDU2IiwibmFtZSI6IkZpblRlY2ggQXBwIiwiaWF0IjoxNzM1MTMyODAwLCJleHAiOjE3MzUxMzY0MDAsInNjb3BlIjoiYWNjb3VudHMgcGF5bWVudHMifQ.signature</textarea>
+                </div>
+                <button class="btn" onclick="validateToken()">Validate Token</button>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">PSD2 Compliance Check</h3>
+                <div class="info-box">
+                    <p><strong>Strong Customer Authentication (SCA) Requirements:</strong></p>
+                    <p>✓ Two-factor authentication required</p>
+                    <p>✓ Dynamic linking for payments (amount + payee)</p>
+                    <p>✓ 90-day consent renewal</p>
+                    <p>✓ Transaction monitoring and limits</p>
+                </div>
+
+                <div class="grid-2">
+                    <div class="api-card">
+                        <h4 style="color: #22c55e; margin-bottom: 1rem;">🔐 Certificate Validation</h4>
+                        <div style="margin-top: 1rem;">
+                            <p style="color: #94a3b8; font-size: 0.875rem;">eIDAS Certificate Status:</p>
+                            <div style="margin-top: 0.5rem;">
+                                <span class="status-badge">Valid</span>
+                            </div>
+                            <p style="color: #64748b; font-size: 0.875rem; margin-top: 1rem;">
+                                CN: FinTech App Ltd<br>
+                                OU: Payment Services<br>
+                                Expires: 2026-12-31
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="api-card">
+                        <h4 style="color: #22c55e; margin-bottom: 1rem;">🔒 TLS Validation</h4>
+                        <div style="margin-top: 1rem;">
+                            <p style="color: #94a3b8; font-size: 0.875rem;">TLS Configuration:</p>
+                            <div style="margin-top: 0.5rem;">
+                                <span class="status-badge">TLS 1.3</span>
+                            </div>
+                            <p style="color: #64748b; font-size: 0.875rem; margin-top: 1rem;">
+                                Cipher: TLS_AES_256_GCM_SHA384<br>
+                                Perfect Forward Secrecy: ✓<br>
+                                Certificate Pinning: ✓
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">API Signature Validation</h3>
+                <div class="form-group">
+                    <label for="requestSignature">JWS Signature</label>
+                    <textarea id="requestSignature" placeholder="Paste JWS signature for validation"></textarea>
+                </div>
+                <button class="btn" onclick="validateSignature()">Validate Signature</button>
+
+                <div id="validationResult" class="result-box" style="display: none;">
+                    <pre id="validationOutput"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Tab -->
+        <div id="results" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">API Performance Metrics</h2>
+
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">99.98%</div>
+                        <div class="metric-label">API Uptime</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">142ms</div>
+                        <div class="metric-label">Avg Response Time</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">15,247</div>
+                        <div class="metric-label">API Calls (Today)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">0.02%</div>
+                        <div class="metric-label">Error Rate</div>
+                    </div>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Recent Transactions</h3>
+                <div class="transaction-list">
+                    <div class="transaction-item">
+                        <div>
+                            <strong style="color: #e2e8f0;">Payment to Coffee Shop Ltd</strong><br>
+                            <span style="color: #64748b; font-size: 0.875rem;">2025-12-25 14:23:45 UTC</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 1.25rem; font-weight: 700; color: #ef4444;">-€25.50</div>
+                            <span class="status-badge">Completed</span>
+                        </div>
+                    </div>
+
+                    <div class="transaction-item">
+                        <div>
+                            <strong style="color: #e2e8f0;">Salary Deposit</strong><br>
+                            <span style="color: #64748b; font-size: 0.875rem;">2025-12-25 09:00:00 UTC</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 1.25rem; font-weight: 700; color: #22c55e;">+€3,500.00</div>
+                            <span class="status-badge">Completed</span>
+                        </div>
+                    </div>
+
+                    <div class="transaction-item">
+                        <div>
+                            <strong style="color: #e2e8f0;">Rent Payment</strong><br>
+                            <span style="color: #64748b; font-size: 0.875rem;">2025-12-24 10:15:30 UTC</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 1.25rem; font-weight: 700; color: #ef4444;">-€1,200.00</div>
+                            <span class="status-badge">Completed</span>
+                        </div>
+                    </div>
+
+                    <div class="transaction-item">
+                        <div>
+                            <strong style="color: #e2e8f0;">Online Shopping - Amazon</strong><br>
+                            <span style="color: #64748b; font-size: 0.875rem;">2025-12-23 16:42:18 UTC</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 1.25rem; font-weight: 700; color: #ef4444;">-€87.99</div>
+                            <span class="status-badge">Completed</span>
+                        </div>
+                    </div>
+
+                    <div class="transaction-item">
+                        <div>
+                            <strong style="color: #e2e8f0;">VRP - Utility Bill</strong><br>
+                            <span style="color: #64748b; font-size: 0.875rem;">2025-12-22 08:00:00 UTC</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 1.25rem; font-weight: 700; color: #ef4444;">-€145.67</div>
+                            <span class="status-badge">Completed</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Account Balances</h3>
+                <div class="grid-2">
+                    <div class="account-item">
+                        <div>
+                            <strong style="color: #e2e8f0;">Current Account</strong><br>
+                            <span style="color: #64748b; font-size: 0.875rem;">GB29NWBK60161331926819</span>
+                        </div>
+                        <div class="balance-display" style="font-size: 1.5rem;">€2,567.84</div>
+                    </div>
+
+                    <div class="account-item">
+                        <div>
+                            <strong style="color: #e2e8f0;">Savings Account</strong><br>
+                            <span style="color: #64748b; font-size: 0.875rem;">GB82WEST12345698765432</span>
+                        </div>
+                        <div class="balance-display" style="font-size: 1.5rem;">€15,890.50</div>
+                    </div>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">TPP Activity Summary</h3>
+                <div class="info-box">
+                    <p><strong>Registered Third-Party Providers:</strong> 127</p>
+                    <p><strong>Active Consents:</strong> 1,543</p>
+                    <p><strong>API Calls (24h):</strong> 15,247</p>
+                    <p><strong>Successful Payments (24h):</strong> 2,891</p>
+                    <p><strong>Average Payment Value:</strong> €87.45</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integration Tab -->
+        <div id="integration" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Integration Guide</h2>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Quick Start</h3>
+                <div class="info-box">
+                    <p><strong>Prerequisites:</strong></p>
+                    <p>1. Register as a TPP with your national regulator</p>
+                    <p>2. Obtain eIDAS qualified certificate</p>
+                    <p>3. Register with the bank's developer portal</p>
+                    <p>4. Configure OAuth 2.0 client credentials</p>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Installation</h3>
+                <div class="code-snippet">
+<code>npm install @wia/open-banking-sdk
+
+# or with yarn
+yarn add @wia/open-banking-sdk</code>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Basic Usage - Account Information</h3>
+                <div class="code-snippet">
+<code>import { OpenBankingClient } from '@wia/open-banking-sdk';
+
+// Initialize client
+const client = new OpenBankingClient({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+  certificatePath: './certs/tpp-certificate.pem',
+  baseUrl: 'https://api.bank.example.com'
+});
+
+// Request account access consent
+const consent = await client.consents.create({
+  permissions: ['ReadAccountsBasic', 'ReadAccountsDetail', 'ReadTransactionsDetail'],
+  expirationDateTime: '2026-12-31T23:59:59Z'
+});
+
+// Redirect user to authorize
+const authUrl = client.auth.getAuthorizationUrl({
+  consentId: consent.consentId,
+  redirectUri: 'https://yourapp.com/callback',
+  scope: 'accounts'
+});
+
+// After user authorizes, exchange code for token
+const tokens = await client.auth.exchangeCode({
+  code: authorizationCode,
+  redirectUri: 'https://yourapp.com/callback'
+});
+
+// Get accounts
+const accounts = await client.accounts.list({
+  accessToken: tokens.access_token
+});
+
+console.log('Accounts:', accounts.data);</code>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Payment Initiation Example</h3>
+                <div class="code-snippet">
+<code>// Create payment consent
+const paymentConsent = await client.payments.createConsent({
+  amount: {
+    amount: '100.00',
+    currency: 'EUR'
+  },
+  creditor: {
+    name: 'Coffee Shop Ltd',
+    account: {
+      iban: 'GB29NWBK60161331926819'
+    }
+  },
+  remittanceInformation: {
+    unstructured: 'Payment for coffee'
+  }
+});
+
+// Redirect user to authenticate and authorize
+const paymentAuthUrl = client.auth.getAuthorizationUrl({
+  consentId: paymentConsent.consentId,
+  redirectUri: 'https://yourapp.com/payment-callback',
+  scope: 'payments'
+});
+
+// After authorization, submit payment
+const payment = await client.payments.submit({
+  consentId: paymentConsent.consentId,
+  accessToken: tokens.access_token
+});
+
+console.log('Payment Status:', payment.status);</code>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Webhook Integration</h3>
+                <div class="code-snippet">
+<code>// Set up webhook endpoint
+const express = require('express');
+const app = express();
+
+app.post('/webhooks/open-banking', async (req, res) => {
+  const event = req.body;
+
+  // Verify webhook signature
+  const isValid = client.webhooks.verify(
+    req.headers['x-signature'],
+    req.body
+  );
+
+  if (!isValid) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  // Handle different event types
+  switch (event.type) {
+    case 'payment.completed':
+      console.log('Payment completed:', event.data);
+      break;
+    case 'payment.failed':
+      console.log('Payment failed:', event.data);
+      break;
+    case 'consent.revoked':
+      console.log('Consent revoked:', event.data);
+      break;
+  }
+
+  res.status(200).send('OK');
+});
+
+app.listen(3000);</code>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Best Practices</h3>
+                <div class="grid-2">
+                    <div class="api-card">
+                        <h4 style="color: #22c55e; margin-bottom: 1rem;">🔐 Security</h4>
+                        <ul style="color: #94a3b8; font-size: 0.875rem; padding-left: 1.5rem;">
+                            <li>Always use HTTPS/TLS 1.2+</li>
+                            <li>Validate JWT signatures</li>
+                            <li>Implement certificate pinning</li>
+                            <li>Use PKCE for OAuth flows</li>
+                            <li>Store credentials securely</li>
+                        </ul>
+                    </div>
+
+                    <div class="api-card">
+                        <h4 style="color: #22c55e; margin-bottom: 1rem;">⚡ Performance</h4>
+                        <ul style="color: #94a3b8; font-size: 0.875rem; padding-left: 1.5rem;">
+                            <li>Cache access tokens</li>
+                            <li>Use refresh tokens</li>
+                            <li>Implement retry logic</li>
+                            <li>Monitor rate limits</li>
+                            <li>Use webhooks for async updates</li>
+                        </ul>
+                    </div>
+
+                    <div class="api-card">
+                        <h4 style="color: #22c55e; margin-bottom: 1rem;">✅ Compliance</h4>
+                        <ul style="color: #94a3b8; font-size: 0.875rem; padding-left: 1.5rem;">
+                            <li>Implement SCA for payments</li>
+                            <li>Respect consent expiration</li>
+                            <li>Log all API interactions</li>
+                            <li>Follow GDPR guidelines</li>
+                            <li>Regular security audits</li>
+                        </ul>
+                    </div>
+
+                    <div class="api-card">
+                        <h4 style="color: #22c55e; margin-bottom: 1rem;">📊 Monitoring</h4>
+                        <ul style="color: #94a3b8; font-size: 0.875rem; padding-left: 1.5rem;">
+                            <li>Track API response times</li>
+                            <li>Monitor error rates</li>
+                            <li>Set up alerting</li>
+                            <li>Analyze user consent patterns</li>
+                            <li>Review webhook delivery</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        function updateApiForm() {
+            const apiType = document.getElementById('apiType').value;
+
+            // Hide all forms
+            document.getElementById('accountsForm').style.display = 'none';
+            document.getElementById('paymentsForm').style.display = 'none';
+            document.getElementById('fundsForm').style.display = 'none';
+            document.getElementById('vrpForm').style.display = 'none';
+
+            // Show selected form
+            document.getElementById(apiType + 'Form').style.display = 'block';
+        }
+
+        function testAccountInfo() {
+            const accountId = document.getElementById('accountId').value;
+            const consentId = document.getElementById('consentId').value;
+            const dateRange = document.getElementById('dateRange').value;
+
+            const result = {
+                request: {
+                    method: 'GET',
+                    url: `/accounts/${accountId}`,
+                    headers: {
+                        'Authorization': 'Bearer eyJhbGciOiJSUzI1NiIs...',
+                        'x-fapi-interaction-id': 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                        'x-consent-id': consentId
+                    }
+                },
+                response: {
+                    status: 200,
+                    data: {
+                        accountId: accountId,
+                        accountType: 'Current',
+                        currency: 'EUR',
+                        balance: {
+                            amount: '2567.84',
+                            currency: 'EUR',
+                            creditDebitIndicator: 'Credit'
+                        },
+                        transactions: [
+                            {
+                                transactionId: 'TXN-001',
+                                bookingDateTime: '2025-12-25T14:23:45Z',
+                                amount: {
+                                    amount: '25.50',
+                                    currency: 'EUR'
+                                },
+                                creditDebitIndicator: 'Debit',
+                                merchantName: 'Coffee Shop Ltd',
+                                status: 'Booked'
+                            },
+                            {
+                                transactionId: 'TXN-002',
+                                bookingDateTime: '2025-12-25T09:00:00Z',
+                                amount: {
+                                    amount: '3500.00',
+                                    currency: 'EUR'
+                                },
+                                creditDebitIndicator: 'Credit',
+                                merchantName: 'Salary Deposit',
+                                status: 'Booked'
+                            }
+                        ],
+                        _links: {
+                            self: `/accounts/${accountId}`,
+                            transactions: `/accounts/${accountId}/transactions`
+                        }
+                    }
+                }
+            };
+
+            displayResult(result);
+        }
+
+        function testPaymentInit() {
+            const amount = document.getElementById('paymentAmount').value;
+            const currency = document.getElementById('paymentCurrency').value;
+            const creditorName = document.getElementById('creditorName').value;
+            const creditorIban = document.getElementById('creditorIban').value;
+
+            const result = {
+                request: {
+                    method: 'POST',
+                    url: '/payments',
+                    headers: {
+                        'Authorization': 'Bearer eyJhbGciOiJSUzI1NiIs...',
+                        'x-idempotency-key': 'unique-key-12345',
+                        'x-jws-signature': 'eyJhbGciOiJSUzI1NiIsImtpZCI6...'
+                    },
+                    body: {
+                        instructedAmount: {
+                            amount: amount,
+                            currency: currency
+                        },
+                        creditorAccount: {
+                            iban: creditorIban
+                        },
+                        creditorName: creditorName,
+                        remittanceInformation: {
+                            unstructured: 'Payment for services'
+                        }
+                    }
+                },
+                response: {
+                    status: 201,
+                    data: {
+                        paymentId: 'PAY-2025-98765',
+                        status: 'AcceptedSettlementInProgress',
+                        creationDateTime: new Date().toISOString(),
+                        instructedAmount: {
+                            amount: amount,
+                            currency: currency
+                        },
+                        creditorName: creditorName,
+                        _links: {
+                            self: '/payments/PAY-2025-98765',
+                            status: '/payments/PAY-2025-98765/status'
+                        }
+                    }
+                }
+            };
+
+            displayResult(result);
+        }
+
+        function testFundsConfirmation() {
+            const amount = document.getElementById('fundsAmount').value;
+            const currency = document.getElementById('fundsCurrency').value;
+            const account = document.getElementById('debtorAccount').value;
+
+            const available = parseFloat(amount) <= 2567.84;
+
+            const result = {
+                request: {
+                    method: 'POST',
+                    url: '/funds-confirmations',
+                    body: {
+                        instructedAmount: {
+                            amount: amount,
+                            currency: currency
+                        },
+                        debtorAccount: {
+                            iban: account
+                        }
+                    }
+                },
+                response: {
+                    status: 200,
+                    data: {
+                        fundsConfirmationId: 'FC-2025-11223',
+                        fundsAvailable: available,
+                        instructedAmount: {
+                            amount: amount,
+                            currency: currency
+                        }
+                    }
+                }
+            };
+
+            displayResult(result);
+        }
+
+        function testVRP() {
+            const maxAmount = document.getElementById('vrpMaxAmount').value;
+            const frequency = document.getElementById('vrpFrequency').value;
+            const validUntil = document.getElementById('vrpValidUntil').value;
+
+            const result = {
+                request: {
+                    method: 'POST',
+                    url: '/vrp/consents',
+                    body: {
+                        controlParameters: {
+                            maximumIndividualAmount: {
+                                amount: maxAmount,
+                                currency: 'EUR'
+                            },
+                            periodicLimits: [{
+                                periodType: frequency,
+                                amount: {
+                                    amount: maxAmount,
+                                    currency: 'EUR'
+                                }
+                            }],
+                            validToDateTime: validUntil + 'T23:59:59Z'
+                        }
+                    }
+                },
+                response: {
+                    status: 201,
+                    data: {
+                        consentId: 'VRP-CNS-2025-55667',
+                        status: 'AwaitingAuthorization',
+                        creationDateTime: new Date().toISOString(),
+                        _links: {
+                            self: '/vrp/consents/VRP-CNS-2025-55667',
+                            authorize: 'https://bank.example.com/authorize?consent_id=VRP-CNS-2025-55667'
+                        }
+                    }
+                }
+            };
+
+            displayResult(result);
+        }
+
+        function validateToken() {
+            const token = document.getElementById('accessToken').value;
+
+            const result = {
+                valid: true,
+                decoded: {
+                    header: {
+                        alg: 'RS256',
+                        typ: 'JWT',
+                        kid: 'bank-signing-key-1'
+                    },
+                    payload: {
+                        sub: 'tpp-123456',
+                        name: 'FinTech App',
+                        iat: 1735132800,
+                        exp: 1735136400,
+                        scope: 'accounts payments',
+                        aud: 'https://api.bank.example.com',
+                        iss: 'https://auth.bank.example.com'
+                    },
+                    signature: 'Valid ✓'
+                },
+                checks: {
+                    'Signature Valid': true,
+                    'Not Expired': true,
+                    'Issuer Trusted': true,
+                    'Audience Correct': true,
+                    'Scope Authorized': true
+                }
+            };
+
+            document.getElementById('validationResult').style.display = 'block';
+            document.getElementById('validationOutput').textContent = JSON.stringify(result, null, 2);
+        }
+
+        function validateSignature() {
+            const signature = document.getElementById('requestSignature').value;
+
+            const result = {
+                valid: true,
+                algorithm: 'RS256',
+                keyId: 'tpp-signing-key-1',
+                timestamp: new Date().toISOString(),
+                checks: {
+                    'Signature Format': 'Valid JWS',
+                    'Algorithm Allowed': 'RS256 ✓',
+                    'Certificate Valid': 'eIDAS Qualified ✓',
+                    'Signature Verified': 'Valid ✓',
+                    'Timestamp Fresh': 'Within 60 seconds ✓'
+                }
+            };
+
+            document.getElementById('validationResult').style.display = 'block';
+            document.getElementById('validationOutput').textContent = JSON.stringify(result, null, 2);
+        }
+
+        function displayResult(result) {
+            document.getElementById('testResult').style.display = 'block';
+            document.getElementById('testOutput').textContent = JSON.stringify(result, null, 2);
+        }
+    </script>
+</body>
+</html>

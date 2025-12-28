@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: Integration | Universal Metadata</title>
+    <style>* { margin: 0; padding: 0; box-sizing: border-box; } body { font-family: 'Georgia', serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #e2e8f0; line-height: 1.8; padding: 2rem; } .container { max-width: 900px; margin: 0 auto; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 3rem; } .chapter-header { border-bottom: 3px solid #6B7280; padding-bottom: 2rem; margin-bottom: 3rem; } .chapter-number { color: #6B7280; font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem; } h1 { font-size: 3rem; color: #ffffff; margin-bottom: 1rem; } h2 { font-size: 2rem; color: #9CA3AF; margin: 2.5rem 0 1.5rem 0; border-left: 5px solid #6B7280; padding-left: 1rem; } h3 { font-size: 1.5rem; color: #6B7280; margin: 2rem 0 1rem 0; } p { margin-bottom: 1.5rem; color: #cbd5e1; text-align: justify; } .code-block { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto; } pre { color: #94a3b8; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; } ul { margin: 1.5rem 0 1.5rem 2rem; color: #cbd5e1; } li { margin-bottom: 0.8rem; } .navigation { display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.1); } .nav-link { padding: 1rem 2rem; background: linear-gradient(135deg, #6B7280, #4B5563); color: #ffffff; text-decoration: none; border-radius: 10px; transition: all 0.3s ease; font-weight: 600; } .nav-link:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(107, 114, 128, 0.3); }</style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 6</div>
+            <h1>Integration with Existing Systems</h1>
+        </div>
+        <p>Real-world adoption requires integration with existing metadata systems, standards, and workflows. This chapter explores strategies for mapping between standards, migrating from legacy systems, and building hybrid solutions that leverage Universal Metadata's capabilities while respecting existing investments.</p>
+        <h2>6.1 Mapping to Dublin Core</h2>
+        <p>Dublin Core is one of the most widely adopted metadata standards. Universal Metadata provides bidirectional mapping to all 15 Dublin Core elements, enabling seamless interoperability with Dublin Core-based systems.</p>
+        <div class="code-block"><pre>import { DublinCoreMapper } from '@wia/universal-metadata';
+
+const mapper = new DublinCoreMapper();
+
+// Convert Universal Metadata to Dublin Core
+const dublinCore = mapper.toD ublinCore(universalMetadata);
+
+console.log(dublinCore);
+// {
+//   'dc:title': 'Research Paper on Climate Change',
+//   'dc:creator': 'Dr. Jane Smith',
+//   'dc:subject': ['climate change', 'environment'],
+//   'dc:description': 'A comprehensive study...',
+//   'dc:date': '2025-01-15',
+//   'dc:type': 'Text',
+//   'dc:format': 'application/pdf',
+//   'dc:identifier': 'https://doi.org/10.1234/example',
+//   'dc:language': 'en',
+//   'dc:rights': 'CC BY 4.0'
+// }
+
+// Convert Dublin Core to Universal Metadata
+const universal = mapper.fromDublinCore(dublinCore);
+</pre></div>
+        <h2>6.2 Schema.org Integration</h2>
+        <p>Schema.org markup is essential for web discoverability and search engine optimization. Universal Metadata can be seamlessly transformed into Schema.org JSON-LD for embedding in web pages.</p>
+        <div class="code-block"><pre>import { SchemaOrgMapper } from '@wia/universal-metadata';
+
+const mapper = new SchemaOrgMapper();
+
+const schemaOrg = mapper.toSchemaOrg(metadata);
+
+// Embed in HTML
+const script = `
+&lt;script type="application/ld+json"&gt;
+${JSON.stringify(schemaOrg, null, 2)}
+&lt;/script&gt;
+`;
+
+// Example Schema.org output
+{
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  "name": "Research Paper on Climate Change",
+  "author": {
+    "@type": "Person",
+    "name": "Dr. Jane Smith"
+  },
+  "datePublished": "2025-01-15",
+  "inLanguage": "en",
+  "about": "climate change",
+  "keywords": ["climate change", "environment", "research"]
+}</pre></div>
+        <h2>6.3 Legacy System Migration</h2>
+        <p>Migrating from legacy metadata systems requires careful planning, data transformation, quality assessment, and validation. Universal Metadata provides tools and best practices for successful migration projects.</p>
+        <h3>Migration Planning</h3>
+        <ul>
+            <li><strong>Inventory Assessment:</strong> Catalog all existing metadata records and schemas</li>
+            <li><strong>Field Mapping:</strong> Map legacy fields to Universal Metadata fields</li>
+            <li><strong>Quality Baseline:</strong> Assess current metadata quality</li>
+            <li><strong>Transformation Strategy:</strong> Plan data transformation and enrichment</li>
+            <li><strong>Validation Rules:</strong> Define acceptance criteria for migrated data</li>
+            <li><strong>Rollback Plan:</strong> Prepare for potential migration issues</li>
+        </ul>
+        <h3>Migration Implementation</h3>
+        <div class="code-block"><pre>import { MetadataMigrator } from '@wia/universal-metadata';
+
+const migrator = new MetadataMigrator({
+  source: 'legacy-database',
+  target: 'universal-metadata',
+  mappings: {
+    'legacy_id': 'id',
+    'legacy_name': 'title',
+    'legacy_summary': 'description',
+    'legacy_lang': 'language',
+    'legacy_category': 'domain'
+  },
+  transformations: {
+    language: (value) => value.toLowerCase().slice(0, 2),
+    domain: (value) => domainMapping[value] || 'general'
+  },
+  enrichment: {
+    calculateQuality: true,
+    generateKeywords: true,
+    normalizeValues: true
+  }
+});
+
+// Execute migration
+const result = await migrator.migrate({
+  batchSize: 1000,
+  parallel: 5,
+  validateEach: true
+});
+
+console.log(result);
+// {
+//   total: 50000,
+//   migrated: 48500,
+//   failed: 1500,
+//   duration: '2h 15m',
+//   qualityImprovement: '+12%'
+// }</pre></div>
+        <h2>6.4 Content Management System Integration</h2>
+        <p>Integrate Universal Metadata with popular CMS platforms like WordPress, Drupal, and custom systems. Metadata can enhance content discoverability, enable better organization, and improve SEO.</p>
+        <div class="code-block"><pre>// WordPress integration example
+class WIA_Universal_Metadata_Plugin {
+  public function __construct() {
+    add_action('save_post', [$this, 'save_metadata']);
+    add_filter('the_content', [$this, 'inject_schema_org']);
+  }
+
+  public function save_metadata($post_id) {
+    $metadata = new UniversalMetadata([
+      'id' => get_permalink($post_id),
+      'title' => get_the_title($post_id),
+      'description' => get_the_excerpt($post_id),
+      'language' => get_post_meta($post_id, 'language', true),
+      'domain' => wp_get_post_categories($post_id)[0],
+      'keywords' => wp_get_post_tags($post_id),
+      'creator' => get_the_author_meta('display_name', $post->post_author),
+      'created' => get_the_date('c', $post_id),
+      'modified' => get_the_modified_date('c', $post_id)
+    ]);
+
+    update_post_meta($post_id, 'wia_metadata', $metadata->toJSON());
+  }
+
+  public function inject_schema_org($content) {
+    $metadata = get_post_meta(get_the_ID(), 'wia_metadata', true);
+    $schemaOrg = (new SchemaOrgMapper())->toSchemaOrg($metadata);
+
+    return '&lt;script type="application/ld+json"&gt;'
+         . json_encode($schemaOrg)
+         . '&lt;/script&gt;'
+         . $content;
+  }
+}</pre></div>
+        <h2>6.5 API Gateway and Middleware</h2>
+        <p>Build API gateways that translate between Universal Metadata and various client expectations, providing a unified interface while supporting multiple metadata standards and formats.</p>
+        <div class="code-block"><pre>import express from 'express';
+import { MetadataAdapter } from '@wia/universal-metadata';
+
+const app = express();
+const adapter = new MetadataAdapter();
+
+// GET with format negotiation
+app.get('/api/metadata/:id', async (req, res) => {
+  const metadata = await getMetadata(req.params.id);
+  const format = req.query.format || req.headers.accept;
+
+  switch (format) {
+    case 'application/ld+json':
+      res.json(adapter.toSchemaOrg(metadata));
+      break;
+    case 'application/xml':
+      res.type('xml').send(adapter.toXML(metadata));
+      break;
+    case 'application/rdf+xml':
+      res.type('xml').send(adapter.toRDF(metadata));
+      break;
+    default:
+      res.json(metadata.toJSON());
+  }
+});
+
+// Support multiple input formats
+app.post('/api/metadata', async (req, res) => {
+  let metadata;
+
+  if (req.is('application/ld+json')) {
+    metadata = adapter.fromSchemaOrg(req.body);
+  } else if (req.is('application/xml')) {
+    metadata = adapter.fromXML(req.body);
+  } else {
+    metadata = new UniversalMetadata(req.body);
+  }
+
+  await saveMetadata(metadata);
+  res.status(201).json(metadata);
+});</pre></div>
+        <h2>6.6 Federated Search and Harvesting</h2>
+        <p>Enable federated search across multiple repositories using Universal Metadata as a common interchange format. Implement OAI-PMH harvesting for interoperability with digital repositories.</p>
+        <div class="code-block"><pre>// OAI-PMH harvester example
+import { OAIPMHHarvester } from '@wia/universal-metadata';
+
+const harvester = new OAIPMHHarvester({
+  repositories: [
+    'https://repository1.org/oai',
+    'https://repository2.org/oai',
+    'https://repository3.org/oai'
+  ],
+  format: 'oai_dc', // Dublin Core
+  setSpec: 'research',
+  from: '2024-01-01'
+});
+
+// Harvest and convert to Universal Metadata
+const records = await harvester.harvest();
+
+records.forEach(record => {
+  const universal = adapter.fromDublinCore(record);
+  const quality = analyzer.analyze(universal);
+  universal.setQualityMetrics(quality);
+  saveMetadata(universal);
+});</pre></div>
+        <h2>Conclusion</h2>
+        <p>Integration capabilities are essential for real-world adoption. Universal Metadata's extensive mapping to established standards, migration tools, CMS integrations, and federation support enable organizations to adopt modern metadata practices while preserving existing investments and workflows. The next chapter explores advanced topics and specialized use cases.</p>
+        <div class="navigation">
+            <a href="05-quality.html" class="nav-link">← Chapter 5</a>
+            <a href="07-advanced.html" class="nav-link">Chapter 7 →</a>
+        </div>
+    </div>
+</body>
+</html>

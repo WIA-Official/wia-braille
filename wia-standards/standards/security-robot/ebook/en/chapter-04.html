@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Phase 1 - Data Format & Sensor Integration - WIA ROB-012</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+            margin-bottom: 40px;
+        }
+        h1 { font-size: 2.5em; margin-bottom: 10px; color: #ffffff; }
+        .chapter-info { color: #E9D5FF; font-size: 1.1em; }
+        nav {
+            background: #1e1e3f;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        nav a {
+            color: #8B5CF6;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        nav a:hover { color: #C4B5FD; }
+        .content-section {
+            background: #1e1e3f;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border-left: 5px solid #8B5CF6;
+        }
+        h2 { color: #8B5CF6; font-size: 2em; margin-bottom: 20px; margin-top: 30px; }
+        h3 { color: #C4B5FD; font-size: 1.5em; margin-bottom: 15px; margin-top: 25px; }
+        h4 { color: #DDD6FE; font-size: 1.2em; margin-bottom: 10px; margin-top: 20px; }
+        p { margin-bottom: 15px; color: #d0d0d0; }
+        code {
+            background: #0f0f23;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #C4B5FD;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #0f0f23;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid #8B5CF6;
+        }
+        pre code { background: none; padding: 0; color: #e0e0e0; font-size: 0.95em; line-height: 1.6; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: #2d2d5f;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th {
+            background: #8B5CF6;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td { padding: 12px 15px; border-bottom: 1px solid #3a3a6a; }
+        tr:hover { background: rgba(139, 92, 246, 0.1); }
+        .key-takeaways {
+            background: rgba(139, 92, 246, 0.1);
+            border-left: 4px solid #8B5CF6;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 8px;
+        }
+        .key-takeaways h3 { margin-top: 0; }
+        .key-takeaways ul { margin-left: 20px; margin-top: 15px; }
+        .key-takeaways li { margin: 10px 0; }
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            border-top: 1px solid #334155;
+            color: #94a3b8;
+        }
+        .philosophy { color: #ffd700; font-size: 1.1rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chapter 4: Phase 1 - Data Format & Sensor Integration</h1>
+            <p class="chapter-info">Foundational Data Structures and JSON Schemas</p>
+        </header>
+
+        <nav>
+            <a href="index.html">← Table of Contents</a>
+            <a href="chapter3.html">← Previous</a>
+            <a href="chapter5.html">Next →</a>
+        </nav>
+
+        <div class="content-section">
+            <h2>4.1 Overview of Phase 1</h2>
+            <p>Phase 1 of the WIA Security Robot Standard establishes the foundational data formats and structures upon which all other phases build. By defining standardized JSON schemas for robot status, sensor data, location information, and operational events, Phase 1 enables data interoperability across different robot platforms and facilitates integration with security management systems.</p>
+
+            <p>The design of these data formats reflects careful balance between comprehensiveness and simplicity. The schemas must capture sufficient detail to support sophisticated security applications while remaining straightforward enough for developers to implement without specialized expertise. Every field has clear semantics, validation rules, and example usage to minimize implementation ambiguity.</p>
+
+            <h3>Design Principles for Data Formats</h3>
+            <p>Several core principles guide the design of Phase 1 data structures. First, human readability matters. While machines parse JSON efficiently, human operators must interpret data during troubleshooting, system integration, and incident investigation. Field names are descriptive rather than abbreviated. Structures nest logically. Enumerated values use clear strings rather than cryptic codes.</p>
+
+            <p>Second, extensibility ensures longevity. The schemas define required core fields that all implementations must provide, but also support optional extensions. Vendors can add proprietary fields for specialized capabilities without breaking compatibility with standard parsers. Extension fields use defined naming conventions (prefixed with "x_" for vendor extensions) ensuring they don't conflict with future standard fields.</p>
+
+            <p>Third, validation enables quality assurance. Every schema includes comprehensive validation rules specifying data types, value ranges, regular expression patterns for string fields, and inter-field dependencies. Implementations can validate data against schemas programmatically, catching errors before they propagate through integrated systems.</p>
+
+            <h2>4.2 Core Data Structures</h2>
+            <p>Phase 1 defines several fundamental data structures used throughout the standard.</p>
+
+            <h3>Robot Status Message</h3>
+            <p>The Robot Status Message provides comprehensive snapshot of a robot's current state. Security operations centers query this structure regularly to monitor fleet health and operational status.</p>
+
+            <pre><code>{
+  "$schema": "https://wiastandards.com/schemas/security-robot/v1.0.0/status.json",
+  "version": "1.0.0",
+  "timestamp": "2025-12-26T10:30:45.123Z",
+  "robot_id": "ROB-SEC-001",
+  "robot_type": "security_patrol",
+  "manufacturer": "SecureBot Industries",
+  "model": "SB-500X",
+  "firmware_version": "2.3.1",
+  "status": {
+    "operational_state": "patrolling",
+    "location": {
+      "type": "geographic",
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "altitude": 12.5,
+      "heading": 135.0,
+      "coordinate_system": "WGS84"
+    },
+    "battery": {
+      "level_percent": 78,
+      "voltage": 48.2,
+      "charging": false,
+      "estimated_runtime_minutes": 187,
+      "charge_cycles": 342
+    },
+    "connectivity": {
+      "signal_strength": -65,
+      "connection_type": "5G",
+      "latency_ms": 23,
+      "bandwidth_mbps": 450
+    },
+    "health": {
+      "overall_status": "healthy",
+      "warnings": [],
+      "errors": [],
+      "last_maintenance": "2025-12-20T08:00:00Z",
+      "odometer_km": 1847.3
+    }
+  },
+  "sensors": {
+    "cameras": [
+      {
+        "id": "cam_front_01",
+        "type": "visual",
+        "status": "active",
+        "resolution": "3840x2160",
+        "fps": 30,
+        "field_of_view": 120
+      },
+      {
+        "id": "cam_thermal_01",
+        "type": "thermal",
+        "status": "active",
+        "resolution": "640x480",
+        "fps": 30,
+        "temperature_range": [-20, 150]
+      }
+    ],
+    "lidar": {
+      "id": "lidar_01",
+      "status": "active",
+      "range_meters": 30,
+      "points_per_second": 300000,
+      "vertical_fov": 30,
+      "horizontal_fov": 360
+    },
+    "environmental": {
+      "temperature_celsius": 22.5,
+      "humidity_percent": 45,
+      "air_quality_index": 35,
+      "atmospheric_pressure_hpa": 1013.25
+    }
+  },
+  "patrol": {
+    "route_id": "route_alpha_1",
+    "current_waypoint": 7,
+    "total_waypoints": 12,
+    "patrol_start": "2025-12-26T08:00:00Z",
+    "estimated_completion": "2025-12-26T12:00:00Z"
+  }
+}</code></pre>
+
+            <h3>Alert Notification Message</h3>
+            <p>Alert messages communicate security events detected by robots to monitoring systems and security personnel. These messages require guaranteed delivery and immediate processing.</p>
+
+            <pre><code>{
+  "$schema": "https://wiastandards.com/schemas/security-robot/v1.0.0/alert.json",
+  "version": "1.0.0",
+  "alert_id": "alert_20251226_103045_001",
+  "timestamp": "2025-12-26T10:30:45.123Z",
+  "robot_id": "ROB-SEC-001",
+  "alert_type": "intrusion_detected",
+  "severity": "high",
+  "confidence": 0.92,
+  "location": {
+    "type": "geographic",
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "zone": "Building A - Perimeter - North Side"
+  },
+  "detection": {
+    "method": "ai_vision",
+    "sensor_id": "cam_front_01",
+    "object_type": "person",
+    "object_count": 2,
+    "behavior": "climbing_fence",
+    "bounding_boxes": [
+      {"x": 120, "y": 340, "width": 80, "height": 220},
+      {"x": 210, "y": 350, "width": 75, "height": 210}
+    ]
+  },
+  "media": {
+    "image_url": "https://storage.example.com/alerts/img_20251226_103045.jpg",
+    "video_url": "https://storage.example.com/alerts/vid_20251226_103045.mp4",
+    "video_duration_seconds": 30
+  },
+  "recommended_action": "dispatch_security_personnel",
+  "related_alerts": []
+}</code></pre>
+
+            <h2>4.3 Sensor Data Standards</h2>
+            <p>Different sensor types require specialized data structures capturing their unique characteristics. ROB-012 defines standardized formats for all common security robot sensors.</p>
+
+            <h3>Camera Data Format</h3>
+            <p>Security robots typically deploy multiple cameras with varying characteristics. The standard supports visual spectrum cameras, thermal imaging, low-light/night vision, and 360-degree panoramic systems. Each camera type has specific metadata requirements.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Camera Type</th>
+                        <th>Key Parameters</th>
+                        <th>Typical Use Cases</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Visual (HD/4K)</td>
+                        <td>Resolution, FPS, FOV, zoom range</td>
+                        <td>General surveillance, facial recognition</td>
+                    </tr>
+                    <tr>
+                        <td>Thermal</td>
+                        <td>Temperature range, sensitivity, resolution</td>
+                        <td>Night patrol, fire detection, people counting</td>
+                    </tr>
+                    <tr>
+                        <td>Low-light/IR</td>
+                        <td>Minimum illumination, IR wavelength, gain</td>
+                        <td>Dark areas, covert surveillance</td>
+                    </tr>
+                    <tr>
+                        <td>360° Panoramic</td>
+                        <td>Resolution, stitching method, blind spots</td>
+                        <td>Complete coverage, situational awareness</td>
+                    </tr>
+                    <tr>
+                        <td>PTZ (Pan-Tilt-Zoom)</td>
+                        <td>Pan/tilt range, optical zoom, presets</td>
+                        <td>Focused investigation, tracking</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>LIDAR Data Format</h3>
+            <p>LIDAR systems generate dense 3D point clouds representing the robot's environment. The standard defines efficient representations for this high-volume data while preserving accuracy needed for navigation and obstacle detection.</p>
+
+            <pre><code>{
+  "sensor_id": "lidar_01",
+  "timestamp": "2025-12-26T10:30:45.123Z",
+  "scan_type": "360_continuous",
+  "point_cloud": {
+    "format": "compressed_binary",
+    "compression": "lz4",
+    "point_count": 287654,
+    "data_url": "https://storage.example.com/lidar/scan_20251226_103045.lz4",
+    "bounding_box": {
+      "min_x": -25.5, "max_x": 28.3,
+      "min_y": -30.1, "max_y": 27.8,
+      "min_z": -0.5, "max_z": 12.7
+    }
+  },
+  "obstacles": [
+    {
+      "id": "obs_001",
+      "type": "dynamic_obstacle",
+      "centroid": {"x": 5.2, "y": 3.1, "z": 1.7},
+      "dimensions": {"length": 0.6, "width": 0.5, "height": 1.8},
+      "velocity": {"x": -0.3, "y": 0.1, "z": 0.0},
+      "classification": "person",
+      "confidence": 0.87
+    }
+  ]
+}</code></pre>
+
+            <h3>Environmental Sensor Data</h3>
+            <p>Environmental sensors monitor ambient conditions both for operational purposes (detecting extreme temperatures that affect robot function) and security applications (detecting fire, smoke, or hazardous gas releases).</p>
+
+            <p>The standard defines formats for temperature sensors (ambient and thermal imaging), humidity sensors (critical for outdoor robots), air quality monitoring (particulate matter, VOCs, specific gas detection), atmospheric pressure (used for altitude estimation indoors), and noise level measurement (detecting abnormal sounds or violations of quiet hours).</p>
+
+            <h2>4.4 Location and Navigation Data</h2>
+            <p>Accurate position tracking is fundamental to security robot operations. The standard supports multiple coordinate systems and positioning methods to accommodate diverse deployment environments.</p>
+
+            <h3>Geographic Coordinates (Outdoor)</h3>
+            <p>Outdoor robots use GPS/GNSS for positioning. The standard mandates WGS84 coordinate system with decimal degree representation. Altitude is specified in meters above the WGS84 ellipsoid. Heading represents true north bearing in degrees (0-360), with 0° indicating north, 90° east, 180° south, and 270° west.</p>
+
+            <h3>Local Coordinates (Indoor)</h3>
+            <p>Indoor environments lack GPS signals, requiring alternative positioning systems. Robots typically use SLAM (Simultaneous Localization and Mapping) algorithms combining LIDAR, cameras, and inertial sensors to build maps and track position.</p>
+
+            <p>The standard defines local coordinate frames with origin at facility-defined reference points. Each facility establishes a primary coordinate frame with defined origin location and orientation. Coordinate transformations between local frames and geographic coordinates enable seamless indoor-outdoor transitions.</p>
+
+            <pre><code>{
+  "location": {
+    "type": "local",
+    "frame_id": "building_a_floor_1",
+    "x": 45.2,
+    "y": 18.7,
+    "z": 0.0,
+    "heading": 270.0,
+    "reference_point": {
+      "description": "Building A Main Entrance",
+      "geographic": {
+        "latitude": 37.7749,
+        "longitude": -122.4194,
+        "altitude": 12.5
+      }
+    },
+    "positioning_method": "slam",
+    "accuracy_meters": 0.15,
+    "confidence": 0.95
+  }
+}</code></pre>
+
+            <h3>Zone-Based Location</h3>
+            <p>For some applications, precise coordinates matter less than knowing which defined zone a robot occupies. The standard supports hierarchical zone definitions enabling coarse-to-fine location specification.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Zone Level</th>
+                        <th>Example</th>
+                        <th>Typical Precision</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Facility</td>
+                        <td>Corporate Campus North</td>
+                        <td>1000+ meters</td>
+                    </tr>
+                    <tr>
+                        <td>Building</td>
+                        <td>Building A</td>
+                        <td>100+ meters</td>
+                    </tr>
+                    <tr>
+                        <td>Floor/Level</td>
+                        <td>Floor 3</td>
+                        <td>10+ meters</td>
+                    </tr>
+                    <tr>
+                        <td>Area</td>
+                        <td>North Wing</td>
+                        <td>~5 meters</td>
+                    </tr>
+                    <tr>
+                        <td>Room</td>
+                        <td>Conference Room 301</td>
+                        <td>~1 meter</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>4.5 Timestamp Standards and Time Synchronization</h2>
+            <p>Accurate timestamps are critical for security applications where event sequencing matters and legal requirements demand precise time documentation. The standard mandates specific timestamp formats and synchronization practices.</p>
+
+            <h3>Timestamp Format</h3>
+            <p>All timestamps use ISO 8601 format in UTC timezone: <code>YYYY-MM-DDTHH:MM:SS.sssZ</code>. The format includes millisecond precision (three decimal places for seconds). More precise systems may include microseconds or nanoseconds but must truncate rather than round when precision exceeds consumer capabilities.</p>
+
+            <h3>Time Synchronization Requirements</h3>
+            <p>Security robots must synchronize clocks with authoritative time sources using NTP (Network Time Protocol) or PTP (Precision Time Protocol) for higher accuracy requirements. Clock drift must not exceed 100ms between synchronization cycles. Synchronization events are logged for audit purposes.</p>
+
+            <p>When robots lose network connectivity and cannot synchronize, they must flag timestamps generated during disconnection with reduced confidence indicators. Upon reconnection, robots correct timestamps retroactively if clock drift is detected, preserving original timestamps as metadata while providing corrected values.</p>
+
+            <h2>4.6 Validation and Quality Assurance</h2>
+            <p>Phase 1 includes comprehensive validation mechanisms ensuring data quality and schema compliance.</p>
+
+            <h3>JSON Schema Validation</h3>
+            <p>All data structures have formal JSON Schema definitions enabling automated validation. Implementations must validate outgoing data against schemas before transmission and can optionally validate incoming data for quality assurance.</p>
+
+            <p>Schema violations are classified by severity. Critical violations (missing required fields, invalid data types) cause message rejection. Warning-level violations (deprecated fields, unusual values) generate logs but don't prevent processing. This allows graceful handling of minor incompatibilities while preventing serious errors.</p>
+
+            <h3>Data Quality Indicators</h3>
+            <p>Many sensor readings include quality metadata helping consumers assess reliability. Confidence scores (0.0-1.0) indicate algorithmic certainty for AI-generated classifications. Accuracy estimates specify expected precision for position data. Sensor health status warns of degraded or failing sensors whose data may be unreliable.</p>
+
+            <div class="key-takeaways">
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li>Phase 1 establishes foundational JSON data formats for robot status, alerts, sensor data, and location information, enabling interoperability across implementations</li>
+                    <li>Data schemas balance comprehensiveness with simplicity through clear semantics, human-readable fields, and comprehensive validation rules</li>
+                    <li>Standardized sensor formats support cameras (visual, thermal, low-light), LIDAR, and environmental sensors with type-specific parameters and metadata</li>
+                    <li>Location representation supports geographic coordinates (outdoor), local frames (indoor), and zone-based hierarchies for diverse deployment scenarios</li>
+                    <li>Strict timestamp standards using ISO 8601 in UTC with NTP synchronization requirements ensure accurate event sequencing and audit trails</li>
+                </ul>
+            </div>
+
+            <h2>Review Questions</h2>
+            <ol>
+                <li>Why does Phase 1 mandate human-readable field names rather than abbreviated codes? What are the trade-offs of this design decision?</li>
+                <li>Explain the extension mechanism for vendor-specific fields. How does the "x_" prefix convention prevent future conflicts?</li>
+                <li>Compare geographic coordinate representation versus local coordinate frames. When is each approach more appropriate?</li>
+                <li>Describe the validation severity levels in JSON Schema processing. Why allow warning-level violations to proceed rather than rejecting messages?</li>
+                <li>What problems arise when security robots cannot synchronize clocks with time servers? How does the standard address temporary disconnection scenarios?</li>
+                <li>Design a data structure for a new sensor type (e.g., audio microphone array) following Phase 1 principles. What required and optional fields would you include?</li>
+            </ol>
+
+            <h2>Looking Ahead</h2>
+            <p>With foundational data formats established, Chapter 5 examines Phase 2: API Interface and Control Systems. We'll explore RESTful APIs for robot control, configuration management, and data retrieval that build upon Phase 1 data structures to enable remote operation and integration with security management platforms.</p>
+        </div>
+
+        <nav>
+            <a href="index.html">← Table of Contents</a>
+            <a href="chapter3.html">← Previous</a>
+            <a href="chapter5.html">Next →</a>
+        </nav>
+
+        <footer>
+            <p class="philosophy">弘益人間 · Benefit All Humanity</p>
+            <p>WIA Security Robot Standard - ROB-012</p>
+            <p>© 2025 MIT License</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Phase 2 - API Interface - WIA-DATA-001</title>
+</head>
+<body>
+
+<p><a href="index.html">📊 WIA-DATA-001 Big Data Standard Ebook</a> | Chapter 5 of 8</p>
+
+<hr>
+
+<h1>Chapter 5: Phase 2 - API Interface</h1>
+
+<blockquote>
+<p><strong>Hongik Ingan (弘益人間)</strong></p>
+<p>Standardized APIs enable developers to build interoperable big data applications that work across any platform.</p>
+</blockquote>
+
+<hr>
+
+<h2>5.1 RESTful API Design</h2>
+
+<h3>5.1.1 Core Endpoints</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>GET</td>
+            <td>/api/v1/datasets</td>
+            <td>List all datasets</td>
+        </tr>
+        <tr>
+            <td>POST</td>
+            <td>/api/v1/datasets</td>
+            <td>Create new dataset</td>
+        </tr>
+        <tr>
+            <td>GET</td>
+            <td>/api/v1/datasets/{id}</td>
+            <td>Get dataset metadata</td>
+        </tr>
+        <tr>
+            <td>PUT</td>
+            <td>/api/v1/datasets/{id}</td>
+            <td>Update dataset</td>
+        </tr>
+        <tr>
+            <td>DELETE</td>
+            <td>/api/v1/datasets/{id}</td>
+            <td>Delete dataset</td>
+        </tr>
+        <tr>
+            <td>POST</td>
+            <td>/api/v1/datasets/{id}/query</td>
+            <td>Query dataset</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>5.1.2 Request/Response Format</h3>
+
+<p>Example dataset creation:</p>
+
+<pre><code>POST /api/v1/datasets
+{
+  "name": "user_events",
+  "schema": {...},
+  "partitioning": {
+    "type": "time",
+    "field": "timestamp"
+  }
+}
+
+Response:
+{
+  "id": "ds-12345",
+  "name": "user_events",
+  "created_at": "2025-01-01T00:00:00Z",
+  "status": "active"
+}
+</code></pre>
+
+<hr>
+
+<h2>5.2 Query Language</h2>
+
+<h3>5.2.1 WIA Query Syntax</h3>
+
+<pre><code>POST /api/v1/datasets/{id}/query
+{
+  "select": ["user_id", "COUNT(*) as event_count"],
+  "where": {
+    "timestamp": {
+      "gte": "2025-01-01",
+      "lt": "2025-02-01"
+    },
+    "event_type": "click"
+  },
+  "groupBy": ["user_id"],
+  "orderBy": ["event_count DESC"],
+  "limit": 100
+}
+</code></pre>
+
+<h3>5.2.2 Query Operations</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Operation</th>
+            <th>Description</th>
+            <th>Example</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Filter</td>
+            <td>Select rows matching conditions</td>
+            <td>{"age": {"gt": 18}}</td>
+        </tr>
+        <tr>
+            <td>Project</td>
+            <td>Select specific columns</td>
+            <td>["id", "name", "email"]</td>
+        </tr>
+        <tr>
+            <td>Aggregate</td>
+            <td>Compute summary statistics</td>
+            <td>["SUM(amount)", "AVG(score)"]</td>
+        </tr>
+        <tr>
+            <td>Join</td>
+            <td>Combine multiple datasets</td>
+            <td>{"type": "inner", "on": "user_id"}</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>5.3 Batch Operations</h2>
+
+<h3>5.3.1 Bulk Insert</h3>
+
+<pre><code>POST /api/v1/datasets/{id}/batch
+{
+  "records": [
+    {"user_id": "u1", "value": 10},
+    {"user_id": "u2", "value": 20},
+    ...
+  ],
+  "format": "wbf"
+}
+</code></pre>
+
+<h3>5.3.2 Batch Export</h3>
+
+<pre><code>POST /api/v1/datasets/{id}/export
+{
+  "format": "parquet",
+  "compression": "snappy",
+  "destination": "s3://bucket/path/"
+}
+</code></pre>
+
+<hr>
+
+<h2>5.4 Client SDKs</h2>
+
+<h3>5.4.1 Python SDK (PyWIA)</h3>
+
+<pre><code>from wia.data import WIAClient
+
+client = WIAClient(api_key="your-key")
+
+# Create dataset
+dataset = client.create_dataset(
+    name="user_events",
+    schema=schema
+)
+
+# Insert data
+dataset.insert([
+    {"user_id": "u1", "timestamp": 1704067200},
+    {"user_id": "u2", "timestamp": 1704067300}
+])
+
+# Query data
+results = dataset.query()
+    .select("user_id", "COUNT(*)")
+    .where(timestamp__gte="2025-01-01")
+    .groupby("user_id")
+    .execute()
+</code></pre>
+
+<h3>5.4.2 Java SDK</h3>
+
+<pre><code>import com.wia.data.*;
+
+WIAClient client = new WIAClient("your-key");
+
+Dataset dataset = client.createDataset(
+    DatasetConfig.builder()
+        .name("user_events")
+        .schema(schema)
+        .build()
+);
+
+dataset.insert(records);
+
+QueryResult results = dataset.query()
+    .select("user_id", "COUNT(*)")
+    .where(Where.gte("timestamp", "2025-01-01"))
+    .groupBy("user_id")
+    .execute();
+</code></pre>
+
+<hr>
+
+<h2>5.5 Authentication and Security</h2>
+
+<h3>5.5.1 API Key Authentication</h3>
+
+<pre><code>curl -H "Authorization: Bearer YOUR_API_KEY" \
+     https://api.wia-data.com/v1/datasets
+</code></pre>
+
+<h3>5.5.2 OAuth 2.0 Support</h3>
+
+<ul>
+    <li>Authorization code flow for user authentication</li>
+    <li>Client credentials for service-to-service</li>
+    <li>Token refresh and expiration handling</li>
+</ul>
+
+<h3>5.5.3 Encryption</h3>
+
+<ul>
+    <li><strong>In transit:</strong> TLS 1.3 required for all API calls</li>
+    <li><strong>At rest:</strong> AES-256 encryption for stored data</li>
+    <li><strong>Key management:</strong> Integration with HSM and KMS</li>
+</ul>
+
+<hr>
+
+<h2>5.6 Rate Limiting and Quotas</h2>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Tier</th>
+            <th>Requests/min</th>
+            <th>Data Transfer (GB/day)</th>
+            <th>Storage (TB)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Free</td>
+            <td>60</td>
+            <td>1</td>
+            <td>0.1</td>
+        </tr>
+        <tr>
+            <td>Standard</td>
+            <td>600</td>
+            <td>100</td>
+            <td>10</td>
+        </tr>
+        <tr>
+            <td>Professional</td>
+            <td>6000</td>
+            <td>1000</td>
+            <td>100</td>
+        </tr>
+        <tr>
+            <td>Enterprise</td>
+            <td>Unlimited</td>
+            <td>Unlimited</td>
+            <td>Unlimited</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>5.7 Error Handling</h2>
+
+<h3>5.7.1 Standard Error Codes</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Code</th>
+            <th>Status</th>
+            <th>Meaning</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>400</td>
+            <td>Bad Request</td>
+            <td>Invalid parameters or malformed request</td>
+        </tr>
+        <tr>
+            <td>401</td>
+            <td>Unauthorized</td>
+            <td>Invalid or missing authentication</td>
+        </tr>
+        <tr>
+            <td>403</td>
+            <td>Forbidden</td>
+            <td>Insufficient permissions</td>
+        </tr>
+        <tr>
+            <td>404</td>
+            <td>Not Found</td>
+            <td>Resource does not exist</td>
+        </tr>
+        <tr>
+            <td>429</td>
+            <td>Too Many Requests</td>
+            <td>Rate limit exceeded</td>
+        </tr>
+        <tr>
+            <td>500</td>
+            <td>Internal Server Error</td>
+            <td>Server-side error</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>5.7.2 Error Response Format</h3>
+
+<pre><code>{
+  "error": {
+    "code": "INVALID_SCHEMA",
+    "message": "Schema validation failed",
+    "details": {
+      "field": "user_id",
+      "reason": "Required field missing"
+    }
+  }
+}
+</code></pre>
+
+<hr>
+
+<h2>Chapter Summary</h2>
+
+<h3>Key Takeaways:</h3>
+
+<ol>
+    <li>WIA-DATA-001 provides comprehensive RESTful APIs for all data operations</li>
+    <li>The query language supports filtering, aggregation, and joins</li>
+    <li>Official SDKs are available for Python, Java, JavaScript, and other languages</li>
+    <li>Security is built-in with API keys, OAuth 2.0, and encryption</li>
+    <li>Rate limiting and quotas ensure fair resource allocation</li>
+</ol>
+
+<hr>
+
+<h2>Review Questions</h2>
+
+<ol>
+    <li>What are the core CRUD operations in the WIA API?</li>
+    <li>How do you perform an aggregation query using the WIA query language?</li>
+    <li>What authentication methods are supported?</li>
+    <li>Explain the difference between API key and OAuth 2.0 authentication.</li>
+    <li>What happens when a rate limit is exceeded?</li>
+    <li>How are errors communicated in the WIA API?</li>
+</ol>
+
+<hr>
+
+<p><strong>Next:</strong> <a href="chapter-06.html">Chapter 6: Phase 3 - Protocol →</a></p>
+
+<p><a href="index.html">← Back to Table of Contents</a></p>
+
+</body>
+</html>

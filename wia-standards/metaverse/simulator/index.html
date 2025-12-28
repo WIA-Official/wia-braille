@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-EDU-018: Metaverse Simulator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+
+        .header {
+            text-align: center;
+            padding: 3rem 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #94a3b8;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .tab-content.active { display: block; }
+
+        .demo-section {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .demo-section h3 {
+            color: #10B981;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .world-preview {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1rem 0;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .world-preview::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+        }
+
+        .world-icon {
+            font-size: 6rem;
+            margin-bottom: 1rem;
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(360deg); }
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .control-group {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .control-group label {
+            display: block;
+            color: #10B981;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .control-group input, .control-group select {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-panel {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .status-panel h4 {
+            color: #10B981;
+            margin-bottom: 1rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+        }
+
+        .stat-label {
+            color: #94a3b8;
+        }
+
+        .stat-value {
+            color: #10B981;
+            font-weight: 600;
+        }
+
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .avatar-card {
+            background: rgba(15, 23, 42, 0.5);
+            border: 2px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .avatar-card:hover, .avatar-card.selected {
+            border-color: #10B981;
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .avatar-icon {
+            font-size: 4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .asset-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .asset-item {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .asset-info {
+            flex: 1;
+        }
+
+        .asset-name {
+            color: #10B981;
+            font-weight: 600;
+        }
+
+        .asset-details {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .log-container {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-entry {
+            padding: 0.25rem 0;
+            color: #94a3b8;
+        }
+
+        .log-entry.success { color: #10B981; }
+        .log-entry.error { color: #ef4444; }
+        .log-entry.warning { color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 Metaverse Simulator</h1>
+            <p style="color: #94a3b8;">Experience Virtual World Interoperability</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('world')">🌍 World Creation</div>
+            <div class="tab" onclick="switchTab('avatar')">👤 Avatar System</div>
+            <div class="tab" onclick="switchTab('assets')">💎 Digital Assets</div>
+            <div class="tab" onclick="switchTab('economy')">💰 Virtual Economy</div>
+            <div class="tab" onclick="switchTab('interop')">🔗 Interoperability</div>
+        </div>
+
+        <!-- World Creation Tab -->
+        <div id="world-tab" class="tab-content active">
+            <div class="demo-section">
+                <h3>Create Your Virtual World</h3>
+
+                <div class="world-preview">
+                    <div class="world-icon">🌐</div>
+                    <h4 style="color: #10B981; margin: 1rem 0;">My Virtual Campus</h4>
+                    <p style="color: #94a3b8;">1000m x 1000m · Educational Space</p>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>World Name</label>
+                        <input type="text" value="My Virtual Campus" id="worldName">
+                    </div>
+                    <div class="control-group">
+                        <label>World Type</label>
+                        <select id="worldType">
+                            <option>Educational</option>
+                            <option>Social</option>
+                            <option>Gaming</option>
+                            <option>Commerce</option>
+                            <option>Art Gallery</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Max Users</label>
+                        <select>
+                            <option>100</option>
+                            <option>500</option>
+                            <option selected>1000</option>
+                            <option>5000</option>
+                            <option>10000</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Environment</label>
+                        <select>
+                            <option>Day Clear</option>
+                            <option>Night Stars</option>
+                            <option>Sunset</option>
+                            <option>Cyberpunk</option>
+                            <option>Space</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button class="btn" onclick="createWorld()">Create World</button>
+                    <button class="btn btn-secondary" onclick="addPortal()">Add Portal</button>
+                </div>
+
+                <div class="status-panel">
+                    <h4>World Statistics</h4>
+                    <div class="stat-row">
+                        <span class="stat-label">Active Users:</span>
+                        <span class="stat-value" id="activeUsers">247</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Visits:</span>
+                        <span class="stat-value">15,832</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Avg Session:</span>
+                        <span class="stat-value">28 minutes</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Server Latency:</span>
+                        <span class="stat-value">18ms</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Avatar System Tab -->
+        <div id="avatar-tab" class="tab-content">
+            <div class="demo-section">
+                <h3>Universal Avatar System</h3>
+
+                <div class="avatar-grid">
+                    <div class="avatar-card selected">
+                        <div class="avatar-icon">👨‍💼</div>
+                        <div>Professional</div>
+                    </div>
+                    <div class="avatar-card">
+                        <div class="avatar-icon">👩‍🎨</div>
+                        <div>Creative</div>
+                    </div>
+                    <div class="avatar-card">
+                        <div class="avatar-icon">🤖</div>
+                        <div>Robot</div>
+                    </div>
+                    <div class="avatar-card">
+                        <div class="avatar-icon">👾</div>
+                        <div>Alien</div>
+                    </div>
+                    <div class="avatar-card">
+                        <div class="avatar-icon">🧙</div>
+                        <div>Fantasy</div>
+                    </div>
+                    <div class="avatar-card">
+                        <div class="avatar-icon">🐱</div>
+                        <div>Animal</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Avatar Format</label>
+                        <select>
+                            <option>VRM (VRoid)</option>
+                            <option>glTF 2.0</option>
+                            <option>USD (Universal Scene)</option>
+                            <option>FBX</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Animation Set</label>
+                        <select>
+                            <option>Standard Humanoid</option>
+                            <option>Full Mocap</option>
+                            <option>Custom</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Accessories</label>
+                        <select multiple>
+                            <option>Hats</option>
+                            <option>Glasses</option>
+                            <option>Clothing</option>
+                            <option>Jewelry</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button class="btn" onclick="customizeAvatar()">Customize Avatar</button>
+                    <button class="btn btn-secondary" onclick="uploadAvatar()">Upload VRM</button>
+                </div>
+
+                <div class="status-panel">
+                    <h4>Avatar Properties</h4>
+                    <div class="stat-row">
+                        <span class="stat-label">Format:</span>
+                        <span class="stat-value">VRM 1.0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Polygons:</span>
+                        <span class="stat-value">15,842</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Compatible Platforms:</span>
+                        <span class="stat-value">27</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">NFT Accessories:</span>
+                        <span class="stat-value">5 owned</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Digital Assets Tab -->
+        <div id="assets-tab" class="tab-content">
+            <div class="demo-section">
+                <h3>Digital Asset Management</h3>
+
+                <div class="asset-list">
+                    <div class="asset-item">
+                        <div class="asset-info">
+                            <div class="asset-name">Golden Trophy NFT</div>
+                            <div class="asset-details">Collectible • Legendary • ERC-721</div>
+                        </div>
+                        <button class="btn">Trade</button>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-info">
+                            <div class="asset-name">Virtual Land Parcel</div>
+                            <div class="asset-details">Real Estate • 100m² • ERC-721</div>
+                        </div>
+                        <button class="btn">Manage</button>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-info">
+                            <div class="asset-name">Designer Sneakers</div>
+                            <div class="asset-details">Wearable • Limited Edition • ERC-1155</div>
+                        </div>
+                        <button class="btn">Equip</button>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-info">
+                            <div class="asset-name">3D Art Sculpture</div>
+                            <div class="asset-details">Art • Unique • ERC-721</div>
+                        </div>
+                        <button class="btn">Display</button>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-info">
+                            <div class="asset-name">VIP Event Pass</div>
+                            <div class="asset-details">Access Token • Transferable • ERC-1155</div>
+                        </div>
+                        <button class="btn">Use</button>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button class="btn" onclick="createAsset()">Create Asset</button>
+                    <button class="btn btn-secondary" onclick="mintNFT()">Mint NFT</button>
+                    <button class="btn btn-secondary" onclick="openMarketplace()">Marketplace</button>
+                </div>
+
+                <div class="status-panel">
+                    <h4>Portfolio Summary</h4>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Assets:</span>
+                        <span class="stat-value">47</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Portfolio Value:</span>
+                        <span class="stat-value">12.5 ETH</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">NFTs Owned:</span>
+                        <span class="stat-value">23</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Items Listed:</span>
+                        <span class="stat-value">3</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Virtual Economy Tab -->
+        <div id="economy-tab" class="tab-content">
+            <div class="demo-section">
+                <h3>Virtual Economy Dashboard</h3>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Currency Type</label>
+                        <select>
+                            <option>EduCoin (EDU)</option>
+                            <option>Ethereum (ETH)</option>
+                            <option>Polygon (MATIC)</option>
+                            <option>USD Coin (USDC)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Transaction Fee</label>
+                        <input type="text" value="2.5%" readonly>
+                    </div>
+                    <div class="control-group">
+                        <label>Creator Royalty</label>
+                        <input type="text" value="5%" readonly>
+                    </div>
+                </div>
+
+                <div class="status-panel">
+                    <h4>Economy Metrics</h4>
+                    <div class="stat-row">
+                        <span class="stat-label">Wallet Balance:</span>
+                        <span class="stat-value">1,250 EDU ($125)</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Monthly Revenue:</span>
+                        <span class="stat-value">$2,847</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Transactions:</span>
+                        <span class="stat-value">156</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Creator Earnings:</span>
+                        <span class="stat-value">$892</span>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button class="btn" onclick="sendPayment()">Send Payment</button>
+                    <button class="btn btn-secondary" onclick="withdraw()">Withdraw</button>
+                    <button class="btn btn-secondary" onclick="viewHistory()">Transaction History</button>
+                </div>
+
+                <div class="log-container" style="margin-top: 1rem;">
+                    <div class="log-entry success">✓ Received 50 EDU from @user_456</div>
+                    <div class="log-entry success">✓ NFT sold for 0.5 ETH</div>
+                    <div class="log-entry">→ Land rental payment: 25 EDU</div>
+                    <div class="log-entry success">✓ Creator royalty: 12 EDU</div>
+                    <div class="log-entry">→ Purchased virtual item: -75 EDU</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interoperability Tab -->
+        <div id="interop-tab" class="tab-content">
+            <div class="demo-section">
+                <h3>Cross-Platform Interoperability</h3>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Connected Platforms</label>
+                        <select multiple size="6">
+                            <option selected>✓ Meta Horizon Worlds</option>
+                            <option selected>✓ VRChat</option>
+                            <option selected>✓ Decentraland</option>
+                            <option>Roblox</option>
+                            <option>The Sandbox</option>
+                            <option>Somnium Space</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Sync Settings</label>
+                        <input type="checkbox" checked> Avatar Sync<br>
+                        <input type="checkbox" checked> Asset Sync<br>
+                        <input type="checkbox" checked> Friend List Sync<br>
+                        <input type="checkbox"> Achievement Sync<br>
+                    </div>
+                </div>
+
+                <div class="status-panel">
+                    <h4>Interoperability Status</h4>
+                    <div class="stat-row">
+                        <span class="stat-label">Protocols Supported:</span>
+                        <span class="stat-value">OpenXR, WebXR, VRM</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Cross-World Portals:</span>
+                        <span class="stat-value">5 active</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Asset Compatibility:</span>
+                        <span class="stat-value">92%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Platform Sync:</span>
+                        <span class="stat-value">Real-time</span>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button class="btn" onclick="createPortal()">Create Portal</button>
+                    <button class="btn btn-secondary" onclick="testInterop()">Test Connection</button>
+                    <button class="btn btn-secondary" onclick="syncNow()">Sync Now</button>
+                </div>
+
+                <div class="log-container" style="margin-top: 1rem;">
+                    <div class="log-entry success">✓ Connected to VRChat</div>
+                    <div class="log-entry success">✓ Avatar synced across 3 platforms</div>
+                    <div class="log-entry">→ Portal created to Decentraland</div>
+                    <div class="log-entry success">✓ NFT verified on Ethereum mainnet</div>
+                    <div class="log-entry">→ Friend list synced: 47 contacts</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function createWorld() {
+            const worldName = document.getElementById('worldName').value;
+            alert('Creating virtual world: ' + worldName + '\n\n✓ World initialized\n✓ Environment loaded\n✓ Physics enabled\n✓ Ready for visitors!');
+        }
+
+        function addPortal() {
+            alert('Portal Creation\n\nDestination: otherworld://university-lab\nPosition: (100, 0, 100)\nType: Bidirectional\n\n✓ Portal created successfully!');
+        }
+
+        function customizeAvatar() {
+            alert('Avatar Customization\n\n✓ Body shape adjusted\n✓ Clothing selected\n✓ Accessories added\n✓ Animations loaded\n\nYour avatar is ready to use across all platforms!');
+        }
+
+        function uploadAvatar() {
+            alert('Upload VRM Avatar\n\nSupported formats:\n• VRM 0.0\n• VRM 1.0\n• glTF 2.0 with humanoid rig\n\nMax file size: 50MB');
+        }
+
+        function createAsset() {
+            alert('Create Digital Asset\n\n1. Upload 3D model (GLB/GLTF)\n2. Add metadata\n3. Set properties\n4. Optional: Mint as NFT\n\nAsset will be compatible across all metaverse platforms!');
+        }
+
+        function mintNFT() {
+            alert('Mint NFT\n\nBlockchain: Ethereum\nStandard: ERC-721\nGas Fee: ~$15\n\n✓ NFT minted successfully!\nToken ID: #42857');
+        }
+
+        function openMarketplace() {
+            alert('Opening Metaverse Marketplace\n\nBrowse thousands of:\n• Virtual clothing\n• 3D models\n• Land parcels\n• Art pieces\n• Access tokens');
+        }
+
+        function sendPayment() {
+            alert('Send Payment\n\nRecipient: @user_789\nAmount: 100 EDU\nFee: 2.5 EDU\n\n✓ Payment sent successfully!');
+        }
+
+        function withdraw() {
+            alert('Withdraw Funds\n\nAvailable: 1,250 EDU ($125)\nDestination: Your wallet\nNetwork fee: ~$2\n\nProcessing time: 5-10 minutes');
+        }
+
+        function viewHistory() {
+            alert('Transaction History\n\nShowing last 30 days:\n• 156 total transactions\n• $2,847 received\n• $1,234 spent\n• Net: +$1,613');
+        }
+
+        function createPortal() {
+            alert('Create Interoperable Portal\n\nDestination Platform: VRChat\nWorld ID: wrld_xyz123\nAccess: Public\n\n✓ Portal created and tested!\nUsers can now travel between worlds.');
+        }
+
+        function testInterop() {
+            alert('Testing Interoperability\n\n✓ Avatar format: Compatible\n✓ Asset sync: Working\n✓ Network latency: 18ms\n✓ Protocol version: Match\n\nAll systems operational!');
+        }
+
+        function syncNow() {
+            alert('Syncing Across Platforms\n\n✓ Avatar synced to 3 platforms\n✓ 12 assets updated\n✓ Friend list refreshed\n✓ Achievements synchronized\n\nSync complete!');
+        }
+
+        // Simulate active users
+        setInterval(() => {
+            const users = document.getElementById('activeUsers');
+            if (users) {
+                const current = parseInt(users.textContent);
+                const change = Math.floor(Math.random() * 10) - 5;
+                users.textContent = Math.max(200, current + change);
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

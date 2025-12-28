@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 05: 드론 통신 시스템 | WIA-SPACE-017</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+            background: #1a1a2e; color: #eee; line-height: 1.8; padding: 2rem;
+        }
+        .container {
+            max-width: 900px; margin: 0 auto; background: rgba(255, 255, 255, 0.03);
+            padding: 3rem; border-radius: 12px; border: 1px solid rgba(233, 69, 96, 0.2);
+        }
+        .chapter-header { border-bottom: 3px solid #e94560; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #e94560; font-size: 1rem; font-weight: 600; letter-spacing: 2px; margin-bottom: 0.5rem; }
+        h1 { color: #fff; font-size: 2.5rem; margin-bottom: 1rem; }
+        .chapter-intro { color: #aaa; font-size: 1.1rem; line-height: 1.8; }
+        h2 {
+            color: #e94560; font-size: 1.8rem; margin-top: 3rem; margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem; border-bottom: 2px solid rgba(233, 69, 96, 0.3);
+        }
+        h3 { color: #4ecca3; font-size: 1.4rem; margin-top: 2rem; margin-bottom: 1rem; }
+        p { margin-bottom: 1.5rem; color: #ccc; font-size: 1.05rem; }
+        ul, ol { margin-bottom: 1.5rem; padding-left: 2rem; }
+        li { margin-bottom: 0.8rem; color: #ccc; }
+        .info-box {
+            background: rgba(78, 204, 163, 0.1); border-left: 4px solid #4ecca3;
+            padding: 1.5rem; margin: 2rem 0; border-radius: 6px;
+        }
+        .info-box h4 { color: #4ecca3; margin-bottom: 1rem; font-size: 1.2rem; }
+        .warning-box {
+            background: rgba(233, 69, 96, 0.1); border-left: 4px solid #e94560;
+            padding: 1.5rem; margin: 2rem 0; border-radius: 6px;
+        }
+        .warning-box h4 { color: #e94560; margin-bottom: 1rem; font-size: 1.2rem; }
+        table {
+            width: 100%; border-collapse: collapse; margin: 2rem 0;
+            background: rgba(15, 52, 96, 0.3); border-radius: 6px; overflow: hidden;
+        }
+        th { background: #0f3460; color: #e94560; padding: 1rem; text-align: left; font-weight: 600; }
+        td { padding: 1rem; border-top: 1px solid rgba(233, 69, 96, 0.2); color: #ccc; }
+        tr:hover { background: rgba(233, 69, 96, 0.1); }
+        .nav-buttons {
+            margin-top: 4rem; padding-top: 2rem; border-top: 2px solid rgba(233, 69, 96, 0.3);
+            display: flex; justify-content: space-between; gap: 1rem;
+        }
+        .btn {
+            display: inline-block; background: #e94560; color: white; padding: 1rem 2rem;
+            border-radius: 6px; text-decoration: none; font-weight: 600; transition: all 0.3s ease;
+        }
+        .btn:hover { background: #d63651; transform: translateY(-2px); }
+        .btn-secondary { background: #0f3460; }
+        .btn-secondary:hover { background: #16213e; }
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .container { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            .nav-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 05</div>
+            <h1>📡 드론 통신 시스템</h1>
+            <p class="chapter-intro">
+                드론과 조종자 간의 통신 시스템을 탐구합니다.
+                RF 통신, 텔레메트리, MAVLink 프로토콜, 그리고 FPV 영상 전송 시스템을 이해합니다.
+            </p>
+        </div>
+
+        <h2>5.1 무선 주파수 (RF) 통신</h2>
+
+        <p>
+            드론은 무선 주파수를 통해 조종 명령을 받고 상태 정보를 전송합니다.
+        </p>
+
+        <h3>5.1.1 주파수 대역</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>주파수</th>
+                    <th>장점</th>
+                    <th>단점</th>
+                    <th>용도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>27MHz / 72MHz</strong></td>
+                    <td>장거리, 장애물 투과</td>
+                    <td>구형, 간섭 많음</td>
+                    <td>구형 RC 시스템</td>
+                </tr>
+                <tr>
+                    <td><strong>433MHz / 915MHz</strong></td>
+                    <td>매우 장거리 (수십 km)</td>
+                    <td>낮은 대역폭</td>
+                    <td>텔레메트리, 장거리 제어</td>
+                </tr>
+                <tr>
+                    <td><strong>2.4GHz</strong></td>
+                    <td>고대역폭, 저지연, 저렴</td>
+                    <td>짧은 거리 (~1-5km)</td>
+                    <td>RC 제어, FPV (디지털)</td>
+                </tr>
+                <tr>
+                    <td><strong>5.8GHz</strong></td>
+                    <td>넓은 채널, FPV 표준</td>
+                    <td>매우 짧은 거리</td>
+                    <td>아날로그 FPV 영상</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>5.1.2 2.4GHz RC 시스템</h3>
+
+        <p>
+            가장 일반적인 RC 주파수로, 다양한 프로토콜이 있습니다:
+        </p>
+
+        <ul>
+            <li><strong>FrSky ACCST/ACCESS</strong>: 유럽에서 인기, D8/D16 모드</li>
+            <li><strong>Spektrum DSMX</strong>: 북미 표준</li>
+            <li><strong>Futaba FASST/T-FHSS</strong>: 일본 브랜드</li>
+            <li><strong>FlySky AFHDS</strong>: 저가형, 입문용</li>
+        </ul>
+
+        <div class="info-box">
+            <h4>💡 FHSS (Frequency Hopping Spread Spectrum)</h4>
+            <p>
+                2.4GHz 시스템은 FHSS 기술을 사용하여 여러 채널을 빠르게 전환하며 통신합니다.
+                이는 간섭을 피하고 여러 드론이 동시에 비행할 수 있게 합니다.
+            </p>
+        </div>
+
+        <h2>5.2 장거리 통신 시스템</h2>
+
+        <h3>5.2.1 900MHz 장거리 RC</h3>
+
+        <ul>
+            <li><strong>TBS Crossfire</strong>:
+                <ul>
+                    <li>주파수: 868MHz (유럽) / 915MHz (미국)</li>
+                    <li>거리: 최대 80km+ (이상적 조건)</li>
+                    <li>지연: ~5ms</li>
+                    <li>양방향 텔레메트리</li>
+                </ul>
+            </li>
+            <li><strong>ExpressLRS (ELRS)</strong>:
+                <ul>
+                    <li>오픈소스, 900MHz 또는 2.4GHz</li>
+                    <li>매우 낮은 지연 (~4ms @ 500Hz)</li>
+                    <li>저비용</li>
+                    <li>500Hz, 250Hz, 150Hz 업데이트 레이트</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>5.2.2 4G/5G LTE 통신</h3>
+
+        <p>
+            상업용 드론은 셀룰러 네트워크를 통해 사실상 무제한 거리 통신이 가능합니다:
+        </p>
+
+        <ul>
+            <li><strong>장점</strong>:
+                <ul>
+                    <li>거리 제한 없음 (셀 커버리지 범위 내)</li>
+                    <li>고대역폭 (HD 영상 스트리밍)</li>
+                    <li>양방향 데이터 전송</li>
+                </ul>
+            </li>
+            <li><strong>단점</strong>:
+                <ul>
+                    <li>지연 시간 높음 (100~500ms)</li>
+                    <li>셀 커버리지 의존</li>
+                    <li>데이터 요금</li>
+                    <li>실시간 제어 부적합 (모니터링용)</li>
+                </ul>
+            </li>
+            <li><strong>응용</strong>:
+                <ul>
+                    <li>Beyond Visual Line of Sight (BVLOS) 비행</li>
+                    <li>장거리 배송 드론</li>
+                    <li>영상 스트리밍</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>5.3 텔레메트리</h2>
+
+        <p>
+            텔레메트리는 드론의 상태 정보를 실시간으로 조종자에게 전송합니다.
+        </p>
+
+        <h3>5.3.1 전송되는 데이터</h3>
+
+        <ul>
+            <li><strong>배터리 정보</strong>: 전압, 전류, 소모량, 남은 용량</li>
+            <li><strong>GPS 데이터</strong>: 위도/경도, 고도, 속도, 위성 수</li>
+            <li><strong>비행 데이터</strong>: 자세(Roll/Pitch/Yaw), 고도, 수직 속도</li>
+            <li><strong>센서 상태</strong>: GPS fix, 나침반 상태</li>
+            <li><strong>경고</strong>: 저전압, RC 신호 약화, failsafe 상태</li>
+        </ul>
+
+        <h3>5.3.2 텔레메트리 시스템</h3>
+
+        <ul>
+            <li><strong>FrSky S.Port</strong>: FrSky 수신기 통합 텔레메트리</li>
+            <li><strong>Crossfire CRSF</strong>: RC와 텔레메트리 통합</li>
+            <li><strong>MAVLink</strong>: 범용 드론 통신 프로토콜 (아래 상세 설명)</li>
+            <li><strong>LTM (Lightweight Telemetry)</strong>: 경량 프로토콜</li>
+        </ul>
+
+        <h3>5.3.3 OSD (On-Screen Display)</h3>
+
+        <p>
+            OSD는 FPV 영상에 텔레메트리 정보를 오버레이합니다:
+        </p>
+
+        <ul>
+            <li>배터리 전압, 전류 소모</li>
+            <li>비행 시간 (타이머)</li>
+            <li>GPS 좌표, 고도</li>
+            <li>인공 수평선</li>
+            <li>홈 방향 화살표</li>
+            <li>RC 신호 강도 (RSSI)</li>
+        </ul>
+
+        <h2>5.4 MAVLink 프로토콜</h2>
+
+        <p>
+            MAVLink (Micro Air Vehicle Link)는 드론과 지상 제어 스테이션(GCS) 간
+            통신을 위한 경량 메시징 프로토콜입니다.
+        </p>
+
+        <h3>5.4.1 MAVLink 특징</h3>
+
+        <ul>
+            <li><strong>경량</strong>: 최소 8바이트 헤더, 효율적</li>
+            <li><strong>범용</strong>: ArduPilot, PX4, MAVSDK 지원</li>
+            <li><strong>확장 가능</strong>: 사용자 정의 메시지 추가 가능</li>
+            <li><strong>신뢰성</strong>: CRC 체크섬, 메시지 시퀀싱</li>
+        </ul>
+
+        <h3>5.4.2 주요 MAVLink 메시지</h3>
+
+        <ul>
+            <li><strong>HEARTBEAT</strong>: 시스템 상태, 비행 모드</li>
+            <li><strong>ATTITUDE</strong>: Roll, Pitch, Yaw 각도</li>
+            <li><strong>GPS_RAW_INT</strong>: GPS 위치, 속도</li>
+            <li><strong>RC_CHANNELS</strong>: RC 입력 값</li>
+            <li><strong>MISSION_ITEM</strong>: 웨이포인트 정보</li>
+            <li><strong>COMMAND_LONG</strong>: 명령 전송 (ARM, 이륙, 착륙 등)</li>
+        </ul>
+
+        <h3>5.4.3 MAVLink over 텔레메트리</h3>
+
+        <p>
+            MAVLink는 다양한 통신 채널을 통해 전송될 수 있습니다:
+        </p>
+
+        <ul>
+            <li><strong>UART/Serial</strong>: FC와 텔레메트리 라디오 연결</li>
+            <li><strong>WiFi</strong>: ESP8266/ESP32를 통한 무선</li>
+            <li><strong>4G/LTE</strong>: 장거리 통신</li>
+            <li><strong>USB</strong>: 지상에서 직접 연결</li>
+        </ul>
+
+        <h2>5.5 FPV 영상 전송</h2>
+
+        <p>
+            FPV (First Person View) 시스템은 드론의 카메라 영상을 실시간으로 전송합니다.
+        </p>
+
+        <h3>5.5.1 아날로그 FPV</h3>
+
+        <p>
+            전통적인 FPV 방식으로 낮은 지연시간이 장점입니다:
+        </p>
+
+        <ul>
+            <li><strong>주파수</strong>: 5.8GHz (일반적), 1.2GHz/1.3GHz (장거리)</li>
+            <li><strong>해상도</strong>: NTSC (720×480), PAL (720×576)</li>
+            <li><strong>지연</strong>: 5~20ms (매우 낮음)</li>
+            <li><strong>전력</strong>: 25mW, 200mW, 600mW, 1000mW+</li>
+            <li><strong>채널</strong>: 40+ 채널 (Raceband, Boscam A/B/E 등)</li>
+        </ul>
+
+        <div class="warning-box">
+            <h4>⚠️ VTX 전력 규제</h4>
+            <p>
+                국가별로 VTX (Video Transmitter) 최대 전력이 규제됩니다:
+                <br><strong>미국</strong>: 5.8GHz 최대 1W
+                <br><strong>유럽</strong>: 5.8GHz 최대 25mW
+                <br><strong>한국</strong>: 5.8GHz 사용 제한적, 인증 필요
+                <br>반드시 현지 법규를 확인하세요!
+            </p>
+        </div>
+
+        <h3>5.5.2 디지털 FPV</h3>
+
+        <p>
+            최신 디지털 FPV 시스템은 HD 화질과 낮은 간섭을 제공합니다:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>시스템</th>
+                    <th>해상도</th>
+                    <th>지연</th>
+                    <th>특징</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>DJI FPV</strong></td>
+                    <td>1080p 60fps</td>
+                    <td>~28ms</td>
+                    <td>최고 화질, 폐쇄 생태계</td>
+                </tr>
+                <tr>
+                    <td><strong>DJI O3</strong></td>
+                    <td>1080p 100fps</td>
+                    <td>~20ms</td>
+                    <td>개선된 지연, 4K 녹화</td>
+                </tr>
+                <tr>
+                    <td><strong>Walksnail Avatar</strong></td>
+                    <td>1080p 60fps</td>
+                    <td>~30ms</td>
+                    <td>오픈 생태계, 저렴</td>
+                </tr>
+                <tr>
+                    <td><strong>HDZero</strong></td>
+                    <td>720p 90fps</td>
+                    <td>~15ms</td>
+                    <td>낮은 지연, 레이싱 최적화</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>5.5.3 아날로그 vs 디지털 FPV</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>특성</th>
+                    <th>아날로그</th>
+                    <th>디지털</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>지연</td>
+                    <td>매우 낮음 (5~20ms)</td>
+                    <td>낮음~중간 (15~30ms)</td>
+                </tr>
+                <tr>
+                    <td>화질</td>
+                    <td>480p, 잡음</td>
+                    <td>720p~1080p, 선명</td>
+                </tr>
+                <tr>
+                    <td>장거리</td>
+                    <td>점진적 화질 저하</td>
+                    <td>갑작스런 끊김</td>
+                </tr>
+                <tr>
+                    <td>비용</td>
+                    <td>저렴 ($50~100)</td>
+                    <td>비쌈 ($200~600)</td>
+                </tr>
+                <tr>
+                    <td>용도</td>
+                    <td>레이싱, 저지연 중시</td>
+                    <td>프리스타일, 촬영</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>5.6 영상 녹화 및 저장</h2>
+
+        <h3>5.6.1 DVR (Digital Video Recorder)</h3>
+
+        <ul>
+            <li><strong>고글 DVR</strong>: FPV 고글에 내장, 화면 그대로 녹화</li>
+            <li><strong>카메라 SD</strong>: 액션 카메라(GoPro 등) 고화질 녹화</li>
+            <li><strong>VTX SD</strong>: 일부 VTX에 SD 슬롯 내장</li>
+        </ul>
+
+        <h3>5.6.2 영상 품질</h3>
+
+        <ul>
+            <li><strong>FPV 피드 녹화</strong>: 480p~1080p, 낮은 비트레이트</li>
+            <li><strong>액션 카메라</strong>: 4K 60fps, 고비트레이트, 고품질</li>
+            <li><strong>용도 구분</strong>: FPV는 조종용, 액션캠은 최종 영상용</li>
+        </ul>
+
+        <h2>5.7 지상 제어 스테이션 (GCS)</h2>
+
+        <p>
+            자율 비행 드론을 위한 소프트웨어 인터페이스입니다.
+        </p>
+
+        <h3>5.7.1 주요 GCS 소프트웨어</h3>
+
+        <ul>
+            <li><strong>Mission Planner</strong>: ArduPilot 전용, Windows, 기능 풍부</li>
+            <li><strong>QGroundControl</strong>: ArduPilot/PX4 모두 지원, 크로스플랫폼</li>
+            <li><strong>APM Planner 2</strong>: ArduPilot, Mac/Linux 친화적</li>
+            <li><strong>DJI GS Pro</strong>: DJI 드론 전용, iOS</li>
+            <li><strong>UgCS</strong>: 상업용, 고급 미션 계획</li>
+        </ul>
+
+        <h3>5.7.2 GCS 기능</h3>
+
+        <ul>
+            <li><strong>미션 계획</strong>: 웨이포인트, 경로, 고도 설정</li>
+            <li><strong>실시간 모니터링</strong>: 비행 데이터, 지도에 드론 위치 표시</li>
+            <li><strong>파라미터 설정</strong>: FC 설정 변경</li>
+            <li><strong>로그 분석</strong>: 비행 후 데이터 분석</li>
+            <li><strong>시뮬레이션</strong>: SITL (Software In The Loop) 비행 시뮬레이션</li>
+        </ul>
+
+        <h2>5.8 주파수 간섭 및 공존</h2>
+
+        <h3>5.8.1 2.4GHz 간섭 문제</h3>
+
+        <p>
+            2.4GHz 대역은 WiFi, Bluetooth와 공유하므로 간섭이 발생할 수 있습니다:
+        </p>
+
+        <ul>
+            <li><strong>WiFi 라우터</strong>: 특히 채널 6, 11</li>
+            <li><strong>Bluetooth 기기</strong>: 이어폰, 스피커</li>
+            <li><strong>전자레인지</strong>: 강한 2.4GHz 방출</li>
+            <li><strong>해결책</strong>: FHSS 기술, 900MHz 시스템 사용</li>
+        </ul>
+
+        <h3>5.8.2 다중 드론 비행</h3>
+
+        <p>
+            여러 드론이 동시에 비행할 때 고려사항:
+        </p>
+
+        <ul>
+            <li><strong>RC 시스템</strong>: FHSS로 자동 회피, 문제 적음</li>
+            <li><strong>아날로그 FPV</strong>: 서로 다른 채널 사용 필수 (Raceband 1~8)</li>
+            <li><strong>디지털 FPV</strong>: 시스템이 자동 채널 관리 (DJI는 최대 8대)</li>
+        </ul>
+
+        <h2>5.9 요약</h2>
+
+        <p>
+            드론 통신 시스템은 RC 제어, 텔레메트리, 영상 전송의 세 가지 주요 축으로 구성됩니다.
+            2.4GHz와 900MHz는 RC 제어에, 5.8GHz는 FPV 영상 전송에 주로 사용됩니다.
+        </p>
+
+        <p>
+            MAVLink 프로토콜은 자율 비행 드론의 표준 통신 방식이며,
+            아날로그 FPV는 낮은 지연으로 레이싱에, 디지털 FPV는 고화질로 촬영에 적합합니다.
+            4G/5G 통신은 장거리 BVLOS 비행의 미래를 열고 있습니다.
+        </p>
+
+        <p>
+            다음 챕터에서는 드론의 자율 비행 기술을 살펴보겠습니다.
+        </p>
+
+        <div class="nav-buttons">
+            <a href="chapter-04.html" class="btn btn-secondary">← 이전: 비행 제어</a>
+            <a href="chapter-06.html" class="btn">다음: 자율 비행 →</a>
+        </div>
+    </div>
+</body>
+</html>

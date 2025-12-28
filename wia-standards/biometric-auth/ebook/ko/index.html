@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>생체인식 보안 전자책 | WIA-SEC-007</title>
+    <style>
+        :root { --primary: #8B5CF6; --primary-dark: #7C3AED; --bg: #0f172a; --bg-card: #1e293b; --text: #f8fafc; --text-muted: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); line-height: 1.9; }
+        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+
+        .book-header { text-align: center; padding: 60px 0; border-bottom: 2px solid var(--primary); }
+        .book-header h1 { font-size: 3rem; color: var(--primary); margin-bottom: 20px; }
+        .book-header .subtitle { font-size: 1.5rem; color: var(--text-muted); margin-bottom: 10px; }
+        .book-header .author { font-size: 1.1rem; color: var(--primary); margin-top: 30px; }
+
+        .chapter { margin: 60px 0; }
+        .chapter-number { font-size: 0.9rem; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
+        .chapter-title { font-size: 2rem; color: var(--primary); margin: 10px 0 30px; }
+        .chapter-content { font-size: 1.1rem; line-height: 2; color: var(--text); }
+        .chapter-content p { margin-bottom: 20px; }
+        .chapter-content h3 { color: var(--primary); margin: 30px 0 15px; font-size: 1.5rem; }
+        .chapter-content ul, .chapter-content ol { margin: 20px 0 20px 40px; }
+        .chapter-content li { margin-bottom: 10px; }
+        .chapter-content code { background: var(--bg-card); padding: 2px 6px; border-radius: 3px; font-family: monospace; color: #10b981; }
+
+        .quote { border-left: 4px solid var(--primary); padding: 20px; margin: 30px 0; background: var(--bg-card); font-style: italic; color: var(--text-muted); }
+
+        .philosophy { text-align: center; font-size: 1.5rem; color: #ffd700; margin: 60px 0; }
+
+        nav { position: sticky; top: 20px; background: var(--bg-card); padding: 20px; border-radius: 12px; margin-bottom: 40px; border: 1px solid var(--border); }
+        nav h3 { color: var(--primary); margin-bottom: 15px; }
+        nav a { display: block; padding: 8px 0; color: var(--text-muted); text-decoration: none; transition: all 0.2s; }
+        nav a:hover { color: var(--primary); padding-left: 10px; }
+
+        footer { margin-top: 80px; padding: 30px 0; border-top: 2px solid var(--primary); text-align: center; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="book-header">
+            <h1>👆 생체인식 보안</h1>
+            <p class="subtitle">지문, 홍채, 얼굴 인식의 종합 가이드</p>
+            <p class="philosophy">弘益人間 · 널리 인간을 이롭게 하라</p>
+            <p class="author">WIA-SEC-007 표준 · 2025년 판</p>
+        </div>
+
+        <nav>
+            <h3>목차</h3>
+            <a href="#ch1">제1장: 생체인식 인증 소개</a>
+            <a href="#ch2">제2장: 지문 인식</a>
+            <a href="#ch3">제3장: 홍채 인식</a>
+            <a href="#ch4">제4장: 얼굴 인식</a>
+            <a href="#ch5">제5장: 성능 지표 (FAR/FRR)</a>
+            <a href="#ch6">제6장: 템플릿 보호 및 프라이버시</a>
+            <a href="#ch7">제7장: FIDO2 & WebAuthn 통합</a>
+            <a href="#ch8">제8장: 실제 응용 사례</a>
+        </nav>
+
+        <div class="chapter" id="ch1">
+            <div class="chapter-number">제1장</div>
+            <h2 class="chapter-title">생체인식 인증 소개</h2>
+            <div class="chapter-content">
+                <p>생체인식 인증은 우리가 신원을 증명하는 방식의 근본적인 변화를 나타냅니다. 잊어버리거나 도난당하거나 공유될 수 있는 비밀번호와 달리, 생체 특징은 본질적으로 개인과 연결되어 있습니다. 지문의 융선 패턴, 홍채의 무늬, 얼굴의 기하학적 구조는 DNA만큼이나 고유합니다.</p>
+
+                <p>이 장에서는 WIA-SEC-007 표준이 다루는 세 가지 주요 생체인식 방식인 지문, 홍채, 얼굴 인식을 소개합니다. 각각은 고유한 장점, 과제 및 사용 사례가 있습니다.</p>
+
+                <h3>생체인식 인증이란?</h3>
+                <p>생체인식 인증은 고유한 신체적 또는 행동적 특징을 측정하여 신원을 확인합니다. 프로세스는 다음을 포함합니다:</p>
+
+                <ol>
+                    <li><strong>등록</strong>: 생체 샘플을 캡처하고 특징을 추출하여 템플릿 생성</li>
+                    <li><strong>저장</strong>: 암호화된 템플릿을 안전하게 저장</li>
+                    <li><strong>인증</strong>: 새로운 샘플을 캡처하고 등록된 템플릿과 비교</li>
+                    <li><strong>결정</strong>: 유사도 점수를 기반으로 수락 또는 거부</li>
+                </ol>
+
+                <h3>생체인식 인증의 장점</h3>
+                <ul>
+                    <li><strong>편의성</strong>: 비밀번호를 기억하거나 물리적 토큰을 휴대할 필요 없음</li>
+                    <li><strong>보안</strong>: 쉽게 도난당하거나 공유될 수 없음 (적절한 생체 감지 포함)</li>
+                    <li><strong>부인 방지</strong>: 감사 추적을 위한 강력한 신원 증명</li>
+                    <li><strong>접근성</strong>: 장애가 있는 사용자에게 더 쉬움 (예: 타이핑이 어려운 사람을 위한 얼굴 인식)</li>
+                </ul>
+
+                <h3>과제 및 우려사항</h3>
+                <ul>
+                    <li><strong>프라이버시</strong>: 생체 데이터는 민감하고 영구적—지문을 변경할 수 없음</li>
+                    <li><strong>스푸핑</strong>: 공격자가 가짜 지문, 사진 또는 비디오를 사용할 수 있음</li>
+                    <li><strong>템플릿 보호</strong>: 저장된 템플릿은 암호화되고 취소 가능해야 함</li>
+                    <li><strong>오인식/오거부</strong>: 100% 정확한 생체인식 시스템은 없음</li>
+                </ul>
+
+                <div class="quote">
+                    "최고의 인증은 사용자에게는 보이지 않지만 공격자에게는 뚫을 수 없는 것입니다. 생체인식은 올바르게 구현될 때 이 균형을 달성합니다."
+                </div>
+
+                <h3>WIA-SEC-007 표준 목표</h3>
+                <p>이 표준의 목표:</p>
+                <ul>
+                    <li>지문, 홍채, 얼굴 템플릿에 대한 상호 운용 가능한 데이터 형식 정의</li>
+                    <li>품질 지표 및 성능 벤치마크 확립</li>
+                    <li>템플릿 보호 메커니즘 지정 (취소 가능한 생체인식)</li>
+                    <li>현대 표준과 통합 (FIDO2, WebAuthn)</li>
+                    <li>개인정보 보호 규정 준수 보장 (GDPR, CCPA)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="chapter" id="ch2">
+            <div class="chapter-number">제2장</div>
+            <h2 class="chapter-title">지문 인식</h2>
+            <div class="chapter-content">
+                <p>지문 인식은 가장 오래되고 가장 널리 배포된 생체인식 기술입니다. 지문 패턴의 고유성은 한 세기 이상 인정받아 왔으며, 현대 자동 지문 식별 시스템(AFIS)은 밀리초 단위로 지문을 매칭할 수 있습니다.</p>
+
+                <h3>지문의 작동 원리</h3>
+                <p>손가락 끝에는 고유한 패턴을 형성하는 융선과 골이 있습니다. 이러한 패턴에는 다음이 포함됩니다:</p>
+                <ul>
+                    <li><strong>아치</strong>: 융선이 한쪽에서 들어와 다른 쪽으로 나감</li>
+                    <li><strong>루프</strong>: 융선이 들어와 휘어져 같은 쪽으로 나감 (인구의 60-65%)</li>
+                    <li><strong>와선</strong>: 원형 또는 나선형 융선 패턴 (인구의 30-35%)</li>
+                </ul>
+
+                <h3>특징점</h3>
+                <p>지문 매칭은 <strong>특징점</strong>에 의존합니다—융선이 끝나거나 분기되는 작은 특징:</p>
+                <ul>
+                    <li><strong>융선 끝</strong>: 갑자기 끝나는 융선</li>
+                    <li><strong>분기점</strong>: 두 개로 나뉘는 융선</li>
+                </ul>
+
+                <p>일반적인 지문에는 30-50개의 특징점이 있습니다. 이러한 점들의 공간적 관계(위치 및 각도)가 고유한 템플릿을 만듭니다.</p>
+
+                <h3>캡처 기술</h3>
+                <ul>
+                    <li><strong>광학</strong>: 빛을 사용하여 지문 이미지화 (가장 일반적)</li>
+                    <li><strong>정전용량</strong>: 융선과 골 사이의 전기 용량 차이 측정 (스마트폰)</li>
+                    <li><strong>초음파</strong>: 음파를 사용하여 지문을 3D로 매핑 (삼성, 퀄컴)</li>
+                    <li><strong>열</strong>: 온도 차이 감지</li>
+                </ul>
+
+                <h3>품질 지표 (NFIQ)</h3>
+                <p>NIST 지문 이미지 품질(NFIQ) 점수는 지문을 1-5 척도로 평가합니다:</p>
+                <ul>
+                    <li><strong>1 (우수)</strong>: 명확한 융선, 높은 대비</li>
+                    <li><strong>2-3 (양호)</strong>: 매칭에 허용 가능</li>
+                    <li><strong>4-5 (불량)</strong>: 거부하고 재캡처해야 함</li>
+                </ul>
+
+                <h3>성능</h3>
+                <ul>
+                    <li><strong>EER (등가 에러율)</strong>: 0.01% - 1% (고품질 지문의 경우)</li>
+                    <li><strong>템플릿 크기</strong>: 200-500 바이트</li>
+                    <li><strong>매칭 속도</strong>: 현대 하드웨어에서 <10ms</li>
+                </ul>
+
+                <div class="quote">
+                    "지문은 인류의 원래 생체인식입니다. 고대 바빌론에서 현대 스마트폰까지, 융선 패턴은 식별을 위한 지속적인 가치를 입증했습니다."
+                </div>
+            </div>
+        </div>
+
+        <div class="chapter" id="ch3">
+            <div class="chapter-number">제3장</div>
+            <h2 class="chapter-title">홍채 인식</h2>
+            <div class="chapter-content">
+                <p>인간의 홍채—동공 주위의 색깔 있는 고리—는 믿을 수 없을 정도로 복잡한 구멍, 주름 및 목걸이선 패턴을 포함합니다. 홍채 인식은 가장 정확한 생체인식 기술로 널리 인정받고 있습니다.</p>
+
+                <h3>홍채가 고유한 이유</h3>
+                <p>홍채는 임신 중에 발달하며 평생 안정적으로 유지됩니다. 일란성 쌍둥이도 다른 홍채 패턴을 가지고 있습니다. 주요 특징은 다음과 같습니다:</p>
+                <ul>
+                    <li><strong>구멍</strong>: 홍채 기질의 다이아몬드 모양 구멍</li>
+                    <li><strong>주름</strong>: 동공에서 뻗어 나가는 방사형 주름</li>
+                    <li><strong>목걸이선</strong>: 내부 및 외부 홍채를 나누는 지그재그 경계</li>
+                    <li><strong>색소 반점</strong>: 멜라닌이 증가된 영역</li>
+                </ul>
+
+                <h3>다우그만의 홍채 코드</h3>
+                <p>존 다우그만은 1993년에 지배적인 홍채 인식 알고리즘을 개발했습니다. 작동 방식:</p>
+                <ol>
+                    <li><strong>위치 파악</strong>: 동공 및 홍채 경계 찾기</li>
+                    <li><strong>정규화</strong>: 환형 홍채를 직사각형 이미지로 펼치기</li>
+                    <li><strong>인코딩</strong>: 2D Gabor 웨이블릿을 적용하여 위상 정보 추출</li>
+                    <li><strong>비교</strong>: 홍채 코드 간의 해밍 거리 계산</li>
+                </ol>
+
+                <p>결과는 홍채를 고유하게 나타내는 2048비트 이진 코드(256바이트)입니다.</p>
+
+                <h3>근적외선 이미징</h3>
+                <p>홍채 스캐너는 근적외선(NIR) 빛(700-900nm)을 사용합니다:</p>
+                <ul>
+                    <li>어두운 눈의 질감 표시 (가시광선에서는 거의 세부 정보 표시 안 됨)</li>
+                    <li>각막의 정반사 감소</li>
+                    <li>동공 수축 최소화 (밝은 빛으로 인해 동공이 수축함)</li>
+                </ul>
+
+                <h3>성능</h3>
+                <ul>
+                    <li><strong>EER</strong>: 0.001% - 0.1% (매우 정확)</li>
+                    <li><strong>템플릿 크기</strong>: 512바이트 (256바이트 코드 + 256바이트 마스크)</li>
+                    <li><strong>오인식률</strong>: 백만 분의 1 (또는 더 나음)</li>
+                    <li><strong>캡처 거리</strong>: 10-30cm (비접촉)</li>
+                </ul>
+
+                <h3>과제</h3>
+                <ul>
+                    <li>사용자 협력 필요 (카메라를 응시)</li>
+                    <li>안경, 콘택트렌즈 또는 눈꺼풀 가림으로 어려움</li>
+                    <li>지문보다 비싼 센서</li>
+                    <li>일부 지역에서 문화적 민감성</li>
+                </ul>
+
+                <div class="quote">
+                    "눈은 영혼의 창입니다—그리고 홍채 인식 덕분에 놀라울 정도로 정확한 신원의 창이기도 합니다."
+                </div>
+            </div>
+        </div>
+
+        <div class="chapter" id="ch4">
+            <div class="chapter-number">제4장</div>
+            <h2 class="chapter-title">얼굴 인식</h2>
+            <div class="chapter-content">
+                <p>얼굴 인식은 미래의 꿈에서 일상적인 현실로 변모하여 스마트폰 잠금 해제, 공항 탑승 및 결제 인증을 지원합니다. 현대 딥러닝은 얼굴 인식을 매우 정확하고 놀라울 정도로 편리하게 만들었습니다.</p>
+
+                <h3>얼굴 인식 작동 방식</h3>
+                <p>얼굴 인식에는 세 가지 주요 단계가 포함됩니다:</p>
+
+                <ol>
+                    <li><strong>감지</strong>: 이미지에서 얼굴 찾기 (Viola-Jones, MTCNN, RetinaFace)</li>
+                    <li><strong>정렬</strong>: 얼굴 랜드마크를 사용하여 얼굴 자세 정규화 (눈, 코, 입)</li>
+                    <li><strong>인식</strong>: 특징 벡터(임베딩) 추출 및 비교</li>
+                </ol>
+
+                <h3>딥러닝 혁명</h3>
+                <p>2012년 이전, 얼굴 인식은 수작업으로 만든 특징(LBP, HOG)에 의존했습니다. 딥러닝이 모든 것을 바꿨습니다:</p>
+
+                <ul>
+                    <li><strong>DeepFace (Facebook, 2014)</strong>: 인간 수준의 정확도를 달성한 최초의 딥러닝 시스템</li>
+                    <li><strong>FaceNet (Google, 2015)</strong>: 트리플렛 손실 및 128차원 임베딩 도입</li>
+                    <li><strong>ArcFace (2018)</strong>: 최첨단 각도 마진 손실</li>
+                </ul>
+
+                <p>이러한 시스템은 유사한 얼굴이 가까운 고차원 공간에 얼굴을 매핑하는 방법을 학습합니다.</p>
+
+                <h3>3D 얼굴 인식</h3>
+                <p>2D 얼굴 인식은 자세, 조명 및 스푸핑에 어려움을 겪습니다. 3D 얼굴 인식은 깊이를 추가합니다:</p>
+
+                <ul>
+                    <li><strong>구조광</strong>: 패턴을 투사하고 왜곡 측정 (iPhone Face ID)</li>
+                    <li><strong>ToF(Time-of-Flight)</strong>: 빛 반사 시간 측정</li>
+                    <li><strong>스테레오 비전</strong>: 두 개의 카메라로 시차에서 깊이 계산</li>
+                </ul>
+
+                <p>3D 얼굴 인식은 조명 변화 및 스푸핑 공격에 훨씬 더 강력합니다.</p>
+
+                <h3>생체 감지</h3>
+                <p>사진/비디오 공격을 방지하기 위해 얼굴 인식 시스템은 다음을 사용합니다:</p>
+
+                <ul>
+                    <li><strong>깊이</strong>: 2D 사진/화면에는 깊이가 없음</li>
+                    <li><strong>질감 분석</strong>: 인쇄 아티팩트, 화면 픽셀 감지</li>
+                    <li><strong>움직임</strong>: 사용자에게 깜빡임, 미소, 머리 돌리기 요청</li>
+                    <li><strong>열</strong>: 체온 신호 감지</li>
+                </ul>
+
+                <h3>성능</h3>
+                <ul>
+                    <li><strong>2D 얼굴 (RGB)</strong>: EER 1-5% (조명, 자세에 민감)</li>
+                    <li><strong>3D 얼굴</strong>: EER 0.1-1% (훨씬 더 강력함)</li>
+                    <li><strong>템플릿 크기</strong>: 512바이트 - 2KB (128 또는 512차원 임베딩)</li>
+                    <li><strong>캡처 거리</strong>: 30-200cm (매우 편리)</li>
+                </ul>
+
+                <h3>프라이버시 고려사항</h3>
+                <p>얼굴 인식은 고유한 프라이버시 문제를 제기합니다:</p>
+                <ul>
+                    <li>동의 없이 원거리에서 캡처 가능</li>
+                    <li>대규모 감시 가능</li>
+                    <li>편향 대상 (특정 인구 통계에 대해 낮은 정확도)</li>
+                </ul>
+
+                <p>책임 있는 배포에는 투명성, 동의 및 정기적인 편향 감사가 필요합니다.</p>
+
+                <div class="quote">
+                    "얼굴은 가장 공개적인 생체인식입니다—따라서 인증을 위해 가장 강력하고 가장 위험합니다."
+                </div>
+            </div>
+        </div>
+
+        <div class="chapter" id="ch5">
+            <div class="chapter-number">제5장</div>
+            <h2 class="chapter-title">성능 지표: FAR, FRR 및 EER</h2>
+            <div class="chapter-content">
+                <p>완벽한 생체인식 시스템은 없습니다. 오류율을 이해하는 것은 보안과 편의성의 균형을 맞추는 시스템을 배포하는 데 중요합니다.</p>
+
+                <h3>두 가지 기본 오류</h3>
+
+                <p><strong>오인식률 (FAR)</strong></p>
+                <p>시스템이 사칭자를 잘못 수락할 확률입니다.</p>
+                <p>예: FAR = 0.01%이면 10,000번의 사칭 시도 중 1번이 수락됩니다.</p>
+
+                <p><strong>오거부율 (FRR)</strong></p>
+                <p>시스템이 정당한 사용자를 잘못 거부할 확률입니다.</p>
+                <p>예: FRR = 1%이면 정당한 사용자가 100번 중 1번 거부됩니다.</p>
+
+                <h3>보안 대 편의성 트레이드오프</h3>
+                <p>FAR과 FRR은 반비례 관계입니다. 매칭 임계값을 낮추면 시스템이:</p>
+                <ul>
+                    <li>더 <strong>편리함</strong> (낮은 FRR—거부 적음)</li>
+                    <li>덜 <strong>안전함</strong> (높은 FAR—사칭자 수락 많음)</li>
+                </ul>
+
+                <p>임계값을 올리면 반대입니다.</p>
+
+                <h3>등가 에러율 (EER)</h3>
+                <p>EER은 FAR = FRR인 지점입니다. 시스템 성능을 요약하는 단일 숫자입니다:</p>
+                <ul>
+                    <li><strong>낮은 EER</strong> = 더 나은 시스템</li>
+                    <li><strong>일반적인 EER 값</strong>:
+                        <ul>
+                            <li>지문: 0.01% - 1%</li>
+                            <li>홍채: 0.001% - 0.1%</li>
+                            <li>얼굴 (2D): 1% - 5%</li>
+                            <li>얼굴 (3D): 0.1% - 1%</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h3>ROC 곡선 (수신기 작동 특성)</h3>
+                <p>ROC 곡선은 서로 다른 임계값에서 참 수락률(1 - FRR) 대 오인식률(FAR)을 플롯합니다. 곡선 아래 영역(AUC)은 전체 성능을 측정합니다:</p>
+                <ul>
+                    <li>AUC = 1.0: 완벽한 분류기</li>
+                    <li>AUC = 0.5: 무작위 추측</li>
+                    <li>AUC > 0.99: 우수한 생체인식 시스템</li>
+                </ul>
+
+                <h3>작동점 선택</h3>
+                <p>다른 응용 프로그램은 다른 임계값이 필요합니다:</p>
+                <ul>
+                    <li><strong>높은 보안</strong> (은행, 정부): FAR = 0.001%, 높은 FRR 허용</li>
+                    <li><strong>편의성</strong> (스마트폰 잠금 해제): FRR = 1%, 높은 FAR 허용</li>
+                    <li><strong>균형</strong> (기업 액세스): EER 근처에서 작동</li>
+                </ul>
+
+                <div class="quote">
+                    "생체인식에서 완벽은 불가능합니다. 예술은 위협 모델에 적합한 균형을 선택하는 데 있습니다."
+                </div>
+            </div>
+        </div>
+
+        <div class="chapter" id="ch6">
+            <div class="chapter-number">제6장</div>
+            <h2 class="chapter-title">템플릿 보호 및 프라이버시</h2>
+            <div class="chapter-content">
+                <p>생체 데이터는 영구적입니다. 도난당하면 비밀번호처럼 지문을 변경할 수 없습니다. 따라서 템플릿 보호가 중요합니다.</p>
+
+                <h3>위협 모델</h3>
+                <p>다음 공격 시나리오를 고려하십시오:</p>
+                <ul>
+                    <li><strong>데이터베이스 침해</strong>: 공격자가 암호화된 템플릿 도난</li>
+                    <li><strong>재생 공격</strong>: 공격자가 캡처된 템플릿을 가로채고 재생</li>
+                    <li><strong>표현 공격</strong>: 가짜 지문, 사진, 3D 인쇄 얼굴</li>
+                    <li><strong>교차 매칭</strong>: 공격자가 서로 다른 시스템에서 템플릿 상관 관계</li>
+                </ul>
+
+                <h3>취소 가능한 생체인식</h3>
+                <p>비밀번호와 달리 생체인식을 변경할 수는 없지만 저장 방식은 <em>변경할 수 있습니다</em>:</p>
+
+                <p><strong>BioHashing</strong></p>
+                <p>생체 템플릿을 사용자별 토큰(비밀번호, PIN 또는 임의 키)과 결합합니다. 손상된 경우 토큰을 변경하여 취소합니다.</p>
+
+                <p><strong>Fuzzy Vault</strong></p>
+                <p>생체 특징 사이에 비밀(예: 암호화 키)을 숨깁니다. 일치하는 생체인식만 비밀을 잠금 해제할 수 있습니다. "chaff" 포인트를 추가하여 진짜 특징을 가립니다.</p>
+
+                <p><strong>동형 암호화</strong></p>
+                <p>암호화된 도메인에서 매칭을 수행할 수 있도록 템플릿을 암호화합니다—서버는 평문 생체인식을 보지 않습니다.</p>
+
+                <h3>안전한 저장</h3>
+                <p>생체 템플릿 저장 위치:</p>
+                <ul>
+                    <li><strong>보안 영역</strong>: 하드웨어 보호 메모리 (Apple Secure Enclave, ARM TrustZone)</li>
+                    <li><strong>TPM (신뢰할 수 있는 플랫폼 모듈)</strong>: 하드웨어 보안 칩</li>
+                    <li><strong>HSM (하드웨어 보안 모듈)</strong>: 기업/정부용</li>
+                </ul>
+
+                <p>저장 전에 항상 <code>AES-256-GCM</code>으로 템플릿을 암호화합니다.</p>
+
+                <h3>개인정보 보호 규정</h3>
+
+                <p><strong>GDPR (일반 데이터 보호 규정)</strong></p>
+                <p>생체 데이터는 다음을 요구하는 "특수 범주 개인 데이터"입니다:</p>
+                <ul>
+                    <li>명시적 사용자 동의</li>
+                    <li>삭제 권한</li>
+                    <li>데이터 이동성</li>
+                    <li>목적 제한</li>
+                </ul>
+
+                <p><strong>CCPA (캘리포니아 소비자 개인정보 보호법)</strong></p>
+                <p>캘리포니아 거주자에 대한 유사한 요구사항.</p>
+
+                <p><strong>BIPA (일리노이 생체 정보 개인정보 보호법)</strong></p>
+                <p>생체 수집 전에 서면 동의 및 공개가 필요합니다.</p>
+
+                <h3>모범 사례</h3>
+                <ul>
+                    <li>원시 생체 이미지를 저장하지 마십시오—보호된 템플릿만 저장</li>
+                    <li>템플릿 보호 사용 (취소 가능한 생체인식)</li>
+                    <li>저장 및 전송 중인 템플릿 암호화</li>
+                    <li>생체 감지 구현</li>
+                    <li>명확한 동의 메커니즘 제공</li>
+                    <li>사용자가 생체 데이터를 삭제할 수 있도록 허용</li>
+                    <li>정기적인 보안 감사 수행</li>
+                    <li>인구 통계학적 편향 테스트</li>
+                </ul>
+
+                <div class="quote">
+                    "프라이버시는 숨길 것이 있다는 것이 아닙니다. 보호할 것이 있다는 것입니다—당신의 신원."
+                </div>
+            </div>
+        </div>
+
+        <div class="chapter" id="ch7">
+            <div class="chapter-number">제7장</div>
+            <h2 class="chapter-title">FIDO2 & WebAuthn 통합</h2>
+            <div class="chapter-content">
+                <p>FIDO2(Fast Identity Online) 및 WebAuthn은 비밀번호 없는 생체 인증을 웹에 제공합니다. 이 장에서는 작동 방식과 온라인 보안의 게임 체인저인 이유를 설명합니다.</p>
+
+                <h3>비밀번호 문제</h3>
+                <ul>
+                    <li>사용자가 사이트 전체에서 비밀번호를 재사용 (하나의 침해가 모두를 손상시킴)</li>
+                    <li>피싱 공격이 사용자를 속여 가짜 사이트에 비밀번호를 입력하게 함</li>
+                    <li>비밀번호를 추측, 크래킹 또는 도난당할 수 있음</li>
+                </ul>
+
+                <h3>FIDO2가 해결하는 방법</h3>
+                <p>FIDO2는 <strong>공개 키 암호화</strong> + <strong>생체 인증</strong>을 사용하여 비밀번호를 제거합니다:</p>
+
+                <ol>
+                    <li><strong>등록</strong>: 장치가 키 쌍(공개 + 개인) 생성. 공개 키를 서버로 전송, 개인 키는 장치에 유지.</li>
+                    <li><strong>인증</strong>: 서버가 챌린지 전송. 사용자가 생체로 신원 증명. 장치가 개인 키로 챌린지에 서명.</li>
+                    <li><strong>확인</strong>: 서버가 공개 키로 서명 확인.</li>
+                </ol>
+
+                <h3>주요 장점</h3>
+                <ul>
+                    <li><strong>피싱 방지</strong>: 개인 키가 장치를 떠나지 않으며 피싱될 수 없음</li>
+                    <li><strong>비밀번호 없음</strong>: 기억하거나 입력할 것이 없음</li>
+                    <li><strong>프라이버시 보호</strong>: 생체인식이 서버로 전송되지 않음 (서명만)</li>
+                    <li><strong>사이트별 키</strong>: 각 사이트가 고유한 키 쌍 받음 (사이트 간 추적 없음)</li>
+                </ul>
+
+                <h3>구성 요소</h3>
+
+                <p><strong>WebAuthn API</strong></p>
+                <p>등록 및 인증을 위한 브라우저 JavaScript API:</p>
+                <ul>
+                    <li><code>navigator.credentials.create()</code> - 인증자 등록</li>
+                    <li><code>navigator.credentials.get()</code> - 인증</li>
+                </ul>
+
+                <p><strong>CTAP (클라이언트-인증자 프로토콜)</strong></p>
+                <p>브라우저와 인증자(예: 지문 센서, YubiKey) 간의 통신.</p>
+
+                <p><strong>인증자</strong></p>
+                <ul>
+                    <li><strong>플랫폼</strong>: 장치에 내장 (Touch ID, Face ID, Windows Hello)</li>
+                    <li><strong>로밍</strong>: 외부 (YubiKey, USB 보안 키)</li>
+                </ul>
+
+                <h3>사용자 경험</h3>
+                <p>등록:</p>
+                <ol>
+                    <li>사용자가 "가입" 클릭</li>
+                    <li>브라우저 프롬프트: "Touch ID를 사용하여 등록하시겠습니까?"</li>
+                    <li>사용자가 지문/얼굴로 인증</li>
+                    <li>완료—만들 비밀번호 없음!</li>
+                </ol>
+
+                <p>인증:</p>
+                <ol>
+                    <li>사용자가 "로그인" 클릭</li>
+                    <li>브라우저 프롬프트: "Touch ID를 사용하시겠습니까?"</li>
+                    <li>사용자가 생체로 인증</li>
+                    <li>로그인됨!</li>
+                </ol>
+
+                <h3>보안 속성</h3>
+                <ul>
+                    <li><strong>증명</strong>: 인증자 모델의 암호화 증명 (하드웨어가 진짜인지 확인)</li>
+                    <li><strong>사용자 확인</strong>: 생체가 확인되었는지 확인</li>
+                    <li><strong>카운터</strong>: 복제 방지 (사용할 때마다 증가)</li>
+                    <li><strong>원본 바인딩</strong>: 챌린지에 도메인 이름 포함 (피싱 방지)</li>
+                </ul>
+
+                <div class="quote">
+                    "FIDO2를 사용하면 지문이 웹을 잠금 해제하는 키가 됩니다—안전하고 개인적으로, 비밀번호 없이."
+                </div>
+            </div>
+        </div>
+
+        <div class="chapter" id="ch8">
+            <div class="chapter-number">제8장</div>
+            <h2 class="chapter-title">실제 응용 사례</h2>
+            <div class="chapter-content">
+                <p>생체 인증은 공상 과학 소설에서 일상적인 현실로 이동했습니다. 이 장에서는 산업 전반에 걸친 실제 배포를 탐구합니다.</p>
+
+                <h3>소비자 기기</h3>
+
+                <p><strong>스마트폰</strong></p>
+                <ul>
+                    <li><strong>Apple Touch ID/Face ID</strong>: 10억 대 이상의 기기, <1% FRR</li>
+                    <li><strong>Samsung 초음파 지문</strong>: 디스플레이 내 센서</li>
+                    <li><strong>Google Pixel 얼굴 잠금 해제</strong>: 듀얼 IR 카메라 시스템</li>
+                </ul>
+
+                <p><strong>노트북</strong></p>
+                <ul>
+                    <li><strong>Windows Hello</strong>: Windows 로그인을 위한 얼굴/지문</li>
+                    <li><strong>MacBook Touch ID</strong>: 전원 버튼의 지문</li>
+                </ul>
+
+                <h3>금융 서비스</h3>
+
+                <p><strong>ATM</strong></p>
+                <p>일본, 인도, 브라질의 은행은 지문/홍채 ATM을 배포합니다—카드가 필요 없습니다.</p>
+
+                <p><strong>모바일 결제</strong></p>
+                <ul>
+                    <li><strong>Apple Pay</strong>: 거래 승인을 위한 Touch ID/Face ID</li>
+                    <li><strong>Mastercard 생체 카드</strong>: 신용 카드에 내장된 지문 센서</li>
+                </ul>
+
+                <h3>국경 통제 및 여행</h3>
+
+                <p><strong>e-Gates</strong></p>
+                <p>얼굴 + 여권 칩을 사용한 자동 국경 통제. 전 세계 공항에 배포(영국, EU, 호주).</p>
+
+                <p><strong>TSA PreCheck</strong></p>
+                <p>신속한 공항 보안을 위한 지문 등록(미국).</p>
+
+                <p><strong>인도 Aadhaar</strong></p>
+                <p>세계 최대 생체 데이터베이스: 13억 명이 지문 + 홍채로 등록.</p>
+
+                <h3>의료</h3>
+
+                <p><strong>환자 식별</strong></p>
+                <p>병원은 지문/홍채를 사용하여 의료 신원 도용을 방지하고 올바른 환자 기록을 보장합니다.</p>
+
+                <p><strong>처방약 모니터링</strong></p>
+                <p>오피오이드를 조제할 때 지문 확인(남용 방지).</p>
+
+                <h3>기업 액세스 제어</h3>
+
+                <p><strong>물리적 보안</strong></p>
+                <ul>
+                    <li>건물 출입을 위한 지문/얼굴 판독기</li>
+                    <li>생체 시간 및 출석 시스템</li>
+                </ul>
+
+                <p><strong>논리적 보안</strong></p>
+                <ul>
+                    <li>워크스테이션에 대한 생체 로그인</li>
+                    <li>다단계 인증 (생체 + PIN)</li>
+                </ul>
+
+                <h3>법 집행</h3>
+
+                <p><strong>AFIS (자동 지문 식별 시스템)</strong></p>
+                <p>FBI는 범죄 수사를 위해 1억 개 이상의 지문 데이터베이스를 유지합니다.</p>
+
+                <p><strong>모바일 ID</strong></p>
+                <p>경찰관은 휴대용 지문 스캐너를 사용하여 현장에서 용의자를 식별합니다.</p>
+
+                <h3>인도주의적 응용</h3>
+
+                <p><strong>난민 등록</strong></p>
+                <p>UNHCR은 홍채 인식을 사용하여 난민을 등록하고 원조를 배포합니다(사기 방지).</p>
+
+                <p><strong>아동 복지</strong></p>
+                <p>지문/얼굴 인식으로 실종 아동을 가족과 재결합시킵니다.</p>
+
+                <h3>과제 및 윤리적 고려사항</h3>
+                <ul>
+                    <li><strong>편향</strong>: 특정 인구 통계에 대한 낮은 정확도는 지속적인 테스트가 필요</li>
+                    <li><strong>감시</strong>: 대규모 얼굴 인식은 시민 자유 문제 제기</li>
+                    <li><strong>동의</strong>: 사용자가 생체 사용을 이해하고 동의하는지 확인</li>
+                    <li><strong>보안</strong>: 데이터베이스 침해는 심각한 결과를 초래</li>
+                </ul>
+
+                <div class="quote">
+                    "기술은 선하지도 악하지도 않습니다—우리가 어떻게 사용하기로 선택하느냐입니다. 생체인식은 권한을 부여하거나 억압할 수 있습니다. 선택은 우리의 것입니다."
+                </div>
+
+                <p style="text-align: center; margin-top: 60px; font-size: 1.3rem; color: var(--primary);">
+                    이 가이드를 읽어주셔서 감사합니다. 인류에게 잘 봉사하기를 바랍니다.
+                </p>
+            </div>
+        </div>
+
+        <footer>
+            <p class="philosophy">弘益人間 · 널리 인간을 이롭게 하라 · Benefit All Humanity</p>
+            <p>© 2025 World Certification Industry Association (WIA)</p>
+            <p style="margin-top: 15px;">대한민국에서 세계로</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제4장: 데이터 집계 - WIA MED-005</title>
+    <link rel="icon" href="/favicon.ico">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #0f172a; color: #e2e8f0; line-height: 1.8;">
+
+<nav style="margin-bottom: 30px; padding: 15px; background: #1e293b; border-radius: 8px;">
+    <a href="chapter-03.html" style="color: #10b981; text-decoration: none;">← 이전</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="index.html" style="color: #10b981; text-decoration: none;">📚 목차</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <span style="color: #64748b;">제4장 / 8장</span>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-05.html" style="color: #10b981; text-decoration: none;">다음 →</a>
+</nav>
+
+<h1 style="color: #10b981;">제4장: 데이터 집계</h1>
+
+<blockquote style="background: #1e293b; padding: 20px; border-left: 4px solid #fbbf24; margin: 20px 0;">
+<p style="color: #fbbf24; font-style: italic;">"수백 개의 센서에서 나오는 데이터를 통합하여 의미 있는 통찰로 변환하는 것, 이것이 데이터 집계의 핵심입니다."</p>
+</blockquote>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">4.1 데이터 집계 아키텍처</h2>
+
+<p>IoMT 데이터 집계는 다층 구조로 이루어집니다:</p>
+
+<pre style="background: #1e293b; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #334155;">
+<code style="color: #10b981;">
+┌─────────────────────────────────────────┐
+│       응용 계층 (Application)            │
+│   EMR, Analytics, ML, Dashboards         │
+└───────────────┬─────────────────────────┘
+                │
+┌───────────────▼─────────────────────────┐
+│       집계 계층 (Aggregation)            │
+│   Data Fusion, Normalization, Storage    │
+└───────────────┬─────────────────────────┘
+                │
+┌───────────────▼─────────────────────────┐
+│       전처리 계층 (Preprocessing)        │
+│   Filtering, Validation, Transformation  │
+└───────────────┬─────────────────────────┘
+                │
+┌───────────────▼─────────────────────────┐
+│       수집 계층 (Collection)             │
+│   Gateway, Edge Devices, IoT Hub         │
+└───────────────┬─────────────────────────┘
+                │
+┌───────────────▼─────────────────────────┐
+│       센서 계층 (Sensors)                │
+│   Wearables, Devices, Implants           │
+└─────────────────────────────────────────┘
+</code>
+</pre>
+
+<h3 style="color: #10b981;">📥 데이터 수집 패턴</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #10b981;">패턴</th>
+        <th style="border: 1px solid #475569; color: #10b981;">설명</th>
+        <th style="border: 1px solid #475569; color: #10b981;">사용 사례</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Push</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">기기가 능동적으로 전송</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">긴급 알림, 이벤트 기반</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Pull</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">서버가 주기적으로 요청</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">정기 모니터링</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Streaming</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">연속 데이터 스트림</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">실시간 ECG, EEG</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Batch</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">데이터 축적 후 일괄 전송</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">활동량, 수면 데이터</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">4.2 데이터 정규화</h2>
+
+<p>다양한 소스의 데이터를 통일된 형식으로 변환:</p>
+
+<h3 style="color: #10b981;">🔄 단위 변환</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; overflow-x: auto; border: 1px solid #334155;">
+<code style="color: #10b981;">// 온도 정규화 예제
+{
+  "temperature": {
+    "raw": {
+      "value": 98.6,
+      "unit": "°F",
+      "source": "oral_thermometer"
+    },
+    "normalized": {
+      "value": 37.0,
+      "unit": "°C",
+      "precision": 0.1
+    },
+    "standard": "WIA-MED-005",
+    "timestamp": "2025-12-26T10:00:00Z"
+  }
+}
+
+// 혈당 정규화
+{
+  "glucose": {
+    "raw": {
+      "value": 150,
+      "unit": "mg/dL",
+      "source": "cgm_sensor"
+    },
+    "normalized": {
+      "value": 8.3,
+      "unit": "mmol/L",
+      "precision": 0.1
+    },
+    "timestamp": "2025-12-26T10:00:00Z"
+  }
+}
+</code>
+</pre>
+
+<h3 style="color: #10b981;">📊 시간 동기화</h3>
+
+<p>정확한 시간 스탬프가 필수적입니다:</p>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">UTC 표준</strong> — 모든 타임스탬프는 UTC로 저장</li>
+    <li><strong style="color: #e2e8f0;">NTP 동기화</strong> — 네트워크 시간 프로토콜 사용</li>
+    <li><strong style="color: #e2e8f0;">타임존 처리</strong> — 표시 시 로컬 시간 변환</li>
+    <li><strong style="color: #e2e8f0;">정밀도</strong> — 밀리초 단위 정확도</li>
+</ul>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">4.3 데이터 융합</h2>
+
+<p>여러 센서의 데이터를 결합하여 더 정확한 통찰 도출:</p>
+
+<h3 style="color: #10b981;">🔀 센서 융합 기법</h3>
+
+<table border="1" cellpadding="10" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #10b981;">기법</th>
+        <th style="border: 1px solid #475569; color: #10b981;">방법</th>
+        <th style="border: 1px solid #475569; color: #10b981;">예시</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">칼만 필터</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">확률적 추정</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">GPS + 가속도계 위치</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">베이지안 융합</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">조건부 확률</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">다중 센서 낙상 감지</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">가중 평균</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">신뢰도 기반 평균</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">다중 온도 센서</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">딥러닝 융합</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">신경망 기반</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">ECG + PPG 융합</td>
+    </tr>
+</table>
+
+<h3 style="color: #10b981;">💡 융합 예제: 심혈관 상태 평가</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; overflow-x: auto; border: 1px solid #334155;">
+<code style="color: #10b981;">{
+  "cardiovascularAssessment": {
+    "timestamp": "2025-12-26T10:00:00Z",
+    "sources": [
+      {
+        "type": "ecg",
+        "heartRate": 72,
+        "confidence": 0.98
+      },
+      {
+        "type": "ppg_watch",
+        "heartRate": 74,
+        "confidence": 0.85
+      },
+      {
+        "type": "blood_pressure",
+        "systolic": 120,
+        "diastolic": 80
+      }
+    ],
+    "fused": {
+      "heartRate": {
+        "value": 72,
+        "confidence": 0.99,
+        "method": "weighted_average"
+      },
+      "bloodPressure": {
+        "systolic": 120,
+        "diastolic": 80
+      },
+      "cardiovascularRisk": {
+        "level": "low",
+        "score": 15,
+        "factors": ["normal_bp", "regular_hr"]
+      }
+    }
+  }
+}
+</code>
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">4.4 데이터 검증</h2>
+
+<p>수집된 데이터의 품질과 신뢰성 확인:</p>
+
+<h3 style="color: #10b981;">✅ 검증 단계</h3>
+
+<ol style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">범위 검증 (Range Validation)</strong>
+        <ul style="color: #94a3b8;">
+            <li>생리학적으로 가능한 범위 확인</li>
+            <li>예: 심박수 30-220 bpm</li>
+            <li>예: 체온 35-42°C</li>
+        </ul>
+    </li>
+    <li><strong style="color: #e2e8f0;">일관성 검증 (Consistency Check)</strong>
+        <ul style="color: #94a3b8;">
+            <li>시간적 일관성 (급격한 변화 탐지)</li>
+            <li>센서 간 일관성</li>
+        </ul>
+    </li>
+    <li><strong style="color: #e2e8f0;">무결성 검증 (Integrity Check)</strong>
+        <ul style="color: #94a3b8;">
+            <li>체크섬 검증</li>
+            <li>데이터 손실 탐지</li>
+            <li>중복 제거</li>
+        </ul>
+    </li>
+    <li><strong style="color: #e2e8f0;">맥락 검증 (Contextual Validation)</strong>
+        <ul style="color: #94a3b8;">
+            <li>환자 프로파일과 비교</li>
+            <li>활동 상태 고려</li>
+            <li>약물 영향 고려</li>
+        </ul>
+    </li>
+</ol>
+
+<h3 style="color: #10b981;">⚠️ 이상치 처리</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; overflow-x: auto; border: 1px solid #334155;">
+<code style="color: #10b981;">{
+  "validation": {
+    "dataPoint": {
+      "value": 250,
+      "type": "heart_rate",
+      "timestamp": "2025-12-26T10:00:00Z"
+    },
+    "checks": [
+      {
+        "type": "range_check",
+        "status": "warning",
+        "message": "Value exceeds typical range (220 bpm max)"
+      },
+      {
+        "type": "consistency_check",
+        "status": "fail",
+        "message": "Sudden increase from 72 to 250 bpm"
+      }
+    ],
+    "action": "flagged_for_review",
+    "confidence": 0.30,
+    "recommendation": "Request manual verification"
+  }
+}
+</code>
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">4.5 데이터 저장 전략</h2>
+
+<p>의료 데이터는 장기 보관과 빠른 접근이 모두 필요합니다:</p>
+
+<h3 style="color: #10b981;">💾 스토리지 계층화</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #10b981;">계층</th>
+        <th style="border: 1px solid #475569; color: #10b981;">기술</th>
+        <th style="border: 1px solid #475569; color: #10b981;">용도</th>
+        <th style="border: 1px solid #475569; color: #10b981;">보관 기간</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">Hot Storage</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">SSD, 메모리 DB</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">실시간 접근</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">24-48시간</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">Warm Storage</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">HDD, RDS</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">자주 조회</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1-12개월</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">Cold Storage</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">S3 Glacier</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">장기 보관</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1-7년</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">Archive</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Tape, Deep Archive</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">규제 준수</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">7-50년</td>
+    </tr>
+</table>
+
+<h3 style="color: #10b981;">🗄️ 데이터베이스 선택</h3>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">시계열 DB</strong> — InfluxDB, TimescaleDB (연속 모니터링)</li>
+    <li><strong style="color: #e2e8f0;">문서 DB</strong> — MongoDB (복합 의료 기록)</li>
+    <li><strong style="color: #e2e8f0;">관계형 DB</strong> — PostgreSQL (환자 정보, 메타데이터)</li>
+    <li><strong style="color: #e2e8f0;">그래프 DB</strong> — Neo4j (의료 지식 그래프)</li>
+</ul>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">4.6 데이터 집계 성능</h2>
+
+<p>대규모 IoMT 시스템의 성능 요구사항:</p>
+
+<h3 style="color: #10b981;">⚡ 처리량</h3>
+
+<table border="1" cellpadding="10" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #10b981;">규모</th>
+        <th style="border: 1px solid #475569; color: #10b981;">기기 수</th>
+        <th style="border: 1px solid #475569; color: #10b981;">초당 이벤트</th>
+        <th style="border: 1px solid #475569; color: #10b981;">일일 데이터</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">소규모 클리닉</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">100-1,000</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">100-1,000</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">10-100 GB</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">중형 병원</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1,000-10,000</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1,000-10,000</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">100 GB - 1 TB</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">대형 의료 시스템</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">10,000-100,000</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">10,000-100,000</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1-10 TB</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">국가 규모</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">100,000-1,000,000+</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">100,000-1,000,000+</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">10-100 TB</td>
+    </tr>
+</table>
+
+<h3 style="color: #10b981;">🚀 최적화 전략</h3>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">로드 밸런싱</strong> — 트래픽 분산</li>
+    <li><strong style="color: #e2e8f0;">캐싱</strong> — 자주 조회되는 데이터</li>
+    <li><strong style="color: #e2e8f0;">인덱싱</strong> — 빠른 쿼리 응답</li>
+    <li><strong style="color: #e2e8f0;">파티셔닝</strong> — 데이터 분할</li>
+    <li><strong style="color: #e2e8f0;">압축</strong> — 저장 공간 절약</li>
+</ul>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">4.7 메타데이터 관리</h2>
+
+<p>데이터에 대한 데이터:</p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; overflow-x: auto; border: 1px solid #334155;">
+<code style="color: #10b981;">{
+  "metadata": {
+    "dataId": "ecg-session-20251226-001",
+    "created": "2025-12-26T08:00:00Z",
+    "modified": "2025-12-26T20:00:00Z",
+    "owner": {
+      "patientId": "patient-abc-123",
+      "providerId": "dr-john-doe",
+      "organizationId": "hospital-xyz"
+    },
+    "dataType": "continuous_ecg",
+    "format": "HL7-FHIR",
+    "version": "R4",
+    "quality": {
+      "completeness": 0.99,
+      "accuracy": 0.98,
+      "timeliness": "real-time"
+    },
+    "security": {
+      "classification": "PHI",
+      "encryption": "AES-256",
+      "accessControl": "RBAC"
+    },
+    "retention": {
+      "period": "7 years",
+      "archiveDate": "2032-12-26"
+    }
+  }
+}
+</code>
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">장 요약</h2>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #10b981;">핵심 포인트</th>
+        <th style="border: 1px solid #475569; color: #10b981;">요약</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>아키텍처</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">5계층 집계 구조</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>정규화</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">단위 변환, 시간 동기화</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>융합</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">칼만 필터, 베이지안, 딥러닝</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>검증</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">범위, 일관성, 무결성, 맥락</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>저장</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Hot/Warm/Cold/Archive 계층화</td>
+    </tr>
+</table>
+
+<nav style="margin-top: 30px; padding: 15px; background: #1e293b; border-radius: 8px; display: flex; justify-content: space-between;">
+    <a href="chapter-03.html" style="color: #10b981; text-decoration: none;">← 제3장: 의료 센서 네트워크</a>
+    <a href="chapter-05.html" style="color: #10b981; text-decoration: none;">제5장: 엣지 컴퓨팅 →</a>
+</nav>
+
+<p style="text-align: center; color: #fbbf24; margin-top: 40px;">弘益人間 · 널리 인간을 이롭게 하라</p>
+<p style="text-align: center; color: #64748b;">© 2025 WIA - World Certification Industry Association</p>
+
+</body>
+</html>

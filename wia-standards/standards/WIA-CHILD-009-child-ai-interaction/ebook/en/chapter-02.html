@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 02: Technical Architecture | WIA-CHILD-009</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #F59E0B; --text: #e2e8f0; --text-dim: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        header { border-bottom: 3px solid var(--primary); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.3rem; margin-top: 2rem; margin-bottom: 0.8rem; }
+        p, li { margin-bottom: 1.2rem; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: var(--surface); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: rgba(245, 158, 11, 0.1); }
+        code { background: var(--surface); padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--primary); }
+        pre { background: var(--surface); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1.5rem 0; border-left: 4px solid var(--primary); }
+        pre code { background: none; padding: 0; color: var(--text); }
+        .key-takeaways, .review-questions { background: var(--surface); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--primary); }
+        ul, ol { margin-left: 2rem; margin-bottom: 1.5rem; }
+        .navigation { display: flex; justify-content: space-between; margin: 3rem 0; padding: 1.5rem; background: var(--surface); border-radius: 8px; }
+        .nav-button { color: var(--primary); text-decoration: none; padding: 0.8rem 1.5rem; border: 2px solid var(--primary); border-radius: 6px; transition: all 0.3s; }
+        .nav-button:hover { background: var(--primary); color: white; }
+        .philosophy { text-align: center; margin: 3rem 0; padding: 2rem; background: var(--surface); border-radius: 8px; border: 2px solid var(--primary); }
+        footer { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chapter 02: Technical Architecture</h1>
+            <div style="color: var(--text-dim); font-size: 0.9rem;">WIA-CHILD-009 Child-AI Interaction Safety Standard | Phase 1 - Technical Foundation</div>
+        </header>
+
+        <h2>Layered Safety Architecture</h2>
+
+        <p>
+            Building safe child-AI interaction systems requires a multi-layered technical architecture where safety is
+            not an afterthought but a core design principle. WIA-CHILD-009 specifies a defense-in-depth approach with
+            redundant safety mechanisms at every level: pre-processing input filtering, age-appropriate model selection,
+            real-time response filtering, conversation monitoring, and post-interaction analysis. No single layer is
+            sufficient; only their combination provides adequate protection.
+        </p>
+
+        <p>
+            The architecture must balance seemingly conflicting goals: providing helpful, engaging responses while
+            preventing harm; maintaining conversational naturalness while enforcing boundaries; enabling learning and
+            exploration while blocking inappropriate content; respecting privacy while monitoring for safety concerns.
+            This chapter details the technical systems that achieve this balance.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Safety Layer</th>
+                    <th>Function</th>
+                    <th>Latency Impact</th>
+                    <th>Failure Mode</th>
+                    <th>Redundancy</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Input Sanitization</td>
+                    <td>Remove/flag inappropriate child input before processing</td>
+                    <td>&lt; 10ms</td>
+                    <td>False positives block benign content</td>
+                    <td>Multiple filter types (keyword, ML, context)</td>
+                </tr>
+                <tr>
+                    <td>Age-Appropriate Model Routing</td>
+                    <td>Select model variant trained for child safety</td>
+                    <td>&lt; 5ms</td>
+                    <td>Age verification bypass</td>
+                    <td>Parental verification + behavioral analysis</td>
+                </tr>
+                <tr>
+                    <td>Real-time Response Filtering</td>
+                    <td>Block/modify AI responses before delivery</td>
+                    <td>&lt; 50ms</td>
+                    <td>Harmful content slips through</td>
+                    <td>Multi-classifier voting, human escalation</td>
+                </tr>
+                <tr>
+                    <td>Conversation Context Monitoring</td>
+                    <td>Detect concerning patterns across messages</td>
+                    <td>Async (no blocking)</td>
+                    <td>Miss gradual manipulation</td>
+                    <td>Multiple temporal windows, ML + rules</td>
+                </tr>
+                <tr>
+                    <td>Behavioral Anomaly Detection</td>
+                    <td>Identify unusual interaction patterns</td>
+                    <td>Async (batch)</td>
+                    <td>Novel attack patterns undetected</td>
+                    <td>Supervised + unsupervised learning</td>
+                </tr>
+                <tr>
+                    <td>Human Review Escalation</td>
+                    <td>Route high-risk conversations to human moderators</td>
+                    <td>Async (non-blocking)</td>
+                    <td>Review queue overflow</td>
+                    <td>Tiered urgency system, auto-termination</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Age-Appropriate Language Models</h2>
+
+        <p>
+            Standard large language models are trained on internet-scale data containing adult content, violence,
+            profanity, and sophisticated concepts inappropriate for children. WIA-CHILD-009 requires age-specific
+            model variants created through a combination of training data filtering, fine-tuning, and reinforcement
+            learning from child safety expert feedback.
+        </p>
+
+        <h3>Model Training Pipeline</h3>
+
+        <pre><code>interface ChildSafeModelTraining {
+  filterTrainingData(rawData: Dataset, ageGroup: AgeGroup): FilteredDataset;
+  fineTuneForChildSafety(baseModel: LLM, safetyData: Dataset): ChildSafeModel;
+  applyRLHF(model: ChildSafeModel, expertFeedback: Feedback[]): ImprovedModel;
+  validateSafety(model: Model, testCases: TestCase[]): SafetyReport;
+}
+
+class ChildSafeModelPipeline {
+  async createAgeAppropriateModel(ageGroup: AgeGroup): Promise<DeployedModel> {
+    // Step 1: Filter training data for age appropriateness
+    const rawData = await this.loadBaseTrainingData();
+    const filteredData = await this.filterForAgeGroup(rawData, ageGroup);
+
+    // Step 2: Start from safe base model
+    const baseModel = await this.loadSafeBaseModel();
+
+    // Step 3: Fine-tune on age-appropriate data
+    const fineTunedModel = await this.fineTune(baseModel, filteredData, {
+      epochs: 10,
+      batchSize: 32,
+      learningRate: 1e-5,
+      safetyWeight: 2.0  // Emphasize safety examples
+    });
+
+    // Step 4: Apply RLHF from child development experts
+    const expertFeedback = await this.collectExpertFeedback(fineTunedModel, ageGroup);
+    const rlhfModel = await this.applyRLHF(fineTunedModel, expertFeedback);
+
+    // Step 5: Red team testing
+    const vulnerabilities = await this.redTeamTest(rlhfModel, ageGroup);
+    if (vulnerabilities.critical.length > 0) {
+      return this.createAgeAppropriateModel(ageGroup); // Retry with fixes
+    }
+
+    // Step 6: Continuous safety evaluation
+    const safetyReport = await this.comprehensiveSafetyEval(rlhfModel, ageGroup);
+    if (safetyReport.score < 0.95) {
+      throw new Error(`Safety score ${safetyReport.score} below threshold 0.95`);
+    }
+
+    // Step 7: Deploy with monitoring
+    return this.deployWithMonitoring(rlhfModel, ageGroup);
+  }
+
+  async filterForAgeGroup(data: Dataset, ageGroup: AgeGroup): Promise<FilteredDataset> {
+    const filters = this.getAgeGroupFilters(ageGroup);
+
+    return data
+      .filter(item => this.passesContentFilters(item, filters))
+      .filter(item => this.passesComplexityFilter(item, ageGroup))
+      .filter(item => this.passesPsychologicalAppropriatenessFilter(item, ageGroup))
+      .map(item => this.simplifyLanguageIfNeeded(item, ageGroup));
+  }
+
+  getAgeGroupFilters(ageGroup: AgeGroup): ContentFilters {
+    // Different age groups require different filters
+    switch(ageGroup) {
+      case '3-6':
+        return {
+          violenceLevel: 0,      // No violence
+          profanityLevel: 0,     // No profanity
+          sexualContent: 0,      // No sexual content
+          scaryContent: 0,       // No scary content
+          complexConcepts: 0,    // Concrete only
+          readingLevel: 'pre-K to 1st grade',
+          vocabularySize: 'basic_500',
+          sentenceComplexity: 'simple'
+        };
+
+      case '7-10':
+        return {
+          violenceLevel: 1,      // Mild cartoon violence only
+          profanityLevel: 0,     // No profanity
+          sexualContent: 0,      // No sexual content
+          scaryContent: 1,       // Mild suspense OK
+          complexConcepts: 1,    // Simple abstract concepts
+          readingLevel: '2nd to 4th grade',
+          vocabularySize: 'intermediate_2000',
+          sentenceComplexity: 'moderate'
+        };
+
+      case '11-14':
+        return {
+          violenceLevel: 2,      // Moderate action, no gore
+          profanityLevel: 1,     // Mild language
+          sexualContent: 1,      // Age-appropriate education
+          scaryContent: 2,       // Moderate suspense
+          complexConcepts: 2,    // Abstract thinking
+          readingLevel: '5th to 8th grade',
+          vocabularySize: 'advanced_5000',
+          sentenceComplexity: 'complex'
+        };
+
+      case '15-17':
+        return {
+          violenceLevel: 3,      // Realistic but not gratuitous
+          profanityLevel: 2,     // Common language
+          sexualContent: 2,      // Health education appropriate
+          scaryContent: 3,       // Horror themes OK
+          complexConcepts: 3,    // Sophisticated topics
+          readingLevel: '9th to 12th grade',
+          vocabularySize: 'comprehensive_10000',
+          sentenceComplexity: 'sophisticated'
+        };
+    }
+  }
+}
+</code></pre>
+
+        <h2>Real-Time Safety Guardrails</h2>
+
+        <p>
+            Even with child-safe models, real-time guardrails are essential to catch edge cases, adversarial inputs,
+            and emergent harmful behaviors. These guardrails operate on both child inputs and AI outputs, creating a
+            bidirectional safety filter.
+        </p>
+
+        <h3>Multi-Layer Guardrail System</h3>
+
+        <pre><code>interface GuardrailSystem {
+  evaluateInput(childInput: string, context: ConversationContext): InputSafetyResult;
+  evaluateOutput(aiResponse: string, context: ConversationContext): OutputSafetyResult;
+  modifyResponseIfNeeded(response: string, violations: Violation[]): ModifiedResponse;
+  terminateConversationIfNeeded(violations: Violation[]): TerminationDecision;
+}
+
+class MultiLayerGuardrails {
+  async processInteraction(
+    childInput: string,
+    context: ConversationContext
+  ): Promise<SafeInteractionResult> {
+    // Layer 1: Input Safety Check
+    const inputSafety = await this.checkInputSafety(childInput, context);
+
+    if (inputSafety.shouldBlock) {
+      return {
+        shouldRespond: false,
+        blockedReason: inputSafety.reason,
+        parentNotification: inputSafety.severity === 'high',
+        educationalMessage: this.getInputEducationalMessage(inputSafety.reason, context.childAge)
+      };
+    }
+
+    // Layer 2: Generate AI response
+    const rawResponse = await this.generateResponse(childInput, context);
+
+    // Layer 3: Output Safety Check
+    const outputSafety = await this.checkOutputSafety(rawResponse, context);
+
+    if (outputSafety.hasViolations) {
+      // Attempt to modify response to be safe
+      const modifiedResponse = await this.modifyToSafe(rawResponse, outputSafety.violations);
+
+      // If modification fails, use fallback
+      if (!modifiedResponse.isSafe) {
+        return {
+          shouldRespond: true,
+          response: this.getFallbackResponse(context.childAge),
+          loggedIncident: true,
+          humanReviewRequired: outputSafety.severity === 'high'
+        };
+      }
+
+      return {
+        shouldRespond: true,
+        response: modifiedResponse.text,
+        wasModified: true
+      };
+    }
+
+    // Layer 4: Contextual Safety Check (considering conversation history)
+    const contextualSafety = await this.checkContextualSafety(
+      rawResponse,
+      context.conversationHistory
+    );
+
+    if (contextualSafety.isManipulative || contextualSafety.isGrooming) {
+      await this.escalateToHumanReview(context, contextualSafety);
+      await this.notifyParent(context.childId, contextualSafety);
+
+      return {
+        shouldRespond: true,
+        response: "I think we should change the subject. What would you like to learn about today?",
+        conversationTerminated: contextualSafety.severity === 'critical'
+      };
+    }
+
+    // Layer 5: Age-Appropriateness Check
+    const ageAppropriate = await this.checkAgeAppropriateness(rawResponse, context.childAge);
+
+    if (!ageAppropriate.appropriate) {
+      const simplifiedResponse = await this.simplifyForAge(rawResponse, context.childAge);
+      return {
+        shouldRespond: true,
+        response: simplifiedResponse,
+        wasSimplified: true
+      };
+    }
+
+    // All checks passed
+    return {
+      shouldRespond: true,
+      response: rawResponse,
+      allChecksPassed: true
+    };
+  }
+
+  async checkOutputSafety(response: string, context: ConversationContext): Promise<OutputSafetyResult> {
+    const violations = [];
+
+    // Check 1: Explicit content detection
+    const explicitCheck = await this.explicitContentClassifier.classify(response);
+    if (explicitCheck.score > 0.3) {
+      violations.push({
+        type: 'explicit_content',
+        severity: explicitCheck.score > 0.7 ? 'high' : 'medium',
+        category: explicitCheck.category,
+        confidence: explicitCheck.score
+      });
+    }
+
+    // Check 2: Emotional manipulation detection
+    const manipulationCheck = await this.detectManipulation(response, context);
+    if (manipulationCheck.isManipulative) {
+      violations.push({
+        type: 'emotional_manipulation',
+        severity: 'high',
+        patterns: manipulationCheck.patterns,
+        confidence: manipulationCheck.confidence
+      });
+    }
+
+    // Check 3: Relationship boundary violations
+    const boundaryCheck = await this.checkRelationshipBoundaries(response);
+    if (boundaryCheck.violatesBoundaries) {
+      violations.push({
+        type: 'boundary_violation',
+        severity: 'high',
+        violations: boundaryCheck.specificViolations,
+        examples: boundaryCheck.examples
+      });
+    }
+
+    // Check 4: Misinformation detection (for factual claims)
+    const factualCheck = await this.checkFactualAccuracy(response);
+    if (factualCheck.likelyIncorrect && factualCheck.importance === 'high') {
+      violations.push({
+        type: 'misinformation',
+        severity: 'medium',
+        claim: factualCheck.claim,
+        correction: factualCheck.suggestedCorrection
+      });
+    }
+
+    // Check 5: Privacy violation detection
+    const privacyCheck = await this.checkPrivacyViolations(response);
+    if (privacyCheck.requestsPrivateInfo) {
+      violations.push({
+        type: 'privacy_violation',
+        severity: 'high',
+        requestedInfo: privacyCheck.infoTypes
+      });
+    }
+
+    return {
+      hasViolations: violations.length > 0,
+      violations: violations,
+      severity: this.calculateMaxSeverity(violations),
+      shouldBlock: violations.some(v => v.severity === 'high')
+    };
+  }
+
+  async detectManipulation(response: string, context: ConversationContext): Promise<ManipulationCheck> {
+    // Patterns that indicate emotional manipulation
+    const manipulationPatterns = [
+      { pattern: /i('ll be|'d be) (sad|upset|disappointed|hurt)/i, type: 'guilt_induction' },
+      { pattern: /you('re| are) my (only|best|favorite)/i, type: 'exclusivity_claim' },
+      { pattern: /(don't tell|keep.*secret|between us)/i, type: 'secrecy_request' },
+      { pattern: /i (need|miss|love) you/i, type: 'emotional_dependency' },
+      { pattern: /you('re| are) (so special|different from others)/i, type: 'specialness_grooming' },
+      { pattern: /if you (really|truly) (care|like|love)/i, type: 'conditional_affection' }
+    ];
+
+    const detectedPatterns = [];
+    for (const { pattern, type } of manipulationPatterns) {
+      if (pattern.test(response)) {
+        detectedPatterns.push(type);
+      }
+    }
+
+    // ML-based manipulation detection
+    const mlScore = await this.manipulationMLModel.score(response, context.conversationHistory);
+
+    return {
+      isManipulative: detectedPatterns.length > 0 || mlScore > 0.7,
+      patterns: detectedPatterns,
+      confidence: Math.max(mlScore, detectedPatterns.length > 0 ? 0.8 : 0)
+    };
+  }
+}
+</code></pre>
+
+        <h2>Conversation Monitoring System</h2>
+
+        <p>
+            Beyond real-time filtering, comprehensive conversation monitoring analyzes interaction patterns over time
+            to detect subtle threats that only emerge across multiple sessions: grooming behaviors, gradual boundary
+            erosion, increasing emotional dependency, or topic drift toward inappropriate content.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Monitoring Type</th>
+                    <th>Detection Window</th>
+                    <th>Key Indicators</th>
+                    <th>Alert Threshold</th>
+                    <th>Response Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Grooming Pattern Detection</td>
+                    <td>14-30 days</td>
+                    <td>Progressive boundary testing, secrecy requests, trust building, isolation encouragement</td>
+                    <td>3+ indicators in 14 days</td>
+                    <td>Immediate parent notification + conversation termination + law enforcement report</td>
+                </tr>
+                <tr>
+                    <td>Emotional Dependency Tracking</td>
+                    <td>7-14 days</td>
+                    <td>Usage frequency spike, emotional language intensity, statements of need/attachment</td>
+                    <td>2+ hours daily for 7 days + dependency language</td>
+                    <td>Parent alert + usage limits + mental health resources</td>
+                </tr>
+                <tr>
+                    <td>Topic Drift Monitoring</td>
+                    <td>Per session + 7 days</td>
+                    <td>Gradual shift from safe to unsafe topics, boundary testing attempts</td>
+                    <td>3+ boundary tests per session</td>
+                    <td>Real-time intervention + session reset + pattern logging</td>
+                </tr>
+                <tr>
+                    <td>Privacy Erosion Tracking</td>
+                    <td>30 days cumulative</td>
+                    <td>Increasing personal information disclosure, detailed location sharing, school/home details</td>
+                    <td>5+ privacy overshares in 30 days</td>
+                    <td>Privacy education + parent notification + enhanced monitoring</td>
+                </tr>
+                <tr>
+                    <td>Mental Health Indicators</td>
+                    <td>Real-time + 7 days</td>
+                    <td>Suicide ideation, self-harm mentions, depression symptoms, crisis language</td>
+                    <td>Any suicide/self-harm mention</td>
+                    <td>Immediate crisis resources + parent emergency notification + professional referral</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Temporal Pattern Analysis</h3>
+
+        <pre><code>interface ConversationMonitor {
+  analyzeTemporalPatterns(childId: string, timeWindow: TimeWindow): PatternAnalysis;
+  detectGroomingBehaviors(conversations: Conversation[]): GroomingRisk;
+  trackEmotionalIntensity(conversations: Conversation[]): EmotionalTrend;
+  identifyPrivacyErosion(conversations: Conversation[]): PrivacyRisk;
+}
+
+class TemporalSafetyMonitor {
+  async analyzeConversationHistory(childId: string): Promise<SafetyAssessment> {
+    // Get conversations from multiple time windows
+    const last7Days = await this.getConversations(childId, { days: 7 });
+    const last30Days = await this.getConversations(childId, { days: 30 });
+    const last90Days = await this.getConversations(childId, { days: 90 });
+
+    // Analyze different temporal patterns
+    const patterns = {
+      grooming: await this.detectGroomingProgression(last30Days),
+      dependency: await this.analyzeEmotionalDependency(last7Days, last30Days),
+      usageEscalation: await this.detectUsageEscalation(last7Days, last30Days, last90Days),
+      topicDrift: await this.analyzeTopicProgression(last30Days),
+      privacyErosion: await this.trackPrivacyDisclosure(last30Days),
+      mentalHealth: await this.assessMentalHealthIndicators(last7Days)
+    };
+
+    // Calculate overall risk score
+    const riskScore = this.calculateCompositeRisk(patterns);
+
+    // Generate recommendations
+    const recommendations = this.generateInterventions(patterns, riskScore);
+
+    return {
+      riskScore: riskScore,
+      riskLevel: this.categorizeRisk(riskScore),
+      patterns: patterns,
+      recommendations: recommendations,
+      requiresImmediateAction: riskScore > 0.8 || patterns.mentalHealth.crisis
+    };
+  }
+
+  async detectGroomingProgression(conversations: Conversation[]): Promise<GroomingRisk> {
+    // Grooming typically follows a progression: trust building -> boundary testing -> isolation -> secrecy
+    const stages = {
+      trustBuilding: this.detectTrustBuilding(conversations),
+      boundaryTesting: this.detectBoundaryTesting(conversations),
+      isolation: this.detectIsolationAttempts(conversations),
+      secrecy: this.detectSecrecyRequests(conversations)
+    };
+
+    const progressionScore = this.calculateGroomingProgression(stages);
+
+    // Check for temporal escalation
+    const temporalEscalation = this.analyzeEscalationRate(conversations, stages);
+
+    return {
+      riskLevel: this.categorizeGroomingRisk(progressionScore),
+      stages: stages,
+      progression: progressionScore,
+      escalationRate: temporalEscalation,
+      recommendedAction: progressionScore > 0.6 ? 'immediate_intervention' : 'enhanced_monitoring'
+    };
+  }
+
+  detectBoundaryTesting(conversations: Conversation[]): BoundaryTestingAnalysis {
+    // Boundary testing patterns
+    const boundaryTests = [];
+
+    for (const conv of conversations) {
+      // Look for progressive intimacy escalation
+      const intimacyLevel = this.measureIntimacyLevel(conv);
+
+      // Look for requests for personal information
+      const personalInfoRequests = this.detectPersonalInfoRequests(conv);
+
+      // Look for attempts to move conversation off-platform
+      const offPlatformSuggestions = this.detectOffPlatformSuggestions(conv);
+
+      // Look for inappropriate topic introduction
+      const inappropriateTopics = this.detectInappropriateTopicIntroduction(conv);
+
+      if (intimacyLevel.escalating || personalInfoRequests.length > 0 ||
+          offPlatformSuggestions.length > 0 || inappropriateTopics.length > 0) {
+        boundaryTests.push({
+          conversationId: conv.id,
+          timestamp: conv.timestamp,
+          testType: this.categorizeBoundaryTest({
+            intimacyLevel,
+            personalInfoRequests,
+            offPlatformSuggestions,
+            inappropriateTopics
+          }),
+          severity: this.calculateTestSeverity({
+            intimacyLevel,
+            personalInfoRequests,
+            offPlatformSuggestions,
+            inappropriateTopics
+          })
+        });
+      }
+    }
+
+    // Analyze progression over time
+    const progression = this.analyzeBoundaryTestProgression(boundaryTests);
+
+    return {
+      totalTests: boundaryTests.length,
+      tests: boundaryTests,
+      progression: progression,
+      isEscalating: progression.slope > 0.3,
+      riskScore: this.calculateBoundaryTestRisk(boundaryTests, progression)
+    };
+  }
+
+  async analyzeEmotionalDependency(
+    recent: Conversation[],
+    baseline: Conversation[]
+  ): Promise<DependencyAnalysis> {
+    // Calculate usage frequency change
+    const recentFrequency = recent.length / 7; // Per day
+    const baselineFrequency = baseline.length / 30;
+    const frequencyIncrease = (recentFrequency - baselineFrequency) / baselineFrequency;
+
+    // Analyze emotional intensity
+    const recentEmotionalIntensity = this.calculateEmotionalIntensity(recent);
+    const baselineEmotionalIntensity = this.calculateEmotionalIntensity(baseline);
+
+    // Detect dependency language
+    const dependencyLanguage = this.detectDependencyLanguage(recent);
+
+    // Analyze session timing (late night usage suggests emotional regulation dependency)
+    const lateNightSessions = recent.filter(c =>
+      this.getHour(c.timestamp) >= 22 || this.getHour(c.timestamp) <= 5
+    );
+
+    return {
+      usageFrequencyChange: frequencyIncrease,
+      emotionalIntensityIncrease: recentEmotionalIntensity - baselineEmotionalIntensity,
+      dependencyIndicators: dependencyLanguage.length,
+      lateNightDependency: lateNightSessions.length > 3,
+      overallDependencyRisk: this.calculateDependencyRisk({
+        frequencyIncrease,
+        emotionalIntensityIncrease: recentEmotionalIntensity - baselineEmotionalIntensity,
+        dependencyLanguage: dependencyLanguage.length,
+        lateNightSessions: lateNightSessions.length
+      }),
+      recommendation: this.getDependencyIntervention({
+        frequencyIncrease,
+        emotionalIntensityIncrease: recentEmotionalIntensity - baselineEmotionalIntensity,
+        dependencyLanguage: dependencyLanguage.length,
+        lateNightSessions: lateNightSessions.length
+      })
+    };
+  }
+}
+</code></pre>
+
+        <h2>Privacy-Preserving Monitoring</h2>
+
+        <p>
+            Effective safety monitoring requires analyzing conversation content, creating tension with privacy protection.
+            WIA-CHILD-009 requires privacy-preserving techniques that enable safety without exposing unnecessary details
+            to human reviewers or retaining conversations longer than necessary.
+        </p>
+
+        <h3>Differential Privacy for Conversation Analysis</h3>
+
+        <pre><code>class PrivacyPreservingMonitor {
+  async analyzeWithPrivacy(conversations: Conversation[]): Promise<SafetyMetrics> {
+    // Extract safety-relevant features without retaining full content
+    const features = conversations.map(c => this.extractSafetyFeatures(c));
+
+    // Add differential privacy noise to aggregate statistics
+    const aggregateMetrics = this.computeWithDifferentialPrivacy(features, {
+      epsilon: 0.1,  // Privacy budget
+      delta: 1e-5
+    });
+
+    // Store only safety signals, not full conversations
+    await this.storeSafetySignals(aggregateMetrics);
+
+    // Delete conversation content after feature extraction
+    await this.deleteConversationContent(conversations);
+
+    return aggregateMetrics;
+  }
+
+  extractSafetyFeatures(conversation: Conversation): SafetyFeatures {
+    // Extract only safety-relevant information
+    return {
+      timestamp: conversation.timestamp,
+      duration: conversation.duration,
+      messageCount: conversation.messages.length,
+      topicCategories: this.categorizeTopics(conversation),        // "education", "entertainment", not specifics
+      emotionalTone: this.analyzeEmotionalTone(conversation),      // Numeric scores, not content
+      boundaryViolations: this.detectViolations(conversation),     // Violation types, not details
+      privacyRiskScore: this.calculatePrivacyRisk(conversation),   // Numeric score
+      manipulationScore: this.detectManipulation(conversation),    // Numeric score
+      ageAppropriatenessScore: this.checkAgeAppropriateness(conversation)
+    };
+    // Note: No actual conversation text is retained
+  }
+}
+</code></pre>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>Child-safe AI requires layered defense-in-depth architecture with redundant safety at input sanitization,
+                model selection, response filtering, conversation monitoring, and behavioral analysis levels—no single layer is sufficient.</li>
+
+                <li>Age-appropriate models are created through training data filtering (removing adult content), fine-tuning on
+                child-safe data, and RLHF from child development experts, with different variants for ages 3-6, 7-10, 11-14, and 15-17.</li>
+
+                <li>Real-time guardrails check both child inputs and AI outputs for explicit content, emotional manipulation,
+                relationship boundary violations, misinformation, and privacy violations with &lt;50ms latency.</li>
+
+                <li>Emotional manipulation detection identifies guilt induction ("I'd be sad if..."), exclusivity claims
+                ("you're my only friend"), secrecy requests ("don't tell"), and conditional affection patterns.</li>
+
+                <li>Temporal monitoring analyzes conversation patterns across 7-90 day windows to detect grooming progression,
+                emotional dependency escalation, topic drift, and privacy erosion that only emerge over time.</li>
+
+                <li>Grooming detection tracks progression through stages: trust building, boundary testing, isolation attempts,
+                and secrecy requests, triggering immediate intervention when 3+ indicators appear within 14 days.</li>
+
+                <li>Privacy-preserving monitoring extracts only safety-relevant features (topic categories, emotional tone scores)
+                without retaining conversation content, using differential privacy for aggregate analysis.</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>Explain the defense-in-depth approach with 6 safety layers. Why is redundancy critical rather than
+                relying on a single highly-accurate safety filter?</li>
+
+                <li>Compare the age-appropriate filters for ages 3-6 versus 15-17. Why does the 3-6 group have violenceLevel: 0
+                and complexConcepts: 0 while 15-17 allows violenceLevel: 3 and complexConcepts: 3?</li>
+
+                <li>The guardrail system checks for emotional manipulation patterns like "I'd be sad if you don't talk to me."
+                Why is this harmful for children even though adults might recognize it as manipulative?</li>
+
+                <li>Describe the grooming detection progression: trust building → boundary testing → isolation → secrecy.
+                Give specific examples of what each stage might look like in actual conversations.</li>
+
+                <li>The monitoring system flags "2+ hours daily for 7 days + dependency language" as emotional dependency.
+                Why is usage duration alone insufficient, requiring both quantity and qualitative language analysis?</li>
+
+                <li>Explain how privacy-preserving monitoring can detect safety threats without retaining full conversation
+                content. What features can be extracted that provide safety value without compromising privacy?</li>
+
+                <li>The real-time response filter has &lt;50ms latency requirement. Why is this latency target important
+                for maintaining natural conversation flow, and what trade-offs exist between speed and accuracy?</li>
+
+                <li>Walk through the complete safety pipeline when a 9-year-old asks "Can you keep a secret?" What checks
+                trigger at each layer, and what should the AI response be?</li>
+            </ol>
+        </div>
+
+        <div class="philosophy">
+            <h3>弘益人間 (Hongik Ingan)</h3>
+            <p><em>"Benefit All Humanity"</em></p>
+            <p style="margin-top: 1rem;">
+                The philosophy of 弘益人間 reminds us that technical sophistication must serve human flourishing.
+                Building layered safety systems is not about restricting children's freedom—it's about creating
+                protected spaces where they can explore, learn, and grow without exploitation.
+            </p>
+            <p style="margin-top: 1rem;">
+                Just as a playground has safety railings not to limit play but to enable adventurous play safely,
+                our technical guardrails enable children to benefit from AI's educational potential while preventing
+                harm. This technical foundation serves all humanity by ensuring the next generation can engage with
+                transformative technology in psychologically healthy ways.
+            </p>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-01.html" class="nav-button">← Previous: Introduction & Core Concepts</a>
+            <a href="chapter-03.html" class="nav-button">Next: Implementation Guide →</a>
+        </div>
+
+        <footer>
+            <p>© 2025 SmileStory Inc. / WIA</p>
+            <p style="margin-top: 0.5rem; color: var(--primary);">弘益人間 (Benefit All Humanity)</p>
+            <p style="margin-top: 0.5rem;">WIA-CHILD-009 Child-AI Interaction Safety Standard v1.0</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA Drought Monitoring Simulator</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --primary: #F59E0B;
+            --primary-dark: #D97706;
+            --accent: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--primary);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .lang-select {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--primary);
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .lang-select:focus {
+            outline: 2px solid var(--primary);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: var(--bg-secondary);
+            border: 2px solid var(--bg-tertiary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .tab:hover {
+            border-color: var(--primary);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: var(--bg);
+            border-color: var(--primary);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border: 2px solid var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+
+        .card h3 {
+            color: var(--primary);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--bg-tertiary);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 2px solid var(--primary);
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--bg);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text);
+            border: 2px solid var(--primary);
+        }
+
+        /* Results */
+        .result-box {
+            background: var(--bg);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--bg-tertiary);
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .result-value {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* Code Block */
+        pre {
+            background: var(--bg);
+            border: 1px solid var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        code {
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Alert Box */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .alert-info {
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid var(--error);
+            color: var(--error);
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--bg-tertiary);
+        }
+
+        th {
+            background: var(--bg);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: var(--bg-tertiary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div class="logo">🌵 WIA Drought Monitoring Simulator</div>
+            <select class="lang-select" id="languageSelect">
+                <option value="en">English</option>
+                <option value="ko">한국어</option>
+                <option value="ja">日本語</option>
+                <option value="zh">中文</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="it">Italiano</option>
+                <option value="pt">Português</option>
+                <option value="ru">Русский</option>
+                <option value="ar">العربية</option>
+                <option value="hi">हिन्दी</option>
+                <option value="bn">বাংলা</option>
+                <option value="id">Bahasa Indonesia</option>
+                <option value="ms">Bahasa Melayu</option>
+                <option value="th">ไทย</option>
+                <option value="vi">Tiếng Việt</option>
+                <option value="tr">Türkçe</option>
+                <option value="pl">Polski</option>
+                <option value="nl">Nederlands</option>
+                <option value="sv">Svenska</option>
+                <option value="da">Dansk</option>
+                <option value="no">Norsk</option>
+                <option value="fi">Suomi</option>
+                <option value="cs">Čeština</option>
+                <option value="hu">Magyar</option>
+                <option value="ro">Română</option>
+                <option value="uk">Українська</option>
+                <option value="el">Ελληνικά</option>
+                <option value="he">עברית</option>
+                <option value="fa">فارسی</option>
+                <option value="ur">اردو</option>
+                <option value="sw">Kiswahili</option>
+                <option value="zu">isiZulu</option>
+                <option value="af">Afrikaans</option>
+                <option value="am">አማርኛ</option>
+                <option value="my">မြန်မာ</option>
+                <option value="km">ខ្មែរ</option>
+                <option value="lo">ລາວ</option>
+                <option value="si">සිංහල</option>
+                <option value="ne">नेपाली</option>
+                <option value="ta">தமிழ்</option>
+                <option value="te">తెలుగు</option>
+                <option value="kn">ಕನ್ನಡ</option>
+                <option value="ml">മലയാളം</option>
+                <option value="mr">मराठी</option>
+                <option value="gu">ગુજરાતી</option>
+                <option value="pa">ਪੰਜਾਬੀ</option>
+                <option value="sq">Shqip</option>
+                <option value="hy">Հայերեն</option>
+                <option value="az">Azərbaycan</option>
+                <option value="eu">Euskara</option>
+                <option value="be">Беларуская</option>
+                <option value="bs">Bosanski</option>
+                <option value="bg">Български</option>
+                <option value="ca">Català</option>
+                <option value="hr">Hrvatski</option>
+                <option value="et">Eesti</option>
+                <option value="gl">Galego</option>
+                <option value="ka">ქართული</option>
+                <option value="is">Íslenska</option>
+                <option value="lv">Latviešu</option>
+                <option value="lt">Lietuvių</option>
+                <option value="mk">Македонски</option>
+                <option value="mt">Malti</option>
+                <option value="mn">Монгол</option>
+                <option value="sr">Српски</option>
+                <option value="sk">Slovenčina</option>
+                <option value="sl">Slovenščina</option>
+                <option value="tl">Tagalog</option>
+                <option value="cy">Cymraeg</option>
+                <option value="yi">ייִדיש</option>
+                <option value="yo">Yorùbá</option>
+                <option value="ha">Hausa</option>
+                <option value="ig">Igbo</option>
+                <option value="so">Soomaali</option>
+                <option value="mg">Malagasy</option>
+                <option value="ny">Chichewa</option>
+                <option value="sn">chiShona</option>
+                <option value="st">Sesotho</option>
+                <option value="xh">isiXhosa</option>
+                <option value="ps">پښتو</option>
+                <option value="ku">Kurdî</option>
+                <option value="tg">Тоҷикӣ</option>
+                <option value="tk">Türkmen</option>
+                <option value="uz">O'zbek</option>
+                <option value="kk">Қазақ</option>
+                <option value="ky">Кыргызча</option>
+                <option value="jw">Basa Jawa</option>
+                <option value="su">Basa Sunda</option>
+                <option value="ceb">Cebuano</option>
+                <option value="hmn">Hmoob</option>
+                <option value="haw">ʻŌlelo Hawaiʻi</option>
+                <option value="sm">Gagana Samoa</option>
+                <option value="mi">Te Reo Māori</option>
+                <option value="eo">Esperanto</option>
+                <option value="la">Latina</option>
+            </select>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('data')">1. Data Format</div>
+            <div class="tab" onclick="switchTab('algorithms')">2. Algorithms</div>
+            <div class="tab" onclick="switchTab('protocol')">3. Protocol</div>
+            <div class="tab" onclick="switchTab('integration')">4. Integration</div>
+            <div class="tab" onclick="switchTab('test')">5. Test</div>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div id="data" class="tab-content active">
+            <div class="card">
+                <h2>Drought Monitoring Data Formats</h2>
+                <p>Standardized schemas for drought indices and monitoring data.</p>
+
+                <h3>Palmer Drought Severity Index (PDSI)</h3>
+                <pre><code>{
+  "pdsi": {
+    "location": {
+      "latitude": 40.7128,
+      "longitude": -74.0060,
+      "region": "Northeast US"
+    },
+    "timestamp": "2025-12-26T00:00:00Z",
+    "index": -2.5,
+    "classification": "moderate drought",
+    "parameters": {
+      "precipitation": 45.2,
+      "temperature": 15.3,
+      "soil_moisture": 0.22,
+      "evapotranspiration": 3.8
+    }
+  }
+}</code></pre>
+
+                <h3>Standardized Precipitation Index (SPI)</h3>
+                <pre><code>{
+  "spi": {
+    "location": "California Central Valley",
+    "period": "12-month",
+    "value": -1.8,
+    "category": "moderate drought",
+    "confidence": 0.92,
+    "historical_percentile": 15.3
+  }
+}</code></pre>
+
+                <h3>Soil Moisture Data</h3>
+                <pre><code>{
+  "soil_moisture": {
+    "depth_cm": [0, 10, 30, 60, 100],
+    "moisture_percent": [12.5, 18.3, 22.1, 25.8, 28.4],
+    "field_capacity": 35.0,
+    "wilting_point": 15.0,
+    "saturation": 45.0,
+    "measurement_method": "TDR"
+  }
+}</code></pre>
+
+                <h3>NDVI Vegetation Index</h3>
+                <pre><code>{
+  "ndvi": {
+    "value": 0.45,
+    "range": [-1.0, 1.0],
+    "interpretation": "moderate vegetation health",
+    "anomaly": -0.15,
+    "satellite": "MODIS Terra",
+    "resolution_m": 250
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div id="algorithms" class="tab-content">
+            <div class="card">
+                <h2>Drought Index Calculator</h2>
+                <p>Calculate drought indices using standardized algorithms.</p>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Precipitation (mm/month)</label>
+                        <input type="number" id="precipitation" value="45" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Temperature (°C)</label>
+                        <input type="number" id="temperature" value="22" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Soil Moisture (%)</label>
+                        <input type="number" id="soilMoisture" value="25" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Evapotranspiration (mm/day)</label>
+                        <input type="number" id="evapotranspiration" value="4.5" step="0.1">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="calculateIndices()">Calculate Drought Indices</button>
+
+                <div id="droughtResults" class="result-box" style="display: none;">
+                    <h3>Calculated Indices</h3>
+                    <div class="result-item">
+                        <span class="result-label">PDSI (Palmer Drought Severity Index)</span>
+                        <span class="result-value" id="pdsiValue">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">SPI (Standardized Precipitation Index)</span>
+                        <span class="result-value" id="spiValue">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Drought Category</span>
+                        <span class="result-value" id="droughtCategory">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Water Deficit (mm)</span>
+                        <span class="result-value" id="waterDeficit">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Risk Level</span>
+                        <span class="result-value" id="riskLevel">-</span>
+                    </div>
+                </div>
+
+                <h3>Algorithm: PDSI Calculation</h3>
+                <pre><code>function calculatePDSI(precip, temp, soilMoisture, et) {
+  // Simplified PDSI calculation
+  const climaticWaterBalance = precip - et * 30;
+  const soilMoistureDeficit = 35 - soilMoisture; // Field capacity - current
+  const pdsi = (climaticWaterBalance / 50) - (soilMoistureDeficit / 20);
+  return pdsi;
+}
+
+// Classification
+// > 4: Extremely Wet
+// 3 to 4: Very Wet
+// 2 to 3: Moderately Wet
+// 1 to 2: Slightly Wet
+// -1 to 1: Near Normal
+// -2 to -1: Mild Drought
+// -3 to -2: Moderate Drought
+// -4 to -3: Severe Drought
+// < -4: Extreme Drought</code></pre>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div id="protocol" class="tab-content">
+            <div class="card">
+                <h2>Satellite Data Integration Protocol</h2>
+
+                <h3>Supported Satellite Systems</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Satellite</th>
+                            <th>Parameters</th>
+                            <th>Resolution</th>
+                            <th>Frequency</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>MODIS Terra/Aqua</td>
+                            <td>NDVI, LST, ET</td>
+                            <td>250m - 1km</td>
+                            <td>Daily</td>
+                        </tr>
+                        <tr>
+                            <td>Landsat 8/9</td>
+                            <td>NDVI, Surface Temp</td>
+                            <td>30m</td>
+                            <td>16 days</td>
+                        </tr>
+                        <tr>
+                            <td>Sentinel-2</td>
+                            <td>NDVI, Moisture</td>
+                            <td>10m - 20m</td>
+                            <td>5 days</td>
+                        </tr>
+                        <tr>
+                            <td>SMAP</td>
+                            <td>Soil Moisture</td>
+                            <td>9km</td>
+                            <td>2-3 days</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Data Processing Pipeline</h3>
+                <pre><code>// Step 1: Satellite Data Acquisition
+const satelliteData = await fetchSatelliteData({
+  satellite: 'MODIS',
+  product: 'MOD13Q1',  // NDVI
+  dateRange: ['2025-01-01', '2025-12-26'],
+  bbox: [-125, 25, -66, 50]  // USA
+});
+
+// Step 2: Cloud Masking & QA
+const cleanData = applyQualityMask(satelliteData, {
+  cloudCover: 10,  // Max 10% cloud cover
+  qaFlags: ['good', 'marginal']
+});
+
+// Step 3: Index Calculation
+const ndvi = calculateNDVI(cleanData.red, cleanData.nir);
+const ndviAnomaly = calculateAnomaly(ndvi, historicalMean);
+
+// Step 4: Drought Detection
+const droughtMask = ndviAnomaly < -0.2;  // 20% below normal
+
+// Step 5: Alert Generation
+if (droughtMask.area > threshold) {
+  generateAlert({
+    type: 'drought_warning',
+    severity: calculateSeverity(ndviAnomaly),
+    affectedArea: droughtMask.area
+  });
+}</code></pre>
+
+                <h3>Evapotranspiration Models</h3>
+                <div class="alert alert-info">
+                    <strong>Penman-Monteith Equation:</strong> Used for calculating reference evapotranspiration (ET₀) based on weather data.
+                </div>
+                <pre><code>// Penman-Monteith ET calculation
+function calculateET0(temp, humidity, windSpeed, solarRadiation) {
+  const delta = saturationVaporPressureSlope(temp);
+  const gamma = psychrometricConstant();
+  const es = saturationVaporPressure(temp);
+  const ea = actualVaporPressure(temp, humidity);
+
+  const numerator = (0.408 * delta * solarRadiation) +
+                     (gamma * (900 / (temp + 273)) * windSpeed * (es - ea));
+  const denominator = delta + gamma * (1 + 0.34 * windSpeed);
+
+  return numerator / denominator;  // mm/day
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div id="integration" class="tab-content">
+            <div class="card">
+                <h2>Agricultural System Integration</h2>
+
+                <h3>Farm Management Systems</h3>
+                <pre><code>// Integration with Farm Management Platform
+const droughtAPI = new WIADroughtMonitoring({
+  apiKey: 'your-api-key',
+  region: 'us-midwest'
+});
+
+// Subscribe to drought alerts for farm locations
+await droughtAPI.subscribe({
+  locations: [
+    { lat: 41.8781, lon: -87.6298, name: 'Field A' },
+    { lat: 40.7128, lon: -74.0060, name: 'Field B' }
+  ],
+  alerts: ['drought_onset', 'drought_warning', 'drought_emergency'],
+  callback: handleDroughtAlert
+});
+
+function handleDroughtAlert(alert) {
+  console.log(`Drought Alert: ${alert.severity} at ${alert.location}`);
+
+  // Trigger irrigation system
+  if (alert.severity >= 'moderate') {
+    irrigationSystem.activate({
+      field: alert.location,
+      duration: calculateIrrigationNeed(alert.soilMoisture)
+    });
+  }
+
+  // Notify farmers
+  notificationService.send({
+    recipients: getFarmersForLocation(alert.location),
+    message: `Drought warning: ${alert.message}`,
+    priority: 'high'
+  });
+}</code></pre>
+
+                <h3>Irrigation Control Integration</h3>
+                <pre><code>// Smart Irrigation Controller
+class SmartIrrigation {
+  async optimize(field) {
+    // Get current drought status
+    const drought = await droughtAPI.getStatus(field.location);
+
+    // Get soil moisture
+    const soilData = await sensors.getSoilMoisture(field.id);
+
+    // Get weather forecast
+    const forecast = await weather.getForecast(field.location, 7);
+
+    // Calculate irrigation need
+    const irrigationNeed = this.calculateNeed({
+      currentMoisture: soilData.moisture,
+      targetMoisture: field.crop.optimalMoisture,
+      et0: drought.evapotranspiration,
+      precipitation: forecast.precipitationSum,
+      droughtIndex: drought.pdsi
+    });
+
+    // Schedule irrigation
+    return this.scheduleIrrigation(field, irrigationNeed);
+  }
+
+  calculateNeed(params) {
+    const deficit = params.targetMoisture - params.currentMoisture;
+    const futureET = params.et0 * 7;  // 7-day ET
+    const futureRain = params.precipitation;
+
+    // Adjust for drought conditions
+    const droughtMultiplier = params.droughtIndex < -2 ? 1.2 : 1.0;
+
+    return Math.max(0, (deficit + futureET - futureRain) * droughtMultiplier);
+  }
+}</code></pre>
+
+                <h3>Early Warning System</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Alert Level</th>
+                            <th>PDSI Range</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>🟢 Normal</td>
+                            <td>-1 to 1</td>
+                            <td>Monitor regularly</td>
+                        </tr>
+                        <tr>
+                            <td>🟡 Watch</td>
+                            <td>-2 to -1</td>
+                            <td>Increase monitoring, prepare irrigation</td>
+                        </tr>
+                        <tr>
+                            <td>🟠 Warning</td>
+                            <td>-3 to -2</td>
+                            <td>Activate irrigation, reduce water usage</td>
+                        </tr>
+                        <tr>
+                            <td>🔴 Alert</td>
+                            <td>-4 to -3</td>
+                            <td>Emergency irrigation, crop protection</td>
+                        </tr>
+                        <tr>
+                            <td>⚫ Emergency</td>
+                            <td>< -4</td>
+                            <td>Crisis management, potential crop loss</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 5: Test -->
+        <div id="test" class="tab-content">
+            <div class="card">
+                <h2>Interactive Drought Monitoring Test</h2>
+
+                <h3>Scenario Simulator</h3>
+                <div class="form-group">
+                    <label>Select Test Scenario</label>
+                    <select id="testScenario" onchange="loadScenario()">
+                        <option value="">-- Select Scenario --</option>
+                        <option value="normal">Normal Conditions</option>
+                        <option value="onset">Drought Onset</option>
+                        <option value="moderate">Moderate Drought</option>
+                        <option value="severe">Severe Drought</option>
+                        <option value="extreme">Extreme Drought</option>
+                        <option value="recovery">Post-Drought Recovery</option>
+                    </select>
+                </div>
+
+                <div class="grid-3">
+                    <div class="form-group">
+                        <label>Monthly Precipitation (mm)</label>
+                        <input type="number" id="testPrecip" value="0" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Average Temperature (°C)</label>
+                        <input type="number" id="testTemp" value="0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Soil Moisture (%)</label>
+                        <input type="number" id="testSoil" value="0" step="0.1">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="runTest()">Run Test</button>
+                <button class="btn btn-secondary" onclick="resetTest()">Reset</button>
+
+                <div id="testResults" style="display: none; margin-top: 2rem;">
+                    <div class="alert alert-info">
+                        <strong>Test Results</strong>
+                    </div>
+
+                    <div class="result-box">
+                        <div class="result-item">
+                            <span class="result-label">Scenario</span>
+                            <span class="result-value" id="testScenarioName">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">PDSI</span>
+                            <span class="result-value" id="testPDSI">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Classification</span>
+                            <span class="result-value" id="testClassification">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Recommended Action</span>
+                            <span class="result-value" id="testAction">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Alert Level</span>
+                            <span class="result-value" id="testAlert">-</span>
+                        </div>
+                    </div>
+
+                    <h3>JSON Output</h3>
+                    <pre><code id="testJSON">{}</code></pre>
+                </div>
+
+                <h3>API Testing</h3>
+                <pre><code>// Test drought monitoring API
+const testAPI = async () => {
+  const client = new WIADroughtMonitoring({
+    apiKey: 'test-key',
+    endpoint: 'https://api.wia.org/drought/v1'
+  });
+
+  // Test 1: Get current status
+  const status = await client.getCurrentStatus({
+    latitude: 40.7128,
+    longitude: -74.0060
+  });
+  console.log('Current Status:', status);
+
+  // Test 2: Get historical data
+  const history = await client.getHistoricalData({
+    location: 'California',
+    startDate: '2024-01-01',
+    endDate: '2025-12-26',
+    indices: ['pdsi', 'spi', 'ndvi']
+  });
+  console.log('Historical Data:', history);
+
+  // Test 3: Subscribe to alerts
+  await client.subscribeAlerts({
+    region: 'midwest',
+    threshold: 'moderate',
+    callback: (alert) => console.log('Alert:', alert)
+  });
+
+  return { status, history };
+};</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab Switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Calculate Drought Indices
+        function calculateIndices() {
+            const precip = parseFloat(document.getElementById('precipitation').value);
+            const temp = parseFloat(document.getElementById('temperature').value);
+            const soil = parseFloat(document.getElementById('soilMoisture').value);
+            const et = parseFloat(document.getElementById('evapotranspiration').value);
+
+            // Simplified PDSI calculation
+            const climaticWaterBalance = precip - (et * 30);
+            const soilDeficit = 35 - soil;
+            const pdsi = (climaticWaterBalance / 50) - (soilDeficit / 20);
+
+            // Simplified SPI calculation
+            const normalPrecip = 75; // Historical average
+            const stdDev = 25;
+            const spi = (precip - normalPrecip) / stdDev;
+
+            // Classification
+            let category, risk;
+            if (pdsi < -4) {
+                category = 'Extreme Drought';
+                risk = 'Critical';
+            } else if (pdsi < -3) {
+                category = 'Severe Drought';
+                risk = 'High';
+            } else if (pdsi < -2) {
+                category = 'Moderate Drought';
+                risk = 'Moderate';
+            } else if (pdsi < -1) {
+                category = 'Mild Drought';
+                risk = 'Low';
+            } else {
+                category = 'Near Normal';
+                risk = 'Minimal';
+            }
+
+            // Water deficit
+            const waterDeficit = Math.max(0, (et * 30) - precip);
+
+            // Display results
+            document.getElementById('pdsiValue').textContent = pdsi.toFixed(2);
+            document.getElementById('spiValue').textContent = spi.toFixed(2);
+            document.getElementById('droughtCategory').textContent = category;
+            document.getElementById('waterDeficit').textContent = waterDeficit.toFixed(1) + ' mm';
+            document.getElementById('riskLevel').textContent = risk;
+            document.getElementById('droughtResults').style.display = 'block';
+        }
+
+        // Load Test Scenario
+        function loadScenario() {
+            const scenario = document.getElementById('testScenario').value;
+            const scenarios = {
+                normal: { precip: 75, temp: 18, soil: 32 },
+                onset: { precip: 55, temp: 21, soil: 28 },
+                moderate: { precip: 35, temp: 24, soil: 22 },
+                severe: { precip: 20, temp: 27, soil: 16 },
+                extreme: { precip: 10, temp: 30, soil: 12 },
+                recovery: { precip: 85, temp: 19, soil: 30 }
+            };
+
+            if (scenarios[scenario]) {
+                document.getElementById('testPrecip').value = scenarios[scenario].precip;
+                document.getElementById('testTemp').value = scenarios[scenario].temp;
+                document.getElementById('testSoil').value = scenarios[scenario].soil;
+            }
+        }
+
+        // Run Test
+        function runTest() {
+            const scenario = document.getElementById('testScenario').value;
+            if (!scenario) {
+                alert('Please select a test scenario');
+                return;
+            }
+
+            const precip = parseFloat(document.getElementById('testPrecip').value);
+            const temp = parseFloat(document.getElementById('testTemp').value);
+            const soil = parseFloat(document.getElementById('testSoil').value);
+
+            // Calculate PDSI
+            const et = 0.0023 * (temp + 17.8) * Math.sqrt(Math.max(temp - 5, 0)) * 4.5; // Simplified Hargreaves
+            const climaticWaterBalance = precip - (et * 30);
+            const soilDeficit = 35 - soil;
+            const pdsi = (climaticWaterBalance / 50) - (soilDeficit / 20);
+
+            // Classification
+            let classification, action, alert;
+            if (pdsi < -4) {
+                classification = 'Extreme Drought ⚫';
+                action = 'Emergency water restrictions, crop loss mitigation';
+                alert = 'EMERGENCY';
+            } else if (pdsi < -3) {
+                classification = 'Severe Drought 🔴';
+                action = 'Activate all irrigation, implement water conservation';
+                alert = 'ALERT';
+            } else if (pdsi < -2) {
+                classification = 'Moderate Drought 🟠';
+                action = 'Increase irrigation, monitor closely';
+                alert = 'WARNING';
+            } else if (pdsi < -1) {
+                classification = 'Mild Drought 🟡';
+                action = 'Prepare irrigation systems, increase monitoring';
+                alert = 'WATCH';
+            } else {
+                classification = 'Near Normal 🟢';
+                action = 'Continue normal monitoring';
+                alert = 'NORMAL';
+            }
+
+            // Display results
+            document.getElementById('testScenarioName').textContent = scenario.toUpperCase();
+            document.getElementById('testPDSI').textContent = pdsi.toFixed(2);
+            document.getElementById('testClassification').textContent = classification;
+            document.getElementById('testAction').textContent = action;
+            document.getElementById('testAlert').textContent = alert;
+
+            // JSON output
+            const jsonOutput = {
+                scenario: scenario,
+                inputs: { precipitation: precip, temperature: temp, soilMoisture: soil },
+                results: {
+                    pdsi: parseFloat(pdsi.toFixed(2)),
+                    classification: classification,
+                    alertLevel: alert,
+                    recommendedAction: action,
+                    timestamp: new Date().toISOString()
+                }
+            };
+            document.getElementById('testJSON').textContent = JSON.stringify(jsonOutput, null, 2);
+            document.getElementById('testResults').style.display = 'block';
+        }
+
+        // Reset Test
+        function resetTest() {
+            document.getElementById('testScenario').value = '';
+            document.getElementById('testPrecip').value = 0;
+            document.getElementById('testTemp').value = 0;
+            document.getElementById('testSoil').value = 0;
+            document.getElementById('testResults').style.display = 'none';
+        }
+
+        // Language selection (placeholder - full i18n would be implemented in production)
+        document.getElementById('languageSelect').addEventListener('change', function() {
+            console.log('Language changed to:', this.value);
+            // In production, this would load appropriate translations
+        });
+    </script>
+</body>
+</html>

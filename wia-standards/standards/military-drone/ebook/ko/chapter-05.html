@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제5장: Phase 2 - 구현 | WIA-MILITARY_D</title>
+    <style>
+        :root { --bg: #0f172a; --bg-secondary: #1e293b; --bg-tertiary: #334155; --primary: #8B5CF6; --text: #f1f5f9; --text-secondary: #cbd5e1; --border: #475569; --success: #10b981; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-secondary); padding: 3rem; border-radius: 10px; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: var(--bg-tertiary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--primary); font-weight: bold; }
+        tr:hover { background: var(--bg-tertiary); }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: var(--bg); text-decoration: none; border-radius: 5px; transition: all 0.3s ease; }
+        .btn:hover { background: var(--success); transform: translateY(-2px); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', monospace; color: var(--success); }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+        .stat-card { background: var(--bg); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid var(--border); }
+        .stat-number { font-size: 2rem; color: var(--primary); font-weight: bold; }
+        .stat-label { color: var(--text-secondary); margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">제5장</p>
+        <h1>Phase 2: 구현</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            임무 센서 통합, 보안 강화, 그리고 전술 능력 구현을 통한 작전 준비 완성
+        </p>
+
+        <h2>Phase 2 개요</h2>
+        <p>
+            Phase 2는 기본 비행 플랫폼을 실전 배치 가능한 전술 시스템으로 발전시키는 단계입니다. 이 단계에서는 임무 특화 센서, 페이로드, 그리고 보안 통신 시스템을 통합하여 정찰, 감시, 표적획득(ISR) 임무를 수행할 수 있는 능력을 갖춥니다. WIA-MILITARY_D Level 2 인증을 획득하면 전술 환경에서 실제 작전 투입이 가능합니다.
+        </p>
+        <p>
+            Phase 2의 핵심은 "임무 효과성"입니다. 단순히 안전하게 비행하는 것을 넘어, 수집한 정보를 실시간으로 전송하고, 적대적 전자전 환경에서 생존하며, 복잡한 작전 시나리오를 자율적으로 수행할 수 있어야 합니다.
+        </p>
+
+        <div class="highlight-box">
+            <h3>Phase 2 핵심 목표</h3>
+            <ul>
+                <li>고해상도 EO/IR 센서 및 SAR 레이더 통합</li>
+                <li>암호화된 전술 데이터링크 및 BLOS 통신 구현</li>
+                <li>대용량 실시간 영상 전송 능력 확보</li>
+                <li>전자전 대응 및 GPS 거부 환경 대처 능력</li>
+                <li>자동 표적 인식(ATR) 및 추적 시스템</li>
+                <li>Level 2 인증 및 전술 시험 평가 통과</li>
+            </ul>
+        </div>
+
+        <h2>임무 페이로드 통합</h2>
+        <p>
+            군용 드론의 가치는 탑재하는 센서와 페이로드의 능력에 크게 좌우됩니다. Phase 2에서는 다양한 임무 장비를 기체에 통합하고 최적화합니다.
+        </p>
+
+        <h3>전자광학/적외선 (EO/IR) 짐벌 시스템</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>사양 항목</th>
+                    <th>Class I/II 요구사항</th>
+                    <th>Class III/IV 요구사항</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>EO 카메라 해상도</td>
+                    <td>1920x1080 (Full HD) 이상</td>
+                    <td>3840x2160 (4K) 이상</td>
+                </tr>
+                <tr>
+                    <td>IR 센서</td>
+                    <td>640x480, LWIR</td>
+                    <td>1280x1024, MWIR/LWIR 선택</td>
+                </tr>
+                <tr>
+                    <td>광학 줌</td>
+                    <td>30x 이상</td>
+                    <td>60x 이상</td>
+                </tr>
+                <tr>
+                    <td>짐벌 안정화</td>
+                    <td>3축, ±0.02° 정확도</td>
+                    <td>3축, ±0.01° 정확도</td>
+                </tr>
+                <tr>
+                    <td>레이저 거리측정기</td>
+                    <td>5 km 범위 (권장)</td>
+                    <td>10 km 범위 (필수)</td>
+                </tr>
+                <tr>
+                    <td>레이저 지시기</td>
+                    <td>선택사항</td>
+                    <td>NATO 코드 호환</td>
+                </tr>
+                <tr>
+                    <td>프레임률</td>
+                    <td>30 fps (EO), 30 fps (IR)</td>
+                    <td>60 fps (EO), 60 fps (IR)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>합성개구레이더 (SAR)</h3>
+        <p>
+            SAR는 악천후 및 야간에도 지상 영상을 획득할 수 있는 전천후 센서입니다. Class III 이상의 UAV에 권장됩니다.
+        </p>
+        <div class="info-box">
+            <h4>SAR 모드 및 성능</h4>
+            <ul>
+                <li><strong>스트립맵 모드:</strong> 광역 매핑, 1m 해상도, 10km 폭</li>
+                <li><strong>스포트라이트 모드:</strong> 정밀 영상, 0.3m 해상도, 1km² 면적</li>
+                <li><strong>GMTI (지상이동표적지시):</strong> 차량 탐지 및 추적, 최소 5 km/h 속도</li>
+                <li><strong>편파 측정:</strong> 표적 분류를 위한 다중 편파 데이터</li>
+                <li><strong>간섭 모드:</strong> 지형 고도 측정, 변화 탐지</li>
+            </ul>
+        </div>
+
+        <h3>SIGINT (신호정보) 패키지</h3>
+        <p>
+            통신 및 레이더 신호를 수집, 분석하는 전자전 페이로드:
+        </p>
+        <ul>
+            <li><strong>주파수 범위:</strong> 20 MHz - 18 GHz (광대역 수신기)</li>
+            <li><strong>방향 탐지:</strong> ±5° 정확도, 동시 다중 신호원 추적</li>
+            <li><strong>신호 분석:</strong> 변조 방식 식별, 통신 프로토콜 분석</li>
+            <li><strong>데이터 기록:</strong> 최소 500 GB SSD, 실시간 압축</li>
+            <li><strong>재밍 능력:</strong> 선택적 주파수 방해 (SEAD 임무)</li>
+        </ul>
+
+        <h3>페이로드 인터페이스 표준</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>인터페이스</th>
+                    <th>용도</th>
+                    <th>사양</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>전원</td>
+                    <td>페이로드 구동</td>
+                    <td>28V DC, 최대 300W (Class II), 1000W (Class III)</td>
+                </tr>
+                <tr>
+                    <td>이더넷</td>
+                    <td>데이터 전송</td>
+                    <td>Gigabit Ethernet, MIL-STD-1553 백업</td>
+                </tr>
+                <tr>
+                    <td>직렬 통신</td>
+                    <td>짐벌 제어</td>
+                    <td>RS-422, 115200 baud 이상</td>
+                </tr>
+                <tr>
+                    <td>동기 신호</td>
+                    <td>센서 타이밍</td>
+                    <td>GPS PPS, IRIG-B 타임코드</td>
+                </tr>
+                <tr>
+                    <td>비디오</td>
+                    <td>아날로그 모니터</td>
+                    <td>HD-SDI (선택사항)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>보안 통신 시스템</h2>
+        <p>
+            Phase 2에서는 적의 감청과 재밍을 견디는 강화된 통신 시스템이 필수입니다.
+        </p>
+
+        <h3>암호화 아키텍처</h3>
+        <div class="highlight-box">
+            <h4>다층 암호화 전략</h4>
+            <ol>
+                <li><strong>링크 계층 암호화:</strong> AES-256-GCM, 물리 계층 보안
+                    <ul>
+                        <li>주파수 도약 확산 스펙트럼 (FHSS)</li>
+                        <li>직접 시퀀스 확산 스펙트럼 (DSSS)</li>
+                        <li>동적 주파수 선택 (DFS)</li>
+                    </ul>
+                </li>
+                <li><strong>애플리케이션 계층 암호화:</strong> TLS 1.3, 종단간 보안
+                    <ul>
+                        <li>공개키 인증 (RSA-4096 또는 ECC-384)</li>
+                        <li>완전 순방향 비밀성 (Perfect Forward Secrecy)</li>
+                        <li>상호 인증 (Mutual TLS)</li>
+                    </ul>
+                </li>
+                <li><strong>키 관리:</strong>
+                    <ul>
+                        <li>하드웨어 보안 모듈 (HSM) 기반 키 저장</li>
+                        <li>자동 키 갱신 (24시간 주기)</li>
+                        <li>제로화 기능 (자폭 시 키 삭제)</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h3>전술 데이터링크</h3>
+        <p>
+            NATO 호환 전술 데이터링크는 연합작전 상호운용성의 핵심입니다.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>데이터링크</th>
+                    <th>주파수</th>
+                    <th>전송률</th>
+                    <th>용도</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Link 16</td>
+                    <td>960-1215 MHz</td>
+                    <td>최대 238 kbps</td>
+                    <td>전술 상황 공유, 협업 교전</td>
+                </tr>
+                <tr>
+                    <td>VMF (Variable Message Format)</td>
+                    <td>VHF/UHF</td>
+                    <td>1.2 - 16 kbps</td>
+                    <td>해군 전술 메시징</td>
+                </tr>
+                <tr>
+                    <td>ROVER (Remotely Operated Video Enhanced Receiver)</td>
+                    <td>C-band, Ku-band</td>
+                    <td>1-10 Mbps</td>
+                    <td>실시간 영상 지상군 전송</td>
+                </tr>
+                <tr>
+                    <td>CDL (Common Data Link)</td>
+                    <td>14.4-15.35 GHz</td>
+                    <td>최대 274 Mbps</td>
+                    <td>고대역폭 센서 데이터</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>BLOS (Beyond Line of Sight) 통신</h3>
+        <p>
+            장거리 작전을 위해서는 위성 통신이 필수적입니다.
+        </p>
+        <div class="info-box">
+            <h4>위성통신 요구사항</h4>
+            <ul>
+                <li><strong>주파수 대역:</strong> X-band (군용), Ku/Ka-band (상용 보완)</li>
+                <li><strong>안테나:</strong> 위상 배열 또는 기계식 추적 안테나</li>
+                <li><strong>전송률:</strong> 업링크 256 kbps, 다운링크 10 Mbps (영상 스트리밍)</li>
+                <li><strong>지연 시간:</strong> GEO 위성 시 500-700ms (C2 명령 우선순위 관리 필요)</li>
+                <li><strong>백업:</strong> 복수 위성 접근, 자동 핸드오버</li>
+            </ul>
+        </div>
+
+        <h2>전자전 대응 능력</h2>
+        <p>
+            현대 전장에서 UAV는 적의 전자 공격에 지속적으로 노출됩니다. Phase 2 시스템은 생존성을 위해 능동적 대응 수단을 갖추어야 합니다.
+        </p>
+
+        <h3>재밍 대응 기술</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>위협</th>
+                    <th>탐지 방법</th>
+                    <th>대응 조치</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>GPS 재밍</td>
+                    <td>신호 강도 모니터링, C/N0 임계값</td>
+                    <td>다중 GNSS 전환, INS 모드, 지형 참조 항법</td>
+                </tr>
+                <tr>
+                    <td>C2 링크 재밍</td>
+                    <td>SNR 저하, 패킷 손실률 증가</td>
+                    <td>주파수 도약, 대역 전환, BLOS 우회</td>
+                </tr>
+                <tr>
+                    <td>GPS 스푸핑</td>
+                    <td>갑작스런 위치 점프, 복수 신호원 탐지</td>
+                    <td>신호 인증, INS 교차 검증, 안전 모드</td>
+                </tr>
+                <tr>
+                    <td>데이터링크 침투</td>
+                    <td>비정상 명령, 인증 실패</td>
+                    <td>명령 격리, 통신 차단, 자율 모드</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>대안 항법 시스템</h3>
+        <p>
+            GPS 거부 환경에서도 임무를 계속할 수 있는 능력:
+        </p>
+        <div class="highlight-box">
+            <ul>
+                <li><strong>관성항법 (INS):</strong> 전술급 IMU, 1시간당 1-3km 드리프트</li>
+                <li><strong>지형 참조 항법 (TRN):</strong> 레이더 고도계 + 디지털 고도 맵 매칭</li>
+                <li><strong>시각 주행 거리 측정 (Visual Odometry):</strong> 카메라 기반 상대 위치 추정</li>
+                <li><strong>천측 항법:</strong> 별 추적기로 자세 보정 (야간 고고도)</li>
+                <li><strong>자기 이상 탐지:</strong> 지자기 맵과 비교하여 위치 보정</li>
+            </ul>
+        </div>
+
+        <h2>자율 비행 및 의사결정</h2>
+        <p>
+            Phase 2에서는 조종사 부담을 줄이고 임무 효율을 높이기 위해 고급 자율 기능을 구현합니다.
+        </p>
+
+        <h3>임무 계획 및 관리</h3>
+        <p>
+            복잡한 작전 시나리오를 자동화하는 임무 관리 시스템:
+        </p>
+        <ul>
+            <li><strong>다중 웨이포인트 경로:</strong> 수백 개의 경유점, 고도/속도/카메라 액션 지정</li>
+            <li><strong>구역 정찰 패턴:</strong> 잔디깎기, 나선형, 원형 패턴 자동 생성</li>
+            <li><strong>관심 지역 (ROI) 추적:</strong> 지정된 좌표 또는 이동 표적 자동 추적</li>
+            <li><strong>동적 재계획:</strong> 날씨, 위협, 연료 상태에 따른 경로 자동 수정</li>
+            <li><strong>우선순위 관리:</strong> 복수 임무 목표 간 자원 배분 최적화</li>
+        </ul>
+
+        <h3>자동 표적 인식 (ATR)</h3>
+        <p>
+            AI/ML 기반 표적 탐지 및 분류 시스템은 조종사의 작업 부하를 크게 줄입니다.
+        </p>
+        <div class="info-box">
+            <h4>ATR 파이프라인</h4>
+            <ol>
+                <li><strong>전처리:</strong> 영상 안정화, 노이즈 제거, 대비 향상</li>
+                <li><strong>물체 탐지:</strong> YOLO/SSD 계열 CNN으로 후보 영역 추출</li>
+                <li><strong>분류:</strong> ResNet/EfficientNet으로 차량, 건물, 인원 등 식별</li>
+                <li><strong>추적:</strong> Kalman 필터 또는 DeepSORT로 시간적 연관성 유지</li>
+                <li><strong>큐잉:</strong> 탐지된 표적을 조종사에게 표시, 우선순위 정렬</li>
+            </ol>
+            <p><strong>성능 목표:</strong> 90% 탐지율, 5% 오탐률, 500ms 이하 처리 지연</p>
+        </div>
+
+        <h3>충돌 회피</h3>
+        <p>
+            민간 공역 운용과 안전을 위한 자동 충돌 회피 시스템:
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>센서</th>
+                    <th>탐지 범위</th>
+                    <th>대응 조치</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>ADS-B 수신기</td>
+                    <td>200+ km</td>
+                    <td>협조 항공기 추적, 경로 회피</td>
+                </tr>
+                <tr>
+                    <td>레이더 (옵션)</td>
+                    <td>5-10 km</td>
+                    <td>비협조 표적 탐지, 회피 기동</td>
+                </tr>
+                <tr>
+                    <td>전방 카메라</td>
+                    <td>1-3 km (시각)</td>
+                    <td>최종 충돌 방지, 긴급 회피</td>
+                </tr>
+                <tr>
+                    <td>ATC 트랜스폰더</td>
+                    <td>N/A (송신)</td>
+                    <td>항공 교통 관제 가시성 제공</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>데이터 처리 및 저장</h2>
+        <p>
+            대용량 센서 데이터를 실시간으로 처리하고 저장하는 온보드 시스템:
+        </p>
+
+        <h3>컴퓨팅 플랫폼</h3>
+        <div class="highlight-box">
+            <h4>권장 하드웨어</h4>
+            <ul>
+                <li><strong>CPU:</strong> ARM Cortex-A72 쿼드코어 또는 Intel i7 (저전력 버전)</li>
+                <li><strong>GPU:</strong> NVIDIA Jetson Xavier NX (AI 추론용) 또는 동급</li>
+                <li><strong>RAM:</strong> 최소 8GB, 권장 16GB DDR4</li>
+                <li><strong>저장장치:</strong> 1TB NVMe SSD (임무 데이터), 256GB eMMC (OS)</li>
+                <li><strong>네트워크:</strong> Gigabit Ethernet, PCIe 확장 슬롯</li>
+                <li><strong>환경 등급:</strong> -40°C ~ +85°C 작동, MIL-STD-810 충격/진동</li>
+            </ul>
+        </div>
+
+        <h3>데이터 관리 워크플로</h3>
+        <ol>
+            <li><strong>실시간 처리:</strong> ATR, 영상 안정화, 메타데이터 삽입</li>
+            <li><strong>압축:</strong> H.265/HEVC (영상), JPEG2000 (정지화상)</li>
+            <li><strong>전송:</strong> 우선순위 큐잉, 대역폭 적응, FEC 에러 보정</li>
+            <li><strong>로컬 저장:</strong> 원본 데이터 + 처리 결과, 타임스탬프/GPS 메타데이터</li>
+            <li><strong>사후 분석:</strong> 임무 후 상세 재생, 보고서 생성</li>
+        </ol>
+
+        <h2>Level 2 인증 절차</h2>
+        <p>
+            Phase 2 개발을 완료한 시스템은 WIA-MILITARY_D Level 2 인증을 통해 전술 배치 적합성을 입증해야 합니다.
+        </p>
+
+        <div class="highlight-box">
+            <h3>Level 2 인증 테스트</h3>
+            <ol>
+                <li><strong>페이로드 통합 테스트</strong>
+                    <ul>
+                        <li>EO/IR 영상 품질 및 안정화 성능</li>
+                        <li>레이저 거리측정 정확도 (±5m @ 5km)</li>
+                        <li>SAR 해상도 및 GMTI 성능 (해당 시)</li>
+                        <li>실시간 영상 전송 품질 (프레임 드롭 &lt; 1%)</li>
+                    </ul>
+                </li>
+                <li><strong>보안 통신 테스트</strong>
+                    <ul>
+                        <li>암호화 성능 (지연 &lt; 10ms 추가)</li>
+                        <li>키 교환 및 인증 절차 검증</li>
+                        <li>침입 시뮬레이션 (레드팀 공격 방어)</li>
+                    </ul>
+                </li>
+                <li><strong>전자전 대응 테스트</strong>
+                    <ul>
+                        <li>GPS 재밍 환경에서 INS 항법 (±100m @ 10분)</li>
+                        <li>C2 재밍 시 자율 귀환 성공</li>
+                        <li>스푸핑 탐지 및 거부 능력</li>
+                    </ul>
+                </li>
+                <li><strong>자율 비행 테스트</strong>
+                    <ul>
+                        <li>복잡한 임무 계획 실행 (20+ 웨이포인트)</li>
+                        <li>동적 재계획 시나리오 (경로 변경, 표적 전환)</li>
+                        <li>ATR 성능 (탐지율, 오탐률 측정)</li>
+                    </ul>
+                </li>
+                <li><strong>전술 시나리오 평가</strong>
+                    <ul>
+                        <li>실전 유사 ISR 임무 (6시간 체공)</li>
+                        <li>다중 UAV 협업 작전 (해당 시)</li>
+                        <li>적대적 환경 침투 및 정보 수집</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h3>인증 통과 기준</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>영역</th>
+                    <th>최소 요구사항</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>영상 품질</td>
+                    <td>NIIRS 5 이상 (차량 식별 가능)</td>
+                </tr>
+                <tr>
+                    <td>영상 전송</td>
+                    <td>30 fps, 1080p, 지연 &lt; 2초</td>
+                </tr>
+                <tr>
+                    <td>통신 보안</td>
+                    <td>AES-256 암호화, 인증 실패 0건</td>
+                </tr>
+                <tr>
+                    <td>전자전 생존</td>
+                    <td>재밍 환경에서 임무 지속 또는 안전 귀환</td>
+                </tr>
+                <tr>
+                    <td>자율 수준</td>
+                    <td>조종사 개입 없이 임무 80% 이상 자율 실행</td>
+                </tr>
+                <tr>
+                    <td>신뢰성</td>
+                    <td>50회 임무, 95% 성공률, 중대 고장 0건</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>운용 교리 개발</h2>
+        <p>
+            기술적 능력만으로는 충분하지 않습니다. Phase 2 시스템의 효과적 활용을 위해서는 명확한 운용 교리가 필요합니다.
+        </p>
+
+        <div class="info-box">
+            <h3>표준 작전 절차 (SOP) 요소</h3>
+            <ul>
+                <li>임무 계획 및 브리핑 절차</li>
+                <li>발진 전 점검 체크리스트</li>
+                <li>비행 단계별 승무원 역할 분담</li>
+                <li>비상 상황 대응 매트릭스</li>
+                <li>통신 두절 시 행동 규정</li>
+                <li>민간 공역 진입 조정 절차</li>
+                <li>표적 교전 권한 및 확인 절차 (무장 UAV)</li>
+                <li>임무 후 디브리핑 및 데이터 아카이빙</li>
+            </ul>
+        </div>
+
+        <h2>요약</h2>
+        <p>
+            Phase 2는 기본 비행 플랫폼을 완전한 전술 정찰 시스템으로 변환하는 중요한 단계입니다. 임무 특화 센서, 보안 통신, 전자전 대응, 그리고 자율 비행 능력을 통합함으로써, UAV는 실제 작전 환경에서 가치 있는 정보를 제공할 수 있게 됩니다.
+        </p>
+        <p>
+            Level 2 인증을 획득한 시스템은 전술 지휘관의 신뢰를 받고 다양한 ISR 임무에 투입될 수 있습니다. 다음 Phase 3에서는 다중 UAV 협업, 이기종 시스템 통합, 그리고 더 높은 수준의 자율성을 추가하여 네트워크 중심전 환경에서의 역할을 확대할 것입니다.
+        </p>
+
+        <div class="nav-buttons">
+            <a href="chapter-04.html" class="btn">← 이전</a>
+            <a href="index.html" class="btn">목차</a>
+            <a href="chapter-06.html" class="btn">다음 →</a>
+        </div>
+    </div>
+</body>
+</html>

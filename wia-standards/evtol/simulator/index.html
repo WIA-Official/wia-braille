@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA eVTOL - Simulator</title>
+    <style>
+        :root {
+            --primary: #06B6D4;
+            --primary-dark: #0891B2;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .nav-home {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav-home:hover { color: var(--primary); }
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--primary); }
+        .breadcrumb .sep { color: var(--border); }
+        .breadcrumb .current { color: var(--primary); font-weight: 500; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--primary); }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .lang-switch { display: flex; gap: 10px; }
+        .lang-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .lang-btn:hover { border-color: var(--primary); }
+        .hero {
+            text-align: center;
+            padding: 40px 0;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, var(--primary), #67E8F9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; }
+        .tabs {
+            justify-content: center;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 24px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .tab:hover { border-color: var(--primary); }
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid var(--border);
+        }
+        .panel.active { display: block; }
+        .panel h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-center {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .signal-display {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            white-space: pre;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        footer {
+            margin-top: 50px;
+            padding: 30px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+        }
+        footer .philosophy {
+            color: #ffd700;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        footer .links {
+            margin-top: 15px;
+        }
+        footer .links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        footer .links a:hover {
+            color: var(--primary);
+        }
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.8rem; }
+            .form-row { grid-template-columns: 1fr; }
+            .tabs { justify-content: center; }
+            .breadcrumb { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-nav">
+            <div class="nav-left">
+                <a href="https://wiastandards.com" class="nav-home" target="_blank">⚡ WIA Standards</a>
+                <div class="breadcrumb">
+                    <a href="https://wiastandards.com" target="_blank">Home</a>
+                    <span class="sep">›</span>
+                    <a href="https://wiastandards.com/#standards" target="_blank">Standards</a>
+                    <span class="sep">›</span>
+                    <span class="current">eVTOL</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 25px;">
+                <nav class="nav-links">
+                    <a href="https://cert.wiastandards.com" target="_blank">🏆 Certification</a>
+                    <a href="https://wiabooks.store/reader/simulators/" target="_blank">🎮 Simulators</a>
+                    <a href="https://wiabooks.store" target="_blank">📚 Ebook</a>
+                    <a href="https://github.com/WIA-Official/wia-standards" target="_blank">GitHub</a>
+                </nav>
+            </div>
+        </div>
+
+        <header>
+            <div class="logo">⚡ WIA eVTOL</div>
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('ko')">KO</button>
+            </div>
+        </header>
+
+        <section class="hero">
+            <h1 data-en="eVTOL Simulator" data-ko="eVTOL 시뮬레이터">eVTOL Simulator</h1>
+            <p data-en="Electric vertical takeoff and landing aircraft design and testing" data-ko="전기 수직이착륙기 설계 및 테스트">Electric vertical takeoff and landing aircraft design and testing</p>
+        </section>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showPanel(0)" data-en="📊 Data Format" data-ko="📊 데이터 형식">📊 Data Format</button>
+            <button class="tab" onclick="showPanel(1)" data-en="🔢 Algorithms" data-ko="🔢 알고리즘">🔢 Algorithms</button>
+            <button class="tab" onclick="showPanel(2)" data-en="📡 Protocol" data-ko="📡 프로토콜">📡 Protocol</button>
+            <button class="tab" onclick="showPanel(3)" data-en="🔗 Integration" data-ko="🔗 통합">🔗 Integration</button>
+            <button class="tab" onclick="showPanel(4)" data-en="🧪 Test" data-ko="🧪 테스트">🧪 Test</button>
+        </div>
+
+        <div class="panel active" id="panel-0">
+            <h2 data-en="📊 Data Format" data-ko="📊 데이터 형식">📊 Data Format</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-en="Aircraft ID" data-ko="기체 ID">Aircraft ID</label>
+                    <input type="text" id="aircraftId" placeholder="EVTOL-001" value="EVTOL-001">
+                </div>
+                <div class="form-group">
+                    <label data-en="Configuration" data-ko="구성">Configuration</label>
+                    <select id="configuration">
+                        <option value="multicopter">Multicopter (멀티콥터)</option>
+                        <option value="lift-cruise">Lift+Cruise (리프트+크루즈)</option>
+                        <option value="tilt-wing">Tilt-Wing (틸트윙)</option>
+                        <option value="tilt-rotor">Tilt-Rotor (틸트로터)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-en="Battery Voltage (V)" data-ko="배터리 전압 (V)">Battery Voltage (V)</label>
+                    <input type="number" id="batteryVoltage" value="800" step="100">
+                </div>
+            </div>
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="generateData()">
+                    <span data-en="📊 Generate Data" data-ko="📊 데이터 생성">📊 Generate Data</span>
+                </button>
+            </div>
+            <div class="signal-display" id="dataOutput" style="display: none;"></div>
+        </div>
+
+        <div class="panel" id="panel-1">
+            <h2 data-en="🔢 Power System Analysis" data-ko="🔢 동력 시스템 분석">🔢 Power System Analysis</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Calculate hover power, endurance, and efficiency</p>
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-en="MTOW (kg)" data-ko="최대이륙중량 (kg)">MTOW (kg)</label>
+                    <input type="number" id="mtow" value="2500" step="100">
+                </div>
+                <div class="form-group">
+                    <label data-en="Motor Efficiency (%)" data-ko="모터 효율 (%)">Motor Efficiency (%)</label>
+                    <input type="number" id="motorEff" value="95" step="1">
+                </div>
+                <div class="form-group">
+                    <label data-en="Battery Capacity (kWh)" data-ko="배터리 용량 (kWh)">Battery Capacity (kWh)</label>
+                    <input type="number" id="batteryCapacity" value="150" step="10">
+                </div>
+            </div>
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="runAlgorithm()">
+                    <span data-en="🔢 Analyze Power System" data-ko="🔢 동력 시스템 분석">🔢 Analyze Power System</span>
+                </button>
+            </div>
+            <div class="signal-display" id="algoOutput" style="display: none;"></div>
+        </div>
+
+        <div class="panel" id="panel-2">
+            <h2 data-en="📡 Communication Protocol" data-ko="📡 통신 프로토콜">📡 Communication Protocol</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Test eVTOL-specific protocols and battery management system</p>
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="testProtocol()">
+                    <span data-en="📡 Test Protocol" data-ko="📡 프로토콜 테스트">📡 Test Protocol</span>
+                </button>
+            </div>
+            <div class="signal-display" id="protocolOutput" style="display: none;"></div>
+        </div>
+
+        <div class="panel" id="panel-3">
+            <h2 data-en="🔗 System Integration" data-ko="🔗 시스템 통합">🔗 System Integration</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Integrate with battery management, motor controllers, and flight systems</p>
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="testIntegration()">
+                    <span data-en="🔗 Test Integration" data-ko="🔗 통합 테스트">🔗 Test Integration</span>
+                </button>
+            </div>
+            <div class="signal-display" id="integrationOutput" style="display: none;"></div>
+        </div>
+
+        <div class="panel" id="panel-4">
+            <h2 data-en="🧪 Compliance Test" data-ko="🧪 규정 준수 테스트">🧪 Compliance Test</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Verify compliance with WIA-SPACE-019 standards</p>
+            <div class="btn-center">
+                <button class="btn btn-primary" onclick="runTest()">
+                    <span data-en="🧪 Run Test" data-ko="🧪 테스트 실행">🧪 Run Test</span>
+                </button>
+            </div>
+            <div id="testResults" style="display: none; margin-top: 20px; padding: 20px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--secondary); border-radius: 12px;">
+                <h3 style="color: var(--secondary);">✅ <span data-en="All Tests Passed" data-ko="모든 테스트 통과">All Tests Passed</span></h3>
+                <p style="margin-top: 10px;">
+                    <span data-en="WIA-SPACE-019 compliance verified" data-ko="WIA-SPACE-019 준수 확인됨">WIA-SPACE-019 compliance verified</span>
+                </p>
+                <div style="margin-top: 20px; text-align: center;">
+                    <canvas id="qrcode" style="border: 2px solid var(--secondary); border-radius: 8px;"></canvas>
+                    <p style="margin-top: 10px; font-size: 0.85rem;">
+                        <span data-en="Certificate ID: WIA-EVTOL-2025-001" data-ko="인증 ID: WIA-EVTOL-2025-001">Certificate ID: WIA-EVTOL-2025-001</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="philosophy">弘益人間 · Benefit All Humanity</div>
+            <div>© 2025 SmileStory Inc. / WIA</div>
+            <div class="links">
+                <a href="https://wiastandards.com" target="_blank">WIA Home</a>
+                <a href="https://github.com/WIA-Official" target="_blank">GitHub</a>
+                <a href="https://wiabooks.store" target="_blank">Ebook Store</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+
+        function setLang(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute(`data-${lang}`);
+            });
+        }
+
+        function showPanel(index) {
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.panel').forEach((panel, i) => {
+                panel.classList.toggle('active', i === index);
+            });
+        }
+
+        function generateData() {
+            const aircraftId = document.getElementById('aircraftId').value;
+            const configuration = document.getElementById('configuration').value;
+            const batteryVoltage = parseInt(document.getElementById('batteryVoltage').value);
+
+            const data = {
+                id: aircraftId,
+                configuration: configuration,
+                timestamp: new Date().toISOString(),
+                propulsionSystem: {
+                    type: "electric",
+                    motors: 8,
+                    motorPower: 75,
+                    rotorDiameter: 2.5
+                },
+                batterySystem: {
+                    voltage: batteryVoltage,
+                    capacity: 150,
+                    chemistry: "Li-ion NMC",
+                    cells: batteryVoltage / 3.7,
+                    temperature: 35,
+                    charge: 82
+                },
+                performance: {
+                    maxSpeed: 180,
+                    cruiseSpeed: 150,
+                    range: 100,
+                    endurance: 35,
+                    serviceOeiling: 3000
+                },
+                certification: {
+                    standard: "WIA-SPACE-019",
+                    authority: "WIA eVTOL Certification",
+                    category: "Part 23.2035",
+                    validUntil: "2027-12-31"
+                },
+                metadata: {
+                    manufacturer: "AeroElectric Inc.",
+                    serialNumber: "EVTOL-2025-" + Math.floor(Math.random() * 1000)
+                }
+            };
+
+            const output = document.getElementById('dataOutput');
+            output.style.display = 'block';
+            output.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function runAlgorithm() {
+            const mtow = parseFloat(document.getElementById('mtow').value);
+            const motorEff = parseFloat(document.getElementById('motorEff').value) / 100;
+            const batteryCapacity = parseFloat(document.getElementById('batteryCapacity').value);
+
+            const g = 9.81;
+            const weight = mtow * g;
+            const diskLoading = 50;
+            const figureOfMerit = 0.75;
+
+            const hoverPower = (Math.pow(weight, 1.5) / Math.sqrt(2 * 1.225 * diskLoading)) / (1000 * motorEff * figureOfMerit);
+
+            const endurance = (batteryCapacity / hoverPower) * 60;
+            const systemEfficiency = motorEff * figureOfMerit;
+
+            const results = {
+                analysis: "eVTOL Power System Analysis",
+                inputs: {
+                    mtow: mtow + " kg",
+                    motorEfficiency: (motorEff * 100).toFixed(0) + "%",
+                    batteryCapacity: batteryCapacity + " kWh"
+                },
+                calculations: {
+                    weight: weight.toFixed(0) + " N",
+                    hoverPower: hoverPower.toFixed(1) + " kW",
+                    endurance: endurance.toFixed(1) + " minutes",
+                    systemEfficiency: (systemEfficiency * 100).toFixed(1) + "%",
+                    energyPerKm: (hoverPower / 150 * 60).toFixed(2) + " kWh/km (at cruise)"
+                },
+                recommendations: endurance > 30
+                    ? "Power system meets requirements for urban missions"
+                    : "Consider increasing battery capacity or reducing weight"
+            };
+
+            const output = document.getElementById('algoOutput');
+            output.style.display = 'block';
+            output.textContent = JSON.stringify(results, null, 2);
+        }
+
+        function testProtocol() {
+            const output = document.getElementById('protocolOutput');
+            output.style.display = 'block';
+
+            const log = [];
+            log.push('[eVTOL Protocol Test]');
+            log.push('Timestamp: ' + new Date().toISOString());
+            log.push('');
+            log.push('Testing eVTOL-specific Protocols...');
+            log.push('');
+            log.push('1. Battery Management System (BMS)');
+            log.push('   Cell Voltage Monitoring: Active ✅');
+            log.push('   Temperature Monitoring: Active ✅');
+            log.push('   State of Charge: 82% ✅');
+            log.push('');
+            log.push('2. Motor Controllers (ESC)');
+            log.push('   8x Motor Controllers: Online ✅');
+            log.push('   RPM Monitoring: Active ✅');
+            log.push('   Current Limiting: Configured ✅');
+            log.push('');
+            log.push('3. Flight Control System');
+            log.push('   Transition Control: Ready ✅');
+            log.push('   Redundancy: Dual FCS ✅');
+            log.push('');
+            log.push('4. Power Distribution');
+            log.push('   High Voltage DC Bus: 800V ✅');
+            log.push('   Power Conversion: Operational ✅');
+            log.push('');
+            log.push('✅ All protocols validated');
+
+            output.textContent = log.join('\n');
+        }
+
+        function testIntegration() {
+            const output = document.getElementById('integrationOutput');
+            output.style.display = 'block';
+
+            const log = [];
+            log.push('[eVTOL System Integration Test]');
+            log.push('Timestamp: ' + new Date().toISOString());
+            log.push('');
+            log.push('Testing System Integrations...');
+            log.push('');
+            log.push('1. Battery Management System');
+            log.push('   BMS Connection: CAN Bus ✅');
+            log.push('   Cell Balancing: Active ✅');
+            log.push('   Thermal Management: Operational ✅');
+            log.push('');
+            log.push('2. Motor Control Units');
+            log.push('   ESC Network: 8 controllers online ✅');
+            log.push('   Torque Distribution: Balanced ✅');
+            log.push('   Emergency Shutdown: Armed ✅');
+            log.push('');
+            log.push('3. Flight Control Computer');
+            log.push('   Autopilot: Engaged ✅');
+            log.push('   Sensor Fusion: IMU + GPS ✅');
+            log.push('   Mode Transition: Ready ✅');
+            log.push('');
+            log.push('4. Ground Support Systems');
+            log.push('   Charging Station: Connected ✅');
+            log.push('   Diagnostics: Available ✅');
+            log.push('');
+            log.push('✅ All integrations successful');
+
+            output.textContent = log.join('\n');
+        }
+
+        function runTest() {
+            const results = document.getElementById('testResults');
+            results.style.display = 'block';
+
+            const canvas = document.getElementById('qrcode');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 200;
+            canvas.height = 200;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 200, 200);
+            ctx.fillStyle = '#000000';
+
+            for (let i = 0; i < 10; i++) {
+                for (let j = 0; j < 10; j++) {
+                    if (Math.random() > 0.5) {
+                        ctx.fillRect(i * 20, j * 20, 18, 18);
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

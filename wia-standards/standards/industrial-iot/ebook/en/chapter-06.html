@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Chapter 6: Time-Series Data & Real-Time Monitoring - WIA-IND-027</title>
+<style>:root{--bg:#0f172a;--surface:#1e293b;--primary:#8B5CF6;--text:#f1f5f9;--text-dim:#94a3b8;--border:#334155}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.8;padding:20px}.container{max-width:900px;margin:0 auto;background:var(--surface);padding:40px;border-radius:10px;box-shadow:0 4px 6px rgba(0,0,0,0.3)}h1{color:var(--primary);font-size:2.5em;margin-bottom:20px;border-bottom:3px solid var(--primary);padding-bottom:15px}h2{color:var(--primary);font-size:1.8em;margin-top:40px;margin-bottom:20px}h3{color:var(--primary);font-size:1.4em;margin-top:30px;margin-bottom:15px}p{margin-bottom:15px;color:var(--text-dim)}.highlight{background:rgba(139,92,246,0.2);padding:20px;border-left:4px solid var(--primary);margin:20px 0;border-radius:5px}table{width:100%;border-collapse:collapse;margin:25px 0;background:var(--bg)}th,td{padding:15px;text-align:left;border:1px solid var(--border)}th{background:var(--primary);color:var(--text);font-weight:600}tr:hover{background:rgba(139,92,246,0.1)}code{background:var(--bg);padding:2px 8px;border-radius:4px;font-family:'Courier New',monospace;color:var(--primary)}pre{background:var(--bg);padding:20px;border-radius:8px;overflow-x:auto;margin:20px 0;border:1px solid var(--border)}pre code{padding:0;background:transparent}.key-takeaways{background:rgba(139,92,246,0.1);padding:25px;border-radius:8px;margin:30px 0}.key-takeaways h3{margin-top:0}.key-takeaways ul{margin-left:20px}.key-takeaways li{margin:10px 0;color:var(--text-dim)}.review-questions{background:var(--bg);padding:25px;border-radius:8px;margin:30px 0;border:2px solid var(--primary)}.review-questions h3{margin-top:0}.review-questions ol{margin-left:20px}.review-questions li{margin:15px 0;color:var(--text-dim)}.navigation{display:flex;justify-content:space-between;margin-top:40px;padding-top:20px;border-top:2px solid var(--border)}.nav-button{background:var(--primary);color:var(--text);padding:12px 24px;text-decoration:none;border-radius:6px;transition:background 0.3s}.nav-button:hover{background:#7C3AED}.diagram{background:var(--bg);padding:20px;border-radius:8px;margin:20px 0;font-family:monospace;overflow-x:auto;border:1px solid var(--border)}ul{margin-left:20px;margin-bottom:15px}li{margin:8px 0;color:var(--text-dim)}</style></head><body><div class="container">
+<h1>Chapter 6: Time-Series Data & Real-Time Monitoring</h1>
+<div class="highlight"><strong>WIA-IND-027 Standard</strong><br>Implementing time-series databases and real-time dashboards for industrial intelligence</div>
+
+<h2>6.1 Time-Series Databases</h2>
+<p>Industrial IoT generates massive volumes of time-stamped data. Traditional relational databases struggle with high write throughput (10K-1M points/sec) and time-based queries. Time-Series Databases (TSDBs) optimize for temporal data with specialized indexing, compression, and query engines.</p>
+
+<h3>6.1.1 TSDB Comparison</h3>
+<table><thead><tr><th>Database</th><th>Write Throughput</th><th>Compression Ratio</th><th>Query Language</th><th>License</th></tr></thead><tbody>
+<tr><td>InfluxDB</td><td>1M points/sec</td><td>10-30x</td><td>InfluxQL/Flux</td><td>MIT + Commercial</td></tr>
+<tr><td>TimescaleDB</td><td>1M rows/sec</td><td>20x (native compression)</td><td>SQL (PostgreSQL)</td><td>Apache 2.0 + Commercial</td></tr>
+<tr><td>Prometheus</td><td>500K samples/sec</td><td>3-5x</td><td>PromQL</td><td>Apache 2.0</td></tr>
+<tr><td>QuestDB</td><td>4M rows/sec</td><td>15x</td><td>SQL</td><td>Apache 2.0</td></tr>
+<tr><td>Azure Data Explorer</td><td>Unlimited (cloud)</td><td>100x (columnar)</td><td>KQL (Kusto)</td><td>Commercial (SaaS)</td></tr>
+</tbody></table>
+
+<h3>6.1.2 InfluxDB Schema Design</h3>
+<pre><code>// InfluxDB Line Protocol
+measurement,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp
+
+// Example: Sensor data
+sensor_data,sensor_id=temp-001,location=line-A,equipment=furnace temperature=850.5,pressure=1.2 1609459200000000000
+
+// Schema components:
+// - Measurement: sensor_data (table name)
+// - Tags: sensor_id, location, equipment (indexed, for filtering)
+// - Fields: temperature, pressure (values, for aggregation)
+// - Timestamp: nanosecond precision
+
+// Best practices:
+// 1. Tags: Low-medium cardinality (<100K unique values)
+// 2. Fields: High cardinality, numeric values
+// 3. Avoid: High-cardinality tags (UUID, timestamp strings)</code></pre>
+
+<pre><code>// Node.js InfluxDB Client
+const { InfluxDB, Point } = require('@influxdata/influxdb-client');
+
+const influx = new InfluxDB({
+  url: 'http://localhost:8086',
+  token: 'my-secret-token'
+});
+
+const writeApi = influx.getWriteApi('factory', 'sensor_bucket');
+
+// Write single point
+const point = new Point('sensor_data')
+  .tag('sensor_id', 'temp-001')
+  .tag('location', 'line-A')
+  .tag('equipment', 'furnace')
+  .floatField('temperature', 850.5)
+  .floatField('pressure', 1.2);
+
+writeApi.writePoint(point);
+
+// Batch write (more efficient)
+const points = [];
+for (let i = 0; i < 1000; i++) {
+  points.push(
+    new Point('sensor_data')
+      .tag('sensor_id', `temp-${i.toString().padStart(3, '0')}`)
+      .tag('location', 'line-A')
+      .floatField('temperature', 45 + Math.random() * 10)
+      .timestamp(new Date())
+  );
+}
+
+writeApi.writePoints(points);
+await writeApi.close(); // Flush buffer
+
+// Query with Flux
+const queryApi = influx.getQueryApi('factory');
+const flux = `
+  from(bucket: "sensor_bucket")
+    |> range(start: -1h)
+    |> filter(fn: (r) => r._measurement == "sensor_data")
+    |> filter(fn: (r) => r.sensor_id == "temp-001")
+    |> aggregateWindow(every: 5m, fn: mean)
+`;
+
+for await (const {values, tableMeta} of queryApi.iterateRows(flux)) {
+  console.log(`${values._time}: ${values._value}°C`);
+}</code></pre>
+
+<h2>6.2 OEE Calculation</h2>
+<p>Overall Equipment Effectiveness (OEE) is the gold standard for measuring manufacturing productivity:</p>
+
+<h3>6.2.1 OEE Formula</h3>
+<table><thead><tr><th>Component</th><th>Formula</th><th>World-Class Target</th><th>Data Sources</th></tr></thead><tbody>
+<tr><td>Availability</td><td>(Operating Time / Planned Production Time) × 100%</td><td>&gt;90%</td><td>PLC status, downtime logs</td></tr>
+<tr><td>Performance</td><td>(Actual Output / Target Output) × 100%</td><td>&gt;95%</td><td>Production counters, cycle time</td></tr>
+<tr><td>Quality</td><td>(Good Units / Total Units) × 100%</td><td>&gt;99%</td><td>Quality inspection, reject counts</td></tr>
+<tr><td>OEE</td><td>Availability × Performance × Quality</td><td>&gt;85%</td><td>Combined metrics</td></tr>
+</tbody></table>
+
+<pre><code>// Real-time OEE Calculator
+class OEECalculator {
+  async calculate(machineId: string, startTime: Date, endTime: Date) {
+    // 1. Availability: (Operating Time / Planned Time)
+    const plannedTime = (endTime.getTime() - startTime.getTime()) / 1000 / 60; // minutes
+    const downtime = await this.getDowntime(machineId, startTime, endTime);
+    const operatingTime = plannedTime - downtime;
+    const availability = operatingTime / plannedTime;
+
+    // 2. Performance: (Actual Output / Target Output)
+    const actualOutput = await this.getProductionCount(machineId, startTime, endTime);
+    const targetCycleTime = await this.getTargetCycleTime(machineId); // minutes per unit
+    const targetOutput = operatingTime / targetCycleTime;
+    const performance = actualOutput / targetOutput;
+
+    // 3. Quality: (Good Units / Total Units)
+    const rejectCount = await this.getRejectCount(machineId, startTime, endTime);
+    const goodUnits = actualOutput - rejectCount;
+    const quality = goodUnits / actualOutput;
+
+    // OEE = A × P × Q
+    const oee = availability * performance * quality;
+
+    return {
+      availability: (availability * 100).toFixed(1) + '%',
+      performance: (performance * 100).toFixed(1) + '%',
+      quality: (quality * 100).toFixed(1) + '%',
+      oee: (oee * 100).toFixed(1) + '%',
+      metrics: {
+        plannedTime,
+        operatingTime,
+        downtime,
+        actualOutput,
+        targetOutput,
+        goodUnits,
+        rejectCount
+      }
+    };
+  }
+
+  private async getDowntime(machineId: string, start: Date, end: Date): Promise<number> {
+    const flux = `
+      from(bucket: "production")
+        |> range(start: ${start.toISOString()}, stop: ${end.toISOString()})
+        |> filter(fn: (r) => r.machine_id == "${machineId}")
+        |> filter(fn: (r) => r.status == "stopped")
+        |> sum(column: "duration_minutes")
+    `;
+    return await influx.query(flux);
+  }
+
+  // ... similar methods for production count, reject count
+}
+
+// Usage
+const calculator = new OEECalculator();
+const result = await calculator.calculate('machine-001', 
+  new Date('2025-01-01T06:00:00Z'),
+  new Date('2025-01-01T14:00:00Z')
+);
+
+console.log(result);
+// {
+//   availability: '90.6%',
+//   performance: '92.0%',
+//   quality: '95.0%',
+//   oee: '79.2%'
+// }</code></pre>
+
+<h2>6.3 Real-Time Dashboards</h2>
+
+<h3>6.3.1 Grafana Configuration</h3>
+<pre><code>// Grafana Dashboard JSON
+{
+  "dashboard": {
+    "title": "Production Line Monitoring",
+    "refresh": "5s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "OEE Trend (Last 24h)",
+        "type": "timeseries",
+        "datasource": "InfluxDB",
+        "targets": [{
+          "query": `
+            from(bucket: "production")
+              |> range(start: -24h)
+              |> filter(fn: (r) => r._measurement == "oee")
+              |> aggregateWindow(every: 1h, fn: mean)
+          `
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "steps": [
+                { "value": 0, "color": "red" },
+                { "value": 60, "color": "yellow" },
+                { "value": 85, "color": "green" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Machine Status",
+        "type": "stat",
+        "targets": [{
+          "query": `
+            from(bucket: "production")
+              |> range(start: -5m)
+              |> filter(fn: (r) => r._measurement == "machine_status")
+              |> last()
+          `
+        }],
+        "options": {
+          "colorMode": "background",
+          "mappings": [
+            { "value": "running", "color": "green", "text": "RUNNING" },
+            { "value": "stopped", "color": "red", "text": "STOPPED" },
+            { "value": "idle", "color": "yellow", "text": "IDLE" }
+          ]
+        }
+      }
+    ]
+  }
+}</code></pre>
+
+<h3>6.3.2 Alert Rules</h3>
+<table><thead><tr><th>Alert</th><th>Condition</th><th>Severity</th><th>Action</th></tr></thead><tbody>
+<tr><td>OEE Low</td><td>OEE < 60% for 1 hour</td><td>Warning</td><td>Email supervisor</td></tr>
+<tr><td>Machine Down</td><td>Status = stopped for >10 min</td><td>Critical</td><td>SMS + Email + Slack</td></tr>
+<tr><td>High Temperature</td><td>Temp > 80°C</td><td>Warning</td><td>Email operator</td></tr>
+<tr><td>Quality Issue</td><td>Reject rate > 5% for 30 min</td><td>Critical</td><td>Stop production, alert QA</td></tr>
+</tbody></table>
+
+<div class="key-takeaways"><h3>Key Takeaways</h3><ul>
+<li><strong>TSDB Selection:</strong> InfluxDB (1M points/sec, 10-30x compression), TimescaleDB (SQL compatibility, 20x compression), QuestDB (4M rows/sec, highest throughput)</li>
+<li><strong>Schema Design:</strong> Use tags for indexed dimensions (sensor_id, location), fields for numeric values (temperature, pressure), avoid high-cardinality tags</li>
+<li><strong>OEE Formula:</strong> Availability × Performance × Quality, world-class target >85%, requires PLC status, production counters, quality data</li>
+<li><strong>Real-Time Monitoring:</strong> Grafana dashboards with 5-second refresh, threshold-based color coding (red <60%, yellow 60-85%, green >85%)</li>
+<li><strong>Alert Strategy:</strong> Multi-channel notifications (Email/SMS/Slack) based on severity, escalation for critical issues (machine down, quality)</li>
+<li><strong>Data Retention:</strong> Hot storage (7-30 days raw data), warm storage (90 days 1-min aggregates), cold storage (2+ years 1-hour aggregates)</li>
+</ul></div>
+
+<div class="review-questions"><h3>Review Questions</h3><ol>
+<li><strong>TSDB Sizing:</strong> 500 sensors @ 1Hz, 8 bytes per point. Calculate daily write volume (MB/day). With 20x compression, estimate 30-day storage (GB).</li>
+<li><strong>Schema Design:</strong> Design InfluxDB schema for 3 factories, 10 lines each, 50 machines per line, 5 sensors per machine. Which fields are tags vs fields?</li>
+<li><strong>OEE Calculation:</strong> Planned time: 480 min, downtime: 60 min, actual output: 380 units, target cycle time: 1 min, rejects: 20 units. Calculate OEE.</li>
+<li><strong>Query Optimization:</strong> Query last 7 days of data (500 sensors × 86400 points/day). How does aggregateWindow(every: 1h) improve performance?</li>
+<li><strong>Alert Tuning:</strong> Temperature alarm triggers at 80°C. False alarms every hour. Adjust threshold or add duration condition? Explain tradeoffs.</li>
+<li><strong>Retention Policy:</strong> 100MB/day raw data. Design tiered retention: 7 days (raw), 90 days (1-min avg), 2 years (1-hour avg). Calculate total storage (GB).</li>
+<li><strong>Dashboard Design:</strong> Create Grafana panel showing OEE trend with thresholds (green >85%, yellow 60-85%, red <60%). Write Flux query.</li>
+<li><strong>Performance Analysis:</strong> InfluxDB writes: 10K points/sec. TimescaleDB: 5K rows/sec. Both compressed 20x. Which for 1M sensors @ 0.1Hz? Why?</li>
+</ol></div>
+
+<div class="navigation">
+<a href="chapter-05.html" class="nav-button">← Previous Chapter</a>
+<a href="chapter-07.html" class="nav-button">Next Chapter: Security & Device Management →</a>
+</div></div></body></html>
+
+<h2>6.4 Data Retention Policies</h2>
+<p>Industrial time-series data grows rapidly. A factory with 1000 sensors at 1Hz generates 86.4 million points daily. Intelligent retention policies balance storage costs against analytical value.</p>
+
+<h3>6.4.1 Tiered Storage Strategy</h3>
+<table><thead><tr><th>Tier</th><th>Duration</th><th>Resolution</th><th>Use Cases</th><th>Storage Cost</th></tr></thead><tbody>
+<tr><td>Hot (Raw)</td><td>7-30 days</td><td>Original (1Hz)</td><td>Real-time monitoring, troubleshooting</td><td>High (SSD)</td></tr>
+<tr><td>Warm (1-min)</td><td>90 days</td><td>1-minute aggregates</td><td>Short-term trending, shift reports</td><td>Medium (SSD/HDD)</td></tr>
+<tr><td>Cold (1-hour)</td><td>2+ years</td><td>1-hour aggregates</td><td>Long-term analysis, compliance</td><td>Low (HDD/Object storage)</td></tr>
+<tr><td>Archive</td><td>7+ years</td><td>Daily summaries</td><td>Regulatory compliance, audits</td><td>Very low (Tape/Glacier)</td></tr>
+</tbody></table>
+
+<pre><code>// InfluxDB Retention Policies
+// CLI commands to create retention policies
+
+// Raw data: 7 days
+influx -execute 'CREATE RETENTION POLICY "raw_7d" ON "factory_db" DURATION 7d REPLICATION 1 DEFAULT'
+
+// 1-minute aggregates: 90 days
+influx -execute 'CREATE RETENTION POLICY "agg_1m_90d" ON "factory_db" DURATION 90d REPLICATION 1'
+
+// 1-hour aggregates: 2 years
+influx -execute 'CREATE RETENTION POLICY "agg_1h_2y" ON "factory_db" DURATION 104w REPLICATION 1'
+
+// Continuous Query for downsampling
+influx -execute '
+CREATE CONTINUOUS QUERY "cq_1m_agg" ON "factory_db"
+BEGIN
+  SELECT mean("temperature") AS "temperature",
+         mean("pressure") AS "pressure",
+         max("temperature") AS "temperature_max",
+         min("temperature") AS "temperature_min"
+  INTO "factory_db"."agg_1m_90d"."sensor_data_1m"
+  FROM "factory_db"."raw_7d"."sensor_data"
+  GROUP BY time(1m), *
+END'
+
+// Storage savings calculation:
+// Raw: 1000 sensors × 86400 points/day × 7 days × 8 bytes = 4.8 GB
+// 1-min: 1000 × 1440 points/day × 90 days × 8 bytes = 1.0 GB  
+// 1-hour: 1000 × 24 points/day × 730 days × 8 bytes = 140 MB
+// Total: 5.94 GB vs 175 GB (30 days raw) = 97% reduction</code></pre>
+
+<h3>6.4.2 Advanced Query Patterns</h3>
+<pre><code>// Complex Flux queries for industrial analytics
+
+// 1. Downtime analysis - Group by reason code
+from(bucket: "production")
+  |> range(start: -30d)
+  |> filter(fn: (r) => r._measurement == "downtime_events")
+  |> filter(fn: (r) => r.machine_id == "machine-001")
+  |> group(columns: ["reason_code"])
+  |> sum(column: "duration_minutes")
+  |> sort(desc: true)
+
+// 2. Production efficiency by shift
+from(bucket: "production")
+  |> range(start: -7d)
+  |> filter(fn: (r) => r._measurement == "production_count")
+  |> window(every: 8h) // 8-hour shifts
+  |> sum()
+  |> duplicate(column: "_stop", as: "shift_end")
+
+// 3. Anomaly detection with statistical functions
+from(bucket: "sensors")
+  |> range(start: -24h)
+  |> filter(fn: (r) => r.sensor_id == "temp-001")
+  |> aggregateWindow(every: 5m, fn: mean)
+  |> movingAverage(n: 12) // 1-hour window
+  |> derivative(nonNegative: true)
+  |> filter(fn: (r) => r._value > 5.0) // Sudden spikes > 5°C/5min
+
+// 4. Cross-sensor correlation
+temp = from(bucket: "sensors")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r.sensor_id == "temp-001")
+  |> keep(columns: ["_time", "_value"])
+
+pressure = from(bucket: "sensors")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r.sensor_id == "pressure-001")
+  |> keep(columns: ["_time", "_value"])
+
+join(tables: {temp: temp, pressure: pressure}, on: ["_time"])
+  |> map(fn: (r) => ({
+      _time: r._time,
+      temp: r._value_temp,
+      pressure: r._value_pressure,
+      ratio: r._value_temp / r._value_pressure
+    }))</code></pre>
+
+<h2>6.5 Performance Optimization</h2>
+
+<h3>6.5.1 Write Performance Tuning</h3>
+<table><thead><tr><th>Technique</th><th>Impact</th><th>Implementation</th><th>Tradeoff</th></tr></thead><tbody>
+<tr><td>Batch Writes</td><td>10-100x throughput</td><td>Buffer 100-1000 points</td><td>Slight latency increase</td></tr>
+<tr><td>Tag Caching</td><td>50% reduction in index size</td><td>Limit tag cardinality <100K</td><td>Schema design constraint</td></tr>
+<tr><td>Write Ahead Log</td><td>99.99% durability</td><td>Enable WAL in config</td><td>+10-20% disk usage</td></tr>
+<tr><td>Compression</td><td>10-30x storage reduction</td><td>Snappy/GZIP/LZ4</td><td>+5-15% CPU usage</td></tr>
+</tbody></table>
+
+<pre><code>// Optimized batch writer with backpressure handling
+class OptimizedInfluxWriter {
+  private buffer: Point[] = [];
+  private maxBatchSize = 1000;
+  private maxBatchInterval = 1000; // ms
+  private lastFlush = Date.now();
+
+  constructor(private writeApi: WriteApi) {
+    // Auto-flush on interval
+    setInterval(() => this.flush(), this.maxBatchInterval);
+  }
+
+  write(point: Point) {
+    this.buffer.push(point);
+
+    if (this.buffer.length >= this.maxBatchSize) {
+      this.flush();
+    }
+  }
+
+  private flush() {
+    if (this.buffer.length === 0) return;
+
+    const points = this.buffer.splice(0, this.maxBatchSize);
+    this.writeApi.writePoints(points);
+    this.lastFlush = Date.now();
+
+    console.log(`Flushed ${points.length} points`);
+  }
+
+  async close() {
+    this.flush();
+    await this.writeApi.close();
+  }
+}
+
+// Usage achieves ~100x better throughput than individual writes
+const writer = new OptimizedInfluxWriter(influx.getWriteApi('factory', 'sensors'));
+
+for (let i = 0; i < 100000; i++) {
+  writer.write(
+    new Point('sensor_data')
+      .tag('sensor_id', `temp-${i % 1000}`)
+      .floatField('temperature', 45 + Math.random() * 10)
+  );
+}
+
+await writer.close();</code></pre>
+
+</body>
+</html>

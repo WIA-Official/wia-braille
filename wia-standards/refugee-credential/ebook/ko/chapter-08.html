@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제8장: 구현 가이드 및 인증 - WIA 전자책</title>
+</head>
+<body>
+
+<p><a href="chapter-07.html">이전 장</a> | <a href="index.html">목차</a></p>
+
+<hr>
+
+<h1>제8장: 구현 가이드 및 인증</h1>
+
+<blockquote>
+<p><strong>홍익인간 (弘益人間)</strong></p>
+<p>"널리 인간을 이롭게 하라"</p>
+<p>이 마지막 장에서는 WIA 난민 자격증명 표준 구현을 위한 실용적인 지침을 제공합니다. 빠른 시작부터 전체 인증까지.</p>
+</blockquote>
+
+<hr>
+
+<h2>8.1 구현 로드맵</h2>
+
+<p>권장 구현 단계:</p>
+
+<h3>단계 개요</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>단계</strong></td>
+        <td><strong>초점</strong></td>
+        <td><strong>결과물</strong></td>
+    </tr>
+    <tr>
+        <td>1. 기초</td>
+        <td>기본 자격증명 처리</td>
+        <td>생성, 읽기, 검증</td>
+    </tr>
+    <tr>
+        <td>2. 검증</td>
+        <td>다단계 검증</td>
+        <td>동료 네트워크, 평가</td>
+    </tr>
+    <tr>
+        <td>3. 통합</td>
+        <td>외부 시스템</td>
+        <td>UNHCR, 대학, 고용주</td>
+    </tr>
+    <tr>
+        <td>4. 고급</td>
+        <td>전체 생태계</td>
+        <td>AI, 모바일, IoT 통합</td>
+    </tr>
+</table>
+
+<h3>예상 일정</h3>
+
+<pre>
+최소 실행 가능 구현:
+- 1단계: 기본 자격증명 지원
+- 예상 노력: 2-4 개발자-주
+
+전체 준수:
+- 1-3단계 완료
+- 예상 노력: 2-4 개발자-월
+
+엔터프라이즈/정부:
+- 모든 단계 + 맞춤화
+- 예상 노력: 4-8 개발자-월
+</pre>
+
+<hr>
+
+<h2>8.2 빠른 시작 가이드</h2>
+
+<h3>1단계: API 접근 등록</h3>
+
+<pre>
+1. https://developers.wia.live/refugee-credential 방문
+2. 개발자 계정 생성
+3. API 키 생성
+4. 플랫폼용 SDK 다운로드
+</pre>
+
+<h3>2단계: SDK 설치</h3>
+
+<pre>
+# Node.js
+npm install @wia/refugee-credential
+
+# Python
+pip install wia-refugee-credential
+
+# Java
+mvn install wia-refugee-credential
+
+# Go
+go get github.com/wia-official/refugee-credential-go
+</pre>
+
+<h3>3단계: 클라이언트 초기화</h3>
+
+<pre>
+// JavaScript/TypeScript 예시
+
+import { WIARefugeeCredential } from '@wia/refugee-credential';
+
+const client = new WIARefugeeCredential({
+  apiKey: process.env.WIA_API_KEY,
+  environment: 'sandbox'  // 또는 'production'
+});
+
+// 자격증명 생성
+const credential = await client.credentials.create({
+  holder: {
+    did: 'did:wia:ref:holder123',
+    names: {
+      original: { script: 'latn', value: 'Ahmad Hassan' },
+      transliterations: { en: 'Ahmad Hassan' }
+    },
+    dateOfBirth: '1985-03-15',
+    nationalities: ['SY']
+  },
+  education: [{
+    institution: {
+      name: { en: 'Damascus University' },
+      country: 'SY',
+      type: 'university'
+    },
+    credential: {
+      type: 'bachelors',
+      name: { en: 'Bachelor of Medicine' },
+      fieldOfStudy: '0911',
+      level: 6
+    },
+    startDate: '2005-09-01',
+    endDate: '2010-06-30'
+  }]
+});
+
+console.log('생성된 자격증명:', credential.credentialId);
+</pre>
+
+<h3>4단계: 자격증명 검증</h3>
+
+<pre>
+// 검증 요청
+const verificationRequest = await client.verification.request({
+  credentialId: credential.credentialId,
+  targetLevel: 2,
+  preferredMethod: 'peer_verification'
+});
+
+// 상태 확인
+const status = await client.verification.getStatus(
+  verificationRequest.verificationRequestId
+);
+
+console.log('검증 상태:', status);
+</pre>
+
+<hr>
+
+<h2>8.3 테스트 요구사항</h2>
+
+<h3>테스트 범주</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>범주</strong></td>
+        <td><strong>설명</strong></td>
+        <td><strong>필수 커버리지</strong></td>
+    </tr>
+    <tr>
+        <td>스키마 검증</td>
+        <td>모든 데이터 구조 검증</td>
+        <td>100%</td>
+    </tr>
+    <tr>
+        <td>API 준수</td>
+        <td>모든 엔드포인트 정상 작동</td>
+        <td>100%</td>
+    </tr>
+    <tr>
+        <td>보안</td>
+        <td>인증, 암호화</td>
+        <td>100%</td>
+    </tr>
+    <tr>
+        <td>오류 처리</td>
+        <td>우아한 오류 응답</td>
+        <td>95%</td>
+    </tr>
+    <tr>
+        <td>성능</td>
+        <td>지연 시간 요구사항 충족</td>
+        <td>95%</td>
+    </tr>
+    <tr>
+        <td>통합</td>
+        <td>외부 시스템 연결</td>
+        <td>90%</td>
+    </tr>
+</table>
+
+<h3>테스트 모음</h3>
+
+<pre>
+# 공식 테스트 모음 실행
+npm install @wia/refugee-credential-tests
+
+# 테스트 실행
+npx wia-test --endpoint https://your-api.com \
+             --api-key YOUR_API_KEY \
+             --level certification
+
+# 테스트 출력
+========================================
+WIA 난민 자격증명 준수 테스트
+========================================
+스키마 검증:       45/45 통과
+API 준수:          128/128 통과
+보안:              32/32 통과
+오류 처리:         24/25 통과 (96%)
+성능:              18/18 통과
+통합:              12/12 통과
+----------------------------------------
+전체: 259/260 통과 (99.6%)
+상태: 인증 자격
+========================================
+</pre>
+
+<hr>
+
+<h2>8.4 인증 프로세스</h2>
+
+<h3>인증 수준</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>수준</strong></td>
+        <td><strong>요구사항</strong></td>
+        <td><strong>비용</strong></td>
+        <td><strong>유효 기간</strong></td>
+    </tr>
+    <tr>
+        <td>레벨 1: Compliant</td>
+        <td>자동화된 테스트 통과</td>
+        <td>$500</td>
+        <td>1년</td>
+    </tr>
+    <tr>
+        <td>레벨 2: Certified</td>
+        <td>+ 수동 검토</td>
+        <td>$2,000</td>
+        <td>2년</td>
+    </tr>
+    <tr>
+        <td>레벨 3: Certified Plus</td>
+        <td>+ 보안 감사</td>
+        <td>$5,000</td>
+        <td>3년</td>
+    </tr>
+</table>
+
+<h3>인증 단계</h3>
+
+<pre>
+1. 자체 평가
+   - 준수 테스트 모음 실행
+   - 모든 편차 문서화
+   - 구현 노트 준비
+
+2. 신청서 제출
+   - https://wia.live/certify를 통해 제출
+   - 테스트를 위한 API 접근 제공
+   - 인증 수수료 지불
+
+3. 자동화된 테스트
+   - WIA가 포괄적인 테스트 모음 실행
+   - 48시간 내 결과
+
+4. 수동 검토 (레벨 2+)
+   - WIA 엔지니어의 코드 검토
+   - 아키텍처 평가
+   - 2주 내 결과
+
+5. 보안 감사 (레벨 3)
+   - 타사 보안 평가
+   - 침투 테스트
+   - 4주 내 결과
+
+6. 인증 발급
+   - 디지털 인증서
+   - 로고 사용 권한
+   - WIA 레지스트리 등재
+</pre>
+
+<hr>
+
+<h2>8.5 준수 체크리스트</h2>
+
+<h3>데이터 형식 준수</h3>
+
+<pre>
+[ ] RefugeeCredential 스키마 검증 통과
+[ ] 다중 문자 이름 지원이 있는 HolderIdentity
+[ ] ISCED 코드가 있는 EducationRecord
+[ ] ESCO 코드가 있는 CompetencyRecord
+[ ] CEFR 수준이 있는 LanguageAbility
+[ ] 적절한 구조의 WorkExperience
+[ ] 신뢰도 계산이 있는 VerificationInfo
+[ ] 디지털 서명 구현
+</pre>
+
+<h3>API 준수</h3>
+
+<pre>
+[ ] 모든 CRUD 엔드포인트 구현
+[ ] 적절한 인증 (JWT/DID)
+[ ] 올바른 오류 응답 형식
+[ ] 속도 제한 구현
+[ ] 웹훅 지원
+[ ] 웹 클라이언트용 CORS 헤더
+</pre>
+
+<h3>보안 준수</h3>
+
+<pre>
+[ ] TLS 1.3 적용
+[ ] 토큰 만료 < 15분
+[ ] 민감한 데이터 저장 시 암호화
+[ ] 감사 로깅 활성화
+[ ] 모든 엔드포인트에서 입력 검증
+[ ] 로그에 민감한 데이터 없음
+</pre>
+
+<h3>통합 준수</h3>
+
+<pre>
+[ ] OMNI-API 호환
+[ ] 웹훅 형식 정확
+[ ] 오류 코드 표준
+[ ] 문서 완전
+[ ] SDK 제공 (선택)
+</pre>
+
+<hr>
+
+<h2>8.6 모범 사례</h2>
+
+<h3>데이터 처리</h3>
+
+<ul>
+    <li><strong>데이터 수집 최소화</strong> - 필요한 것만 수집</li>
+    <li><strong>민감한 필드 암호화</strong> - 필드 수준 암호화 사용</li>
+    <li><strong>데이터 보존 구현</strong> - 더 이상 필요 없을 때 삭제</li>
+    <li><strong>데이터 이동성 지원</strong> - 자격증명 내보내기 허용</li>
+</ul>
+
+<h3>사용자 경험</h3>
+
+<ul>
+    <li><strong>명확한 진행 상황 제공</strong> - 검증 상태를 명확하게 표시</li>
+    <li><strong>다국어 지원</strong> - 최소 5개 난민 언어</li>
+    <li><strong>오프라인 기능</strong> - 오프라인에서 자격증명 보기 허용</li>
+    <li><strong>접근성</strong> - WCAG 2.1 AA 준수</li>
+</ul>
+
+<h3>통합</h3>
+
+<ul>
+    <li><strong>웹훅 사용</strong> - 실시간 업데이트용</li>
+    <li><strong>재시도 로직 구현</strong> - 지수 백오프 포함</li>
+    <li><strong>적절히 캐시</strong> - API 호출 감소</li>
+    <li><strong>상태 모니터링</strong> - API 가용성 추적</li>
+</ul>
+
+<hr>
+
+<h2>8.7 문제 해결</h2>
+
+<h3>일반적인 문제</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>문제</strong></td>
+        <td><strong>원인</strong></td>
+        <td><strong>해결책</strong></td>
+    </tr>
+    <tr>
+        <td>스키마 검증 실패</td>
+        <td>필수 필드 누락</td>
+        <td>스키마 문서 확인</td>
+    </tr>
+    <tr>
+        <td>인증 오류</td>
+        <td>만료되거나 잘못된 토큰</td>
+        <td>토큰 갱신, API 키 확인</td>
+    </tr>
+    <tr>
+        <td>신뢰도 계산 오류</td>
+        <td>누락된 증거 가중치</td>
+        <td>알고리즘 구현 확인</td>
+    </tr>
+    <tr>
+        <td>동료 매칭 실패</td>
+        <td>동료 네트워크 부족</td>
+        <td>날짜 범위 확장, 기관 ID 확인</td>
+    </tr>
+    <tr>
+        <td>문서 검증 느림</td>
+        <td>큰 파일 크기</td>
+        <td>이미지 압축, 비동기 처리 사용</td>
+    </tr>
+</table>
+
+<h3>디버그 모드</h3>
+
+<pre>
+// 디버그 로깅 활성화
+const client = new WIARefugeeCredential({
+  apiKey: process.env.WIA_API_KEY,
+  debug: true,
+  logLevel: 'verbose'
+});
+
+// 디버그 출력 포함:
+// - 요청/응답 본문
+// - 타이밍 정보
+// - 검증 세부사항
+// - 알고리즘 중간 값
+</pre>
+
+<hr>
+
+<h2>8.8 리소스 및 지원</h2>
+
+<h3>문서</h3>
+
+<ul>
+    <li><strong>API 참조</strong>: https://docs.wia.live/refugee-credential/api</li>
+    <li><strong>스키마 정의</strong>: https://schema.wia.live/refugee-credential</li>
+    <li><strong>SDK 문서</strong>: https://sdk.wia.live/refugee-credential</li>
+    <li><strong>예제 애플리케이션</strong>: https://github.com/WIA-Official/examples</li>
+</ul>
+
+<h3>커뮤니티</h3>
+
+<ul>
+    <li><strong>GitHub 토론</strong>: https://github.com/WIA-Official/wia-standards/discussions</li>
+    <li><strong>Discord 서버</strong>: https://discord.gg/wia-standards</li>
+    <li><strong>Stack Overflow</strong>: 태그 [wia-refugee-credential]</li>
+</ul>
+
+<h3>지원 채널</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>채널</strong></td>
+        <td><strong>응답 시간</strong></td>
+        <td><strong>대상</strong></td>
+    </tr>
+    <tr>
+        <td>GitHub Issues</td>
+        <td>1-3일</td>
+        <td>버그 보고, 기능 요청</td>
+    </tr>
+    <tr>
+        <td>이메일 지원</td>
+        <td>1-2 영업일</td>
+        <td>일반 질문</td>
+    </tr>
+    <tr>
+        <td>프리미엄 지원</td>
+        <td>4시간</td>
+        <td>인증 파트너</td>
+    </tr>
+    <tr>
+        <td>긴급</td>
+        <td>1시간</td>
+        <td>중요 프로덕션 문제</td>
+    </tr>
+</table>
+
+<h3>연락처 정보</h3>
+
+<pre>
+세계인증산업협회 (WIA)
+Smilestory Inc.
+
+웹사이트: https://wia.live
+이메일: support@wia.family
+GitHub: https://github.com/WIA-Official
+
+인증 문의:
+certify@wia.family
+
+파트너십 기회:
+partners@wia.family
+</pre>
+
+<hr>
+
+<h2>8.9 장 요약</h2>
+
+<p>이 장의 핵심 내용:</p>
+
+<ul>
+    <li>[REF] 기본부터 고급까지 4단계 구현 로드맵</li>
+    <li>[REF] SDK 설치 및 기본 작업으로 빠른 시작</li>
+    <li>[REF] 준수를 위한 포괄적인 테스트 요구사항</li>
+    <li>[REF] $500에서 $5,000까지 3개의 인증 수준</li>
+    <li>[REF] 자체 평가를 위한 상세 준수 체크리스트</li>
+    <li>[REF] 데이터 처리, UX, 통합을 위한 모범 사례</li>
+    <li>[REF] 문제 해결 가이드 및 지원 리소스</li>
+</ul>
+
+<hr>
+
+<h2>결론</h2>
+
+<p>WIA 난민 자격증명 표준은 실향민의 자격증명 검증 접근 방식에 근본적인 변화를 나타냅니다. 국가 독립적 검증 경로, 점진적 신뢰 구축, 포괄적인 생태계 통합을 제공함으로써 이 표준은 서류 분실에 관계없이 난민이 전문적 정체성을 되찾을 수 있도록 합니다.</p>
+
+<p>기억해야 할 핵심 원칙:</p>
+
+<ul>
+    <li>인간의 가치는 본질적 - 기술은 서류와 독립적으로 존재</li>
+    <li>점진적 검증은 신뢰도를 구축하면서 즉시 사용 가능</li>
+    <li>다양한 증거 유형이 회복력 있는 검증 생성</li>
+    <li>프라이버시와 보안이 취약한 인구 보호</li>
+    <li>개방형 표준이 모든 인류에게 이익</li>
+</ul>
+
+<blockquote>
+<p><strong>弘益人間 (홍익인간)</strong></p>
+<p>"널리 인간을 이롭게 하라"</p>
+<p>국가가 무너져도 사람의 가치는 무너지지 않습니다. WIA 난민 자격증명은 실향민의 기술, 교육, 경험이 전 세계 어디서나 인정받을 수 있도록 보장합니다. 이 표준은 인류에 속합니다. 영원히 무료.</p>
+</blockquote>
+
+<hr>
+
+<p><a href="chapter-07.html">이전: 생태계 통합</a> | <a href="index.html">목차</a></p>
+
+<hr>
+
+<p><strong>Copyright 2025 Smilestory Inc. / WIA</strong></p>
+<p>MIT 라이선스로 배포</p>
+
+</body>
+</html>

@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: Implementation Guide | WIA-CHILD-007</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --primary: #F59E0B;
+            --text: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #475569;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--bg-secondary);
+            padding: 3rem;
+            border-radius: 10px;
+        }
+        h1 {
+            color: var(--primary);
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+        h2 {
+            color: var(--primary);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+        h3 {
+            color: var(--primary);
+            font-size: 1.3rem;
+            margin: 2rem 0 1rem;
+        }
+        .chapter-number {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        p {
+            margin: 1rem 0;
+            text-align: justify;
+        }
+        .intro {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            border-left: 3px solid var(--primary);
+            padding-left: 1.5rem;
+            margin: 2rem 0;
+        }
+        .code-block {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: var(--success);
+        }
+        .note {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 5px;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+        }
+        .note-title {
+            color: var(--primary);
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+        li {
+            margin: 0.5rem 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: var(--bg);
+            color: var(--primary);
+        }
+        .key-takeaways {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        .review-questions {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+        .nav a {
+            color: var(--primary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--primary);
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .nav a:hover {
+            background: var(--primary);
+            color: var(--bg);
+        }
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-number">Chapter 3</div>
+        <h1>Implementation Guide</h1>
+
+        <p class="intro">
+            Step-by-step implementation of screen time analytics, app blocking systems, usage pattern analysis,
+            and reward mechanisms for positive behavior change.
+        </p>
+
+        <h2>1. Screen Time Analytics Dashboard</h2>
+
+        <h3>1.1 Real-Time Analytics Engine</h3>
+        <p>
+            The analytics dashboard provides parents and children with actionable insights into digital usage patterns.
+            The implementation prioritizes real-time updates, intuitive visualizations, and age-appropriate presentation.
+        </p>
+
+        <div class="code-block">
+// Analytics Dashboard Core Implementation
+import { UsageEvent, UsageSession, AppCategory } from './types';
+
+class ScreenTimeAnalytics {
+  private events: UsageEvent[] = [];
+  private sessions: UsageSession[] = [];
+
+  constructor(
+    private userId: string,
+    private timeZone: string
+  ) {}
+
+  // Real-time event ingestion
+  async ingestEvent(event: UsageEvent): Promise<void> {
+    this.events.push(event);
+
+    // Update session tracking
+    await this.updateSessions(event);
+
+    // Trigger real-time calculations
+    await this.recalculateMetrics();
+
+    // Check for threshold alerts
+    await this.checkThresholds();
+  }
+
+  // Daily summary metrics
+  getDailySummary(date: Date): DailySummary {
+    const dayEvents = this.getEventsForDate(date);
+
+    return {
+      totalScreenTime: this.calculateTotalTime(dayEvents),
+      sessionCount: this.countSessions(dayEvents),
+      mostUsedApp: this.getMostUsedApp(dayEvents),
+      categoryBreakdown: this.getCategoryBreakdown(dayEvents),
+
+      hourlyDistribution: this.getHourlyDistribution(dayEvents),
+      pickups: this.countPickups(dayEvents),
+      notifications: this.countNotifications(dayEvents),
+
+      comparisonToAverage: this.compareToBaseline(dayEvents),
+      comparisonToYesterday: this.compareToYesterday(dayEvents),
+      weeklyTrend: this.calculateWeeklyTrend(date),
+
+      topActivities: this.getTopActivities(dayEvents, 5),
+      longestSession: this.getLongestSession(dayEvents),
+      averageSessionDuration: this.getAverageSession(dayEvents),
+
+      healthMetrics: {
+        sleepInterference: this.calculateSleepInterference(dayEvents),
+        physicalActivity: this.estimatePhysicalActivity(dayEvents),
+        socialInteraction: this.estimateSocialTime(dayEvents)
+      }
+    };
+  }
+
+  // Category breakdown with percentages
+  private getCategoryBreakdown(
+    events: UsageEvent[]
+  ): CategoryBreakdown[] {
+    const byCategory = new Map<AppCategory, number>();
+
+    events.forEach(event => {
+      const current = byCategory.get(event.application.category) || 0;
+      byCategory.set(
+        event.application.category,
+        current + event.duration
+      );
+    });
+
+    const total = this.calculateTotalTime(events);
+
+    return Array.from(byCategory.entries())
+      .map(([category, duration]) => ({
+        category,
+        duration,
+        percentage: (duration / total) * 100,
+        appCount: this.countAppsInCategory(events, category)
+      }))
+      .sort((a, b) => b.duration - a.duration);
+  }
+
+  // Hourly distribution for heatmap visualization
+  private getHourlyDistribution(
+    events: UsageEvent[]
+  ): HourlyDistribution[] {
+    const distribution = new Array(24).fill(0);
+
+    events.forEach(event => {
+      const hour = new Date(event.timestamp).getHours();
+      distribution[hour] += event.duration;
+    });
+
+    return distribution.map((duration, hour) => ({
+      hour,
+      duration,
+      intensity: this.normalizeIntensity(duration),
+      sessions: this.countSessionsInHour(events, hour)
+    }));
+  }
+
+  // Trend analysis with statistical significance
+  private calculateWeeklyTrend(currentDate: Date): TrendAnalysis {
+    const thisWeek = this.getWeekData(currentDate);
+    const lastWeek = this.getWeekData(this.addDays(currentDate, -7));
+
+    const thisWeekAvg = this.average(thisWeek.map(d => d.totalTime));
+    const lastWeekAvg = this.average(lastWeek.map(d => d.totalTime));
+
+    const change = thisWeekAvg - lastWeekAvg;
+    const percentChange = (change / lastWeekAvg) * 100;
+
+    // Statistical significance test (t-test)
+    const significant = this.tTest(thisWeek, lastWeek) < 0.05;
+
+    return {
+      direction: change > 0 ? 'increasing' : 'decreasing',
+      magnitude: Math.abs(percentChange),
+      significant,
+      recommendation: this.getTrendRecommendation(change, significant)
+    };
+  }
+}
+
+// Data types
+interface DailySummary {
+  totalScreenTime: number;
+  sessionCount: number;
+  mostUsedApp: string;
+  categoryBreakdown: CategoryBreakdown[];
+  hourlyDistribution: HourlyDistribution[];
+  pickups: number;
+  notifications: number;
+  comparisonToAverage: number;
+  comparisonToYesterday: number;
+  weeklyTrend: TrendAnalysis;
+  topActivities: TopActivity[];
+  longestSession: number;
+  averageSessionDuration: number;
+  healthMetrics: HealthMetrics;
+}
+        </div>
+
+        <h3>1.2 Visualization Components</h3>
+        <p>
+            Effective visualizations make complex usage data understandable at a glance. The dashboard implements
+            multiple visualization types optimized for different insights:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Visualization</th>
+                    <th>Purpose</th>
+                    <th>Key Metrics</th>
+                    <th>User Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Timeline Graph</td>
+                    <td>Show usage over time</td>
+                    <td>Daily total, 7-day moving average</td>
+                    <td>Parent & Teen</td>
+                </tr>
+                <tr>
+                    <td>Category Pie Chart</td>
+                    <td>App category distribution</td>
+                    <td>% time per category</td>
+                    <td>All ages</td>
+                </tr>
+                <tr>
+                    <td>Heatmap Calendar</td>
+                    <td>Daily patterns over month</td>
+                    <td>Day-by-day intensity</td>
+                    <td>Parent & Teen</td>
+                </tr>
+                <tr>
+                    <td>Hourly Bar Chart</td>
+                    <td>Time-of-day usage</td>
+                    <td>Usage by hour (0-23)</td>
+                    <td>Parent & Teen</td>
+                </tr>
+                <tr>
+                    <td>Session Duration</td>
+                    <td>Individual session lengths</td>
+                    <td>Session count by duration bracket</td>
+                    <td>Parent</td>
+                </tr>
+                <tr>
+                    <td>Progress Rings</td>
+                    <td>Goal achievement</td>
+                    <td>% of daily limit used</td>
+                    <td>Child & Teen</td>
+                </tr>
+                <tr>
+                    <td>Comparison Chart</td>
+                    <td>Benchmarking</td>
+                    <td>User vs age-group average</td>
+                    <td>Teen</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="code-block">
+// React component for timeline visualization
+import React from 'react';
+import { Line } from 'react-chartjs-2';
+
+interface TimelineProps {
+  data: DailyUsage[];
+  threshold?: number;
+  comparison?: 'average' | 'yesterday' | 'none';
+}
+
+const UsageTimeline: React.FC<TimelineProps> = ({
+  data,
+  threshold,
+  comparison
+}) => {
+  const chartData = {
+    labels: data.map(d => d.date.toLocaleDateString()),
+    datasets: [
+      {
+        label: 'Screen Time',
+        data: data.map(d => d.totalMinutes),
+        borderColor: '#F59E0B',
+        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+        tension: 0.4,
+        fill: true
+      },
+      ...(threshold ? [{
+        label: 'Daily Limit',
+        data: new Array(data.length).fill(threshold),
+        borderColor: '#ef4444',
+        borderDash: [5, 5],
+        pointRadius: 0
+      }] : []),
+      ...(comparison === 'average' ? [{
+        label: 'Age Group Average',
+        data: data.map(d => d.ageGroupAverage),
+        borderColor: '#6b7280',
+        borderDash: [3, 3],
+        pointRadius: 0
+      }] : [])
+    ]
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top' as const
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            return `${context.dataset.label}: ${context.parsed.y} minutes`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Minutes'
+        }
+      }
+    }
+  };
+
+  return <Line data={chartData} options={options} />;
+};
+        </div>
+
+        <h2>2. App Blocking Implementation</h2>
+
+        <h3>2.1 Multi-Level Blocking Strategies</h3>
+        <p>
+            App blocking must balance effectiveness with user agency. The system implements graduated blocking levels
+            based on risk assessment and family preferences:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Level</th>
+                    <th>Mechanism</th>
+                    <th>User Experience</th>
+                    <th>Bypass Options</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Soft Reminder</td>
+                    <td>In-app overlay notification</td>
+                    <td>"You've reached your daily limit. Consider taking a break."</td>
+                    <td>Dismiss immediately</td>
+                </tr>
+                <tr>
+                    <td>Friction Delay</td>
+                    <td>15-30 second waiting period</td>
+                    <td>Countdown with breathing exercise</td>
+                    <td>Wait expires automatically</td>
+                </tr>
+                <tr>
+                    <td>Parental Request</td>
+                    <td>Notification to parent for approval</td>
+                    <td>"Request sent to Mom. You'll be notified."</td>
+                    <td>Parent approves/denies</td>
+                </tr>
+                <tr>
+                    <td>Hard Block</td>
+                    <td>App/website inaccessible</td>
+                    <td>"This app is blocked until tomorrow at 6am"</td>
+                    <td>Emergency parent override only</td>
+                </tr>
+                <tr>
+                    <td>Device Lock</td>
+                    <td>Entire device restricted</td>
+                    <td>"Study mode active. Device locked."</td>
+                    <td>Scheduled end time or parent unlock</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="code-block">
+// App Blocking Implementation
+interface BlockingPolicy {
+  appId: string;
+  level: 'soft' | 'friction' | 'request' | 'hard' | 'device';
+  schedule: BlockingSchedule[];
+  exceptions: BlockingException[];
+}
+
+interface BlockingSchedule {
+  daysOfWeek: number[]; // 0=Sunday, 6=Saturday
+  startTime: string; // "22:00"
+  endTime: string; // "07:00"
+  reason: string; // "Bedtime", "School hours"
+}
+
+class AppBlockingSystem {
+  private policies: Map<string, BlockingPolicy> = new Map();
+  private activeBlocks: Set<string> = new Set();
+
+  // Check if app should be blocked
+  async shouldBlock(
+    appId: string,
+    context: UsageContext
+  ): Promise<BlockDecision> {
+    const policy = this.policies.get(appId);
+    if (!policy) return { blocked: false };
+
+    // Check schedule-based blocks
+    const scheduledBlock = this.checkSchedule(policy, context.timestamp);
+    if (scheduledBlock) {
+      return {
+        blocked: true,
+        level: policy.level,
+        reason: scheduledBlock.reason,
+        endsAt: scheduledBlock.endTime
+      };
+    }
+
+    // Check usage-based blocks
+    const usageExceeded = await this.checkUsageLimits(appId, context);
+    if (usageExceeded) {
+      return {
+        blocked: true,
+        level: policy.level,
+        reason: `Daily limit of ${usageExceeded.limit} minutes reached`,
+        resetAt: this.getNextResetTime()
+      };
+    }
+
+    // Check contextual blocks (e.g., during homework time)
+    const contextualBlock = await this.checkContext(appId, context);
+    if (contextualBlock) {
+      return {
+        blocked: true,
+        level: 'friction',
+        reason: contextualBlock.reason,
+        canRequestOverride: true
+      };
+    }
+
+    return { blocked: false };
+  }
+
+  // Handle block enforcement
+  async enforceBlock(
+    decision: BlockDecision,
+    appId: string
+  ): Promise<EnforcementResult> {
+
+    switch (decision.level) {
+      case 'soft':
+        return this.showSoftReminder(appId, decision.reason);
+
+      case 'friction':
+        return this.applyFriction(appId, decision.reason);
+
+      case 'request':
+        return this.requestParentalApproval(appId, decision.reason);
+
+      case 'hard':
+        return this.hardBlock(appId, decision);
+
+      case 'device':
+        return this.lockDevice(decision);
+    }
+  }
+
+  // Friction mechanism with mindfulness exercise
+  private async applyFriction(
+    appId: string,
+    reason: string
+  ): Promise<EnforcementResult> {
+
+    const frictionDuration = 30000; // 30 seconds
+
+    // Show full-screen overlay
+    await this.showOverlay({
+      type: 'friction',
+      message: reason,
+      duration: frictionDuration,
+      activity: {
+        type: 'breathing',
+        instructions: 'Take 6 deep breaths',
+        countdown: true
+      }
+    });
+
+    // Track compliance
+    const completed = await this.waitForCompletion(frictionDuration);
+
+    if (completed) {
+      // Allow access but log the event
+      await this.logFrictionBypass(appId, 'completed');
+      return { allowed: true, logged: true };
+    } else {
+      // User abandoned the app
+      await this.logFrictionBypass(appId, 'abandoned');
+      return { allowed: false, logged: true };
+    }
+  }
+
+  // Parental request workflow
+  private async requestParentalApproval(
+    appId: string,
+    reason: string
+  ): Promise<EnforcementResult> {
+
+    const request: ApprovalRequest = {
+      id: this.generateRequestId(),
+      childId: this.userId,
+      appId,
+      reason,
+      timestamp: new Date(),
+      context: await this.captureContext()
+    };
+
+    // Send notification to parent
+    await this.notifyParent(request);
+
+    // Show waiting screen to child
+    await this.showOverlay({
+      type: 'waiting',
+      message: 'Request sent to your parent. You\'ll be notified when they respond.',
+      allowCancel: true
+    });
+
+    // Wait for response (with timeout)
+    const response = await this.waitForParentResponse(
+      request.id,
+      300000 // 5 minute timeout
+    );
+
+    if (response?.approved) {
+      // Grant temporary access
+      await this.grantTemporaryAccess(appId, response.duration);
+      return { allowed: true, temporary: true };
+    } else {
+      return { allowed: false, reason: response?.denialReason };
+    }
+  }
+}
+        </div>
+
+        <h2>3. Usage Pattern Analysis</h2>
+
+        <h3>3.1 Pattern Detection Algorithms</h3>
+        <p>
+            Identifying problematic usage patterns requires sophisticated analysis beyond simple time limits.
+            The system detects multiple pattern types associated with addiction risk:
+        </p>
+
+        <div class="code-block">
+class UsagePatternAnalyzer {
+
+  // Detect compulsive checking pattern
+  detectCompulsiveChecking(
+    events: UsageEvent[]
+  ): CompulsivePattern | null {
+
+    // Identify sessions under 2 minutes
+    const shortSessions = events.filter(e => e.duration < 120000);
+
+    // Group by hour
+    const byHour = this.groupByHour(shortSessions);
+
+    // Check for clusters (3+ checks within same hour)
+    const clusters = byHour.filter(hour => hour.count >= 3);
+
+    if (clusters.length > 0) {
+      return {
+        type: 'compulsive_checking',
+        severity: this.calculateSeverity(clusters),
+        description: `${clusters.length} hours with 3+ quick checks`,
+        interventionSuggestion: 'notification_reduction',
+        affectedApps: this.getTopApps(shortSessions, 3)
+      };
+    }
+
+    return null;
+  }
+
+  // Detect binge usage pattern
+  detectBingeUsage(
+    sessions: UsageSession[]
+  ): BingePattern | null {
+
+    // Sessions over 3 hours
+    const longSessions = sessions.filter(s => s.totalDuration > 180);
+
+    if (longSessions.length > 0) {
+      const avgDuration = this.average(
+        longSessions.map(s => s.totalDuration)
+      );
+
+      return {
+        type: 'binge_usage',
+        severity: avgDuration > 240 ? 'high' : 'moderate',
+        sessionCount: longSessions.length,
+        longestSession: Math.max(...longSessions.map(s => s.totalDuration)),
+        description: `${longSessions.length} sessions over 3 hours`,
+        interventionSuggestion: 'session_time_limits',
+        affectedApps: this.getDominantApps(longSessions)
+      };
+    }
+
+    return null;
+  }
+
+  // Detect displacement of healthy activities
+  detectActivityDisplacement(
+    usageEvents: UsageEvent[],
+    healthData: HealthData
+  ): DisplacementPattern | null {
+
+    const metrics = {
+      screenTime: this.calculateTotalTime(usageEvents),
+      physicalActivity: healthData.activeMinutes,
+      sleepDuration: healthData.sleepMinutes,
+      socialTime: healthData.inPersonSocialMinutes
+    };
+
+    const issues: string[] = [];
+
+    // Check displacement indicators
+    if (metrics.screenTime > 180 && metrics.physicalActivity < 60) {
+      issues.push('insufficient_physical_activity');
+    }
+
+    if (metrics.screenTime > 120 && metrics.sleepDuration < 480) {
+      issues.push('sleep_deprivation');
+    }
+
+    if (metrics.screenTime > metrics.socialTime * 3) {
+      issues.push('social_isolation');
+    }
+
+    if (issues.length > 0) {
+      return {
+        type: 'activity_displacement',
+        severity: issues.length >= 2 ? 'high' : 'moderate',
+        displacedActivities: issues,
+        description: 'Screen time replacing essential activities',
+        interventionSuggestion: 'activity_scheduling',
+        metrics
+      };
+    }
+
+    return null;
+  }
+
+  // Detect late-night usage pattern
+  detectLateNightUsage(
+    events: UsageEvent[]
+  ): LateNightPattern | null {
+
+    // Usage between 10pm and 6am
+    const nightEvents = events.filter(e => {
+      const hour = new Date(e.timestamp).getHours();
+      return hour >= 22 || hour < 6;
+    });
+
+    if (nightEvents.length === 0) return null;
+
+    const nightTime = this.calculateTotalTime(nightEvents);
+    const nightSessions = this.countSessions(nightEvents);
+
+    // Calculate sleep impact
+    const latestUsage = this.getLatestTimestamp(nightEvents);
+    const estimatedBedtime = this.estimateBedtime(events);
+    const delayMinutes = this.minutesBetween(estimatedBedtime, latestUsage);
+
+    return {
+      type: 'late_night_usage',
+      severity: delayMinutes > 60 ? 'high' : 'moderate',
+      totalNightTime: nightTime,
+      sessionCount: nightSessions,
+      sleepDelayMinutes: delayMinutes,
+      description: `${nightTime} minutes of usage after 10pm`,
+      interventionSuggestion: 'bedtime_mode',
+      mostUsedApps: this.getTopApps(nightEvents, 3)
+    };
+  }
+
+  // Detect escalation pattern (tolerance building)
+  detectEscalation(
+    historicalData: DailyUsage[]
+  ): EscalationPattern | null {
+
+    // Require at least 30 days of data
+    if (historicalData.length < 30) return null;
+
+    // Calculate linear regression
+    const trend = this.linearRegression(
+      historicalData.map((d, i) => ({ x: i, y: d.totalMinutes }))
+    );
+
+    // Positive slope indicates increasing usage
+    if (trend.slope > 2) { // More than 2 minutes/day increase
+      const projectedIncrease = trend.slope * 30; // 30-day projection
+
+      return {
+        type: 'escalation',
+        severity: trend.slope > 5 ? 'high' : 'moderate',
+        dailyIncrease: trend.slope,
+        projectedMonthlyIncrease: projectedIncrease,
+        description: `Usage increasing by ${trend.slope.toFixed(1)} min/day`,
+        interventionSuggestion: 'gradual_reduction_plan',
+        confidence: trend.r_squared
+      };
+    }
+
+    return null;
+  }
+
+  // Comprehensive pattern detection
+  async analyzeAllPatterns(
+    events: UsageEvent[],
+    sessions: UsageSession[],
+    historicalData: DailyUsage[],
+    healthData: HealthData
+  ): Promise<PatternAnalysisReport> {
+
+    const patterns: DetectedPattern[] = [];
+
+    // Run all detectors
+    const compulsive = this.detectCompulsiveChecking(events);
+    if (compulsive) patterns.push(compulsive);
+
+    const binge = this.detectBingeUsage(sessions);
+    if (binge) patterns.push(binge);
+
+    const displacement = this.detectActivityDisplacement(events, healthData);
+    if (displacement) patterns.push(displacement);
+
+    const lateNight = this.detectLateNightUsage(events);
+    if (lateNight) patterns.push(lateNight);
+
+    const escalation = this.detectEscalation(historicalData);
+    if (escalation) patterns.push(escalation);
+
+    // Prioritize interventions
+    const prioritized = this.prioritizePatterns(patterns);
+
+    return {
+      detectedPatterns: patterns,
+      overallRisk: this.calculateOverallRisk(patterns),
+      primaryConcern: prioritized[0],
+      recommendedInterventions: prioritized.map(p => p.interventionSuggestion),
+      analysisDate: new Date()
+    };
+  }
+}
+        </div>
+
+        <h2>4. Reward Systems for Positive Behavior</h2>
+
+        <h3>4.1 Gamification Without Manipulation</h3>
+        <p>
+            While addiction often uses gamification harmfully, the same principles can support healthy behavior
+            change when applied ethically. The key is rewarding actual positive outcomes (sleep, exercise, focus)
+            rather than just compliance with arbitrary limits.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Reward Type</th>
+                    <th>Trigger Behavior</th>
+                    <th>Reward Mechanism</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Achievement Badges</td>
+                    <td>7 days under screen time goal</td>
+                    <td>Visual badge, shareable</td>
+                    <td>Recognize sustained effort</td>
+                </tr>
+                <tr>
+                    <td>Bonus Time</td>
+                    <td>Complete homework session without phone</td>
+                    <td>+30 min flexible time for weekend</td>
+                    <td>Reward focus and productivity</td>
+                </tr>
+                <tr>
+                    <td>Unlocked Features</td>
+                    <td>Meet activity goals (steps, sleep)</td>
+                    <td>Access to premium apps/content</td>
+                    <td>Link digital use to health</td>
+                </tr>
+                <tr>
+                    <td>Family Rewards</td>
+                    <td>Whole family meets collective goal</td>
+                    <td>Family activity (movie night, outing)</td>
+                    <td>Build shared commitment</td>
+                </tr>
+                <tr>
+                    <td>Choice Expansion</td>
+                    <td>Demonstrate responsible usage</td>
+                    <td>Increased autonomy, fewer restrictions</td>
+                    <td>Develop self-regulation</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="code-block">
+// Ethical reward system implementation
+interface RewardSystem {
+  userId: string;
+  currentLevel: number;
+  points: number;
+  achievements: Achievement[];
+  activeGoals: Goal[];
+}
+
+interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  criteria: AchievementCriteria;
+  reward: Reward;
+  earnedDate?: Date;
+}
+
+class EthicalRewardEngine {
+
+  // Evaluate achievement eligibility
+  async checkAchievements(
+    user: RewardSystem,
+    recentActivity: ActivityData
+  ): Promise<Achievement[]> {
+
+    const newAchievements: Achievement[] = [];
+
+    for (const achievement of this.allAchievements) {
+      // Skip already earned
+      if (user.achievements.some(a => a.id === achievement.id)) {
+        continue;
+      }
+
+      // Evaluate criteria
+      if (await this.meetsCriteria(achievement.criteria, recentActivity)) {
+        newAchievements.push(achievement);
+        await this.grantAchievement(user.userId, achievement);
+      }
+    }
+
+    return newAchievements;
+  }
+
+  // Example: "Balanced Week" achievement
+  private balancedWeekCriteria: AchievementCriteria = {
+    timeframe: '7_days',
+    conditions: [
+      {
+        metric: 'screen_time',
+        operator: '<',
+        threshold: 120, // under 2 hours daily average
+        allDays: true
+      },
+      {
+        metric: 'physical_activity',
+        operator: '>',
+        threshold: 60, // over 1 hour daily
+        allDays: true
+      },
+      {
+        metric: 'sleep_duration',
+        operator: '>',
+        threshold: 480, // 8+ hours
+        daysRequired: 6 // 6 out of 7 days
+      },
+      {
+        metric: 'late_night_usage',
+        operator: '=',
+        threshold: 0,
+        allDays: true
+      }
+    ]
+  };
+
+  // Grant meaningful rewards
+  private async grantAchievement(
+    userId: string,
+    achievement: Achievement
+  ): Promise<void> {
+
+    // Record achievement
+    await this.database.achievements.add({
+      userId,
+      achievementId: achievement.id,
+      earnedDate: new Date()
+    });
+
+    // Apply reward
+    switch (achievement.reward.type) {
+      case 'bonus_time':
+        await this.addBonusTime(userId, achievement.reward.minutes);
+        break;
+
+      case 'unlock_feature':
+        await this.unlockFeature(userId, achievement.reward.featureId);
+        break;
+
+      case 'increased_autonomy':
+        await this.adjustAutonomy(userId, achievement.reward.level);
+        break;
+
+      case 'family_activity':
+        await this.scheduleFamilyReward(userId, achievement.reward.activity);
+        break;
+    }
+
+    // Notify user with positive reinforcement
+    await this.sendAchievementNotification(userId, achievement);
+  }
+
+  // Progressive autonomy system
+  async adjustAutonomy(userId: string, newLevel: number): Promise<void> {
+    const currentSettings = await this.getParentalControls(userId);
+
+    // Level 1: Strict monitoring, many restrictions
+    // Level 5: Minimal monitoring, self-regulation focus
+
+    const adjustments = {
+      1: { monitoring: 'intensive', approvalRequired: true, flexTime: 0 },
+      2: { monitoring: 'moderate', approvalRequired: true, flexTime: 30 },
+      3: { monitoring: 'moderate', approvalRequired: false, flexTime: 60 },
+      4: { monitoring: 'minimal', approvalRequired: false, flexTime: 90 },
+      5: { monitoring: 'minimal', approvalRequired: false, flexTime: 120 }
+    };
+
+    await this.updateSettings(userId, adjustments[newLevel]);
+  }
+}
+        </div>
+
+        <div class="note">
+            <div class="note-title">Implementation Best Practice: Intrinsic Motivation</div>
+            <p>
+                Research shows that extrinsic rewards (points, badges) can undermine intrinsic motivation if not
+                carefully implemented. Focus rewards on recognizing genuine achievements (better sleep, maintained
+                relationships, academic success) rather than arbitrary compliance. The goal is to help youth
+                experience the inherent benefits of balanced digital use, not create dependence on external validation.
+            </p>
+        </div>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>Screen time analytics should provide real-time insights with multiple visualization types (timeline, heatmap, category breakdown) optimized for different age groups</li>
+                <li>App blocking implements five graduated levels from soft reminders to hard blocks, with friction mechanisms that include mindfulness exercises</li>
+                <li>Pattern detection identifies compulsive checking, binge usage, activity displacement, late-night patterns, and escalation through specialized algorithms</li>
+                <li>Usage pattern analysis combines multiple detection methods to create comprehensive risk assessments and prioritized intervention recommendations</li>
+                <li>Reward systems must focus on intrinsic motivation by recognizing genuine health outcomes (sleep, activity, focus) rather than arbitrary compliance</li>
+                <li>Progressive autonomy systems gradually reduce restrictions as youth demonstrate responsible self-regulation, building long-term healthy habits</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>Design a dashboard visualization for an 8-year-old vs. a 16-year-old. How would the information architecture differ?</li>
+                <li>When should a system use "friction delay" vs. "parental request" blocking? Provide specific scenarios for each.</li>
+                <li>Explain how the compulsive checking detection algorithm works. What false positives might occur and how would you handle them?</li>
+                <li>Why does activity displacement analysis compare screen time to physical activity, sleep, and social time rather than just looking at screen time alone?</li>
+                <li>Design a reward that promotes intrinsic motivation for an 11-year-old gamer. What behavior would it recognize and why?</li>
+                <li>Implement a function that determines whether usage represents "healthy gaming" vs. "gaming addiction" for a 14-year-old playing 2 hours/day of Minecraft.</li>
+            </ol>
+        </div>
+
+        <div class="nav">
+            <a href="chapter-02.html">&larr; Previous</a>
+            <a href="index.html">Contents</a>
+            <a href="chapter-04.html">Next &rarr;</a>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / WIA - World Certification Industry Association</p>
+            <p>弘益人間 (Hongik Ingan) · Benefit All Humanity</p>
+            <p style="margin-top: 1rem; font-size: 0.9rem;">
+                Effective implementation balances protection with autonomy, supporting young people
+                in developing the self-regulation skills they need to thrive in a digital world.
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

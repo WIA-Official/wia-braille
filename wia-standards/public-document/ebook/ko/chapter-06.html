@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>제6장 - WIA-SOC-013 공공 문서 표준</title>
+<style>
+body { font-family: -apple-system, 'Malgun Gothic', sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; background: #0f172a; color: #f8fafc; line-height: 1.8; }
+h1, h2, h3 { color: #10B981; }
+h2 { margin-top: 40px; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+pre { background: #1e293b; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #334155; }
+code { color: #34D399; }
+.nav { margin-bottom: 30px; }
+.nav a { color: #10B981; text-decoration: none; margin-right: 20px; }
+.highlight { background: rgba(16, 185, 129, 0.1); padding: 20px; border-left: 4px solid #10B981; margin: 20px 0; }
+table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+th, td { padding: 12px; text-align: left; border-bottom: 1px solid #334155; }
+th { background: #1e293b; color: #10B981; }
+ul, ol { margin: 15px 0; padding-left: 30px; }
+li { margin: 8px 0; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+<a href="index.html">← 목차</a>
+<a href="chapter-05.html">← 이전</a>
+<a href="chapter-07.html">다음 →</a>
+</div>
+
+<h1>제6장: WIA-SOC-013 공공 문서 표준</h1>
+
+<blockquote class="highlight">
+<strong>弘益人間 (홍익인간)</strong> - "공공 문서는 진정성을 보존하고 개인정보를 보호하면서 전 세계적으로 접근 가능하고 검증 가능하며 인정받아야 합니다."
+</blockquote>
+
+<h2>6.1 개요</h2>
+<p>WIA-SOC-013은 공공 문서 디지털화, 보관 표준, 메타데이터 스키마, 접근 제어, 디지털 서명 및 국경 간 인정을 위한 포괄적인 국제 표준입니다. 이 장에서는 표준의 핵심 구성 요소와 구현 전략을 다룹니다.</p>
+
+<h2>6.2 주요 기능</h2>
+<ul>
+<li><strong>문서 디지털화</strong>: 고해상도 스캐닝 (최소 300 DPI), OCR 정확도 95% 이상, PDF/A 및 TIFF 형식 지원</li>
+<li><strong>메타데이터 관리</strong>: Dublin Core 및 PREMIS 표준 준수, 다국어 메타데이터 지원, 99개 언어</li>
+<li><strong>디지털 서명</strong>: ECDSA 및 RSA 암호화, PKI 인프라, 타임스탬프 서비스, 블록체인 앵커링</li>
+<li><strong>접근 제어</strong>: RBAC 및 ABAC 정책, AES-256 암호화, 영지식 증명을 통한 개인정보 보호</li>
+<li><strong>국경 간 인정</strong>: 상호 인정 프레임워크, eIDAS 통합, ICAO 9303 호환성</li>
+</ul>
+
+<h2>6.3 기술 사양</h2>
+<p>WIA-SOC-013 표준은 4단계 아키텍처로 구성됩니다:</p>
+
+<h3>1단계: 데이터 형식 사양</h3>
+<pre><code>{
+  "documentId": "doc:wia:soc013:birth:KR:2025:abc123",
+  "type": "birthCertificate",
+  "issuer": "did:gov:kr:ministry-interior",
+  "issuedAt": "2025-01-15T10:30:00Z",
+  "subject": {
+    "name": "홍길동",
+    "nameRomanized": "Hong Gildong",
+    "dateOfBirth": "1990-05-20",
+    "placeOfBirth": "서울특별시",
+    "nationality": "대한민국"
+  },
+  "metadata": {
+    "dublinCore": {
+      "title": "출생증명서 - 홍길동",
+      "creator": "대한민국 행정안전부",
+      "language": "ko",
+      "format": "application/pdf"
+    }
+  }
+}
+</code></pre>
+
+<h3>2단계: API 통합</h3>
+<p>RESTful API 엔드포인트를 통한 문서 작업:</p>
+<pre><code>import { WiaPublicDocument } from 'wia-soc-013';
+
+const document = await WiaPublicDocument.create({
+  type: 'birthCertificate',
+  data: birthData,
+  language: 'ko'
+});
+
+await document.sign({
+  privateKey: governmentKey,
+  algorithm: 'ECDSA-SHA256'
+});
+
+await document.publish();
+</code></pre>
+
+<h3>3단계: 보안 및 암호화</h3>
+<p>디지털 서명 알고리즘 비교:</p>
+<table>
+<tr><th>알고리즘</th><th>키 크기</th><th>보안 수준</th><th>성능</th></tr>
+<tr><td>RSA</td><td>2048-4096 비트</td><td>높음</td><td>느림</td></tr>
+<tr><td>ECDSA</td><td>256 비트</td><td>높음</td><td>빠름</td></tr>
+<tr><td>EdDSA</td><td>256 비트</td><td>매우 높음</td><td>매우 빠름</td></tr>
+<tr><td>Dilithium</td><td>N/A</td><td>양자 저항</td><td>중간</td></tr>
+</table>
+
+<h3>4단계: 국경 간 통합</h3>
+<p>국제 인정 프레임워크 및 상호 신뢰 협정:</p>
+<ul>
+<li>유럽연합 eIDAS 규정 준수</li>
+<li>ICAO 9303 기계 판독 가능 여행 문서 표준</li>
+<li>W3C 검증 가능한 자격 증명 호환성</li>
+<li>아포스티유 프로세스 디지털화</li>
+</ul>
+
+<h2>6.4 구현 예제</h2>
+<p>TypeScript SDK를 사용한 문서 생성 및 검증:</p>
+<pre><code>import { WiaPublicDocument, VerificationService } from 'wia-soc-013';
+
+// 문서 생성
+const doc = await WiaPublicDocument.digitize({
+  imageUrl: '/path/to/scan.jpg',
+  documentType: 'passport',
+  ocrLanguage: 'kor',
+  outputFormat: 'PDF/A-2b'
+});
+
+// 메타데이터 추가
+await doc.setMetadata({
+  dublinCore: {
+    title: '대한민국 여권',
+    creator: '외교부',
+    subject: '여행 문서',
+    language: 'ko'
+  }
+});
+
+// 디지털 서명
+await doc.sign({
+  privateKey: governmentPrivateKey,
+  certificateChain: pkiChain
+});
+
+// 블록체인 앵커링
+await doc.anchorToBlockchain({
+  network: 'ethereum-mainnet'
+});
+
+// 검증
+const verifier = new VerificationService();
+const result = await verifier.verify({
+  documentId: doc.id,
+  checkRevocation: true,
+  validateBlockchain: true
+});
+
+if (result.valid) {
+  console.log('문서가 진짜이며 변조되지 않았습니다');
+}
+</code></pre>
+
+<h2>6.5 메타데이터 관리</h2>
+<p>Dublin Core 및 PREMIS 표준을 준수하는 메타데이터:</p>
+<pre><code>{
+  "dublinCore": {
+    "title": "출생증명서 - 홍길동",
+    "creator": "대한민국 행정안전부",
+    "subject": ["인구동태", "출생등록", "신분증명"],
+    "description": "2025년 1월 15일 발급된 공식 출생증명서",
+    "publisher": "대한민국 보건복지부",
+    "date": "2025-01-15",
+    "type": "Text",
+    "format": "application/pdf",
+    "identifier": "doc:wia:soc013:birth:KR:2025:abc123",
+    "language": "ko",
+    "rights": "© 2025 대한민국. 공공 기록. 개인정보 보호법에 따라 접근 제한됨."
+  },
+  "premis": {
+    "objectIdentifier": "doc:wia:soc013:abc123",
+    "preservationLevel": "full",
+    "significantProperties": ["authenticity", "integrity", "readability"],
+    "environment": {
+      "software": "WIA-SOC-013 Scanner v1.0",
+      "hardware": "Fujitsu fi-7600 (600 DPI)"
+    }
+  }
+}
+</code></pre>
+
+<h2>6.6 접근 제어 및 개인정보 보호</h2>
+<p>역할 기반 접근 제어(RBAC) 및 속성 기반 접근 제어(ABAC) 구현:</p>
+<pre><code>const accessPolicy = {
+  subject: {
+    role: 'registrar',
+    department: 'vital-records',
+    clearanceLevel: 3
+  },
+  resource: {
+    documentType: 'birthCertificate',
+    classification: 'confidential'
+  },
+  action: 'read',
+  environment: {
+    time: 'business-hours',
+    location: 'on-premises',
+    ipRange: '192.168.1.0/24'
+  },
+  decision: 'allow'
+};
+</code></pre>
+
+<h2>6.7 품질 보증</h2>
+<p>디지털화된 문서의 품질 기준:</p>
+<table>
+<tr><th>메트릭</th><th>목표</th><th>측정</th></tr>
+<tr><td>OCR 정확도</td><td>95% 이상</td><td>수동 검증 샘플</td></tr>
+<tr><td>해상도</td><td>300 DPI 이상</td><td>자동 검증</td></tr>
+<tr><td>메타데이터 완전성</td><td>필수 필드 100%</td><td>필드 값 백분율</td></tr>
+<tr><td>서명 유효성</td><td>100%</td><td>암호화 검증</td></tr>
+</table>
+
+<h2>6.8 국경 간 인정</h2>
+<p>99개 언어 지원 및 다국어 메타데이터:</p>
+<pre><code>{
+  "title": {
+    "ko": "출생증명서",
+    "en": "Birth Certificate",
+    "zh": "出生证明",
+    "ja": "出生証明書",
+    "es": "Certificado de Nacimiento"
+  }
+}
+</code></pre>
+
+<h2>6.9 블록체인 통합</h2>
+<p>변조 방지 감사 추적을 위한 블록체인 앵커링:</p>
+<ul>
+<li><strong>Ethereum</strong>: 메인넷 및 레이어 2 솔루션 (Polygon, Arbitrum)</li>
+<li><strong>Hyperledger Fabric</strong>: 정부 간 허가형 네트워크</li>
+<li><strong>Solana</strong>: 고성능 트랜잭션 처리</li>
+</ul>
+
+<h2>6.10 실제 사례 연구</h2>
+<p>대한민국 전자정부 시스템:</p>
+<ul>
+<li>민원24 (Government 24) 플랫폼을 통한 온라인 문서 발급</li>
+<li>모바일 신분증 (Mobile Driver License) 도입</li>
+<li>블록체인 기반 학력 증명서 검증 시스템</li>
+<li>결과: 처리 시간 90% 단축, 시민 만족도 95% 달성</li>
+</ul>
+
+<h2>6.11 미래 발전 방향</h2>
+<ul>
+<li><strong>AI 기반 문서 이해</strong>: 자동 분류 및 메타데이터 추출</li>
+<li><strong>양자 저항 암호화</strong>: CRYSTALS-Dilithium 및 SPHINCS+ 통합</li>
+<li><strong>분산 신원(DID)</strong>: W3C DID 표준과의 통합</li>
+<li><strong>영지식 증명 향상</strong>: 선택적 공개를 위한 고급 프로토콜</li>
+<li><strong>생체 인식 통합</strong>: 지문, 홍채, 얼굴 인식을 통한 신원 확인</li>
+</ul>
+
+<h2>6.12 규정 준수</h2>
+<p>국제 개인정보 보호 규정 준수:</p>
+<ul>
+<li><strong>GDPR</strong> (유럽연합): 데이터 최소화, 접근권, 삭제권</li>
+<li><strong>개인정보 보호법</strong> (대한민국): 개인정보 처리 동의, 안전성 확보 조치</li>
+<li><strong>CCPA</strong> (캘리포니아): 소비자 개인정보 권리</li>
+<li><strong>PIPL</strong> (중국): 개인정보 보호 프레임워크</li>
+</ul>
+
+<h2>6.13 비용 분석 및 ROI</h2>
+<table>
+<tr><th>항목</th><th>월간 비용 (1천만 문서)</th></tr>
+<tr><td>클라우드 스토리지</td><td>₩6,500,000</td></tr>
+<tr><td>데이터베이스</td><td>₩3,250,000</td></tr>
+<tr><td>API 게이트웨이</td><td>₩1,300,000</td></tr>
+<tr><td>OCR API 호출</td><td>₩3,900,000</td></tr>
+<tr><td><strong>총계</strong></td><td><strong>₩14,950,000</strong></td></tr>
+</table>
+
+<h2>결론</h2>
+<p>WIA-SOC-013 표준은 공공 문서 디지털화, 보관, 검증 및 국경 간 인정을 위한 포괄적인 프레임워크를 제공합니다. 이 표준을 구현함으로써 정부는 시민에게 안전하고 접근 가능하며 신뢰할 수 있는 문서 서비스를 제공할 수 있습니다.</p>
+
+<blockquote class="highlight">
+<strong>弘益人間</strong> - 기술을 통해 우리는 필수 문서를 전 세계적으로 접근 가능하고 검증 가능하며 영원히 보존함으로써 모든 인류에게 이익을 제공합니다.
+</blockquote>
+
+<div class="nav" style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #334155;">
+<a href="chapter-05.html">← 이전</a>
+<a href="index.html">목차</a>
+<a href="chapter-07.html">다음 →</a>
+</div>
+
+</body>
+</html>

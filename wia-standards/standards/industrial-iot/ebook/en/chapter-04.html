@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: MQTT & Modbus Protocols - WIA-IND-027</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #8B5CF6; --text: #f1f5f9; --text-dim: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--surface); padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
+        h1 { color: var(--primary); font-size: 2.5em; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; }
+        h2 { color: var(--primary); font-size: 1.8em; margin-top: 40px; margin-bottom: 20px; }
+        h3 { color: var(--primary); font-size: 1.4em; margin-top: 30px; margin-bottom: 15px; }
+        p { margin-bottom: 15px; color: var(--text-dim); }
+        .highlight { background: rgba(139, 92, 246, 0.2); padding: 20px; border-left: 4px solid var(--primary); margin: 20px 0; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 25px 0; background: var(--bg); }
+        th, td { padding: 15px; text-align: left; border: 1px solid var(--border); }
+        th { background: var(--primary); color: var(--text); font-weight: 600; }
+        tr:hover { background: rgba(139, 92, 246, 0.1); }
+        code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-family: 'Courier New', monospace; color: var(--primary); }
+        pre { background: var(--bg); padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; border: 1px solid var(--border); }
+        pre code { padding: 0; background: transparent; }
+        .key-takeaways { background: rgba(139, 92, 246, 0.1); padding: 25px; border-radius: 8px; margin: 30px 0; }
+        .key-takeaways h3 { margin-top: 0; }
+        .key-takeaways ul { margin-left: 20px; }
+        .key-takeaways li { margin: 10px 0; color: var(--text-dim); }
+        .review-questions { background: var(--bg); padding: 25px; border-radius: 8px; margin: 30px 0; border: 2px solid var(--primary); }
+        .review-questions h3 { margin-top: 0; }
+        .review-questions ol { margin-left: 20px; }
+        .review-questions li { margin: 15px 0; color: var(--text-dim); }
+        .navigation { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 2px solid var(--border); }
+        .nav-button { background: var(--primary); color: var(--text); padding: 12px 24px; text-decoration: none; border-radius: 6px; transition: background 0.3s; }
+        .nav-button:hover { background: #7C3AED; }
+        .diagram { background: var(--bg); padding: 20px; border-radius: 8px; margin: 20px 0; font-family: monospace; overflow-x: auto; border: 1px solid var(--border); }
+        ul { margin-left: 20px; margin-bottom: 15px; }
+        li { margin: 8px 0; color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chapter 4: MQTT & Modbus Protocols</h1>
+        <div class="highlight">
+            <strong>WIA-IND-027 Standard</strong><br>
+            Mastering lightweight messaging (MQTT) and legacy industrial protocols (Modbus RTU/TCP)
+        </div>
+
+        <h2>4.1 MQTT - Message Queuing Telemetry Transport</h2>
+        <p>MQTT is a lightweight publish/subscribe messaging protocol designed for constrained devices and unreliable networks. Originally developed by IBM in 1999 for oil pipeline SCADA systems, MQTT has become the de facto standard for IoT and IIoT telemetry.</p>
+
+        <h3>4.1.1 MQTT Architecture</h3>
+        <p>MQTT uses a broker-based architecture that decouples publishers from subscribers, enabling scalable one-to-many messaging:</p>
+
+        <table>
+            <thead>
+                <tr><th>Component</th><th>Role</th><th>Examples</th><th>Scalability</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Publisher</td><td>Sends messages to topics</td><td>Sensors, PLCs, gateways</td><td>Millions of clients</td></tr>
+                <tr><td>Broker</td><td>Routes messages to subscribers</td><td>Mosquitto, HiveMQ, EMQX</td><td>100K-10M+ msg/sec</td></tr>
+                <tr><td>Subscriber</td><td>Receives messages from topics</td><td>SCADA, analytics, historians</td><td>Thousands of subscribers</td></tr>
+                <tr><td>Topic</td><td>Message routing path</td><td>factory/line-A/temp</td><td>Millions of topics</td></tr>
+            </tbody>
+        </table>
+
+        <h3>4.1.2 Quality of Service Levels</h3>
+        <p>MQTT provides three QoS levels balancing reliability against performance:</p>
+
+        <table>
+            <thead>
+                <tr><th>QoS</th><th>Name</th><th>Guarantee</th><th>Messages</th><th>Use Cases</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>0</td><td>At most once</td><td>Fire and forget</td><td>1 message</td><td>Non-critical telemetry, high-frequency data</td></tr>
+                <tr><td>1</td><td>At least once</td><td>Acknowledged delivery</td><td>≥1 (may duplicate)</td><td>Important events, alarms</td></tr>
+                <tr><td>2</td><td>Exactly once</td><td>No duplicates</td><td>Exactly 1</td><td>Critical commands, billing, safety</td></tr>
+            </tbody>
+        </table>
+
+        <pre><code>// MQTT QoS Examples (JavaScript)
+const mqtt = require('mqtt');
+const client = mqtt.connect('mqtt://broker.factory.com');
+
+// QoS 0: At most once (best effort)
+client.publish('sensors/temp-001', '45.2', { qos: 0 });
+
+// QoS 1: At least once (acknowledged)
+client.publish('alarms/high-temp', 'Temperature exceeded 80C', { qos: 1 });
+
+// QoS 2: Exactly once (critical)
+client.publish('commands/stop-machine', 'EMERGENCY_STOP', { qos: 2 });
+
+// Subscribe with QoS
+client.subscribe('sensors/+/temperature', { qos: 1 });
+client.subscribe('alarms/#', { qos: 2 });</code></pre>
+
+        <h3>4.1.3 Topic Design Best Practices</h3>
+        <p>Hierarchical topic structure enables efficient filtering and wildcard subscriptions:</p>
+
+        <pre><code># Good: Hierarchical, specific
+factory/001/line-A/machine-001/temperature
+factory/001/line-A/machine-001/pressure
+factory/001/line-A/machine-002/temperature
+factory/001/line-B/robot-001/position
+
+# Topic levels:
+#   Level 1: Site/Factory ID
+#   Level 2: Production line
+#   Level 3: Equipment ID
+#   Level 4: Measurement type
+
+# Wildcard subscriptions
+factory/001/line-A/+/temperature      # All temps on line A
+factory/001/line-A/machine-001/#     # All data from machine-001
+factory/+/+/+/temperature            # All temps in factory 001</code></pre>
+
+        <h3>4.1.4 Retained Messages and Last Will</h3>
+        <pre><code>// Retained messages - latest value persisted
+client.publish('status/machine-001', 'running', {
+  qos: 1,
+  retain: true  // New subscribers get last value immediately
+});
+
+// Last Will and Testament - automatic notification on disconnect
+client.connect('mqtt://broker.factory.com', {
+  clientId: 'sensor-temp-001',
+  clean: true,
+  will: {
+    topic: 'status/sensor-temp-001',
+    payload: 'offline',
+    qos: 1,
+    retain: true
+  }
+});
+
+// When sensor-temp-001 disconnects (network failure, power loss),
+// broker automatically publishes "offline" to status/sensor-temp-001</code></pre>
+
+        <h2>4.2 MQTT Performance and Scalability</h2>
+
+        <h3>4.2.1 Broker Comparison</h3>
+        <table>
+            <thead>
+                <tr><th>Broker</th><th>Max Clients</th><th>Throughput</th><th>Clustering</th><th>License</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Eclipse Mosquitto</td><td>100K</td><td>80K msg/sec</td><td>No</td><td>EPL/EDL (Open Source)</td></tr>
+                <tr><td>HiveMQ</td><td>10M+</td><td>4M msg/sec</td><td>Yes</td><td>Commercial</td></tr>
+                <tr><td>EMQX</td><td>100M+</td><td>5M msg/sec</td><td>Yes</td><td>Apache 2.0 + Commercial</td></tr>
+                <tr><td>VerneMQ</td><td>10M+</td><td>1M msg/sec</td><td>Yes</td><td>Apache 2.0</td></tr>
+                <tr><td>AWS IoT Core</td><td>Unlimited</td><td>Unlimited</td><td>Managed</td><td>Pay-per-use</td></tr>
+            </tbody>
+        </table>
+
+        <h3>4.2.2 MQTT Security</h3>
+        <pre><code>// TLS/SSL encryption
+const fs = require('fs');
+const mqtt = require('mqtt');
+
+const options = {
+  host: 'broker.factory.com',
+  port: 8883,  // TLS port (1883 for non-TLS)
+  protocol: 'mqtts',
+
+  // TLS options
+  ca: fs.readFileSync('ca-cert.pem'),
+  cert: fs.readFileSync('client-cert.pem'),
+  key: fs.readFileSync('client-key.pem'),
+  rejectUnauthorized: true,
+
+  // Authentication
+  username: 'sensor-001',
+  password: 'SecurePassword123!',
+
+  // Connection options
+  clientId: 'sensor-temp-001',
+  clean: true,
+  keepalive: 60
+};
+
+const client = mqtt.connect(options);</code></pre>
+
+        <h2>4.3 Modbus Protocol</h2>
+        <p>Modbus, developed by Modicon (now Schneider Electric) in 1979, remains the most widely deployed industrial protocol. Simple, open, and royalty-free, Modbus is supported by virtually every PLC, VFD, and industrial device.</p>
+
+        <h3>4.3.1 Modbus Variants</h3>
+        <table>
+            <thead>
+                <tr><th>Variant</th><th>Physical Layer</th><th>Max Distance</th><th>Max Devices</th><th>Speed</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Modbus RTU</td><td>RS-232</td><td>15m</td><td>1 slave</td><td>9.6-115.2 kbps</td></tr>
+                <tr><td>Modbus RTU</td><td>RS-485</td><td>1200m</td><td>247 slaves</td><td>9.6-115.2 kbps</td></tr>
+                <tr><td>Modbus TCP</td><td>Ethernet</td><td>100m (segment)</td><td>Unlimited</td><td>10/100/1000 Mbps</td></tr>
+                <tr><td>Modbus ASCII</td><td>RS-232/485</td><td>Same as RTU</td><td>Same as RTU</td><td>Half of RTU</td></tr>
+            </tbody>
+        </table>
+
+        <h3>4.3.2 Modbus Data Model</h3>
+        <p>Modbus uses a register-based data model with four address spaces:</p>
+
+        <table>
+            <thead>
+                <tr><th>Type</th><th>Access</th><th>Size</th><th>Address Range</th><th>Use Cases</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Coils (0x)</td><td>Read/Write</td><td>1 bit</td><td>00001-09999</td><td>Digital outputs, relay control</td></tr>
+                <tr><td>Discrete Inputs (1x)</td><td>Read-Only</td><td>1 bit</td><td>10001-19999</td><td>Digital inputs, switches, limit sensors</td></tr>
+                <tr><td>Input Registers (3x)</td><td>Read-Only</td><td>16 bit</td><td>30001-39999</td><td>Analog inputs, sensor readings</td></tr>
+                <tr><td>Holding Registers (4x)</td><td>Read/Write</td><td>16 bit</td><td>40001-49999</td><td>Analog outputs, setpoints, config</td></tr>
+            </tbody>
+        </table>
+
+        <h3>4.3.3 Modbus Function Codes</h3>
+        <pre><code># Common Modbus Function Codes
+
+01 (0x01) - Read Coils
+   Read 1-2000 contiguous coils
+   Example: Read 10 coils starting at address 00001
+
+02 (0x02) - Read Discrete Inputs
+   Read 1-2000 discrete inputs
+   Example: Read limit switch states
+
+03 (0x03) - Read Holding Registers
+   Read 1-125 holding registers (most common)
+   Example: Read temperature setpoint
+
+04 (0x04) - Read Input Registers
+   Read 1-125 input registers
+   Example: Read analog sensor values
+
+05 (0x05) - Write Single Coil
+   Write ON (0xFF00) or OFF (0x0000)
+   Example: Activate relay
+
+06 (0x06) - Write Single Register
+   Write 16-bit value
+   Example: Update setpoint
+
+15 (0x0F) - Write Multiple Coils
+   Write 1-1968 coils
+   Example: Set multiple outputs
+
+16 (0x10) - Write Multiple Registers
+   Write 1-123 registers (most common for batch writes)
+   Example: Update recipe parameters</code></pre>
+
+        <h3>4.3.4 Modbus TCP Example</h3>
+        <pre><code>// Python Modbus TCP Client (pymodbus)
+from pymodbus.client import ModbusTcpClient
+from pymodbus.payload import BinaryPayloadDecoder
+from pymodbus.constants import Endian
+
+# Connect to PLC
+client = ModbusTcpClient('192.168.1.100', port=502)
+client.connect()
+
+# Read holding registers (Function Code 03)
+# Address 40001 (temperature) = register 0
+# Read 2 registers (32-bit float)
+result = client.read_holding_registers(address=0, count=2, slave=1)
+
+if not result.isError():
+    # Decode as 32-bit float (IEEE 754)
+    decoder = BinaryPayloadDecoder.fromRegisters(
+        result.registers,
+        byteorder=Endian.Big,
+        wordorder=Endian.Big
+    )
+    temperature = decoder.decode_32bit_float()
+    print(f"Temperature: {temperature}°C")
+
+# Write single register (Function Code 06)
+# Set setpoint to 75.0°C
+client.write_register(address=10, value=750, slave=1)  # 75.0 * 10 = 750
+
+# Write multiple registers (Function Code 16)
+values = [750, 1500, 2000]  # Setpoint, Speed RPM, Pressure
+client.write_registers(address=10, values=values, slave=1)
+
+# Read coils (Function Code 01)
+# Read 8 digital outputs
+coils = client.read_coils(address=0, count=8, slave=1)
+print(f"Outputs: {coils.bits[:8]}")
+
+# Write single coil (Function Code 05)
+client.write_coil(address=5, value=True, slave=1)  # Turn on output 5
+
+client.close()</code></pre>
+
+        <h3>4.3.5 Modbus RTU over RS-485</h3>
+        <pre><code>// Node.js Modbus RTU Client
+const ModbusRTU = require("modbus-serial");
+const client = new ModbusRTU();
+
+// Open serial port
+client.connectRTUBuffered("/dev/ttyUSB0", {
+  baudRate: 9600,
+  dataBits: 8,
+  stopBits: 1,
+  parity: 'none'
+});
+
+// Set slave ID
+client.setID(1);
+
+// Read holding registers
+client.readHoldingRegisters(0, 10)
+  .then(data => {
+    console.log("Registers:", data.data);
+  })
+  .catch(err => {
+    console.error("Modbus error:", err);
+  });
+
+// Write multiple registers
+const values = [100, 200, 300];
+client.writeRegisters(10, values)
+  .then(() => {
+    console.log("Write successful");
+  });</code></pre>
+
+        <h2>4.4 MQTT vs Modbus Comparison</h2>
+
+        <table>
+            <thead>
+                <tr><th>Aspect</th><th>MQTT</th><th>Modbus</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Architecture</td><td>Publish/Subscribe (broker-based)</td><td>Master/Slave (request/response)</td></tr>
+                <tr><td>Messaging Pattern</td><td>Asynchronous, event-driven</td><td>Synchronous polling</td></tr>
+                <tr><td>Scalability</td><td>Excellent (millions of devices)</td><td>Limited (247 slaves per RS-485 segment)</td></tr>
+                <tr><td>Bandwidth Efficiency</td><td>Excellent (5-byte header + payload)</td><td>Moderate (requires polling)</td></tr>
+                <tr><td>Network Reliability</td><td>Handles disruptions gracefully</td><td>Requires continuous connection</td></tr>
+                <tr><td>Latency</td><td>5-50ms typical</td><td>10-500ms (depends on poll rate)</td></tr>
+                <tr><td>Security</td><td>TLS/SSL, authentication, authorization</td><td>Limited (typically none or IP filtering)</td></tr>
+                <tr><td>Use Cases</td><td>Telemetry, events, notifications</td><td>PLC data access, legacy equipment</td></tr>
+            </tbody>
+        </table>
+
+        <h2>4.5 MQTT-Modbus Gateway</h2>
+        <p>Edge gateways often bridge MQTT and Modbus to modernize legacy infrastructure:</p>
+
+        <pre><code>// MQTT-Modbus Gateway (Node.js)
+const mqtt = require('mqtt');
+const ModbusRTU = require('modbus-serial');
+
+// MQTT client
+const mqttClient = mqtt.connect('mqtt://broker.factory.com');
+
+// Modbus client
+const modbusClient = new ModbusRTU();
+modbusClient.connectRTUBuffered('/dev/ttyUSB0', { baudRate: 9600 });
+modbusClient.setID(1);
+
+// Poll Modbus every 1 second and publish to MQTT
+setInterval(async () => {
+  try {
+    // Read temperature (register 0-1, 32-bit float)
+    const tempData = await modbusClient.readHoldingRegisters(0, 2);
+    const buffer = Buffer.from([
+      tempData.data[0] >> 8, tempData.data[0] & 0xFF,
+      tempData.data[1] >> 8, tempData.data[1] & 0xFF
+    ]);
+    const temperature = buffer.readFloatBE(0);
+
+    // Publish to MQTT
+    mqttClient.publish('factory/line-A/plc-001/temperature',
+      JSON.stringify({
+        value: temperature,
+        unit: 'celsius',
+        timestamp: Date.now()
+      }),
+      { qos: 1 }
+    );
+
+    console.log(`Published temperature: ${temperature}°C`);
+
+  } catch (err) {
+    console.error('Modbus read error:', err);
+  }
+}, 1000);
+
+// Subscribe to MQTT commands and write to Modbus
+mqttClient.subscribe('factory/line-A/plc-001/commands/#');
+
+mqttClient.on('message', async (topic, message) => {
+  if (topic.endsWith('/setpoint')) {
+    const setpoint = parseFloat(message.toString());
+
+    // Write to Modbus register 10
+    await modbusClient.writeRegister(10, Math.round(setpoint * 10));
+    console.log(`Set setpoint to ${setpoint}°C`);
+  }
+});</code></pre>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li><strong>MQTT Architecture:</strong> Lightweight pub/sub protocol with 3 QoS levels (0: at most once, 1: at least once, 2: exactly once) scales to millions of devices</li>
+                <li><strong>MQTT Features:</strong> Retained messages, Last Will Testament, hierarchical topics with wildcards (+, #), TLS encryption, username/password authentication</li>
+                <li><strong>MQTT Performance:</strong> Modern brokers (HiveMQ, EMQX) handle 1M-5M msg/sec, support clustering for 100M+ concurrent clients</li>
+                <li><strong>Modbus Variants:</strong> RTU (RS-485, 1200m, 247 devices), TCP (Ethernet, unlimited devices), ASCII (readable but inefficient)</li>
+                <li><strong>Modbus Data Model:</strong> 4 address spaces - Coils (digital I/O), Discrete Inputs (read-only digital), Input/Holding Registers (analog, 16-bit)</li>
+                <li><strong>MQTT vs Modbus:</strong> MQTT excels at scalable telemetry (5-50ms latency), Modbus best for direct PLC access (10-500ms depending on poll rate)</li>
+                <li><strong>Gateway Pattern:</strong> MQTT-Modbus bridges enable modern cloud connectivity for legacy equipment, poll Modbus at 1-10Hz, publish events to MQTT</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li><strong>QoS Selection:</strong> You need to send: (a) temperature every 1s, (b) alarm notifications, (c) emergency stop command. Which QoS (0/1/2) for each and why?</li>
+                <li><strong>Topic Design:</strong> Design MQTT topic hierarchy for 3 factories, 5 lines each, 10 machines per line, 5 sensors per machine. Show wildcard subscriptions for all line-A data.</li>
+                <li><strong>Modbus Addressing:</strong> Calculate Modbus addresses for: (a) 8 digital inputs starting at 10001, (b) 10 holding registers for temperature (32-bit float, 5 sensors).</li>
+                <li><strong>Performance Analysis:</strong> 100 Modbus slaves polled every 1 second vs 100 MQTT publishers @ 1Hz. Calculate messages/minute and network efficiency.</li>
+                <li><strong>Gateway Design:</strong> Design MQTT-Modbus gateway for 50 PLCs (Modbus RTU, 9600 baud). What's max poll rate per PLC if each read takes 100ms?</li>
+                <li><strong>Security Implementation:</strong> Compare MQTT (TLS, username/password) vs Modbus TCP (no built-in security). How would you secure Modbus in production?</li>
+                <li><strong>Retained Messages:</strong> When are MQTT retained messages useful? Provide 3 industrial use cases. What happens if retained message is deleted?</li>
+                <li><strong>Function Code Selection:</strong> Read 50 holding registers from address 40001. Which Modbus function code? Can you read all 50 in one request (max 125)?</li>
+            </ol>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-03.html" class="nav-button">← Previous Chapter</a>
+            <a href="chapter-05.html" class="nav-button">Next Chapter: Edge Computing →</a>
+        </div>
+    </div>
+</body>
+</html>

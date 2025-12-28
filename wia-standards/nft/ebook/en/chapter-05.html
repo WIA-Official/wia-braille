@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Marketplaces & Trading | WIA-FIN-009</title>
+    <style>* {margin: 0; padding: 0; box-sizing: border-box;} body {font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.8;} .header {background: rgba(30, 41, 59, 0.8); border-bottom: 1px solid rgba(34, 197, 94, 0.2); padding: 2rem; position: sticky; top: 0; z-index: 100;} .header-content {max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;} .logo {font-size: 1.5rem; font-weight: 800; color: #22c55e; text-decoration: none;} nav a {color: #94a3b8; text-decoration: none; margin-left: 2rem;} .container {max-width: 900px; margin: 0 auto; padding: 3rem 2rem;} .chapter-number {display: inline-block; background: #22c55e; color: #0f172a; padding: 0.5rem 1rem; border-radius: 20px; margin-bottom: 1rem;} h1 {font-size: 3rem; font-weight: 800; background: linear-gradient(135deg, #22c55e 0%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;} h2 {font-size: 2rem; color: #22c55e; margin: 3rem 0 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(34, 197, 94, 0.2);} h3 {font-size: 1.5rem; color: #10b981; margin: 2rem 0 1rem;} p {margin-bottom: 1.5rem; color: #cbd5e1; font-size: 1.125rem;} ul {margin: 1.5rem 0; padding-left: 2rem; color: #cbd5e1;} li {margin-bottom: 0.75rem; font-size: 1.125rem;} .code-block {background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto;} .code-block pre {color: #22c55e; font-family: 'Courier New', monospace; font-size: 0.85rem;} .info-box {background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 1.5rem; margin: 2rem 0;} .info-box h4 {color: #3b82f6; margin-bottom: 1rem;} .navigation {display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(34, 197, 94, 0.2);} .nav-button {padding: 1rem 2rem; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px; color: #22c55e; text-decoration: none; font-weight: 600;} footer {background: rgba(15, 23, 42, 0.8); padding: 2rem; text-align: center; border-top: 1px solid rgba(34, 197, 94, 0.2); margin-top: 4rem; color: #64748b;}</style>
+</head>
+<body>
+    <div class="header"><div class="header-content"><a href="index.html" class="logo">🖼️ WIA-FIN-009</a><nav><a href="index.html">Contents</a><a href="../../index.html">Home</a></nav></div></div>
+    <div class="container">
+        <div class="chapter-header"><span class="chapter-number">CHAPTER 5</span><h1>Marketplaces & Trading</h1></div>
+
+        <p>NFT marketplaces are the lifeblood of the ecosystem, connecting creators with collectors and enabling price discovery through transparent trading. Understanding marketplace mechanics, integration patterns, and trading protocols is essential for anyone building in the NFT space.</p>
+
+        <h2>Major NFT Marketplaces</h2>
+
+        <h3>OpenSea</h3>
+        <p>As the largest NFT marketplace by volume, OpenSea supports ERC-721, ERC-1155, and cross-chain trading. It offers zero-cost listing using off-chain signatures (gasless listings), collection management tools, and the Seaport protocol for advanced trading scenarios. OpenSea takes a 2.5% fee on sales.</p>
+
+        <h3>Rarible</h3>
+        <p>Community-owned marketplace with governance token (RARI), supporting multi-chain NFTs and creator-centric features. Rarible pioneered the concept of marketplace rewards, distributing tokens to active users.</p>
+
+        <h3>LooksRare</h3>
+        <p>Launched as a community-first alternative to OpenSea, offering trading rewards in LOOKS tokens, 2% marketplace fee with staking rewards, and aggressive incentive programs for high-volume traders.</p>
+
+        <h3>Blur</h3>
+        <p>Professional trader-focused platform with zero marketplace fees, advanced portfolio management, sweep tools for batch buying, and optimized for speed and efficiency. Popular among NFT traders and collectors.</p>
+
+        <h2>Marketplace Integration</h2>
+
+        <h3>OpenSea Integration</h3>
+
+        <div class="code-block"><pre>// NFT contract compatible with OpenSea
+contract OpenSeaCompatibleNFT is ERC721 {
+    // Proxy registry for gasless listings
+    address public proxyRegistryAddress;
+
+    constructor(address _proxyRegistry) {
+        proxyRegistryAddress = _proxyRegistry;
+    }
+
+    // Override isApprovedForAll to whitelist OpenSea proxy
+    function isApprovedForAll(address owner, address operator)
+        public view override returns (bool)
+    {
+        // Whitelist OpenSea proxy contract for easy trading
+        ProxyRegistry proxyRegistry = ProxyRegistry(proxyRegistryAddress);
+        if (address(proxyRegistry.proxies(owner)) == operator) {
+            return true;
+        }
+        return super.isApprovedForAll(owner, operator);
+    }
+
+    // OpenSea metadata
+    function contractURI() public pure returns (string memory) {
+        return "ipfs://QmCollectionMetadata...";
+    }
+}
+
+contract ProxyRegistry {
+    mapping(address => address) public proxies;
+}</pre></div>
+
+        <h3>Collection Metadata</h3>
+
+        <div class="code-block"><pre>{
+  "name": "My NFT Collection",
+  "description": "A unique collection of digital art",
+  "image": "ipfs://QmCollectionImage...",
+  "external_link": "https://myproject.com",
+  "seller_fee_basis_points": 750,
+  "fee_recipient": "0xYourAddress..."
+}</pre></div>
+
+        <h2>Trading Mechanisms</h2>
+
+        <h3>Fixed Price Sales</h3>
+        <p>The simplest trading mechanism where sellers list NFTs at a specific price. Buyers can purchase immediately at the listed price. This is implemented through marketplace approval systems where the seller approves the marketplace contract to transfer their NFT upon payment receipt.</p>
+
+        <h3>Auctions</h3>
+        <p><strong>English Auctions:</strong> Traditional ascending price auctions where bidders compete by placing increasingly higher bids. The auction runs for a fixed duration, and the highest bidder wins.</p>
+        <p><strong>Dutch Auctions:</strong> Price starts high and decreases over time until someone purchases. Popular for fair launches as it finds market price automatically.</p>
+        <p><strong>Reserve Price Auctions:</strong> Seller sets a minimum acceptable price. If bidding doesn't reach the reserve, the NFT doesn't sell.</p>
+
+        <h3>Offers and Counteroffers</h3>
+        <p>Buyers can make offers below the listing price, which sellers can accept, reject, or counter. This enables price negotiation and discovery, particularly useful for illiquid or unique items.</p>
+
+        <h2>Seaport Protocol</h2>
+
+        <p>Seaport is OpenSea's advanced marketplace protocol enabling complex trading scenarios: partial fills, bundled listings, criteria-based offers, consideration items, and time-based restrictions.</p>
+
+        <div class="code-block"><pre>// Example Seaport order
+{
+  "offerer": "0xSeller...",
+  "offer": [{
+    "itemType": 2, // ERC721
+    "token": "0xNFTContract...",
+    "identifierOrCriteria": "123",
+    "startAmount": "1",
+    "endAmount": "1"
+  }],
+  "consideration": [{
+    "itemType": 0, // ETH
+    "token": "0x0000000000000000000000000000000000000000",
+    "identifierOrCriteria": "0",
+    "startAmount": "1000000000000000000", // 1 ETH
+    "endAmount": "1000000000000000000",
+    "recipient": "0xSeller..."
+  }, {
+    "itemType": 0,
+    "startAmount": "25000000000000000", // 2.5% royalty
+    "endAmount": "25000000000000000",
+    "recipient": "0xCreator..."
+  }]
+}</pre></div>
+
+        <h2>Fees and Economics</h2>
+
+        <h3>Marketplace Fees</h3>
+        <ul>
+            <li>OpenSea: 2.5% of sale price</li>
+            <li>Rarible: 2.5% of sale price</li>
+            <li>LooksRare: 2% of sale price</li>
+            <li>Blur: 0% marketplace fee (as of 2024)</li>
+        </ul>
+
+        <h3>Creator Royalties</h3>
+        <p>Typically 5-10% of secondary sales, paid automatically through ERC-2981 or marketplace-specific systems. However, royalty enforcement has become contentious, with some marketplaces making royalties optional.</p>
+
+        <h3>Gas Costs</h3>
+        <ul>
+            <li>Minting: 50,000-200,000 gas depending on complexity</li>
+            <li>Transfers: ~65,000 gas for ERC-721</li>
+            <li>Listings: Often gasless using off-chain signatures</li>
+            <li>Sales: ~80,000-150,000 gas for transaction settlement</li>
+        </ul>
+
+        <div class="info-box">
+            <h4>💡 Gasless Listings</h4>
+            <p>Modern marketplaces use off-chain order books with cryptographic signatures. When you list an NFT, you sign a message authorizing the sale without submitting a blockchain transaction. Gas is only paid when the sale actually executes, paid by the buyer. This dramatically reduces friction for sellers.</p>
+        </div>
+
+        <h2>Aggregators and Tools</h2>
+
+        <h3>Marketplace Aggregators</h3>
+        <p><strong>Gem (acquired by OpenSea):</strong> Aggregates listings across multiple marketplaces, enabling users to find the best prices and sweep collections efficiently.</p>
+        <p><strong>Blur:</strong> Functions as both marketplace and aggregator, showing listings from multiple platforms with optimized interface for professional traders.</p>
+
+        <h3>Analytics Platforms</h3>
+        <ul>
+            <li><strong>NFTGo:</strong> Comprehensive analytics including floor prices, trading volumes, holder distributions, and rarity rankings</li>
+            <li><strong>Nansen:</strong> On-chain analytics tracking whale wallets, smart money movements, and emerging trends</li>
+            <li><strong>DappRadar:</strong> Cross-chain NFT marketplace rankings and statistics</li>
+        </ul>
+
+        <h2>Building Custom Marketplaces</h2>
+
+        <h3>Basic Marketplace Contract</h3>
+
+        <div class="code-block"><pre>contract SimpleMarketplace {
+    struct Listing {
+        address seller;
+        address nftContract;
+        uint256 tokenId;
+        uint256 price;
+        bool active;
+    }
+
+    mapping(bytes32 => Listing) public listings;
+    uint256 public feePercent = 250; // 2.5%
+
+    event Listed(bytes32 listingId, address seller, uint256 price);
+    event Sold(bytes32 listingId, address buyer, uint256 price);
+
+    function list(
+        address nftContract,
+        uint256 tokenId,
+        uint256 price
+    ) external {
+        bytes32 listingId = keccak256(
+            abi.encodePacked(nftContract, tokenId, msg.sender)
+        );
+
+        IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+
+        listings[listingId] = Listing({
+            seller: msg.sender,
+            nftContract: nftContract,
+            tokenId: tokenId,
+            price: price,
+            active: true
+        });
+
+        emit Listed(listingId, msg.sender, price);
+    }
+
+    function buy(bytes32 listingId) external payable {
+        Listing storage listing = listings[listingId];
+        require(listing.active, "Not active");
+        require(msg.value >= listing.price, "Insufficient payment");
+
+        listing.active = false;
+
+        uint256 fee = (listing.price * feePercent) / 10000;
+        uint256 sellerAmount = listing.price - fee;
+
+        IERC721(listing.nftContract).transferFrom(
+            address(this),
+            msg.sender,
+            listing.tokenId
+        );
+
+        payable(listing.seller).transfer(sellerAmount);
+
+        emit Sold(listingId, msg.sender, listing.price);
+    }
+}</pre></div>
+
+        <h2>Conclusion</h2>
+
+        <p>NFT marketplaces continue evolving with new trading mechanisms, fee structures, and user experiences. Understanding marketplace integration and trading protocols is crucial whether you're launching a collection, building a project, or creating custom marketplace solutions. The trend toward aggregation and zero-fee models is reshaping the competitive landscape, while debates around royalty enforcement will define creator economics for years to come.</p>
+
+        <div class="navigation">
+            <a href="chapter-04.html" class="nav-button">← Previous: Smart Contracts</a>
+            <a href="chapter-06.html" class="nav-button">Next: Royalties →</a>
+        </div>
+    </div>
+    <footer><p>© 2025 SmileStory Inc. / WIA</p><p>弘益人間 (홍익인간) · Benefit All Humanity</p></footer>
+</body>
+</html>

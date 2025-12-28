@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-ENE-072: Ecosystem Restoration Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 0;
+            border-bottom: 2px solid #EF4444;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            color: #EF4444;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #94a3b8;
+            text-decoration: none;
+            margin-bottom: 1rem;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #EF4444;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab-button {
+            padding: 1rem 2rem;
+            background: #1e293b;
+            border: 2px solid #334155;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .tab-button:hover {
+            border-color: #EF4444;
+            color: #e2e8f0;
+        }
+
+        .tab-button.active {
+            background: #EF4444;
+            border-color: #EF4444;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .panel {
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel h2 {
+            color: #EF4444;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .panel h3 {
+            color: #fca5a5;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 0.5rem;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #EF4444;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .button {
+            background: #EF4444;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .button:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .button-secondary {
+            background: #334155;
+            margin-left: 1rem;
+        }
+
+        .button-secondary:hover {
+            background: #475569;
+        }
+
+        .results {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #0f172a;
+            border-radius: 0.5rem;
+            border-left: 4px solid #EF4444;
+        }
+
+        .results h3 {
+            color: #EF4444;
+            margin-bottom: 1rem;
+        }
+
+        .metric {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .metric-card {
+            background: #1e293b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-top: 3px solid #EF4444;
+        }
+
+        .metric-card .label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-card .value {
+            color: #EF4444;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .metric-card .unit {
+            color: #cbd5e1;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #0f172a;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #EF4444, #fca5a5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            transition: width 0.5s ease;
+        }
+
+        .checklist {
+            list-style: none;
+        }
+
+        .checklist li {
+            padding: 0.75rem;
+            background: #0f172a;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .checklist input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        table th,
+        table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        table th {
+            background: #0f172a;
+            color: #EF4444;
+            font-weight: 600;
+        }
+
+        table tr:hover {
+            background: #0f172a;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-excellent { background: #10b981; color: white; }
+        .status-good { background: #3b82f6; color: white; }
+        .status-fair { background: #f59e0b; color: white; }
+        .status-poor { background: #ef4444; color: white; }
+
+        .info-box {
+            background: #334155;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .info-box p {
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 4rem;
+            border-top: 2px solid #334155;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="../index.html" class="back-link">← Back to Main</a>
+            <h1>🦋 Ecosystem Restoration Simulator</h1>
+            <p>Interactive tools for planning and monitoring restoration projects</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab(0)">🌳 Ecosystem Health</button>
+            <button class="tab-button" onclick="showTab(1)">🐾 Species Reintroduction</button>
+            <button class="tab-button" onclick="showTab(2)">🌿 Habitat Restoration</button>
+            <button class="tab-button" onclick="showTab(3)">📊 Biodiversity Index</button>
+            <button class="tab-button" onclick="showTab(4)">🎯 Impact Analyzer</button>
+        </div>
+
+        <!-- Tab 1: Ecosystem Health Assessment -->
+        <div class="tab-content active" id="tab0">
+            <div class="panel">
+                <h2>🌳 Ecosystem Health Assessment</h2>
+                <p>Evaluate the current state of your ecosystem and identify restoration needs.</p>
+
+                <div class="grid-2">
+                    <div>
+                        <h3>Basic Information</h3>
+                        <div class="form-group">
+                            <label>Ecosystem Type</label>
+                            <select id="ecosystemType">
+                                <option value="forest">Forest</option>
+                                <option value="wetland">Wetland</option>
+                                <option value="grassland">Grassland</option>
+                                <option value="marine">Marine/Coastal</option>
+                                <option value="desert">Desert</option>
+                                <option value="tundra">Tundra</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Area Size (hectares)</label>
+                            <input type="number" id="areaSize" placeholder="Enter area size" value="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Degradation Level</label>
+                            <select id="degradationLevel">
+                                <option value="1">Minimal (1-20%)</option>
+                                <option value="2">Moderate (21-50%)</option>
+                                <option value="3">Severe (51-80%)</option>
+                                <option value="4">Critical (81-100%)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3>Environmental Indicators</h3>
+                        <div class="form-group">
+                            <label>Soil Quality (1-10)</label>
+                            <input type="range" id="soilQuality" min="1" max="10" value="5" oninput="updateValue('soilQuality')">
+                            <span id="soilQualityValue">5</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Water Quality (1-10)</label>
+                            <input type="range" id="waterQuality" min="1" max="10" value="5" oninput="updateValue('waterQuality')">
+                            <span id="waterQualityValue">5</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Vegetation Cover (%)</label>
+                            <input type="range" id="vegCover" min="0" max="100" value="50" oninput="updateValue('vegCover')">
+                            <span id="vegCoverValue">50%</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Native Species Diversity (1-10)</label>
+                            <input type="range" id="speciesDiversity" min="1" max="10" value="5" oninput="updateValue('speciesDiversity')">
+                            <span id="speciesDiversityValue">5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="button" onclick="assessEcosystemHealth()">Calculate Health Score</button>
+
+                <div id="healthResults" style="display: none;" class="results">
+                    <h3>Assessment Results</h3>
+                    <div class="metric">
+                        <div class="metric-card">
+                            <div class="label">Overall Health Score</div>
+                            <div class="value" id="healthScore">0</div>
+                            <div class="unit">out of 100</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Restoration Priority</div>
+                            <div class="value" id="priority" style="font-size: 1.2rem;">-</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Estimated Timeline</div>
+                            <div class="value" id="timeline">0</div>
+                            <div class="unit">years</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Estimated Cost</div>
+                            <div class="value" id="cost">$0</div>
+                            <div class="unit">USD</div>
+                        </div>
+                    </div>
+
+                    <h3>Recommended Actions</h3>
+                    <ul class="checklist" id="actionList"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Species Reintroduction Planner -->
+        <div class="tab-content" id="tab1">
+            <div class="panel">
+                <h2>🐾 Species Reintroduction Planner</h2>
+                <p>Plan and manage the reintroduction of native species to your ecosystem.</p>
+
+                <div class="grid-2">
+                    <div>
+                        <h3>Species Information</h3>
+                        <div class="form-group">
+                            <label>Species Name</label>
+                            <input type="text" id="speciesName" placeholder="e.g., Gray Wolf">
+                        </div>
+                        <div class="form-group">
+                            <label>Species Type</label>
+                            <select id="speciesType">
+                                <option value="mammal">Mammal</option>
+                                <option value="bird">Bird</option>
+                                <option value="reptile">Reptile</option>
+                                <option value="amphibian">Amphibian</option>
+                                <option value="fish">Fish</option>
+                                <option value="plant">Plant</option>
+                                <option value="insect">Insect</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Trophic Level</label>
+                            <select id="trophicLevel">
+                                <option value="producer">Producer</option>
+                                <option value="herbivore">Primary Consumer (Herbivore)</option>
+                                <option value="carnivore">Secondary Consumer (Carnivore)</option>
+                                <option value="apex">Apex Predator</option>
+                                <option value="decomposer">Decomposer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Initial Population Size</label>
+                            <input type="number" id="popSize" placeholder="Number of individuals" value="20">
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3>Habitat Requirements</h3>
+                        <div class="form-group">
+                            <label>Minimum Territory (hectares)</label>
+                            <input type="number" id="territory" placeholder="Territory size" value="500">
+                        </div>
+                        <div class="form-group">
+                            <label>Food Source Availability (1-10)</label>
+                            <input type="range" id="foodAvail" min="1" max="10" value="5" oninput="updateValue('foodAvail')">
+                            <span id="foodAvailValue">5</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Habitat Suitability (1-10)</label>
+                            <input type="range" id="habitatSuit" min="1" max="10" value="5" oninput="updateValue('habitatSuit')">
+                            <span id="habitatSuitValue">5</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Genetic Diversity Score (1-10)</label>
+                            <input type="range" id="geneticDiv" min="1" max="10" value="5" oninput="updateValue('geneticDiv')">
+                            <span id="geneticDivValue">5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="button" onclick="planReintroduction()">Generate Reintroduction Plan</button>
+
+                <div id="reintroResults" style="display: none;" class="results">
+                    <h3>Reintroduction Viability Analysis</h3>
+                    <div class="metric">
+                        <div class="metric-card">
+                            <div class="label">Success Probability</div>
+                            <div class="value" id="successProb">0%</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Population Growth Rate</div>
+                            <div class="value" id="growthRate">0%</div>
+                            <div class="unit">per year</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Time to Stability</div>
+                            <div class="value" id="stabilityTime">0</div>
+                            <div class="unit">years</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Carrying Capacity</div>
+                            <div class="value" id="carryCapacity">0</div>
+                            <div class="unit">individuals</div>
+                        </div>
+                    </div>
+
+                    <h3>Implementation Timeline</h3>
+                    <table id="timelineTable">
+                        <thead>
+                            <tr>
+                                <th>Phase</th>
+                                <th>Duration</th>
+                                <th>Activities</th>
+                                <th>Success Criteria</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timelineBody"></tbody>
+                    </table>
+
+                    <div class="info-box">
+                        <h4 style="color: #3b82f6; margin-bottom: 0.5rem;">Critical Considerations</h4>
+                        <p>• Ensure genetic diversity through multiple source populations</p>
+                        <p>• Implement gradual acclimation period before full release</p>
+                        <p>• Establish monitoring protocol for population tracking</p>
+                        <p>• Prepare contingency plans for unexpected challenges</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Habitat Restoration Tracker -->
+        <div class="tab-content" id="tab2">
+            <div class="panel">
+                <h2>🌿 Habitat Restoration Tracker</h2>
+                <p>Monitor progress of habitat restoration activities across different zones.</p>
+
+                <h3>Project Setup</h3>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Project Name</label>
+                        <input type="text" id="projectName" placeholder="e.g., Oak Woodland Restoration">
+                    </div>
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" id="startDate">
+                    </div>
+                </div>
+
+                <h3>Restoration Zones</h3>
+                <div id="zonesList">
+                    <div class="zone-item" style="background: #0f172a; padding: 1rem; margin-bottom: 1rem; border-radius: 0.5rem;">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Zone Name</label>
+                                <input type="text" class="zoneName" placeholder="e.g., Zone A - Riparian Buffer">
+                            </div>
+                            <div class="form-group">
+                                <label>Area (hectares)</label>
+                                <input type="number" class="zoneArea" placeholder="Area size" value="25">
+                            </div>
+                            <div class="form-group">
+                                <label>Restoration Activity</label>
+                                <select class="zoneActivity">
+                                    <option value="planting">Native Planting</option>
+                                    <option value="soil">Soil Remediation</option>
+                                    <option value="water">Hydrological Restoration</option>
+                                    <option value="invasive">Invasive Species Removal</option>
+                                    <option value="erosion">Erosion Control</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Completion Status (%)</label>
+                                <input type="range" class="zoneProgress" min="0" max="100" value="0" oninput="updateZoneProgress(this)">
+                                <span class="zoneProgressValue">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="button" onclick="addZone()">+ Add Zone</button>
+                <button class="button" onclick="calculateRestoration()">Calculate Progress</button>
+
+                <div id="restorationResults" style="display: none;" class="results">
+                    <h3>Overall Project Progress</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="overallProgress" style="width: 0%;">0%</div>
+                    </div>
+
+                    <div class="metric">
+                        <div class="metric-card">
+                            <div class="label">Total Area</div>
+                            <div class="value" id="totalArea">0</div>
+                            <div class="unit">hectares</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Completed Area</div>
+                            <div class="value" id="completedArea">0</div>
+                            <div class="unit">hectares</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Days Elapsed</div>
+                            <div class="value" id="daysElapsed">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Estimated Completion</div>
+                            <div class="value" id="estCompletion" style="font-size: 1rem;">-</div>
+                        </div>
+                    </div>
+
+                    <h3>Zone-by-Zone Analysis</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Zone</th>
+                                <th>Area (ha)</th>
+                                <th>Activity</th>
+                                <th>Progress</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="zoneAnalysis"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Biodiversity Index Calculator -->
+        <div class="tab-content" id="tab3">
+            <div class="panel">
+                <h2>📊 Biodiversity Index Calculator</h2>
+                <p>Calculate biodiversity indices to measure ecosystem richness and evenness.</p>
+
+                <div class="info-box">
+                    <h4 style="color: #3b82f6; margin-bottom: 0.5rem;">About Biodiversity Indices</h4>
+                    <p><strong>Shannon Index:</strong> Measures species diversity accounting for abundance and evenness</p>
+                    <p><strong>Simpson Index:</strong> Probability that two individuals randomly selected belong to different species</p>
+                    <p><strong>Species Richness:</strong> Total number of different species present</p>
+                </div>
+
+                <h3>Species Count Data</h3>
+                <div id="speciesList">
+                    <div class="species-item" style="background: #0f172a; padding: 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; display: flex; gap: 1rem; align-items: center;">
+                        <input type="text" class="speciesNameInput" placeholder="Species name" style="flex: 2;">
+                        <input type="number" class="speciesCount" placeholder="Count" value="10" style="flex: 1;">
+                        <button onclick="removeSpecies(this)" style="background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">Remove</button>
+                    </div>
+                </div>
+
+                <button class="button" onclick="addSpecies()">+ Add Species</button>
+                <button class="button" onclick="calculateBiodiversity()">Calculate Indices</button>
+
+                <div id="biodivResults" style="display: none;" class="results">
+                    <h3>Biodiversity Metrics</h3>
+                    <div class="metric">
+                        <div class="metric-card">
+                            <div class="label">Species Richness</div>
+                            <div class="value" id="richness">0</div>
+                            <div class="unit">species</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Shannon Index (H')</div>
+                            <div class="value" id="shannon">0.00</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Simpson Index (D)</div>
+                            <div class="value" id="simpson">0.00</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Evenness (J)</div>
+                            <div class="value" id="evenness">0.00</div>
+                        </div>
+                    </div>
+
+                    <h3>Species Distribution</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Species</th>
+                                <th>Count</th>
+                                <th>Relative Abundance</th>
+                                <th>Contribution to Diversity</th>
+                            </tr>
+                        </thead>
+                        <tbody id="speciesDistribution"></tbody>
+                    </table>
+
+                    <div class="info-box">
+                        <h4 style="color: #3b82f6; margin-bottom: 0.5rem;">Interpretation</h4>
+                        <p id="interpretation"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Project Impact Analyzer -->
+        <div class="tab-content" id="tab4">
+            <div class="panel">
+                <h2>🎯 Project Impact Analyzer</h2>
+                <p>Analyze the ecological and socio-economic impacts of restoration projects.</p>
+
+                <div class="grid-2">
+                    <div>
+                        <h3>Ecological Impacts</h3>
+                        <div class="form-group">
+                            <label>Carbon Sequestration (tons CO2/year)</label>
+                            <input type="number" id="carbonSeq" placeholder="Estimated carbon capture" value="500">
+                        </div>
+                        <div class="form-group">
+                            <label>Water Quality Improvement (%)</label>
+                            <input type="range" id="waterImprov" min="0" max="100" value="30" oninput="updateValue('waterImprov')">
+                            <span id="waterImprovValue">30%</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Soil Erosion Reduction (%)</label>
+                            <input type="range" id="erosionRed" min="0" max="100" value="40" oninput="updateValue('erosionRed')">
+                            <span id="erosionRedValue">40%</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Habitat Connectivity Increase (%)</label>
+                            <input type="range" id="habitatConn" min="0" max="100" value="25" oninput="updateValue('habitatConn')">
+                            <span id="habitatConnValue">25%</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3>Socio-Economic Impacts</h3>
+                        <div class="form-group">
+                            <label>Jobs Created</label>
+                            <input type="number" id="jobsCreated" placeholder="Number of jobs" value="15">
+                        </div>
+                        <div class="form-group">
+                            <label>Community Participants</label>
+                            <input type="number" id="participants" placeholder="Number of people" value="200">
+                        </div>
+                        <div class="form-group">
+                            <label>Tourism Revenue Increase ($/year)</label>
+                            <input type="number" id="tourismRev" placeholder="Annual revenue" value="50000">
+                        </div>
+                        <div class="form-group">
+                            <label>Ecosystem Services Value ($/year)</label>
+                            <input type="number" id="ecoserviceVal" placeholder="Annual value" value="100000">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="button" onclick="analyzeImpact()">Analyze Impact</button>
+
+                <div id="impactResults" style="display: none;" class="results">
+                    <h3>Impact Assessment Summary</h3>
+
+                    <div class="metric">
+                        <div class="metric-card">
+                            <div class="label">Total Ecological Score</div>
+                            <div class="value" id="ecoScore">0</div>
+                            <div class="unit">out of 100</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Total Social Score</div>
+                            <div class="value" id="socialScore">0</div>
+                            <div class="unit">out of 100</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Overall Impact Rating</div>
+                            <div class="value" id="impactRating" style="font-size: 1.2rem;">-</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Benefit-Cost Ratio</div>
+                            <div class="value" id="bcRatio">0.0</div>
+                        </div>
+                    </div>
+
+                    <h3>Climate Impact</h3>
+                    <div class="metric">
+                        <div class="metric-card">
+                            <div class="label">Annual CO2 Sequestration</div>
+                            <div class="value" id="co2Annual">0</div>
+                            <div class="unit">tons/year</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">20-Year Carbon Offset</div>
+                            <div class="value" id="co2Total">0</div>
+                            <div class="unit">tons CO2</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Car Equivalents</div>
+                            <div class="value" id="carEquiv">0</div>
+                            <div class="unit">cars/year</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="label">Tree Equivalents</div>
+                            <div class="value" id="treeEquiv">0</div>
+                            <div class="unit">mature trees</div>
+                        </div>
+                    </div>
+
+                    <h3>Long-term Benefits</h3>
+                    <ul class="checklist">
+                        <li><input type="checkbox" checked disabled> Enhanced climate resilience</li>
+                        <li><input type="checkbox" checked disabled> Improved water regulation</li>
+                        <li><input type="checkbox" checked disabled> Increased biodiversity</li>
+                        <li><input type="checkbox" checked disabled> Soil health restoration</li>
+                        <li><input type="checkbox" checked disabled> Community well-being</li>
+                        <li><input type="checkbox" checked disabled> Cultural heritage preservation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 WIA (World Certification Industry Association)</p>
+            <p style="margin-top: 0.5rem; color: #EF4444;">弘益人間 (홍익인간) · Benefit All Humanity</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentTab = 0;
+
+        function showTab(index) {
+            const tabs = document.querySelectorAll('.tab-content');
+            const buttons = document.querySelectorAll('.tab-button');
+
+            tabs.forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+
+            buttons.forEach((button, i) => {
+                button.classList.toggle('active', i === index);
+            });
+
+            currentTab = index;
+        }
+
+        function updateValue(id) {
+            const input = document.getElementById(id);
+            const output = document.getElementById(id + 'Value');
+            output.textContent = input.value + (id.includes('Cover') || id.includes('Improv') || id.includes('Red') || id.includes('Conn') ? '%' : '');
+        }
+
+        // Tab 1: Ecosystem Health Assessment
+        function assessEcosystemHealth() {
+            const soilQuality = parseInt(document.getElementById('soilQuality').value);
+            const waterQuality = parseInt(document.getElementById('waterQuality').value);
+            const vegCover = parseInt(document.getElementById('vegCover').value);
+            const speciesDiversity = parseInt(document.getElementById('speciesDiversity').value);
+            const degradationLevel = parseInt(document.getElementById('degradationLevel').value);
+            const areaSize = parseFloat(document.getElementById('areaSize').value);
+
+            // Calculate health score (0-100)
+            const baseScore = (soilQuality * 10 + waterQuality * 10 + vegCover + speciesDiversity * 10) / 4;
+            const degradationPenalty = degradationLevel * 10;
+            const healthScore = Math.max(0, Math.min(100, baseScore - degradationPenalty));
+
+            // Determine priority
+            let priority = '';
+            if (healthScore >= 70) priority = 'Low';
+            else if (healthScore >= 50) priority = 'Medium';
+            else if (healthScore >= 30) priority = 'High';
+            else priority = 'Critical';
+
+            // Estimate timeline (years)
+            const timeline = Math.ceil((100 - healthScore) / 10);
+
+            // Estimate cost ($/hectare varies by degradation)
+            const costPerHectare = 5000 + (degradationLevel * 3000);
+            const totalCost = (areaSize * costPerHectare).toLocaleString();
+
+            // Display results
+            document.getElementById('healthScore').textContent = Math.round(healthScore);
+            document.getElementById('priority').textContent = priority;
+            document.getElementById('timeline').textContent = timeline;
+            document.getElementById('cost').textContent = '$' + totalCost;
+
+            // Generate action list
+            const actions = [];
+            if (soilQuality < 5) actions.push('Implement soil remediation and organic matter enhancement');
+            if (waterQuality < 5) actions.push('Restore hydrological processes and improve water quality');
+            if (vegCover < 50) actions.push('Increase native vegetation through planting programs');
+            if (speciesDiversity < 5) actions.push('Enhance biodiversity through species reintroduction');
+            if (degradationLevel > 2) actions.push('Remove invasive species and restore native ecosystems');
+            actions.push('Establish long-term monitoring protocols');
+            actions.push('Engage local communities in restoration activities');
+
+            const actionList = document.getElementById('actionList');
+            actionList.innerHTML = actions.map(action =>
+                `<li><input type="checkbox"> ${action}</li>`
+            ).join('');
+
+            document.getElementById('healthResults').style.display = 'block';
+        }
+
+        // Tab 2: Species Reintroduction Planner
+        function planReintroduction() {
+            const popSize = parseInt(document.getElementById('popSize').value);
+            const territory = parseInt(document.getElementById('territory').value);
+            const foodAvail = parseInt(document.getElementById('foodAvail').value);
+            const habitatSuit = parseInt(document.getElementById('habitatSuit').value);
+            const geneticDiv = parseInt(document.getElementById('geneticDiv').value);
+
+            // Calculate success probability
+            const successProb = ((foodAvail + habitatSuit + geneticDiv) / 30 * 100).toFixed(1);
+
+            // Calculate growth rate (simplified model)
+            const growthRate = ((foodAvail + habitatSuit) / 20 * 15).toFixed(1);
+
+            // Time to stability
+            const stabilityTime = Math.ceil(10 / (growthRate / 10));
+
+            // Carrying capacity
+            const carryCapacity = Math.floor(territory * (foodAvail / 10) * 0.5);
+
+            // Display results
+            document.getElementById('successProb').textContent = successProb + '%';
+            document.getElementById('growthRate').textContent = growthRate;
+            document.getElementById('stabilityTime').textContent = stabilityTime;
+            document.getElementById('carryCapacity').textContent = carryCapacity;
+
+            // Generate timeline
+            const timeline = [
+                { phase: 'Pre-release Assessment', duration: '3-6 months', activities: 'Habitat survey, stakeholder consultation, permits', criteria: 'All permits approved, habitat suitable' },
+                { phase: 'Preparation', duration: '6-12 months', activities: 'Source population selection, health screening, quarantine', criteria: 'Animals healthy, genetically diverse' },
+                { phase: 'Soft Release', duration: '2-3 months', activities: 'Acclimation enclosures, gradual release, supplemental feeding', criteria: 'Animals adapting to environment' },
+                { phase: 'Monitoring', duration: '2-5 years', activities: 'GPS tracking, health checks, population surveys', criteria: 'Population stable and reproducing' },
+                { phase: 'Adaptive Management', duration: 'Ongoing', activities: 'Adjust strategies, address challenges, maintain habitat', criteria: 'Self-sustaining population achieved' }
+            ];
+
+            const timelineBody = document.getElementById('timelineBody');
+            timelineBody.innerHTML = timeline.map(phase =>
+                `<tr>
+                    <td><strong>${phase.phase}</strong></td>
+                    <td>${phase.duration}</td>
+                    <td>${phase.activities}</td>
+                    <td>${phase.criteria}</td>
+                </tr>`
+            ).join('');
+
+            document.getElementById('reintroResults').style.display = 'block';
+        }
+
+        // Tab 3: Habitat Restoration Tracker
+        function addZone() {
+            const zonesList = document.getElementById('zonesList');
+            const newZone = document.createElement('div');
+            newZone.className = 'zone-item';
+            newZone.style.cssText = 'background: #0f172a; padding: 1rem; margin-bottom: 1rem; border-radius: 0.5rem;';
+            newZone.innerHTML = `
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Zone Name</label>
+                        <input type="text" class="zoneName" placeholder="e.g., Zone B">
+                    </div>
+                    <div class="form-group">
+                        <label>Area (hectares)</label>
+                        <input type="number" class="zoneArea" placeholder="Area size" value="25">
+                    </div>
+                    <div class="form-group">
+                        <label>Restoration Activity</label>
+                        <select class="zoneActivity">
+                            <option value="planting">Native Planting</option>
+                            <option value="soil">Soil Remediation</option>
+                            <option value="water">Hydrological Restoration</option>
+                            <option value="invasive">Invasive Species Removal</option>
+                            <option value="erosion">Erosion Control</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Completion Status (%)</label>
+                        <input type="range" class="zoneProgress" min="0" max="100" value="0" oninput="updateZoneProgress(this)">
+                        <span class="zoneProgressValue">0%</span>
+                    </div>
+                </div>
+            `;
+            zonesList.appendChild(newZone);
+        }
+
+        function updateZoneProgress(element) {
+            const valueSpan = element.nextElementSibling;
+            valueSpan.textContent = element.value + '%';
+        }
+
+        function calculateRestoration() {
+            const zones = document.querySelectorAll('.zone-item');
+            let totalArea = 0;
+            let completedArea = 0;
+            const zoneData = [];
+
+            zones.forEach(zone => {
+                const name = zone.querySelector('.zoneName').value || 'Unnamed Zone';
+                const area = parseFloat(zone.querySelector('.zoneArea').value) || 0;
+                const activity = zone.querySelector('.zoneActivity').selectedOptions[0].text;
+                const progress = parseInt(zone.querySelector('.zoneProgress').value) || 0;
+
+                totalArea += area;
+                completedArea += (area * progress / 100);
+
+                zoneData.push({ name, area, activity, progress });
+            });
+
+            const overallProgress = totalArea > 0 ? (completedArea / totalArea * 100).toFixed(1) : 0;
+
+            // Calculate days elapsed
+            const startDate = document.getElementById('startDate').value;
+            let daysElapsed = 0;
+            if (startDate) {
+                const start = new Date(startDate);
+                const now = new Date();
+                daysElapsed = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+            }
+
+            // Estimate completion
+            let estCompletion = 'Set start date';
+            if (daysElapsed > 0 && overallProgress > 0) {
+                const daysToComplete = (daysElapsed / overallProgress) * (100 - overallProgress);
+                const completionDate = new Date();
+                completionDate.setDate(completionDate.getDate() + daysToComplete);
+                estCompletion = completionDate.toLocaleDateString();
+            }
+
+            // Display results
+            document.getElementById('overallProgress').style.width = overallProgress + '%';
+            document.getElementById('overallProgress').textContent = overallProgress + '%';
+            document.getElementById('totalArea').textContent = totalArea.toFixed(1);
+            document.getElementById('completedArea').textContent = completedArea.toFixed(1);
+            document.getElementById('daysElapsed').textContent = daysElapsed;
+            document.getElementById('estCompletion').textContent = estCompletion;
+
+            // Zone analysis table
+            const zoneAnalysis = document.getElementById('zoneAnalysis');
+            zoneAnalysis.innerHTML = zoneData.map(zone => {
+                let statusClass = 'status-poor';
+                let statusText = 'Not Started';
+                if (zone.progress >= 100) {
+                    statusClass = 'status-excellent';
+                    statusText = 'Complete';
+                } else if (zone.progress >= 70) {
+                    statusClass = 'status-good';
+                    statusText = 'On Track';
+                } else if (zone.progress >= 30) {
+                    statusClass = 'status-fair';
+                    statusText = 'In Progress';
+                }
+
+                return `<tr>
+                    <td><strong>${zone.name}</strong></td>
+                    <td>${zone.area} ha</td>
+                    <td>${zone.activity}</td>
+                    <td>${zone.progress}%</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('restorationResults').style.display = 'block';
+        }
+
+        // Tab 4: Biodiversity Index Calculator
+        function addSpecies() {
+            const speciesList = document.getElementById('speciesList');
+            const newSpecies = document.createElement('div');
+            newSpecies.className = 'species-item';
+            newSpecies.style.cssText = 'background: #0f172a; padding: 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem; display: flex; gap: 1rem; align-items: center;';
+            newSpecies.innerHTML = `
+                <input type="text" class="speciesNameInput" placeholder="Species name" style="flex: 2;">
+                <input type="number" class="speciesCount" placeholder="Count" value="10" style="flex: 1;">
+                <button onclick="removeSpecies(this)" style="background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">Remove</button>
+            `;
+            speciesList.appendChild(newSpecies);
+        }
+
+        function removeSpecies(button) {
+            button.parentElement.remove();
+        }
+
+        function calculateBiodiversity() {
+            const speciesItems = document.querySelectorAll('.species-item');
+            const speciesData = [];
+            let totalIndividuals = 0;
+
+            speciesItems.forEach(item => {
+                const name = item.querySelector('.speciesNameInput').value || 'Unknown Species';
+                const count = parseInt(item.querySelector('.speciesCount').value) || 0;
+                if (count > 0) {
+                    speciesData.push({ name, count });
+                    totalIndividuals += count;
+                }
+            });
+
+            if (speciesData.length === 0 || totalIndividuals === 0) {
+                alert('Please add species data with valid counts');
+                return;
+            }
+
+            // Calculate indices
+            const richness = speciesData.length;
+
+            // Shannon Index: H' = -Σ(pi * ln(pi))
+            let shannon = 0;
+            speciesData.forEach(sp => {
+                const pi = sp.count / totalIndividuals;
+                shannon -= pi * Math.log(pi);
+            });
+
+            // Simpson Index: D = 1 - Σ(pi²)
+            let simpson = 0;
+            speciesData.forEach(sp => {
+                const pi = sp.count / totalIndividuals;
+                simpson += pi * pi;
+            });
+            simpson = 1 - simpson;
+
+            // Evenness: J = H' / ln(S)
+            const evenness = shannon / Math.log(richness);
+
+            // Display results
+            document.getElementById('richness').textContent = richness;
+            document.getElementById('shannon').textContent = shannon.toFixed(3);
+            document.getElementById('simpson').textContent = simpson.toFixed(3);
+            document.getElementById('evenness').textContent = evenness.toFixed(3);
+
+            // Species distribution table
+            const distribution = document.getElementById('speciesDistribution');
+            distribution.innerHTML = speciesData.map(sp => {
+                const relAbundance = (sp.count / totalIndividuals * 100).toFixed(2);
+                const pi = sp.count / totalIndividuals;
+                const contribution = (-pi * Math.log(pi)).toFixed(3);
+
+                return `<tr>
+                    <td><strong>${sp.name}</strong></td>
+                    <td>${sp.count}</td>
+                    <td>${relAbundance}%</td>
+                    <td>${contribution}</td>
+                </tr>`;
+            }).join('');
+
+            // Interpretation
+            let interpretation = '';
+            if (shannon > 3) {
+                interpretation = 'Excellent diversity! This ecosystem shows high species richness and evenness, indicating a healthy, well-balanced community.';
+            } else if (shannon > 2) {
+                interpretation = 'Good diversity. The ecosystem has moderate species richness with reasonable distribution among species.';
+            } else if (shannon > 1) {
+                interpretation = 'Moderate diversity. Consider strategies to increase species richness or improve evenness.';
+            } else {
+                interpretation = 'Low diversity. This ecosystem may be dominated by few species and could benefit from restoration efforts.';
+            }
+
+            document.getElementById('interpretation').textContent = interpretation;
+            document.getElementById('biodivResults').style.display = 'block';
+        }
+
+        // Tab 5: Impact Analyzer
+        function analyzeImpact() {
+            const carbonSeq = parseFloat(document.getElementById('carbonSeq').value) || 0;
+            const waterImprov = parseInt(document.getElementById('waterImprov').value) || 0;
+            const erosionRed = parseInt(document.getElementById('erosionRed').value) || 0;
+            const habitatConn = parseInt(document.getElementById('habitatConn').value) || 0;
+            const jobsCreated = parseInt(document.getElementById('jobsCreated').value) || 0;
+            const participants = parseInt(document.getElementById('participants').value) || 0;
+            const tourismRev = parseFloat(document.getElementById('tourismRev').value) || 0;
+            const ecoserviceVal = parseFloat(document.getElementById('ecoserviceVal').value) || 0;
+
+            // Calculate scores
+            const ecoScore = Math.min(100, (waterImprov + erosionRed + habitatConn) / 3 + (carbonSeq / 10));
+            const socialScore = Math.min(100, (jobsCreated * 2) + (participants / 10) + (tourismRev / 1000));
+
+            // Overall rating
+            const avgScore = (ecoScore + socialScore) / 2;
+            let rating = '';
+            if (avgScore >= 80) rating = 'Transformative';
+            else if (avgScore >= 60) rating = 'High Impact';
+            else if (avgScore >= 40) rating = 'Moderate Impact';
+            else rating = 'Developing';
+
+            // Benefit-cost ratio (simplified)
+            const totalBenefits = ecoserviceVal + tourismRev;
+            const estimatedCosts = jobsCreated * 30000; // rough estimate
+            const bcRatio = estimatedCosts > 0 ? (totalBenefits / estimatedCosts).toFixed(2) : 0;
+
+            // Climate calculations
+            const co2Total = carbonSeq * 20; // 20-year total
+            const carEquiv = Math.floor(carbonSeq / 4.6); // avg car emits 4.6 tons/year
+            const treeEquiv = Math.floor(carbonSeq / 0.025); // avg tree sequesters 25kg/year
+
+            // Display results
+            document.getElementById('ecoScore').textContent = Math.round(ecoScore);
+            document.getElementById('socialScore').textContent = Math.round(socialScore);
+            document.getElementById('impactRating').textContent = rating;
+            document.getElementById('bcRatio').textContent = bcRatio;
+
+            document.getElementById('co2Annual').textContent = carbonSeq;
+            document.getElementById('co2Total').textContent = co2Total;
+            document.getElementById('carEquiv').textContent = carEquiv;
+            document.getElementById('treeEquiv').textContent = treeEquiv;
+
+            document.getElementById('impactResults').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

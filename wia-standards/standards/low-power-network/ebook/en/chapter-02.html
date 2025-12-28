@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: LoRaWAN Deep Dive - WIA-COMM-018</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #8B5CF6;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 15px;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 1.8em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            color: var(--text);
+            font-size: 1.3em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: var(--text-dim);
+        }
+
+        .chapter-info {
+            background: rgba(139, 92, 246, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: var(--bg);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--primary);
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .code-block {
+            background: var(--bg);
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .diagram {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .key-takeaways {
+            background: rgba(139, 92, 246, 0.15);
+            border: 2px solid var(--primary);
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 8px;
+        }
+
+        .key-takeaways h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .key-takeaways ul {
+            margin-left: 20px;
+        }
+
+        .key-takeaways li {
+            margin: 10px 0;
+            color: var(--text-dim);
+        }
+
+        .review-questions {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 8px;
+        }
+
+        .review-questions h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .review-questions ol {
+            margin-left: 20px;
+        }
+
+        .review-questions li {
+            margin: 15px 0;
+            color: var(--text-dim);
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border);
+        }
+
+        .nav-button {
+            background: var(--primary);
+            color: var(--text);
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .nav-button:hover {
+            background: #7C3AED;
+            transform: translateY(-2px);
+        }
+
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+
+        li {
+            margin: 8px 0;
+            color: var(--text-dim);
+        }
+
+        strong {
+            color: var(--text);
+        }
+
+        .highlight {
+            color: var(--primary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chapter 2: LoRaWAN Deep Dive</h1>
+
+        <div class="chapter-info">
+            <p><strong>WIA-COMM-018 Standard</strong> | Low-Power Wide Area Networks</p>
+            <p><strong>Focus:</strong> LoRaWAN architecture, modulation, device classes, and practical implementation</p>
+        </div>
+
+        <h2>2.1 Introduction to LoRaWAN</h2>
+
+        <p>LoRaWAN (Long Range Wide Area Network) stands out among LPWAN technologies for its unique combination of long range, low power consumption, and deployment flexibility. Unlike cellular-based solutions (NB-IoT, LTE-M), LoRaWAN operates in unlicensed ISM (Industrial, Scientific, and Medical) bands, enabling both public and private network deployments without ongoing spectrum licensing costs.</p>
+
+        <p>Developed by the LoRa Alliance—a global association of over 500 companies—LoRaWAN is an <span class="highlight">open standard</span> that promotes interoperability between devices and networks from different vendors. This openness has driven rapid adoption: over 171 public LoRaWAN networks operate in 170+ countries, with millions of sensors deployed worldwide.</p>
+
+        <h3>LoRaWAN vs. LoRa: Understanding the Difference</h3>
+
+        <p>It's crucial to distinguish between <strong>LoRa</strong> (the physical layer modulation) and <strong>LoRaWAN</strong> (the network protocol):</p>
+
+        <ul>
+            <li><strong>LoRa (Physical Layer):</strong> Chirp Spread Spectrum (CSS) modulation technique developed by Semtech. Defines how data is encoded into radio waves for transmission.</li>
+            <li><strong>LoRaWAN (MAC Layer & Above):</strong> Network protocol that defines device activation, encryption, network management, and message formats. Built on top of LoRa modulation.</li>
+        </ul>
+
+        <p>Think of it like WiFi: LoRa is analogous to OFDM modulation, while LoRaWAN is like the 802.11 protocol that manages network operations.</p>
+
+        <h2>2.2 Chirp Spread Spectrum Modulation</h2>
+
+        <p>LoRa's revolutionary capability comes from <strong>Chirp Spread Spectrum (CSS)</strong> modulation—a technique originally developed for radar and military communications. CSS offers exceptional resilience to interference and enables reception of signals significantly below the noise floor.</p>
+
+        <h3>How Chirps Work</h3>
+
+        <p>A chirp is a sinusoidal signal whose frequency increases (up-chirp) or decreases (down-chirp) linearly over time. Imagine a sound that starts low-pitched and smoothly transitions to high-pitched—that's an audible chirp. LoRa uses radio frequency chirps in the ISM bands.</p>
+
+        <div class="diagram">
+Frequency
+    ^
+    │     ╱
+    │    ╱
+    │   ╱       ← Up-Chirp (LoRa Symbol)
+    │  ╱
+    │ ╱
+    └──────────────> Time
+
+Symbol Information Encoded by Chirp Start Position:
+
+Symbol 0:  ├──╱──╱──╱──╱──╱──╱──╱──╱──┤
+Symbol 1:  ├─╱──╱──╱──╱──╱──╱──╱──╱───┤
+Symbol 2:  ├╱──╱──╱──╱──╱──╱──╱──╱────┤
+           ...
+        </div>
+
+        <p><strong>Key Properties of CSS:</strong></p>
+
+        <ul>
+            <li><strong>Spreading Gain:</strong> Signal is spread across the full bandwidth (125/250/500 kHz), making it resistant to narrowband interference</li>
+            <li><strong>Processing Gain:</strong> Receiver correlates incoming signal with expected chirp pattern, extracting signal from noise (up to -20 dB below noise floor)</li>
+            <li><strong>Doppler Resilient:</strong> Frequency offset from motion has minimal impact, unlike FSK modulation</li>
+            <li><strong>Multipath Resistant:</strong> Delayed reflections don't significantly degrade performance</li>
+        </ul>
+
+        <h3>Spreading Factors: The Range-Rate Tradeoff</h3>
+
+        <p>LoRa's <strong>Spreading Factor (SF)</strong> is the most critical parameter, controlling the tradeoff between range, data rate, and power consumption. SF determines how many chirps represent each bit of data.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>SF</th>
+                    <th>Chips/Symbol</th>
+                    <th>Data Rate (125kHz BW)</th>
+                    <th>Time on Air (10B)</th>
+                    <th>Link Budget</th>
+                    <th>Range (Urban)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>SF7</strong></td>
+                    <td>128</td>
+                    <td>5.5 kbps</td>
+                    <td>41 ms</td>
+                    <td>~126 dB</td>
+                    <td>2 km</td>
+                </tr>
+                <tr>
+                    <td><strong>SF8</strong></td>
+                    <td>256</td>
+                    <td>3.1 kbps</td>
+                    <td>72 ms</td>
+                    <td>~129 dB</td>
+                    <td>4 km</td>
+                </tr>
+                <tr>
+                    <td><strong>SF9</strong></td>
+                    <td>512</td>
+                    <td>1.8 kbps</td>
+                    <td>144 ms</td>
+                    <td>~132 dB</td>
+                    <td>6 km</td>
+                </tr>
+                <tr>
+                    <td><strong>SF10</strong></td>
+                    <td>1024</td>
+                    <td>980 bps</td>
+                    <td>247 ms</td>
+                    <td>~135 dB</td>
+                    <td>8 km</td>
+                </tr>
+                <tr>
+                    <td><strong>SF11</strong></td>
+                    <td>2048</td>
+                    <td>440 bps</td>
+                    <td>494 ms</td>
+                    <td>~138 dB</td>
+                    <td>11 km</td>
+                </tr>
+                <tr>
+                    <td><strong>SF12</strong></td>
+                    <td>4096</td>
+                    <td>250 bps</td>
+                    <td>988 ms</td>
+                    <td>~141 dB</td>
+                    <td>14 km</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Important Observations:</strong></p>
+
+        <ul>
+            <li>Each SF increase (SF7→SF8) doubles the time on air and halves the data rate</li>
+            <li>Higher SF = longer range but more battery consumption and airtime</li>
+            <li>Different SFs are orthogonal—transmissions don't interfere with each other</li>
+            <li>Gateway can receive multiple SFs simultaneously on the same frequency</li>
+        </ul>
+
+        <h2>2.3 LoRaWAN Network Architecture</h2>
+
+        <p>LoRaWAN employs a <strong>star-of-stars topology</strong>, distinct from mesh networks (Zigbee) or cellular point-to-point architectures.</p>
+
+        <div class="diagram">
+┌──────────────────────────────────────────────────────────────┐
+│                LoRaWAN Network Architecture                   │
+├──────────────────────────────────────────────────────────────┤
+│                                                                │
+│  End Devices              Gateways              Network Server│
+│                                                                │
+│  ┌─────────┐                                                  │
+│  │ Sensor  │──────┐                                           │
+│  │  SF12   │      │         ┌──────────┐                      │
+│  └─────────┘      ├────────▶│ Gateway  │                      │
+│                   │         │    1     │────┐                 │
+│  ┌─────────┐      │         └──────────┘    │                 │
+│  │ Sensor  │──────┤                          │                 │
+│  │  SF10   │      │                          │  Backhaul      │
+│  └─────────┘      │         ┌──────────┐    │  (Ethernet/    │
+│                   ├────────▶│ Gateway  │────┤   4G/Fiber)    │
+│  ┌─────────┐      │         │    2     │    │                 │
+│  │ Sensor  │──────┘         └──────────┘    │                 │
+│  │  SF7    │                                 │                 │
+│  └─────────┘                ┌──────────┐    │  ┌────────────┐ │
+│                             │ Gateway  │────┼─▶│  Network   │ │
+│                             │    3     │    │  │   Server   │ │
+│                             └──────────┘    │  └─────┬──────┘ │
+│                                             │        │         │
+│                                             │        │ API     │
+│  Properties:                                │  ┌─────▼──────┐ │
+│  • Devices can be heard by multiple gateways│  │Application │ │
+│  • Gateways forward all packets to server  │  │  Server    │ │
+│  • Server deduplicates and selects best SNR│  └────────────┘ │
+│  • Bidirectional communication supported   │                 │
+│                                                                │
+└──────────────────────────────────────────────────────────────┘
+        </div>
+
+        <h3>Network Components</h3>
+
+        <p><strong>1. End Devices (Nodes)</strong></p>
+        <p>Battery-powered sensors or actuators with LoRa radio modules. Devices transmit data whenever needed (Class A) or at scheduled intervals. They don't know which gateway will receive their transmission—nor do they care.</p>
+
+        <p><strong>2. Gateways (Base Stations)</strong></p>
+        <p>Multi-channel receivers that listen on all spreading factors simultaneously. A single gateway can serve 10,000-50,000 devices. Gateways are essentially transparent bridges—they forward all received packets to the network server via IP backhaul (Ethernet, 4G, fiber) without processing or filtering. Advanced gateways support 8-16 channels and GPS synchronization for Class B operation.</p>
+
+        <p><strong>3. Network Server</strong></p>
+        <p>The brain of the LoRaWAN network. Responsibilities include:</p>
+
+        <ul>
+            <li>Deduplication: When multiple gateways receive the same packet, select the one with best SNR</li>
+            <li>Device authentication and encryption key management</li>
+            <li>Adaptive Data Rate (ADR): Optimize SF and TX power for each device</li>
+            <li>Scheduling downlinks: Determine which gateway and when to send messages to devices</li>
+            <li>Frame counter validation for replay attack prevention</li>
+        </ul>
+
+        <p><strong>4. Application Server</strong></p>
+        <p>Implements business logic, processes sensor data, and stores information. Communicates with network server via APIs. End-to-end encryption ensures application server is the only entity that can decrypt payload data.</p>
+
+        <h2>2.4 Device Classes: Choosing the Right Tradeoff</h2>
+
+        <p>LoRaWAN defines three device classes, each optimizing for different latency/power tradeoffs:</p>
+
+        <h3>Class A: Lowest Power, Highest Latency</h3>
+
+        <p>All LoRaWAN devices must support Class A. After each uplink transmission, the device opens two short receive windows:</p>
+
+        <div class="diagram">
+Device TX ────┐        ┌RX1 (1s)──┐  ┌RX2 (2s)──┐
+              └────────┘           └──┘          └───────────▶
+              0        1s          2s           Time
+
+              TX: Transmit uplink
+              RX1: First receive window (1s after TX end)
+              RX2: Second receive window (2s after TX end, different freq)
+        </div>
+
+        <ul>
+            <li><strong>Uplink:</strong> Anytime, asynchronous (when sensor has data)</li>
+            <li><strong>Downlink:</strong> Only in RX windows after uplink (server must wait for device to transmit)</li>
+            <li><strong>Power:</strong> Ultra-low (sleep current 1-5 µA, 10-15 year battery)</li>
+            <li><strong>Latency:</strong> Depends on uplink interval (could be hours if device transmits once daily)</li>
+            <li><strong>Use Cases:</strong> Sensors with infrequent updates (soil moisture, temperature, utility meters)</li>
+        </ul>
+
+        <h3>Class B: Scheduled Downlinks, Medium Power</h3>
+
+        <p>Class B devices synchronize with network beacons (transmitted by gateways every 128 seconds) and open additional receive windows ("ping slots") at scheduled times:</p>
+
+        <ul>
+            <li><strong>Uplink:</strong> Anytime (like Class A)</li>
+            <li><strong>Downlink:</strong> After uplink + during scheduled ping slots (every 0.96 to 122.88 seconds)</li>
+            <li><strong>Power:</strong> Medium (5-10 year battery, depending on ping slot frequency)</li>
+            <li><strong>Latency:</strong> Maximum of ping slot interval (e.g., 30 seconds if ping every 30s)</li>
+            <li><strong>Use Cases:</strong> Streetlights, irrigation valves, smart locks requiring timely downlinks</li>
+        </ul>
+
+        <h3>Class C: Continuous RX, Highest Power</h3>
+
+        <p>Class C devices keep receiver open continuously except when transmitting:</p>
+
+        <ul>
+            <li><strong>Uplink:</strong> Anytime</li>
+            <li><strong>Downlink:</strong> Anytime (server can send immediately, ~1 second latency)</li>
+            <li><strong>Power:</strong> High (RX current 10-15 mA continuously, months on battery or mains-powered)</li>
+            <li><strong>Latency:</strong> Minimal (~1 second)</li>
+            <li><strong>Use Cases:</strong> Actuators requiring immediate commands (emergency lighting, alarms), mains-powered devices</li>
+        </ul>
+
+        <h2>2.5 Device Activation: OTAA vs ABP</h2>
+
+        <p>Before a device can communicate, it must join the network and establish session keys. LoRaWAN supports two activation methods:</p>
+
+        <h3>OTAA (Over-the-Air Activation) - Recommended</h3>
+
+        <p>Devices perform a join procedure that dynamically generates session keys:</p>
+
+        <div class="code-block">
+<strong>OTAA Join Procedure:</strong>
+
+1. Device sends Join Request:
+   DevEUI:   0x0123456789ABCDEF (unique device ID, like MAC address)
+   AppEUI:   0xFEDCBA9876543210 (application ID)
+   DevNonce: 0x1234 (random number, prevents replay)
+   MIC:      Message Integrity Code (signed with AppKey)
+
+2. Network Server validates request and responds with Join Accept:
+   AppNonce: 0x5678 (random from server)
+   NetID:    Network identifier
+   DevAddr:  0x01AB23CD (32-bit device address, assigned dynamically)
+   DLSettings: RX1 delay, RX2 data rate
+   RxDelay:  Delay between TX and RX1 window
+
+3. Device and Server derive session keys:
+   NwkSKey = aes128_encrypt(AppKey, AppNonce | NetID | DevNonce | pad)
+   AppSKey = aes128_encrypt(AppKey, AppNonce | NetID | DevNonce | pad | 0x01)
+
+4. Device can now send encrypted data using session keys
+
+<strong>Security Benefits:</strong>
+- Session keys change on each join (if device loses power, new keys generated)
+- AppKey never transmitted over the air
+- DevNonce prevents replay of join requests
+- Supports network roaming
+        </div>
+
+        <h3>ABP (Activation By Personalization) - Less Secure</h3>
+
+        <p>Session keys are hardcoded into the device during manufacturing or provisioning. No join procedure occurs—device can transmit immediately after power-on.</p>
+
+        <p><strong>Disadvantages:</strong></p>
+        <ul>
+            <li>Frame counter reset risk: If device loses power and restarts with counter=0, network server rejects packets (sees as replay attack)</li>
+            <li>No key refresh: Compromised keys remain valid indefinitely</li>
+            <li>Manual provisioning: Each device requires unique key injection</li>
+            <li>No roaming support</li>
+        </ul>
+
+        <p><strong>When to use ABP:</strong> Manufacturing test fixtures, controlled environments where power cycling is rare, or when join latency is unacceptable (e.g., emergency sensors that must transmit immediately after power-on).</p>
+
+        <h2>2.6 LoRaWAN Security Architecture</h2>
+
+        <p>LoRaWAN implements a <strong>two-layer encryption</strong> model providing both network-level and application-level security:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Security Layer</th>
+                    <th>Key Used</th>
+                    <th>Purpose</th>
+                    <th>Who Can Decrypt</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Network Security</strong></td>
+                    <td>NwkSKey</td>
+                    <td>MIC validation, MAC commands encryption</td>
+                    <td>Network Server</td>
+                </tr>
+                <tr>
+                    <td><strong>Application Security</strong></td>
+                    <td>AppSKey</td>
+                    <td>Payload encryption</td>
+                    <td>Application Server only</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>This architecture ensures that even if the network operator is untrusted, they cannot read application payloads. Only the application server (controlled by the device owner) holds AppSKey.</p>
+
+        <h3>Encryption Process</h3>
+
+        <div class="code-block">
+<strong>AES-128 CTR Mode Encryption:</strong>
+
+Plaintext:  "Hello World" (application payload)
+AppSKey:    0x2B7E151628AED2A6ABF7158809CF4F3C
+FCnt:       42 (frame counter)
+DevAddr:    0x01AB23CD
+Direction:  0x00 (uplink)
+
+1. Build encryption block Ai:
+   Ai = [0x01, 0x00, 0x00, 0x00, 0x00, Direction, DevAddr, FCnt, 0x00, i]
+
+2. Generate keystream Si:
+   Si = AES128_Encrypt(AppSKey, Ai)
+
+3. XOR with plaintext:
+   Ciphertext = Plaintext ⊕ Si
+
+<strong>Frame Counter (FCnt) Security:</strong>
+- 16-bit counter increments with each uplink (separate counter for downlink)
+- Network server rejects packets with FCnt ≤ previous FCnt
+- Prevents replay attacks
+- Device must re-join if counter reaches 65535 (or implement 32-bit counter)
+        </div>
+
+        <h2>2.7 Practical Implementation Example</h2>
+
+        <p>Let's implement a LoRaWAN soil moisture sensor for precision agriculture:</p>
+
+        <div class="code-block">
+<strong>Arduino/C++ LoRaWAN Soil Sensor Code:</strong>
+
+#include &lt;lmic.h&gt;
+#include &lt;hal/hal.h&gt;
+
+// OTAA Credentials (get from network server)
+static const u1_t PROGMEM APPEUI[8] = { 0x00, 0x00, ... };
+static const u1_t PROGMEM DEVEUI[8] = { 0x00, 0x01, ... };
+static const u1_t PROGMEM APPKEY[16] = { 0x2B, 0x7E, ... };
+
+// Schedule transmission every 60 minutes
+const unsigned TX_INTERVAL = 3600;
+
+// Pin mappings for LoRa module
+const lmic_pinmap lmic_pins = {
+    .nss = 10,
+    .rxtx = LMIC_UNUSED_PIN,
+    .rst = 9,
+    .dio = {2, 6, 7},
+};
+
+void setup() {
+    os_init();
+    LMIC_reset();
+
+    // Set spreading factor to SF10 for good range/power balance
+    LMIC_setDrTxpow(DR_SF10, 14);
+
+    // Enable adaptive data rate
+    LMIC_setAdrMode(1);
+
+    // Start join procedure
+    LMIC_startJoining();
+}
+
+void loop() {
+    os_runloop_once();
+}
+
+// Read soil moisture sensor (capacitive sensor on A0)
+uint16_t readSoilMoisture() {
+    uint32_t sum = 0;
+    // Average 10 readings for stability
+    for(int i = 0; i < 10; i++) {
+        sum += analogRead(A0);
+        delay(10);
+    }
+    return sum / 10;
+}
+
+// LMIC event handler
+void onEvent(ev_t ev) {
+    switch(ev) {
+        case EV_JOINED:
+            Serial.println("Network joined");
+            // Disable ADR link check (save power)
+            LMIC_setLinkCheckMode(0);
+            // Send first measurement
+            do_send(&sendjob);
+            break;
+
+        case EV_TXCOMPLETE:
+            Serial.println("TX complete");
+            if (LMIC.txrxFlags & TXRX_ACK)
+                Serial.println("Received ACK");
+            if (LMIC.dataLen) {
+                // Handle downlink (e.g., configuration update)
+                processDownlink(LMIC.frame + LMIC.dataBeg, LMIC.dataLen);
+            }
+            // Schedule next transmission
+            os_setTimedCallback(&sendjob,
+                               os_getTime() + sec2osticks(TX_INTERVAL),
+                               do_send);
+            break;
+    }
+}
+
+void do_send(osjob_t* j) {
+    if (LMIC.opmode & OP_TXRXPEND) {
+        Serial.println("OP_TXRXPEND, not sending");
+        return;
+    }
+
+    // Read sensors
+    uint16_t moisture = readSoilMoisture();
+    uint16_t vbat = readBatteryVoltage();
+    int16_t temp = readTemperature();
+
+    // Pack into efficient payload (6 bytes)
+    uint8_t payload[6];
+    payload[0] = 0x01;  // Sensor type: soil sensor
+    payload[1] = moisture >> 8;
+    payload[2] = moisture & 0xFF;
+    payload[3] = temp >> 8;
+    payload[4] = temp & 0xFF;
+    payload[5] = (vbat * 100) / 3.3;  // Battery %
+
+    // Send on port 2 (application data)
+    LMIC_setTxData2(2, payload, sizeof(payload), 0);  // 0 = unconfirmed
+
+    Serial.println("Packet queued");
+}
+
+<strong>Battery Life Calculation:</strong>
+- Battery: 5000 mAh (2× AA lithium)
+- TX every 60 minutes (24× daily)
+- Sensor read: 4 seconds @ 5 mA
+- TX (SF10): 247 ms @ 50 mA
+- RX windows: 2× 20 ms @ 15 mA
+- Sleep: 1-2 µA
+
+Daily consumption:
+  Sensor:  24 × 4s × 5mA = 0.133 mAh
+  TX:      24 × 0.247s × 50mA = 0.082 mAh
+  RX:      48 × 0.02s × 15mA = 0.004 mAh
+  Sleep:   23.9 h × 0.002mA = 0.048 mAh
+  Total:   0.267 mAh/day
+
+Battery life = 5000 / 0.267 = 18,727 days = <strong>51.3 years</strong>
+(Realistic: 12-15 years accounting for battery self-discharge)
+        </div>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>LoRaWAN uses Chirp Spread Spectrum (CSS) modulation, enabling reception of signals 20 dB below the noise floor for exceptional range</li>
+                <li>Spreading Factor (SF7-SF12) controls the range/rate tradeoff: higher SF = longer range but slower data rate and more power consumption</li>
+                <li>Star-of-stars architecture with transparent gateways simplifies deployment—devices don't need routing logic or mesh capabilities</li>
+                <li>Three device classes (A, B, C) offer different latency/power tradeoffs: Class A for ultra-low power, Class C for low latency</li>
+                <li>OTAA activation is strongly preferred over ABP for security reasons—session keys refresh on each join</li>
+                <li>Two-layer encryption (NwkSKey + AppSKey) ensures network operators cannot read application payloads</li>
+                <li>Adaptive Data Rate (ADR) automatically optimizes SF and TX power, dramatically extending battery life and improving network capacity</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>Explain why LoRa's Chirp Spread Spectrum modulation can receive signals below the noise floor. What is the "processing gain" and how is it achieved?</li>
+                <li>A device is located 8 km from the nearest gateway with moderate obstacles. The application sends 20-byte messages every 30 minutes. What spreading factor would you recommend and why? Calculate the approximate battery life using a 5000 mAh battery.</li>
+                <li>Compare the LoRaWAN star-of-stars topology to a mesh network topology (like Zigbee). What are the advantages and disadvantages of each for a smart agriculture deployment covering 500 hectares?</li>
+                <li>Explain the difference between Class A, B, and C devices. For each class, provide a specific IoT use case where that class is most appropriate and justify your choice.</li>
+                <li>Why is OTAA strongly preferred over ABP activation? Describe a scenario where ABP's weaknesses would create a security or operational problem.</li>
+                <li>Describe LoRaWAN's two-layer encryption architecture. Why is it important that the network server cannot decrypt application payloads? How does this enable multi-tenant networks?</li>
+                <li>A gateway receives the same packet from a device via 3 different gateways with SNRs of -15 dB, -8 dB, and -3 dB. How does the network server handle this situation? What advantage does this provide over cellular networks?</li>
+            </ol>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-01.html" class="nav-button">← Previous: Introduction</a>
+            <a href="chapter-03.html" class="nav-button">Next: Sigfox Technology →</a>
+        </div>
+    </div>
+</body>
+</html>

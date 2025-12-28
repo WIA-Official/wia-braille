@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 03: Implementation Guide | WIA-CHILD-011</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #F59E0B; --text: #e2e8f0; --text-dim: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        header { border-bottom: 3px solid var(--primary); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.3rem; margin-top: 2rem; margin-bottom: 0.8rem; }
+        p, li { margin-bottom: 1.2rem; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: var(--surface); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: rgba(245, 158, 11, 0.1); }
+        code { background: var(--surface); padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--primary); }
+        pre { background: var(--surface); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1.5rem 0; border-left: 4px solid var(--primary); }
+        pre code { background: none; padding: 0; color: var(--text); }
+        .key-takeaways, .review-questions { background: var(--surface); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--primary); }
+        ul, ol { margin-left: 2rem; margin-bottom: 1.5rem; }
+        .navigation { display: flex; justify-content: space-between; margin: 3rem 0; padding: 1.5rem; background: var(--surface); border-radius: 8px; }
+        .nav-button { color: var(--primary); text-decoration: none; padding: 0.8rem 1.5rem; border: 2px solid var(--primary); border-radius: 6px; transition: all 0.3s; }
+        .nav-button:hover { background: var(--primary); color: white; }
+        .philosophy { text-align: center; margin: 3rem 0; padding: 2rem; background: var(--surface); border-radius: 8px; border: 2px solid var(--primary); }
+        footer { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chapter 03: Implementation Guide</h1>
+            <div style="color: var(--text-dim); font-size: 0.9rem;">WIA-CHILD-011 Screen Time Management Standard | Practical Deployment</div>
+        </header>
+
+        <h2>Age-Based Limit Configuration</h2>
+
+        <p>
+            Implementing WIA-CHILD-011 begins with configuring age-appropriate limits. While AAP guidelines provide general
+            recommendations, effective implementation requires customization based on individual child needs, family values,
+            and specific circumstances. The standard provides default configurations that parents can adjust as needed.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Age Range</th>
+                    <th>Total Screen Time</th>
+                    <th>Quality-Adjusted Limit</th>
+                    <th>Category Restrictions</th>
+                    <th>Downtime</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>0-18 months</td>
+                    <td>0 min (except video chat)</td>
+                    <td>N/A</td>
+                    <td>All blocked except video calling</td>
+                    <td>Always (except video calls)</td>
+                </tr>
+                <tr>
+                    <td>18 months - 2 years</td>
+                    <td>30 min</td>
+                    <td>40 min (if high-quality with parent)</td>
+                    <td>Educational only, parent co-viewing required</td>
+                    <td>8 PM - 8 AM</td>
+                </tr>
+                <tr>
+                    <td>2-5 years</td>
+                    <td>60 min</td>
+                    <td>90 min (if educational/creative)</td>
+                    <td>No social media, limited games (15 min)</td>
+                    <td>8 PM - 7 AM</td>
+                </tr>
+                <tr>
+                    <td>6-8 years</td>
+                    <td>90 min</td>
+                    <td>120 min (mixed quality)</td>
+                    <td>Social media blocked, games 30 min, homework unlimited</td>
+                    <td>8:30 PM - 6:30 AM</td>
+                </tr>
+                <tr>
+                    <td>9-12 years</td>
+                    <td>120 min</td>
+                    <td>150 min (with educational weighting)</td>
+                    <td>Supervised social media 30 min, games 45 min</td>
+                    <td>9 PM - 6 AM, homework exceptions allowed</td>
+                </tr>
+                <tr>
+                    <td>13-15 years</td>
+                    <td>150 min</td>
+                    <td>180 min (self-regulation encouraged)</td>
+                    <td>Social media 60 min, content filters active</td>
+                    <td>10 PM - 6 AM (weekdays), 11 PM - 8 AM (weekends)</td>
+                </tr>
+                <tr>
+                    <td>16-18 years</td>
+                    <td>180 min (negotiable)</td>
+                    <td>240 min (more autonomy)</td>
+                    <td>Parent-teen agreement, content warnings only</td>
+                    <td>11 PM - 6 AM, flexible on weekends</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Configuration Implementation</h3>
+
+        <pre><code>interface ScreenTimeLimits {
+  childId: string;
+  age: number;
+  totalDailyMinutes: number;
+  qualityAdjustedMinutes: number;
+  categoryLimits: CategoryLimit[];
+  downtimeSchedule: DowntimeSchedule;
+  allowedApps: string[];
+  blockedApps: string[];
+  requireParentApproval: string[];
+}
+
+class LimitConfigurationService {
+  createDefaultLimits(child: ChildProfile): ScreenTimeLimits {
+    const age = child.age;
+
+    // Age-based defaults
+    if (age < 1.5) {
+      return {
+        childId: child.id,
+        age: age,
+        totalDailyMinutes: 0,
+        qualityAdjustedMinutes: 0,
+        categoryLimits: [
+          { category: 'video_calling', limit: 'unlimited', requireParentPresent: true },
+          { category: 'all_others', limit: 0 }
+        ],
+        downtimeSchedule: { always: true },
+        allowedApps: ['FaceTime', 'Zoom', 'Google Meet'],
+        blockedApps: ['*'],
+        requireParentApproval: ['*']
+      };
+    }
+
+    if (age >= 1.5 && age < 2) {
+      return {
+        childId: child.id,
+        age: age,
+        totalDailyMinutes: 30,
+        qualityAdjustedMinutes: 40,
+        categoryLimits: [
+          { category: 'education', limit: 30, requireParentPresent: true },
+          { category: 'entertainment', limit: 0 },
+          { category: 'games', limit: 0 },
+          { category: 'social_media', limit: 0 }
+        ],
+        downtimeSchedule: {
+          weekday: { start: '20:00', end: '08:00' },
+          weekend: { start: '20:00', end: '08:00' }
+        },
+        allowedApps: this.getEducationalAppsForAge(age),
+        blockedApps: [],
+        requireParentApproval: ['*']
+      };
+    }
+
+    if (age >= 2 && age <= 5) {
+      return {
+        childId: child.id,
+        age: age,
+        totalDailyMinutes: 60,
+        qualityAdjustedMinutes: 90,
+        categoryLimits: [
+          { category: 'education', limit: 'unlimited' },
+          { category: 'creative', limit: 'unlimited' },
+          { category: 'video_calling', limit: 'unlimited' },
+          { category: 'games', limit: 15 },
+          { category: 'entertainment', limit: 30 },
+          { category: 'social_media', limit: 0 }
+        ],
+        downtimeSchedule: {
+          weekday: { start: '20:00', end: '07:00' },
+          weekend: { start: '20:30', end: '07:30' }
+        },
+        allowedApps: [],
+        blockedApps: this.getSocialMediaApps(),
+        requireParentApproval: ['app_store', 'in_app_purchases']
+      };
+    }
+
+    // Continue for other age ranges...
+    return this.getDefaultsForAge(age);
+  }
+
+  async configureFamily(family: Family): Promise<void> {
+    for (const child of family.children) {
+      // Create default limits
+      const defaults = this.createDefaultLimits(child);
+
+      // Apply any family-specific overrides
+      const customized = await this.applyFamilyPreferences(defaults, family.preferences);
+
+      // Deploy to all child's devices
+      await this.deployToDevices(child.id, customized);
+
+      // Set up monitoring and reporting
+      await this.setupMonitoring(child.id, family.parents);
+    }
+  }
+
+  async applyFamilyPreferences(
+    defaults: ScreenTimeLimits,
+    preferences: FamilyPreferences
+  ): Promise<ScreenTimeLimits> {
+    let limits = { ...defaults };
+
+    // Family might be more or less restrictive
+    if (preferences.strictnessLevel === 'relaxed') {
+      limits.totalDailyMinutes *= 1.25;
+      limits.qualityAdjustedMinutes *= 1.25;
+    } else if (preferences.strictnessLevel === 'strict') {
+      limits.totalDailyMinutes *= 0.75;
+      limits.qualityAdjustedMinutes *= 0.75;
+    }
+
+    // Apply custom category priorities
+    if (preferences.prioritizeEducation) {
+      limits.categoryLimits = limits.categoryLimits.map(cat => {
+        if (cat.category === 'education' || cat.category === 'creative') {
+          return { ...cat, limit: 'unlimited' };
+        }
+        return cat;
+      });
+    }
+
+    // Custom downtime
+    if (preferences.customDowntime) {
+      limits.downtimeSchedule = preferences.customDowntime;
+    }
+
+    return limits;
+  }
+}</code></pre>
+
+        <h2>App Category Management</h2>
+
+        <p>
+            Effective screen time management requires accurate app categorization. WIA-CHILD-011 provides a comprehensive
+            taxonomy of app categories with default classifications for thousands of popular apps, plus mechanisms for
+            parents to override classifications and add custom categories.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Example Apps</th>
+                    <th>Default Quality Score</th>
+                    <th>Typical Limit (8-year-old)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Education - Core Learning</td>
+                    <td>Khan Academy Kids, Duolingo, Prodigy Math</td>
+                    <td>0.90</td>
+                    <td>Unlimited</td>
+                </tr>
+                <tr>
+                    <td>Education - STEM</td>
+                    <td>Scratch, Tynker, CodeSpark Academy</td>
+                    <td>0.85</td>
+                    <td>Unlimited</td>
+                </tr>
+                <tr>
+                    <td>Creative Tools</td>
+                    <td>GarageBand, Procreate, iMovie</td>
+                    <td>0.75</td>
+                    <td>Unlimited</td>
+                </tr>
+                <tr>
+                    <td>Reading & Books</td>
+                    <td>Epic Books, Kindle, Audible</td>
+                    <td>0.80</td>
+                    <td>Unlimited</td>
+                </tr>
+                <tr>
+                    <td>Video Calling</td>
+                    <td>FaceTime, Zoom, Google Meet</td>
+                    <td>0.80</td>
+                    <td>Unlimited (family) / 30 min (friends)</td>
+                </tr>
+                <tr>
+                    <td>Educational Games</td>
+                    <td>Minecraft Education, Osmo, ThinkFun</td>
+                    <td>0.70</td>
+                    <td>60 minutes</td>
+                </tr>
+                <tr>
+                    <td>Active Gaming</td>
+                    <td>Ring Fit Adventure, Just Dance, Pokemon GO</td>
+                    <td>0.60</td>
+                    <td>45 minutes</td>
+                </tr>
+                <tr>
+                    <td>Casual Gaming</td>
+                    <td>Roblox, Among Us, Fall Guys</td>
+                    <td>0.45</td>
+                    <td>30 minutes</td>
+                </tr>
+                <tr>
+                    <td>Video Streaming</td>
+                    <td>YouTube Kids, Disney+, Netflix Kids</td>
+                    <td>0.35</td>
+                    <td>45 minutes</td>
+                </tr>
+                <tr>
+                    <td>Social Media (Supervised)</td>
+                    <td>Messenger Kids, Kinzoo, Gabb</td>
+                    <td>0.40</td>
+                    <td>20 minutes (parent monitoring)</td>
+                </tr>
+                <tr>
+                    <td>Productivity</td>
+                    <td>Google Docs, Notion, Calendar</td>
+                    <td>0.70</td>
+                    <td>Unlimited (homework-related)</td>
+                </tr>
+                <tr>
+                    <td>Music</td>
+                    <td>Spotify, Apple Music, YouTube Music</td>
+                    <td>0.50</td>
+                    <td>Usually exempt from limits (background listening)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Custom Category Creation</h3>
+
+        <pre><code>class AppCategoryManager {
+  async createCustomCategory(
+    parentId: string,
+    category: CustomCategory
+  ): Promise<void> {
+    // Parent wants to create a custom category for their family
+    const customCat = {
+      id: this.generateId(),
+      name: category.name,
+      description: category.description,
+      parentId: parentId,
+      apps: category.apps,
+      qualityScore: category.qualityScore || this.inferQualityScore(category),
+      dailyLimit: category.dailyLimit,
+      requireApproval: category.requireApproval,
+      restrictedTimes: category.restrictedTimes
+    };
+
+    await this.categoryStore.save(customCat);
+
+    // Apply to all family children
+    const children = await this.getChildren(parentId);
+    for (const child of children) {
+      await this.applyCategoryToChild(child.id, customCat);
+    }
+  }
+
+  async overrideAppClassification(
+    parentId: string,
+    app: string,
+    newCategory: string,
+    newQualityScore?: number
+  ): Promise<void> {
+    // Parent disagrees with default classification
+    // Example: "YouTube" might be educational for some families, entertainment for others
+
+    const override = {
+      parentId: parentId,
+      app: app,
+      originalCategory: await this.getDefaultCategory(app),
+      overrideCategory: newCategory,
+      originalQuality: await this.getDefaultQuality(app),
+      overrideQuality: newQualityScore,
+      reason: 'parent_override',
+      timestamp: new Date()
+    };
+
+    await this.overrideStore.save(override);
+
+    // Recompute screen time for children with this override
+    const children = await this.getChildren(parentId);
+    for (const child of children) {
+      await this.recomputeScreenTime(child.id, new Date());
+    }
+  }
+
+  // Example: Parent creates "Homework Research" category
+  async setupHomeworkCategory(parentId: string): Promise<void> {
+    await this.createCustomCategory(parentId, {
+      name: 'Homework Research',
+      description: 'Educational websites and apps needed for homework',
+      apps: [
+        'Google Search',
+        'Wikipedia',
+        'Google Docs',
+        'Khan Academy',
+        'Quizlet',
+        'Google Classroom'
+      ],
+      websites: [
+        '*.edu',
+        'scholar.google.com',
+        'khanacademy.org',
+        'quizlet.com'
+      ],
+      qualityScore: 0.85,
+      dailyLimit: 'unlimited',
+      requireApproval: false,
+      restrictedTimes: [],
+      exemptFromDowntime: true,  // Homework emergency at night
+      trackSeparately: true  // Don't count toward entertainment limits
+    });
+  }
+}</code></pre>
+
+        <h2>Downtime Scheduling</h2>
+
+        <p>
+            Downtime periods block device usage during critical times like sleep hours, family dinner, or homework time.
+            WIA-CHILD-011 supports flexible scheduling with exceptions for emergencies, approved apps, and parent overrides.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Downtime Type</th>
+                    <th>Typical Schedule</th>
+                    <th>Exceptions Allowed</th>
+                    <th>Enforcement Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Sleep Protection</td>
+                    <td>9 PM - 7 AM (school nights), 10 PM - 8 AM (weekends)</td>
+                    <td>Phone calls, alarm clock, emergency contacts</td>
+                    <td>Strict - hardware enforced</td>
+                </tr>
+                <tr>
+                    <td>School Hours</td>
+                    <td>8 AM - 3 PM (weekdays during school year)</td>
+                    <td>School-issued apps, emergency parent contact</td>
+                    <td>Moderate - educational apps allowed</td>
+                </tr>
+                <tr>
+                    <td>Homework Time</td>
+                    <td>4 PM - 6 PM (configurable)</td>
+                    <td>Educational apps, research websites, productivity tools</td>
+                    <td>Moderate - blocks entertainment only</td>
+                </tr>
+                <tr>
+                    <td>Family Dinner</td>
+                    <td>6 PM - 7 PM</td>
+                    <td>Emergency calls only</td>
+                    <td>Strict - all devices locked</td>
+                </tr>
+                <tr>
+                    <td>Weekend Morning Screen-Free</td>
+                    <td>Saturday/Sunday 8 AM - 12 PM</td>
+                    <td>None (encourage outdoor play)</td>
+                    <td>Strict</td>
+                </tr>
+                <tr>
+                    <td>Reading Hour</td>
+                    <td>7:30 PM - 8:30 PM</td>
+                    <td>E-readers, audiobooks, reading apps</td>
+                    <td>Moderate - reading-only mode</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Advanced Scheduling</h3>
+
+        <pre><code>interface DowntimeSchedule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  schedule: Schedule;
+  exceptions: Exception[];
+  enforcement: EnforcementLevel;
+  allowedCategories: string[];
+  message: string;
+}
+
+class DowntimeManager {
+  async createSchedule(childId: string, config: DowntimeConfig): Promise<DowntimeSchedule> {
+    const schedule: DowntimeSchedule = {
+      id: this.generateId(),
+      name: config.name,
+      enabled: true,
+      schedule: {
+        type: config.scheduleType,
+        weekday: config.weekdaySchedule,
+        weekend: config.weekendSchedule,
+        exceptions: config.dateExceptions  // Holidays, vacations, etc.
+      },
+      exceptions: [
+        { type: 'emergency_calls', always: true },
+        { type: 'alarm_clock', always: true },
+        ...config.customExceptions
+      ],
+      enforcement: config.enforcement || 'strict',
+      allowedCategories: config.allowedCategories || [],
+      message: config.message || `Devices unavailable during ${config.name}`
+    };
+
+    await this.scheduleStore.save(childId, schedule);
+    await this.deployToDevices(childId, schedule);
+
+    return schedule;
+  }
+
+  async setupSleepProtection(childId: string, age: number): Promise<void> {
+    // Age-appropriate sleep schedules based on AAP recommendations
+    const sleepSchedule = this.getSleepSchedule(age);
+
+    await this.createSchedule(childId, {
+      name: 'Sleep Protection',
+      scheduleType: 'daily',
+      weekdaySchedule: {
+        start: sleepSchedule.weeknight.start,
+        end: sleepSchedule.weeknight.end
+      },
+      weekendSchedule: {
+        start: sleepSchedule.weekend.start,
+        end: sleepSchedule.weekend.end
+      },
+      customExceptions: [
+        { type: 'parent_override', requirePassword: true },
+        { type: 'emergency_contact_list', contacts: ['Mom', 'Dad', 'Grandma'] }
+      ],
+      enforcement: 'strict',
+      allowedCategories: [],
+      message: 'Good night! Screens are off until morning. 😴'
+    });
+
+    // Gradual wind-down before sleep
+    await this.createSchedule(childId, {
+      name: 'Pre-Sleep Wind Down',
+      scheduleType: 'daily',
+      weekdaySchedule: {
+        start: this.subtractMinutes(sleepSchedule.weeknight.start, 30),
+        end: sleepSchedule.weeknight.start
+      },
+      weekendSchedule: {
+        start: this.subtractMinutes(sleepSchedule.weekend.start, 30),
+        end: sleepSchedule.weekend.start
+      },
+      enforcement: 'moderate',
+      allowedCategories: ['reading', 'meditation', 'white_noise'],
+      message: 'Winding down for bed. Try reading a book! 📚'
+    });
+  }
+
+  async handleDowntimeRequest(childId: string, requestType: string): Promise<Response> {
+    // Child requests exception to downtime
+    const currentSchedule = await this.getCurrentDowntime(childId);
+
+    if (!currentSchedule) {
+      return { approved: true, reason: 'No active downtime' };
+    }
+
+    // Check if request type is in exceptions
+    const exception = currentSchedule.exceptions.find(e => e.type === requestType);
+
+    if (exception && exception.always) {
+      return { approved: true, reason: 'Automatic exception', duration: 'unlimited' };
+    }
+
+    if (exception && exception.requireParentApproval) {
+      // Send request to parent
+      const parent = await this.getParent(childId);
+      await this.sendApprovalRequest(parent, {
+        childId: childId,
+        requestType: requestType,
+        currentSchedule: currentSchedule.name,
+        reason: exception.reason,
+        urgency: exception.urgency || 'normal'
+      });
+
+      return {
+        approved: false,
+        reason: 'Waiting for parent approval',
+        estimatedWait: '2-5 minutes'
+      };
+    }
+
+    return {
+      approved: false,
+      reason: `Devices are unavailable during ${currentSchedule.name}`,
+      nextAvailable: currentSchedule.schedule.end
+    };
+  }
+
+  getSleepSchedule(age: number): SleepSchedule {
+    // AAP-recommended sleep schedules
+    if (age <= 2) {
+      return {
+        weeknight: { start: '19:00', end: '07:00' },  // 12 hours
+        weekend: { start: '19:30', end: '07:30' }
+      };
+    } else if (age <= 5) {
+      return {
+        weeknight: { start: '19:30', end: '07:00' },  // 11.5 hours
+        weekend: { start: '20:00', end: '07:30' }
+      };
+    } else if (age <= 12) {
+      return {
+        weeknight: { start: '20:30', end: '06:30' },  // 10 hours
+        weekend: { start: '21:00', end: '08:00' }
+      };
+    } else {
+      return {
+        weeknight: { start: '22:00', end: '06:30' },  // 8.5 hours
+        weekend: { start: '23:00', end: '08:30' }
+      };
+    }
+  }
+}</code></pre>
+
+        <h2>Family Sharing Integration</h2>
+
+        <p>
+            Modern families use devices across multiple platforms. WIA-CHILD-011 integrates with Apple Family Sharing,
+            Google Family Link, Microsoft Family Safety, and provides standalone cross-platform coordination for families
+            that use mixed ecosystems.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Platform</th>
+                    <th>Family Features</th>
+                    <th>Cross-Device Sync</th>
+                    <th>Parent Controls</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Apple Family Sharing</td>
+                    <td>Up to 6 members, iCloud storage sharing, purchase sharing</td>
+                    <td>Real-time across all Apple devices</td>
+                    <td>Screen Time, App Limits, Downtime, Content Restrictions</td>
+                </tr>
+                <tr>
+                    <td>Google Family Link</td>
+                    <td>Parent-supervised Google accounts for children under 13</td>
+                    <td>Android devices + Chrome browser</td>
+                    <td>App approval, screen time, device location, content filters</td>
+                </tr>
+                <tr>
+                    <td>Microsoft Family Safety</td>
+                    <td>Activity reporting, screen time, content filters</td>
+                    <td>Windows, Xbox, Android (with app)</td>
+                    <td>App/game limits, web filtering, location tracking</td>
+                </tr>
+                <tr>
+                    <td>WIA-CHILD-011 Standalone</td>
+                    <td>Cross-platform aggregation for mixed families</td>
+                    <td>All major platforms via API integration</td>
+                    <td>Unified dashboard, consistent policies across platforms</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Cross-Platform Coordination</h3>
+
+        <pre><code>class FamilyCoordinator {
+  async setupFamily(family: FamilySetup): Promise<FamilyAccount> {
+    // Create master family account
+    const familyAccount = await this.createFamilyAccount({
+      parents: family.parents,
+      children: family.children,
+      preferences: family.preferences
+    });
+
+    // Enroll in platform-specific family services
+    for (const parent of family.parents) {
+      if (parent.hasAppleId) {
+        await this.enrollAppleFamily(familyAccount.id, parent.appleId);
+      }
+      if (parent.hasGoogleAccount) {
+        await this.enrollGoogleFamily(familyAccount.id, parent.googleId);
+      }
+      if (parent.hasMicrosoftAccount) {
+        await this.enrollMicrosoftFamily(familyAccount.id, parent.microsoftId);
+      }
+    }
+
+    // Configure each child
+    for (const child of family.children) {
+      await this.setupChild(familyAccount.id, child);
+    }
+
+    return familyAccount;
+  }
+
+  async setupChild(familyId: string, child: ChildSetup): Promise<void> {
+    // Create child profile
+    const childProfile = await this.createChildProfile({
+      familyId: familyId,
+      name: child.name,
+      birthDate: child.birthDate,
+      age: this.calculateAge(child.birthDate)
+    });
+
+    // Enroll child's devices
+    for (const device of child.devices) {
+      await this.enrollDevice(childProfile.id, device);
+    }
+
+    // Configure limits
+    const limits = await this.configureChildLimits(childProfile);
+
+    // Deploy to platform-specific systems
+    if (child.appleDevices.length > 0) {
+      await this.deployAppleScreenTime(childProfile, limits, child.appleDevices);
+    }
+    if (child.androidDevices.length > 0) {
+      await this.deployGoogleFamilyLink(childProfile, limits, child.androidDevices);
+    }
+    if (child.windowsDevices.length > 0) {
+      await this.deployMicrosoftFamily(childProfile, limits, child.windowsDevices);
+    }
+
+    // Set up unified monitoring
+    await this.startUnifiedMonitoring(childProfile.id);
+  }
+
+  async synchronizeLimits(childId: string): Promise<void> {
+    // When parent changes limits, sync across all platforms
+    const child = await this.getChildProfile(childId);
+    const limits = await this.getLimits(childId);
+    const devices = await this.getDevices(childId);
+
+    const updates = devices.map(async device => {
+      const adapter = this.getPlatformAdapter(device.platform);
+      await adapter.updateLimits(device.id, limits);
+    });
+
+    await Promise.all(updates);
+
+    // Verify synchronization
+    await this.verifySync(childId, limits);
+  }
+
+  async aggregateActivity(familyId: string, date: Date): Promise<FamilyReport> {
+    const family = await this.getFamily(familyId);
+    const reports = [];
+
+    for (const child of family.children) {
+      const activity = await this.getChildActivity(child.id, date);
+      reports.push({
+        child: child,
+        activity: activity,
+        complianceScore: this.calculateCompliance(activity, child.limits)
+      });
+    }
+
+    return {
+      family: family,
+      date: date,
+      children: reports,
+      familyTotalScreenTime: this.sumScreenTime(reports),
+      insights: await this.generateInsights(reports)
+    };
+  }
+}</code></pre>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>Age-based default configurations range from 0 minutes (0-18 months) to 180 minutes (16-18 years) with
+                quality-adjusted limits that allow more time for high-value activities.</li>
+
+                <li>Category limits enable granular control: unlimited educational content, restricted social media, moderate
+                gaming, with different limits for different activity types based on developmental appropriateness.</li>
+
+                <li>App categorization uses a comprehensive taxonomy including Education-Core Learning (0.90 quality),
+                Creative Tools (0.75), Casual Gaming (0.45), and Video Streaming (0.35) with customization options.</li>
+
+                <li>Parents can create custom categories, override default classifications, and set family-specific rules
+                that reflect their values while maintaining consistency with research-based recommendations.</li>
+
+                <li>Downtime scheduling supports multiple types: sleep protection (strict enforcement), homework time (blocks
+                entertainment only), family dinner (all devices locked), and reading hour (reading apps only).</li>
+
+                <li>Family Sharing integration works with Apple Family Sharing, Google Family Link, and Microsoft Family Safety,
+                plus standalone cross-platform coordination for mixed-device families.</li>
+
+                <li>Implementation involves creating family accounts, enrolling devices, configuring age-appropriate limits,
+                deploying to platform-specific systems, and maintaining synchronization across all devices.</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>The default limits table shows a 6-8 year old gets 90 minutes total but 120 minutes quality-adjusted.
+                Explain a realistic daily scenario where this child uses exactly 120 raw minutes of screens but stays within
+                the quality-adjusted limit.</li>
+
+                <li>A parent creates a custom "Homework Research" category with unlimited daily limit and exemption from downtime.
+                Discuss potential risks of this approach and design safeguards to prevent abuse.</li>
+
+                <li>Compare the downtime schedules for "Sleep Protection" (strict, no exceptions) versus "Homework Time"
+                (moderate, educational apps allowed). Explain the reasoning behind different enforcement levels.</li>
+
+                <li>The chapter mentions "gradual wind-down before sleep" with a 30-minute transition period allowing only
+                reading, meditation, and white noise apps. Based on sleep research, why is this better than an immediate cutoff?</li>
+
+                <li>Design a decision algorithm for the handleDowntimeRequest() function. Given different request types
+                (homework emergency, friend calling, game just about to finish), how should the system prioritize and respond?</li>
+
+                <li>A family has 3 children (ages 6, 10, 14) using a mix of iOS, Android, and Windows devices. Walk through
+                the technical challenges of synchronizing screen time limits across this ecosystem and propose solutions.</li>
+
+                <li>The applyFamilyPreferences() function allows a "relaxed" setting that multiplies limits by 1.25. Critically
+                evaluate this feature: does it undermine the evidence-based AAP guidelines, or is parental flexibility necessary?</li>
+
+                <li>Propose an improvement to the category classification system: how could machine learning be used to detect
+                when an app nominally classified as "educational" is actually being used for entertainment (e.g., Minecraft
+                Education Edition used for creative play rather than structured learning)?</li>
+            </ol>
+        </div>
+
+        <div class="philosophy">
+            <h3>弘益人間 (Hongik Ingan)</h3>
+            <p><em>"Benefit All Humanity"</em></p>
+            <p style="margin-top: 1rem;">
+                Implementation of screen time management should serve families, not surveillance capitalism or platform
+                vendor lock-in. WIA-CHILD-011 provides cross-platform standards that work regardless of which devices a
+                family owns, ensuring equitable access to healthy screen time management.
+            </p>
+            <p style="margin-top: 1rem;">
+                By supporting family autonomy through customizable limits, category overrides, and flexible scheduling, we
+                honor the principle that parents know their children best. The standard provides evidence-based defaults
+                while respecting that each family's values and circumstances are unique—serving all humanity by empowering
+                families rather than imposing rigid constraints.
+            </p>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-02.html" class="nav-button">← Previous: Technical Architecture</a>
+            <a href="chapter-04.html" class="nav-button">Next: Real-World Applications →</a>
+        </div>
+
+        <footer>
+            <p>© 2025 SmileStory Inc. / WIA</p>
+            <p style="margin-top: 0.5rem; color: var(--primary);">弘益人間 (Benefit All Humanity)</p>
+            <p style="margin-top: 0.5rem;">WIA-CHILD-011 Screen Time Management Standard v1.0</p>
+        </footer>
+    </div>
+</body>
+</html>

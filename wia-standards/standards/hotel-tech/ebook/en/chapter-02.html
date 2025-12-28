@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Reservation Management & Rate Strategies | WIA-IND-016</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #8B5CF6;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        header { background: var(--surface); padding: 2rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--text); font-size: 1.3rem; margin: 1.5rem 0 1rem 0; }
+        .subtitle { color: var(--text-dim); font-size: 1.1rem; }
+        section { background: var(--surface); padding: 2rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: var(--bg); border-radius: 8px; overflow: hidden; }
+        th { background: var(--primary); color: white; padding: 1rem; text-align: left; font-weight: 600; }
+        td { padding: 1rem; border-bottom: 1px solid var(--border); }
+        tr:last-child td { border-bottom: none; }
+        code { background: var(--bg); color: var(--primary); padding: 0.2rem 0.5rem; border-radius: 4px; font-family: 'Courier New', monospace; }
+        pre { background: var(--bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1.5rem 0; border: 1px solid var(--border); }
+        pre code { padding: 0; background: none; }
+        .key-takeaways { background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05)); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0; }
+        .key-takeaways h3 { color: var(--primary); margin-top: 0; }
+        .key-takeaways ul { margin-left: 1.5rem; margin-top: 1rem; }
+        .key-takeaways li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .review-questions { background: var(--bg); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border); margin: 2rem 0; }
+        .review-questions h3 { color: var(--primary); margin-top: 0; }
+        .review-questions ol { margin-left: 1.5rem; margin-top: 1rem; }
+        .review-questions li { margin-bottom: 1rem; color: var(--text-dim); }
+        .diagram { background: var(--bg); padding: 2rem; border-radius: 8px; margin: 1.5rem 0; border: 1px solid var(--border); font-family: 'Courier New', monospace; white-space: pre; overflow-x: auto; }
+        .navigation { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid var(--border); }
+        .nav-button { display: inline-block; padding: 0.75rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: 8px; transition: transform 0.2s, box-shadow 0.2s; }
+        .nav-button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); }
+        ul, ol { margin-left: 2rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        strong { color: var(--text); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chapter 2</h1>
+            <p class="subtitle">Reservation Management & Rate Strategies</p>
+        </header>
+
+        <section>
+            <h2>2.1 The Reservation Lifecycle</h2>
+
+            <p>Every hotel reservation progresses through a well-defined lifecycle, from initial inquiry to final completion. Understanding this lifecycle is essential for effective reservation management and ensuring optimal guest experiences. Modern PMS systems track reservations through each state, triggering appropriate actions and notifications at each transition.</p>
+
+            <h3>Reservation State Machine</h3>
+
+            <p>Reservations can exist in multiple states, with specific rules governing transitions between states. The WIA-IND-016 standard defines a standardized state machine that ensures consistent handling across different systems.</p>
+
+            <div class="diagram">
+Reservation State Flow:
+
+Inquiry → Quoted → Confirmed → Guaranteed
+                      ↓
+                  Modified ←→ Confirmed
+                      ↓
+              ┌───────┴───────┐
+              ↓               ↓
+         Checked-In      Cancelled
+              ↓               ↓
+         Checked-Out      No-Show
+              ↓
+         Completed
+</div>
+
+            <p><strong>Inquiry:</strong> The initial state when a guest requests information about availability and rates. No inventory is held at this stage. The PMS may track inquiries for future marketing analysis but doesn't commit any resources.</p>
+
+            <p><strong>Quoted:</strong> A formal rate quote has been provided, typically with a limited validity period (24-48 hours). Some systems automatically convert quotes to confirmed reservations if the guest accepts within the validity window.</p>
+
+            <p><strong>Confirmed:</strong> A reservation has been made and inventory allocated. The room is held for the guest, preventing it from being sold to others. At this stage, the reservation may or may not be guaranteed with payment.</p>
+
+            <p><strong>Guaranteed:</strong> Payment information has been provided (credit card, deposit, or prepayment). This provides the hotel protection against no-shows and gives the reservation higher priority during overbooking situations.</p>
+
+            <p><strong>Modified:</strong> Changes have been made to an existing confirmed reservation (dates, room type, rate, etc.). Modifications may trigger rate recalculation and availability checks. The system should maintain an audit trail of all modifications.</p>
+
+            <p><strong>Checked-In:</strong> The guest has arrived and completed check-in procedures. A room number has been assigned, keys issued, and the folio activated for charging. This is an active reservation consuming hotel resources.</p>
+
+            <p><strong>Checked-Out:</strong> The guest has departed, the final bill has been settled, and the room released back to inventory. The room status changes to dirty, triggering housekeeping workflows.</p>
+
+            <p><strong>Cancelled:</strong> The reservation was cancelled before arrival. Depending on cancellation policy and timing, penalties may apply. Cancelled reservations free up inventory for sale to other guests.</p>
+
+            <p><strong>No-Show:</strong> The guest failed to arrive without cancelling. The room was held but never used. No-show charges typically apply, and the reservation is closed.</p>
+
+            <p><strong>Completed:</strong> Final state after checkout, payment verification, and any post-stay processes. Historical data is retained for reporting and guest profile updates.</p>
+
+            <h2>2.2 Rate Plan Management</h2>
+
+            <p>Effective rate management balances revenue optimization with market competitiveness. Hotels typically offer multiple rate plans targeting different market segments, each with specific restrictions and benefits.</p>
+
+            <h3>Common Rate Plan Types</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rate Code</th>
+                        <th>Description</th>
+                        <th>Restrictions</th>
+                        <th>Cancellation Policy</th>
+                        <th>Target Market</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>BAR</td>
+                        <td>Best Available Rate</td>
+                        <td>None</td>
+                        <td>Flexible (24-48hr)</td>
+                        <td>Transient leisure</td>
+                    </tr>
+                    <tr>
+                        <td>CORP</td>
+                        <td>Corporate Rate</td>
+                        <td>Company ID required</td>
+                        <td>Moderate (7 days)</td>
+                        <td>Business travelers</td>
+                    </tr>
+                    <tr>
+                        <td>GOV</td>
+                        <td>Government Rate</td>
+                        <td>Government ID</td>
+                        <td>Flexible</td>
+                        <td>Government employees</td>
+                    </tr>
+                    <tr>
+                        <td>AAA</td>
+                        <td>AAA Member Rate</td>
+                        <td>Membership verification</td>
+                        <td>Flexible</td>
+                        <td>AAA members</td>
+                    </tr>
+                    <tr>
+                        <td>PROMO</td>
+                        <td>Promotional Rate</td>
+                        <td>Advance purchase, non-refundable</td>
+                        <td>Strict (no refund)</td>
+                        <td>Price-sensitive leisure</td>
+                    </tr>
+                    <tr>
+                        <td>PKG</td>
+                        <td>Package Rate</td>
+                        <td>Includes amenities/services</td>
+                        <td>Moderate</td>
+                        <td>Leisure packages</td>
+                    </tr>
+                    <tr>
+                        <td>GROUP</td>
+                        <td>Group Rate</td>
+                        <td>Minimum 10 rooms</td>
+                        <td>Custom contract</td>
+                        <td>Groups/events</td>
+                    </tr>
+                    <tr>
+                        <td>LRA</td>
+                        <td>Last Room Available</td>
+                        <td>No blackout dates</td>
+                        <td>None (fully prepaid)</td>
+                        <td>Loyalty members</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Rate Calculation Methodology</h3>
+
+            <p>The WIA-IND-016 standard defines a comprehensive rate calculation model that considers multiple factors:</p>
+
+            <pre><code>Final Rate = Base Rate × Season Multiplier × DOW Multiplier ×
+             LOS Multiplier × Occupancy Multiplier
+
+Where:
+- Base Rate: Room type standard price
+- Season Multiplier: Seasonal adjustment (0.8 - 1.5)
+- DOW Multiplier: Day of week factor (0.9 - 1.2)
+- LOS Multiplier: Length of stay discount (0.85 - 1.0)
+- Occupancy Multiplier: Demand-based factor (0.8 - 1.3)</code></pre>
+
+            <p><strong>Example Calculation:</strong></p>
+
+            <pre><code>Deluxe King Room Booking:
+Base Rate: $250/night
+High Season: × 1.3 = $325
+Weekend (Friday): × 1.1 = $357.50
+3+ Night Stay: × 0.95 = $339.63
+High Occupancy: × 1.05 = $356.61
+
+Final Quoted Rate: $357/night (rounded)
+
+Total for 3 nights: $1,071
+Taxes (12%): $128.52
+Total Amount: $1,199.52</code></pre>
+
+            <h2>2.3 Cancellation Policies and Management</h2>
+
+            <p>Cancellation policies balance guest flexibility with hotel revenue protection. The policy structure significantly impacts booking behavior and revenue risk.</p>
+
+            <h3>Policy Framework</h3>
+
+            <p><strong>Flexible Policy:</strong></p>
+            <ul>
+                <li>Free cancellation up to 24-48 hours before arrival</li>
+                <li>One night charge if cancelled within penalty window</li>
+                <li>Full stay charge for no-shows</li>
+                <li>Typical for BAR and loyalty rates</li>
+                <li>Higher initial rate to compensate for risk</li>
+            </ul>
+
+            <p><strong>Moderate Policy:</strong></p>
+            <ul>
+                <li>Free cancellation up to 7 days before arrival</li>
+                <li>50% charge if cancelled 3-7 days prior</li>
+                <li>100% charge if cancelled within 3 days</li>
+                <li>Full stay plus one night penalty for no-shows</li>
+                <li>Common for corporate and group rates</li>
+            </ul>
+
+            <p><strong>Strict/Non-Refundable Policy:</strong></p>
+            <ul>
+                <li>No refunds under any circumstances</li>
+                <li>Significantly discounted rate (15-30% lower)</li>
+                <li>Immediate full payment required</li>
+                <li>May offer double loyalty points as compensation</li>
+                <li>Popular for advance purchase promotions</li>
+            </ul>
+
+            <h3>Cancellation Processing Logic</h3>
+
+            <pre><code>function processCancellation(reservation) {
+    const now = new Date();
+    const checkIn = new Date(reservation.checkIn);
+    const hoursUntilCheckIn = (checkIn - now) / (1000 * 60 * 60);
+
+    let penalty = 0;
+    let refund = reservation.totalAmount;
+    let processingFee = 0;
+
+    // Check policy type
+    if (reservation.policy === 'non-refundable') {
+        penalty = reservation.totalAmount;
+        refund = 0;
+    } else if (reservation.policy === 'flexible') {
+        if (hoursUntilCheckIn < 24) {
+            penalty = reservation.nightlyRate; // 1 night penalty
+            refund = reservation.totalAmount - penalty;
+        }
+    } else if (reservation.policy === 'moderate') {
+        const daysUntilCheckIn = hoursUntilCheckIn / 24;
+
+        if (daysUntilCheckIn < 3) {
+            penalty = reservation.totalAmount; // 100%
+            refund = 0;
+        } else if (daysUntilCheckIn < 7) {
+            penalty = reservation.totalAmount * 0.5; // 50%
+            refund = reservation.totalAmount * 0.5;
+        }
+    }
+
+    // Apply processing fee if refunding
+    if (refund > 0) {
+        processingFee = Math.min(25, refund * 0.02);
+        refund -= processingFee;
+    }
+
+    return {
+        approved: true,
+        refundAmount: refund,
+        penaltyAmount: penalty,
+        processingFee: processingFee,
+        refundMethod: reservation.paymentMethod,
+        processingDays: 5-7
+    };
+}</code></pre>
+
+            <h2>2.4 Modification and Amendment Management</h2>
+
+            <p>Handling reservation modifications efficiently while maintaining revenue integrity is crucial for guest satisfaction and operational efficiency.</p>
+
+            <h3>Allowed Modifications</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Modification Type</th>
+                        <th>Constraints</th>
+                        <th>Rate Impact</th>
+                        <th>Approval Required</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Date Changes</td>
+                        <td>Subject to availability</td>
+                        <td>Rate may change based on new dates</td>
+                        <td>Automatic if within policy</td>
+                    </tr>
+                    <tr>
+                        <td>Room Type Upgrade</td>
+                        <td>Availability dependent</td>
+                        <td>Rate difference charged</td>
+                        <td>Automatic</td>
+                    </tr>
+                    <tr>
+                        <td>Room Type Downgrade</td>
+                        <td>Within 48 hours of booking</td>
+                        <td>Rate difference refunded</td>
+                        <td>Manager approval</td>
+                    </tr>
+                    <tr>
+                        <td>Guest Count Increase</td>
+                        <td>Room capacity limits</td>
+                        <td>Additional guest charge may apply</td>
+                        <td>Automatic</td>
+                    </tr>
+                    <tr>
+                        <td>LOS Extension</td>
+                        <td>Availability for extra nights</td>
+                        <td>Existing rate honored if available</td>
+                        <td>Automatic</td>
+                    </tr>
+                    <tr>
+                        <td>LOS Reduction</td>
+                        <td>Minimum LOS restrictions apply</td>
+                        <td>Pro-rated refund if applicable</td>
+                        <td>Automatic within policy</td>
+                    </tr>
+                    <tr>
+                        <td>Rate Plan Change</td>
+                        <td>Qualification verification</td>
+                        <td>New rate applied</td>
+                        <td>Front desk approval</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Modification Business Rules</h3>
+
+            <pre><code>function canModifyReservation(reservation, modification) {
+    const now = new Date();
+    const checkIn = new Date(reservation.checkIn);
+    const hoursUntilCheckIn = (checkIn - now) / (1000 * 60 * 60);
+
+    // Cannot modify checked-in or checked-out reservations
+    if (['checked-in', 'checked-out', 'completed'].includes(reservation.status)) {
+        return {
+            allowed: false,
+            reason: 'Reservation is already in-house or completed'
+        };
+    }
+
+    // Non-refundable reservations have limited modifications
+    if (reservation.rateCode === 'PROMO' && modification.type === 'dates') {
+        return {
+            allowed: false,
+            reason: 'Promotional rates cannot change dates'
+        };
+    }
+
+    // Date changes within 24 hours require approval
+    if (modification.type === 'dates' && hoursUntilCheckIn < 24) {
+        return {
+            allowed: true,
+            requiresApproval: true,
+            approvalLevel: 'manager',
+            reason: 'Within 24-hour modification window'
+        };
+    }
+
+    // Check availability for room type changes
+    if (modification.type === 'roomType') {
+        const available = checkAvailability(
+            modification.newRoomType,
+            reservation.checkIn,
+            reservation.checkOut
+        );
+
+        if (!available) {
+            return {
+                allowed: false,
+                reason: 'Requested room type not available'
+            };
+        }
+    }
+
+    return {
+        allowed: true,
+        requiresApproval: false
+    };
+}</code></pre>
+
+            <h2>2.5 Guest Profile and Preference Management</h2>
+
+            <p>Comprehensive guest profiles enable personalized service and efficient operations. The WIA-IND-016 standard defines a robust guest profile data model.</p>
+
+            <h3>Profile Data Structure</h3>
+
+            <pre><code>{
+    "guestId": "guest-12345",
+    "personalInfo": {
+        "title": "Mr.",
+        "firstName": "John",
+        "lastName": "Smith",
+        "dateOfBirth": "1985-06-15",
+        "nationality": "US",
+        "language": "en-US",
+        "email": "john.smith@email.com",
+        "phone": "+1-555-0100",
+        "address": {
+            "street": "123 Main Street",
+            "city": "New York",
+            "state": "NY",
+            "postalCode": "10001",
+            "country": "USA"
+        }
+    },
+    "preferences": {
+        "roomLocation": "high-floor",
+        "bedType": "king",
+        "smokingPreference": "non-smoking",
+        "pillowType": "firm",
+        "roomTemperature": 21,
+        "newspaper": "Wall Street Journal",
+        "dietaryRestrictions": ["gluten-free"],
+        "allergens": ["nuts"],
+        "communicationPreference": "email"
+    },
+    "loyaltyMembership": {
+        "program": "Elite Rewards",
+        "memberNumber": "ELT789456",
+        "tier": "Gold",
+        "points": 25000,
+        "tierExpiry": "2026-12-31",
+        "benefits": ["room-upgrade", "late-checkout", "lounge-access"]
+    },
+    "stayHistory": [
+        {
+            "confirmationNumber": "ABC123456",
+            "propertyId": "hotel-001",
+            "checkIn": "2024-12-01",
+            "checkOut": "2024-12-05",
+            "roomType": "deluxe-king",
+            "totalSpent": 1200.00,
+            "satisfaction": 5
+        }
+    ],
+    "marketingConsent": {
+        "email": true,
+        "sms": false,
+        "phone": false,
+        "consentDate": "2024-01-15",
+        "gdprCompliant": true
+    }
+}</code></pre>
+
+            <div class="key-takeaways">
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li>Reservations progress through a defined state machine from inquiry to completion, with specific rules governing state transitions</li>
+                    <li>Multiple rate plans targeting different market segments enable revenue optimization while serving diverse guest needs</li>
+                    <li>Rate calculations consider base pricing, seasonal factors, day-of-week patterns, length of stay, and occupancy levels</li>
+                    <li>Cancellation policies balance guest flexibility with hotel revenue protection, ranging from flexible to non-refundable</li>
+                    <li>Modification management requires business rules that consider timing, rate type, and availability constraints</li>
+                    <li>Comprehensive guest profiles enable personalization and efficient service delivery across multiple stays</li>
+                    <li>The WIA-IND-016 standard provides consistent data models and processing logic for reservation management</li>
+                </ul>
+            </div>
+
+            <div class="review-questions">
+                <h3>Review Questions</h3>
+                <ol>
+                    <li>Explain the difference between a "confirmed" and "guaranteed" reservation. Why is this distinction important for hotel operations?</li>
+                    <li>How does the rate calculation formula balance multiple factors to arrive at a final quoted rate? Provide a specific example.</li>
+                    <li>Compare the three main cancellation policy types (flexible, moderate, strict). What are the trade-offs for hotels and guests with each approach?</li>
+                    <li>What business rules should govern reservation modifications? Why are some modifications more restricted than others?</li>
+                    <li>How can comprehensive guest profiles improve both operational efficiency and guest satisfaction? Provide specific examples.</li>
+                    <li>Why is the "no-show" state handled differently from "cancelled" in the reservation lifecycle? What are the implications for revenue management?</li>
+                    <li>Describe how a PMS should handle a request to modify a non-refundable promotional rate reservation. What factors should be considered?</li>
+                </ol>
+            </div>
+
+            <div class="navigation">
+                <a href="chapter-01.html" class="nav-button">← Previous Chapter</a>
+                <a href="index.html" class="nav-button">Table of Contents</a>
+                <a href="chapter-03.html" class="nav-button">Next Chapter →</a>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제8장: 구현 및 인증 | WIA-MESH_NETWORK</title>
+    <style>
+        :root { --bg: #0f172a; --bg-secondary: #1e293b; --bg-tertiary: #334155; --primary: #8B5CF6; --text: #f1f5f9; --text-secondary: #cbd5e1; --border: #475569; --success: #10b981; --purple-light: #a78bfa; --purple-dark: #6d28d9; --warning: #f59e0b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-secondary); padding: 3rem; border-radius: 10px; box-shadow: 0 0 40px rgba(139, 92, 246, 0.1); }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--purple-light); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        h4 { color: var(--purple-light); font-size: 1.2rem; margin: 1.5rem 0 0.75rem; }
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(109, 40, 217, 0.1)); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .info-box { background: var(--bg); border: 1px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .warning-box { background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .success-box { background: rgba(16, 185, 129, 0.1); border-left: 4px solid var(--success); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--primary); font-weight: bold; }
+        tr:hover { background: rgba(139, 92, 246, 0.05); }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: 5px; transition: all 0.3s ease; font-weight: 600; }
+        .btn:hover { background: var(--purple-dark); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', monospace; color: var(--purple-light); border: 1px solid var(--border); }
+        .code-block { background: var(--bg); padding: 1.5rem; border-radius: 5px; overflow-x: auto; margin: 1.5rem 0; border: 1px solid var(--primary); }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+        .stat-card { background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(109, 40, 217, 0.05)); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid var(--primary); }
+        .stat-number { font-size: 2rem; color: var(--primary); font-weight: bold; }
+        .stat-label { color: var(--text-secondary); margin-top: 0.5rem; }
+        .timeline { position: relative; padding-left: 2rem; margin: 2rem 0; }
+        .timeline-item { position: relative; padding-bottom: 2rem; border-left: 2px solid var(--primary); padding-left: 2rem; }
+        .timeline-item::before { content: '●'; position: absolute; left: -0.6rem; top: 0; color: var(--primary); font-size: 1.2rem; }
+        .timeline-item:last-child { border-left-color: transparent; }
+        .checklist { background: var(--bg-tertiary); padding: 1.5rem; border-radius: 5px; margin: 1rem 0; }
+        .cert-badge { display: inline-block; padding: 0.5rem 1rem; border-radius: 20px; font-weight: bold; margin: 0.5rem; }
+        .cert-bronze { background: linear-gradient(135deg, #CD7F32, #B8860B); }
+        .cert-silver { background: linear-gradient(135deg, #C0C0C0, #A8A8A8); }
+        .cert-gold { background: linear-gradient(135deg, #FFD700, #FFA500); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">제8장</p>
+        <h1>🏆 구현 및 인증</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            메시 네트워크를 실제 환경에 배포하고 WIA-MESH_NETWORK 표준 인증을 획득하는 완전한 가이드입니다.
+        </p>
+
+        <h2>개요</h2>
+        <p>
+            이 장에서는 지금까지 학습한 메시 네트워크 기술을 실제 프로덕션 환경에 구현하는 전체 프로세스를 다룹니다. 계획 수립부터 배포, 테스트, 인증 획득, 유지보수까지 메시 네트워크 구현의 모든 단계를 상세히 설명합니다.
+        </p>
+        <p>
+            WIA-MESH_NETWORK 인증은 귀하의 메시 네트워크가 국제 표준을 충족하고, 높은 품질과 상호운용성을 보장한다는 것을 증명합니다. 이 인증은 고객의 신뢰를 얻고, 글로벌 시장에 진입하며, 경쟁 우위를 확보하는 데 필수적입니다.
+        </p>
+
+        <div class="highlight-box">
+            <h3>🎯 이 장의 핵심 내용</h3>
+            <ul>
+                <li><strong>구현 계획:</strong> 프로젝트 범위, 일정, 자원 할당</li>
+                <li><strong>하드웨어 선택:</strong> 노드, 게이트웨이, 센서 선택 가이드</li>
+                <li><strong>소프트웨어 구성:</strong> 펌웨어, 프로토콜 스택, 관리 도구</li>
+                <li><strong>배포 전략:</strong> 단계적 롤아웃, 파일럿 테스트</li>
+                <li><strong>테스트 및 검증:</strong> 기능, 성능, 보안, 스트레스 테스트</li>
+                <li><strong>인증 프로세스:</strong> 신청, 평가, 감사, 승인</li>
+                <li><strong>문제 해결:</strong> 일반적인 문제와 해결 방법</li>
+                <li><strong>유지보수:</strong> 모니터링, 업데이트, 확장</li>
+            </ul>
+        </div>
+
+        <h2>구현 계획 수립</h2>
+
+        <h3>1. 요구사항 분석</h3>
+        <p>
+            성공적인 메시 네트워크 구현의 첫 단계는 비즈니스 및 기술 요구사항을 명확히 정의하는 것입니다. 다음 질문들에 답하면서 요구사항을 구체화하세요.
+        </p>
+
+        <div class="checklist">
+            <h4>요구사항 체크리스트</h4>
+            <ul>
+                <li>□ <strong>범위:</strong> 커버해야 할 물리적 영역 크기는?</li>
+                <li>□ <strong>노드 수:</strong> 연결할 디바이스 개수는? (현재 및 향후 3년)</li>
+                <li>□ <strong>성능:</strong> 필요한 지연시간, 처리량, 신뢰성은?</li>
+                <li>□ <strong>환경:</strong> 실내/실외? 온도, 습도, 장애물은?</li>
+                <li>□ <strong>전력:</strong> AC 전원 가능? 배터리 수명 요구사항은?</li>
+                <li>□ <strong>이동성:</strong> 고정 노드? 이동 노드? 이동 속도는?</li>
+                <li>□ <strong>보안:</strong> 데이터 민감도? 규제 준수 요구사항은?</li>
+                <li>□ <strong>통합:</strong> 연동할 기존 시스템은?</li>
+                <li>□ <strong>예산:</strong> 초기 투자 및 운영 비용 한도는?</li>
+                <li>□ <strong>일정:</strong> 배포 완료 목표일은?</li>
+            </ul>
+        </div>
+
+        <h3>2. 아키텍처 설계</h3>
+        <p>
+            요구사항을 바탕으로 메시 네트워크의 전체 아키텍처를 설계합니다. 토폴로지, 계층 구조, 프로토콜 선택, 보안 아키텍처를 정의합니다.
+        </p>
+
+        <div class="info-box">
+            <h4>아키텍처 설계 고려사항</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>영역</th>
+                        <th>고려사항</th>
+                        <th>권장사항</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>토폴로지</strong></td>
+                        <td>완전 메시 vs 부분 메시</td>
+                        <td>노드 수에 따라 결정: &lt;50개 완전, &gt;50개 부분 메시</td>
+                    </tr>
+                    <tr>
+                        <td><strong>프로토콜</strong></td>
+                        <td>Zigbee, Thread, BLE Mesh, Wi-Fi</td>
+                        <td>사용 사례별: 저전력=Zigbee, 고대역폭=Wi-Fi</td>
+                    </tr>
+                    <tr>
+                        <td><strong>라우팅</strong></td>
+                        <td>Reactive vs Proactive</td>
+                        <td>정적 네트워크=Proactive, 동적=Reactive</td>
+                    </tr>
+                    <tr>
+                        <td><strong>보안</strong></td>
+                        <td>암호화 수준, 인증 방식</td>
+                        <td>AES-256, 상호 인증, 정기적 키 갱신</td>
+                    </tr>
+                    <tr>
+                        <td><strong>게이트웨이</strong></td>
+                        <td>중앙집중 vs 분산</td>
+                        <td>고가용성 위해 다중 분산 게이트웨이 권장</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>하드웨어 선택</h2>
+
+        <h3>메시 네트워크 노드 선택 기준</h3>
+        <p>
+            적절한 하드웨어 선택은 메시 네트워크의 성능과 안정성을 결정합니다. 다음은 주요 하드웨어 컴포넌트별 선택 가이드입니다.
+        </p>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-number">50-500mW</div>
+                <div class="stat-label">노드 전력 소비 범위</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">-40~85°C</div>
+                <div class="stat-label">산업용 동작 온도 범위</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">IP65+</div>
+                <div class="stat-label">실외용 방수/방진 등급</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">3-10년</div>
+                <div class="stat-label">배터리 수명 (저전력 모드)</div>
+            </div>
+        </div>
+
+        <h4>1. 메시 노드 하드웨어</h4>
+
+        <div class="info-box">
+            <table>
+                <thead>
+                    <tr>
+                        <th>컴포넌트</th>
+                        <th>사양</th>
+                        <th>추천 제품 예시</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>MCU</strong></td>
+                        <td>32-bit ARM Cortex-M, 256KB+ Flash</td>
+                        <td>Nordic nRF52840, ESP32, STM32WB</td>
+                    </tr>
+                    <tr>
+                        <td><strong>무선 칩</strong></td>
+                        <td>2.4GHz, 802.15.4 / 802.11</td>
+                        <td>Texas Instruments CC2652, Silicon Labs EFR32</td>
+                    </tr>
+                    <tr>
+                        <td><strong>메모리</strong></td>
+                        <td>RAM 256KB+, Flash 512KB+</td>
+                        <td>내장 또는 외장 SPI Flash</td>
+                    </tr>
+                    <tr>
+                        <td><strong>전원</strong></td>
+                        <td>3.3V, 배터리 또는 PoE</td>
+                        <td>LiPo 배터리 + 태양광 충전</td>
+                    </tr>
+                    <tr>
+                        <td><strong>안테나</strong></td>
+                        <td>PCB, 외장, 지향성</td>
+                        <td>환경에 따라 선택</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h4>2. 게이트웨이 하드웨어</h4>
+        <p>
+            게이트웨이는 메시 네트워크와 외부 네트워크(인터넷, 클라우드)를 연결하는 브릿지 역할을 합니다. 더 높은 처리 능력과 다중 네트워크 인터페이스가 필요합니다.
+        </p>
+
+        <div class="code-block">
+            <strong>게이트웨이 최소 사양:</strong>
+            <pre><code>CPU: 1GHz+ ARM Cortex-A (예: Raspberry Pi 4, BeagleBone)
+RAM: 1GB+
+Storage: 8GB+ eMMC/SD Card
+Network:
+  - Ethernet: 10/100/1000 Mbps
+  - Wi-Fi: 802.11ac dual-band
+  - Cellular: 4G/LTE (옵션)
+  - Mesh Radio: 2.4GHz 802.15.4
+Power: PoE (802.3af) 또는 12V DC
+OS: Linux (Ubuntu, Debian, Yocto)</code></pre>
+        </div>
+
+        <h2>소프트웨어 구성</h2>
+
+        <h3>1. 펌웨어 개발</h3>
+        <p>
+            메시 네트워크 노드의 펌웨어는 네트워크 스택, 라우팅 프로토콜, 애플리케이션 로직을 포함합니다. 다음은 권장 펌웨어 아키텍처입니다.
+        </p>
+
+        <div class="code-block">
+            <strong>펌웨어 아키텍처 (C/C++):</strong>
+            <pre><code>// 메시 노드 펌웨어 구조
+#include "mesh_network.h"
+#include "routing.h"
+#include "security.h"
+#include "application.h"
+
+int main(void) {
+    // 1. 하드웨어 초기화
+    hardware_init();
+
+    // 2. 메시 네트워크 초기화
+    MeshConfig config = {
+        .node_id = get_unique_id(),
+        .network_key = NETWORK_KEY,
+        .protocol = MESH_PROTOCOL_ZIGBEE,
+        .channel = 15,
+        .tx_power = 0  // 0 dBm
+    };
+
+    mesh_init(&config);
+
+    // 3. 라우팅 프로토콜 시작
+    routing_init(ROUTING_AODV);
+
+    // 4. 보안 계층 활성화
+    security_init(AES_128_CCM);
+
+    // 5. 애플리케이션 시작
+    application_init();
+
+    // 6. 메시 네트워크 참여
+    mesh_join_network();
+
+    // 7. 메인 이벤트 루프
+    while (1) {
+        mesh_process_events();
+        routing_update();
+        application_task();
+
+        // 저전력 슬립
+        if (no_activity()) {
+            enter_sleep_mode();
+        }
+    }
+}
+
+// 수신 메시지 핸들러
+void on_message_received(MeshMessage* msg) {
+    if (msg->destination == config.node_id) {
+        // 나에게 온 메시지
+        application_handle_message(msg);
+    } else {
+        // 포워딩 필요
+        routing_forward_message(msg);
+    }
+}</code></pre>
+        </div>
+
+        <h3>2. 관리 소프트웨어</h3>
+        <p>
+            메시 네트워크를 효과적으로 관리하기 위한 중앙 관리 시스템이 필요합니다. 웹 기반 대시보드, CLI 도구, API를 제공합니다.
+        </p>
+
+        <div class="code-block">
+            <strong>관리 시스템 구성 (TypeScript/React):</strong>
+            <pre><code>// 메시 네트워크 관리 대시보드
+import { MeshNetworkClient } from './mesh-client';
+
+class MeshNetworkManager {
+  private client: MeshNetworkClient;
+
+  async getNetworkTopology() {
+    const nodes = await this.client.getAllNodes();
+    const links = await this.client.getAllLinks();
+
+    return {
+      nodes: nodes.map(n => ({
+        id: n.id,
+        type: n.type,
+        status: n.status,
+        battery: n.batteryLevel,
+        neighbors: n.neighbors.length
+      })),
+      links: links.map(l => ({
+        source: l.sourceId,
+        target: l.targetId,
+        quality: l.linkQuality,
+        rssi: l.rssi
+      }))
+    };
+  }
+
+  async updateNodeConfiguration(nodeId: string, config: any) {
+    // OTA 설정 업데이트
+    await this.client.sendConfigUpdate(nodeId, config);
+  }
+
+  async deployFirmwareUpdate(version: string, nodes: string[]) {
+    // 펌웨어 OTA 업데이트
+    for (const nodeId of nodes) {
+      await this.client.startFirmwareUpdate(nodeId, version);
+    }
+  }
+
+  async runNetworkDiagnostics() {
+    // 네트워크 진단 실행
+    const results = {
+      connectivity: await this.testConnectivity(),
+      performance: await this.measurePerformance(),
+      healthScore: await this.calculateHealthScore()
+    };
+
+    return results;
+  }
+}</code></pre>
+        </div>
+
+        <h2>배포 전략</h2>
+
+        <h3>단계적 롤아웃</h3>
+        <p>
+            대규모 메시 네트워크는 단계적으로 배포하여 리스크를 최소화하고, 각 단계에서 학습한 내용을 다음 단계에 적용합니다.
+        </p>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <h4>Phase 1: 파일럿 (2-4주)</h4>
+                <p>5-10개 노드로 소규모 테스트 네트워크 구축. 기본 기능 검증, 설정 최적화, 문제 식별 및 해결.</p>
+            </div>
+            <div class="timeline-item">
+                <h4>Phase 2: 확장 테스트 (4-8주)</h4>
+                <p>50-100개 노드로 확장. 확장성, 성능, 안정성 검증. 모니터링 시스템 구축.</p>
+            </div>
+            <div class="timeline-item">
+                <h4>Phase 3: 프로덕션 롤아웃 (8-16주)</h4>
+                <p>전체 네트워크 배포. 구역별 순차 배포로 리스크 관리. 24/7 모니터링 및 지원.</p>
+            </div>
+            <div class="timeline-item">
+                <h4>Phase 4: 안정화 및 최적화 (지속적)</h4>
+                <p>성능 튜닝, 버그 수정, 기능 개선. 사용자 피드백 수집 및 반영.</p>
+            </div>
+        </div>
+
+        <h2>테스트 및 검증</h2>
+
+        <h3>포괄적 테스트 계획</h3>
+        <p>
+            WIA-MESH_NETWORK 인증을 획득하기 위해서는 엄격한 테스트를 통과해야 합니다. 다음은 필수 테스트 항목입니다.
+        </p>
+
+        <div class="info-box">
+            <h4>테스트 카테고리</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>테스트 유형</th>
+                        <th>목표</th>
+                        <th>합격 기준</th>
+                        <th>도구</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>기능 테스트</strong></td>
+                        <td>모든 기능이 정상 작동하는지 확인</td>
+                        <td>100% 기능 동작</td>
+                        <td>자동화 테스트 스크립트</td>
+                    </tr>
+                    <tr>
+                        <td><strong>성능 테스트</strong></td>
+                        <td>지연시간, 처리량, 확장성 측정</td>
+                        <td>KPI 달성 (표준 요구사항)</td>
+                        <td>iperf, ping, JMeter</td>
+                    </tr>
+                    <tr>
+                        <td><strong>보안 테스트</strong></td>
+                        <td>암호화, 인증, 취약점 검증</td>
+                        <td>CVE 취약점 없음</td>
+                        <td>Nmap, Metasploit, Wireshark</td>
+                    </tr>
+                    <tr>
+                        <td><strong>스트레스 테스트</strong></td>
+                        <td>최대 부하에서 안정성 검증</td>
+                        <td>24시간 무중단 운영</td>
+                        <td>사용자 정의 부하 생성기</td>
+                    </tr>
+                    <tr>
+                        <td><strong>장애 복구 테스트</strong></td>
+                        <td>노드/링크 장애 시 복구 능력</td>
+                        <td>&lt; 1초 복구 시간</td>
+                        <td>수동 노드 단절</td>
+                    </tr>
+                    <tr>
+                        <td><strong>상호운용성</strong></td>
+                        <td>다른 제조사 장비와 호환성</td>
+                        <td>표준 프로토콜 준수</td>
+                        <td>프로토콜 분석기</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>자동화 테스트 스위트</h3>
+
+        <div class="code-block">
+            <strong>자동화 테스트 스크립트 예시 (Python):</strong>
+            <pre><code>import pytest
+from mesh_test_framework import MeshNetwork, TestHarness
+
+class TestMeshNetwork:
+    @pytest.fixture
+    def mesh_network(self):
+        """테스트 메시 네트워크 설정"""
+        network = MeshNetwork(num_nodes=10)
+        network.deploy()
+        yield network
+        network.teardown()
+
+    def test_node_discovery(self, mesh_network):
+        """노드 자동 발견 테스트"""
+        nodes = mesh_network.discover_nodes(timeout=30)
+        assert len(nodes) == 10, "모든 노드가 발견되어야 함"
+
+    def test_end_to_end_latency(self, mesh_network):
+        """종단간 지연시간 테스트"""
+        latencies = []
+        for i in range(100):
+            lat = mesh_network.ping(src=0, dst=9)
+            latencies.append(lat)
+
+        avg_latency = sum(latencies) / len(latencies)
+        assert avg_latency < 50, f"평균 지연시간 {avg_latency}ms > 50ms"
+
+    def test_throughput(self, mesh_network):
+        """처리량 테스트"""
+        throughput = mesh_network.measure_throughput(
+            src=0, dst=9, duration=60, packet_size=1024
+        )
+        assert throughput > 100_000, f"처리량 {throughput}bps < 100Kbps"
+
+    def test_node_failure_recovery(self, mesh_network):
+        """노드 장애 복구 테스트"""
+        # 중간 노드 제거
+        mesh_network.disable_node(5)
+
+        # 경로 재계산 대기
+        time.sleep(2)
+
+        # 여전히 통신 가능한지 확인
+        success = mesh_network.ping(src=0, dst=9, timeout=5)
+        assert success, "노드 장애 후에도 통신 가능해야 함"
+
+    def test_encryption(self, mesh_network):
+        """암호화 테스트"""
+        # 패킷 캡처
+        packets = mesh_network.capture_packets(duration=10)
+
+        # 모든 패킷이 암호화되었는지 확인
+        for packet in packets:
+            assert packet.is_encrypted, "모든 패킷이 암호화되어야 함"
+            assert packet.encryption == "AES-128", "AES-128 암호화 사용"
+
+    def test_scalability(self, mesh_network):
+        """확장성 테스트"""
+        # 동적으로 노드 추가
+        for i in range(10, 100):
+            mesh_network.add_node(i)
+            time.sleep(1)
+
+        # 네트워크가 수렴했는지 확인
+        assert mesh_network.is_converged(timeout=60)
+
+        # 여전히 성능 유지하는지 확인
+        latency = mesh_network.ping(src=0, dst=99)
+        assert latency < 100, "100개 노드에서도 지연시간 < 100ms"</code></pre>
+        </div>
+
+        <h2>WIA-MESH_NETWORK 인증 프로세스</h2>
+
+        <h3>인증 레벨</h3>
+        <p>
+            WIA-MESH_NETWORK 표준은 세 가지 인증 레벨을 제공하며, 각 레벨은 요구사항과 혜택이 다릅니다.
+        </p>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="cert-badge cert-bronze">브론즈</div>
+                <div class="stat-label">기본 준수 80%+</div>
+                <p style="font-size: 0.9rem; margin-top: 1rem;">시장 진입, 기본 상호운용성</p>
+            </div>
+            <div class="stat-card">
+                <div class="cert-badge cert-silver">실버</div>
+                <div class="stat-label">강화 준수 95%+</div>
+                <p style="font-size: 0.9rem; margin-top: 1rem;">프리미엄 포지셔닝, 확장 지원</p>
+            </div>
+            <div class="stat-card">
+                <div class="cert-badge cert-gold">골드</div>
+                <div class="stat-label">완전 준수 100%</div>
+                <p style="font-size: 0.9rem; margin-top: 1rem;">리더십 인정, 우선 접근</p>
+            </div>
+        </div>
+
+        <h3>인증 절차</h3>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <h4>1단계: 신청 및 사전 평가 (1주)</h4>
+                <p>온라인 신청서 제출, 제품 정보 및 아키텍처 문서 제공. WIA 팀이 사전 검토 수행.</p>
+                <div class="checklist">
+                    <strong>제출 문서:</strong>
+                    <ul>
+                        <li>시스템 아키텍처 다이어그램</li>
+                        <li>하드웨어 사양서</li>
+                        <li>소프트웨어 설계 문서</li>
+                        <li>보안 아키텍처 문서</li>
+                        <li>테스트 계획 및 결과</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <h4>2단계: 자가 테스트 (2-4주)</h4>
+                <p>WIA 제공 테스트 스위트를 사용하여 자가 테스트 수행. 테스트 결과 및 로그 제출.</p>
+                <div class="code-block">
+                    <strong>자가 테스트 실행:</strong>
+                    <pre><code>$ wia-mesh-test-suite --profile full --output report.json
+Running WIA-MESH_NETWORK Certification Tests...
+[✓] Protocol Compliance: 100%
+[✓] Performance Benchmarks: PASS
+[✓] Security Validation: PASS
+[✓] Interoperability: PASS
+[!] Energy Efficiency: 92% (Warning)
+
+Overall Score: 96% - Silver Level Eligible
+Report saved to: report.json</code></pre>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <h4>3단계: 공식 평가 (2-3주)</h4>
+                <p>WIA 공인 시험소에서 독립적인 평가 수행. 기능, 성능, 보안, 상호운용성 테스트.</p>
+            </div>
+            <div class="timeline-item">
+                <h4>4단계: 감사 및 검토 (1-2주)</h4>
+                <p>WIA 인증위원회가 테스트 결과, 문서, 코드 품질 검토. 필요시 추가 정보 요청.</p>
+            </div>
+            <div class="timeline-item">
+                <h4>5단계: 인증 발급 (1주)</h4>
+                <p>합격 시 공식 WIA-MESH_NETWORK 인증서 발급. 인증 로고 사용 권한 부여. 공식 인증 디렉토리 등재.</p>
+            </div>
+        </div>
+
+        <h3>인증 유지 및 갱신</h3>
+        <p>
+            WIA-MESH_NETWORK 인증은 2년간 유효하며, 이후 갱신이 필요합니다. 정기적인 감시 감사를 통해 지속적인 준수를 확인합니다.
+        </p>
+
+        <div class="warning-box">
+            <h4>⚠️ 인증 유지 요구사항</h4>
+            <ul>
+                <li><strong>연간 자가 평가:</strong> 매년 자가 테스트 수행 및 결과 제출</li>
+                <li><strong>중대 변경 통지:</strong> 아키텍처, 프로토콜, 보안 관련 변경 사항 보고</li>
+                <li><strong>보안 업데이트:</strong> 발견된 취약점에 대한 신속한 패치 배포</li>
+                <li><strong>사고 보고:</strong> 보안 침해 또는 중대 장애 발생 시 24시간 내 보고</li>
+            </ul>
+        </div>
+
+        <h2>일반적인 문제 및 해결 방법</h2>
+
+        <h3>문제 해결 가이드</h3>
+
+        <div class="info-box">
+            <h4>자주 발생하는 문제와 해결책</h4>
+
+            <h4 style="color: var(--warning); margin-top: 1.5rem;">문제 1: 노드가 네트워크에 참여하지 못함</h4>
+            <p><strong>증상:</strong> 새 노드가 기존 메시 네트워크를 찾지 못하거나 연결 실패</p>
+            <p><strong>가능한 원인:</strong></p>
+            <ul>
+                <li>잘못된 네트워크 키 또는 채널 설정</li>
+                <li>신호 범위 밖에 위치</li>
+                <li>펌웨어 버전 불일치</li>
+                <li>하드웨어 결함</li>
+            </ul>
+            <p><strong>해결 방법:</strong></p>
+            <ol>
+                <li>네트워크 키와 채널이 올바른지 확인: <code>mesh-cli config verify</code></li>
+                <li>노드를 기존 노드에 더 가깝게 이동</li>
+                <li>모든 노드의 펌웨어를 최신 버전으로 업데이트</li>
+                <li>하드웨어 진단 실행: <code>mesh-cli hardware-test</code></li>
+            </ol>
+
+            <h4 style="color: var(--warning); margin-top: 1.5rem;">문제 2: 높은 지연시간 또는 패킷 손실</h4>
+            <p><strong>증상:</strong> 메시지 전달 지연, 간헐적 통신 실패</p>
+            <p><strong>가능한 원인:</strong></p>
+            <ul>
+                <li>네트워크 혼잡 (노드 과밀)</li>
+                <li>간섭 (다른 무선 장치)</li>
+                <li>비효율적인 라우팅 경로</li>
+                <li>불량한 링크 품질</li>
+            </ul>
+            <p><strong>해결 방법:</strong></p>
+            <ol>
+                <li>네트워크 토폴로지 분석: <code>mesh-cli topology analyze</code></li>
+                <li>채널 간섭 스캔 및 최적 채널로 변경: <code>mesh-cli channel scan</code></li>
+                <li>라우팅 프로토콜 최적화: 다중 경로 라우팅 활성화</li>
+                <li>약한 링크 식별 및 중계 노드 추가</li>
+            </ol>
+
+            <h4 style="color: var(--warning); margin-top: 1.5rem;">문제 3: 네트워크 분할 (Partitioning)</h4>
+            <p><strong>증상:</strong> 네트워크가 두 개 이상의 독립적인 그룹으로 분리됨</p>
+            <p><strong>가능한 원인:</strong></p>
+            <ul>
+                <li>브릿지 노드 장애</li>
+                <li>물리적 장애물로 인한 신호 차단</li>
+                <li>배터리 방전</li>
+            </ul>
+            <p><strong>해결 방법:</strong></p>
+            <ol>
+                <li>분할 감지: <code>mesh-cli partition detect</code></li>
+                <li>중계 노드를 분할된 영역 사이에 배치</li>
+                <li>배터리 레벨 모니터링 자동화 및 사전 교체</li>
+                <li>백본 노드를 AC 전원으로 전환하여 안정성 향상</li>
+            </ol>
+
+            <h4 style="color: var(--warning); margin-top: 1.5rem;">문제 4: 보안 취약점</h4>
+            <p><strong>증상:</strong> 무단 접근, 데이터 유출, 서비스 거부 공격</p>
+            <p><strong>가능한 원인:</strong></p>
+            <ul>
+                <li>약한 암호화 키</li>
+                <li>펌웨어 취약점</li>
+                <li>물리적 노드 탈취</li>
+            </ul>
+            <p><strong>해결 방법:</strong></p>
+            <ol>
+                <li>강력한 암호화 활성화: AES-256, 정기적 키 로테이션</li>
+                <li>최신 보안 패치 즉시 적용</li>
+                <li>침입 탐지 시스템(IDS) 구현</li>
+                <li>물리적 보안 강화 (변조 방지 하우징)</li>
+                <li>보안 감사: <code>mesh-cli security audit</code></li>
+            </ol>
+        </div>
+
+        <h2>모니터링 및 유지보수</h2>
+
+        <h3>지속적인 운영 관리</h3>
+        <p>
+            메시 네트워크의 장기적인 성공은 효과적인 모니터링과 유지보수에 달려 있습니다. 다음은 프로덕션 환경에서의 모범 사례입니다.
+        </p>
+
+        <div class="success-box">
+            <h4>운영 모범 사례</h4>
+            <ul>
+                <li><strong>24/7 모니터링:</strong> Prometheus + Grafana로 실시간 메트릭 추적</li>
+                <li><strong>자동 경보:</strong> 임계값 초과 시 즉시 알림 (SMS, 이메일, Slack)</li>
+                <li><strong>정기 백업:</strong> 네트워크 구성, 노드 설정 일일 백업</li>
+                <li><strong>펌웨어 관리:</strong> OTA 업데이트 전 스테이징 환경 테스트</li>
+                <li><strong>용량 계획:</strong> 성장 추세 분석 및 사전 확장</li>
+                <li><strong>정기 감사:</strong> 분기별 보안 및 성능 검토</li>
+                <li><strong>문서화:</strong> 모든 변경사항, 사고, 해결책 기록</li>
+            </ul>
+        </div>
+
+        <h3>성능 벤치마크 추적</h3>
+
+        <div class="code-block">
+            <strong>월간 성능 리포트 생성:</strong>
+            <pre><code>#!/bin/bash
+# 월간 메시 네트워크 성능 리포트 생성 스크립트
+
+REPORT_DATE=$(date +%Y-%m)
+OUTPUT_FILE="mesh_performance_${REPORT_DATE}.html"
+
+echo "메시 네트워크 월간 성능 리포트 생성 중..."
+
+# 1. 평균 지연시간
+AVG_LATENCY=$(mesh-cli metrics latency --month $REPORT_DATE --avg)
+
+# 2. 총 처리량
+TOTAL_THROUGHPUT=$(mesh-cli metrics throughput --month $REPORT_DATE --sum)
+
+# 3. 패킷 손실률
+PACKET_LOSS=$(mesh-cli metrics packet-loss --month $REPORT_DATE --avg)
+
+# 4. 노드 가용성
+NODE_AVAILABILITY=$(mesh-cli metrics availability --month $REPORT_DATE)
+
+# 5. 에너지 효율성
+ENERGY_EFFICIENCY=$(mesh-cli metrics energy --month $REPORT_DATE)
+
+# 6. 보안 이벤트
+SECURITY_EVENTS=$(mesh-cli security events --month $REPORT_DATE --count)
+
+# HTML 리포트 생성
+cat > $OUTPUT_FILE <<EOF
+<html>
+<head><title>Mesh Network Report - $REPORT_DATE</title></head>
+<body>
+<h1>메시 네트워크 성능 리포트</h1>
+<p>기간: $REPORT_DATE</p>
+
+<h2>핵심 지표</h2>
+<table>
+<tr><td>평균 지연시간</td><td>$AVG_LATENCY ms</td></tr>
+<tr><td>총 처리량</td><td>$TOTAL_THROUGHPUT GB</td></tr>
+<tr><td>패킷 손실률</td><td>$PACKET_LOSS %</td></tr>
+<tr><td>노드 가용성</td><td>$NODE_AVAILABILITY %</td></tr>
+<tr><td>에너지 효율성</td><td>$ENERGY_EFFICIENCY nJ/bit</td></tr>
+<tr><td>보안 이벤트</td><td>$SECURITY_EVENTS</td></tr>
+</table>
+
+<h2>상세 분석</h2>
+$(mesh-cli report generate --month $REPORT_DATE --format html)
+
+</body>
+</html>
+EOF
+
+echo "리포트 생성 완료: $OUTPUT_FILE"</code></pre>
+        </div>
+
+        <h2>요약 및 다음 단계</h2>
+
+        <p>
+            이 장에서는 메시 네트워크를 실제 환경에 구현하고 WIA-MESH_NETWORK 표준 인증을 획득하는 전체 프로세스를 다루었습니다. 계획 수립, 하드웨어/소프트웨어 선택, 배포 전략, 테스트, 인증, 문제 해결, 운영 관리까지 모든 단계를 학습했습니다.
+        </p>
+
+        <div class="highlight-box">
+            <h3>핵심 요점 정리</h3>
+            <ul>
+                <li>철저한 요구사항 분석과 계획이 성공의 기초입니다</li>
+                <li>적절한 하드웨어 선택이 성능과 안정성을 결정합니다</li>
+                <li>단계적 롤아웃으로 리스크를 최소화하세요</li>
+                <li>포괄적인 테스트가 품질을 보장합니다</li>
+                <li>WIA 인증이 신뢰성과 상호운용성을 증명합니다</li>
+                <li>지속적인 모니터링과 유지보수가 장기 성공의 열쇠입니다</li>
+            </ul>
+        </div>
+
+        <div class="success-box">
+            <h3>다음 단계</h3>
+            <ol>
+                <li><strong>학습 심화:</strong> WIA-MESH_NETWORK 공식 문서 및 튜토리얼 탐색</li>
+                <li><strong>커뮤니티 참여:</strong> WIA 포럼, GitHub, Stack Overflow에서 경험 공유</li>
+                <li><strong>파일럿 시작:</strong> 소규모 프로젝트로 실습</li>
+                <li><strong>인증 준비:</strong> 자가 테스트 도구 다운로드 및 실행</li>
+                <li><strong>지속 학습:</strong> 최신 메시 네트워크 기술 및 트렌드 추적</li>
+            </ol>
+        </div>
+
+        <p style="text-align: center; margin: 3rem 0; font-size: 1.2rem; color: var(--purple-light);">
+            <strong>축하합니다! WIA-MESH_NETWORK 전문가 과정을 완료하셨습니다.</strong><br>
+            이제 여러분은 세계 수준의 메시 네트워크를 설계, 구현, 인증할 준비가 되었습니다.
+        </p>
+
+        <div class="nav-buttons">
+            <a href="chapter-07.html" class="btn">← 이전: Phase 4 최적화</a>
+            <a href="index.html" class="btn">📚 목차</a>
+            <a href="index.html" class="btn">처음으로 →</a>
+        </div>
+    </div>
+</body>
+</html>

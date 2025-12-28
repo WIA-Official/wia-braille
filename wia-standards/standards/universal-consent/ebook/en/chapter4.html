@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Consent Data Format (PHASE 1) | WIA-CORE-002</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Georgia, 'Times New Roman', serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 800px; margin: 0 auto; }
+        header { border-bottom: 3px solid #334155; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #6B7280; font-size: 1rem; font-weight: 600; letter-spacing: 2px; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #f1f5f9; margin-bottom: 1rem; }
+        .chapter-intro { font-size: 1.2rem; color: #94a3b8; font-style: italic; margin-top: 1rem; }
+        h2 { font-size: 1.8rem; color: #6B7280; margin: 3rem 0 1.5rem 0; }
+        h3 { font-size: 1.4rem; color: #9CA3AF; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; text-align: justify; }
+        .highlight { background: #1e293b; padding: 1.5rem; border-left: 4px solid #6B7280; margin: 2rem 0; border-radius: 8px; }
+        .highlight h4 { color: #6B7280; margin-bottom: 1rem; }
+        ul, ol { margin: 1.5rem 0; padding-left: 2rem; color: #cbd5e1; }
+        li { margin-bottom: 0.75rem; }
+        .code-block { background: #1e293b; padding: 1.5rem; border-radius: 8px; margin: 2rem 0; font-family: 'Courier New', monospace; font-size: 0.9rem; overflow-x: auto; color: #cbd5e1; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #1e293b; color: #6B7280; font-weight: 600; }
+        td { color: #cbd5e1; }
+        .nav { display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #6B7280; text-decoration: none; padding: 0.75rem 1.5rem; border: 2px solid #6B7280; border-radius: 8px; transition: all 0.3s; }
+        .nav a:hover { background: #6B7280; color: white; }
+        footer { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; color: #64748b; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-number">CHAPTER 04 · PHASE 1</div>
+            <h1>Consent Data Format</h1>
+            <p class="chapter-intro">
+                Deep dive into standardized consent data structures, JSON schemas, validation rules,
+                and universal formats that form the foundation of WIA-CORE-002.
+            </p>
+        </header>
+
+        <article>
+            <h2>The Foundation: Why Data Format Matters</h2>
+
+            <p>
+                Phase 1 of WIA-CORE-002 establishes the fundamental data format for consent records. This may seem
+                like a purely technical concern, but the choice of data format has profound implications for
+                interoperability, auditability, compliance, and user rights. A well-designed data format ensures
+                that consent records are complete, consistent, verifiable, and machine-readable across all systems
+                and organizations.
+            </p>
+
+            <p>
+                The goals of Phase 1 are ambitious yet practical:
+            </p>
+
+            <ul>
+                <li>Define a comprehensive consent record structure that captures all legally required information</li>
+                <li>Ensure human readability and machine processability</li>
+                <li>Support multiple jurisdictions and regulatory frameworks simultaneously</li>
+                <li>Enable extensibility for future requirements without breaking compatibility</li>
+                <li>Provide validation mechanisms to ensure data quality and completeness</li>
+                <li>Support the full consent lifecycle from creation through revocation and expiration</li>
+            </ul>
+
+            <h2>Core Consent Record Structure</h2>
+
+            <p>
+                Every WIA-CORE-002 consent record follows a standardized JSON structure with required and optional
+                fields. The complete schema is available in the technical specification, but here we'll explore
+                the key components.
+            </p>
+
+            <h3>Required Fields</h3>
+
+            <p>
+                These fields MUST be present in every valid consent record:
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>consentId</td>
+                        <td>string (UUID)</td>
+                        <td>Globally unique identifier for this consent record</td>
+                    </tr>
+                    <tr>
+                        <td>userId</td>
+                        <td>string</td>
+                        <td>Identifier for the user who provided consent</td>
+                    </tr>
+                    <tr>
+                        <td>version</td>
+                        <td>string</td>
+                        <td>WIA-CORE-002 version (e.g., "1.0")</td>
+                    </tr>
+                    <tr>
+                        <td>timestamp</td>
+                        <td>ISO 8601 datetime</td>
+                        <td>When consent was granted</td>
+                    </tr>
+                    <tr>
+                        <td>status</td>
+                        <td>enum</td>
+                        <td>Current status: pending, active, revoked, expired</td>
+                    </tr>
+                    <tr>
+                        <td>purposes</td>
+                        <td>array</td>
+                        <td>List of purposes for which consent is granted</td>
+                    </tr>
+                    <tr>
+                        <td>legalBasis</td>
+                        <td>enum</td>
+                        <td>Legal basis for processing: consent, contract, legal-obligation, legitimate-interest</td>
+                    </tr>
+                    <tr>
+                        <td>jurisdiction</td>
+                        <td>string</td>
+                        <td>Applicable jurisdiction (ISO 3166-1 alpha-2 code or special codes like "EU")</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Complete Consent Record Example</h3>
+
+            <div class="code-block">{
+  "consentId": "consent-550e8400-e29b-41d4-a716-446655440000",
+  "userId": "user-789012",
+  "version": "1.0",
+  "standard": "WIA-CORE-002",
+  
+  "timestamp": "2025-01-15T10:30:00Z",
+  "expiresAt": "2026-01-15T10:30:00Z",
+  "status": "active",
+  
+  "jurisdiction": "EU",
+  "legalBasis": "consent",
+  
+  "purposes": [
+    {
+      "purposeId": "marketing-email",
+      "purposeName": "Email Marketing Communications",
+      "description": "Receive promotional emails about products and services",
+      "granted": true,
+      "categories": ["email", "marketing", "promotional"],
+      "dataCategories": ["email-address", "name", "preferences"],
+      "retentionPeriod": "P2Y",
+      "thirdParties": ["marketing-platform-inc"]
+    },
+    {
+      "purposeId": "analytics",
+      "purposeName": "Product Analytics",
+      "description": "Analyze product usage to improve features",
+      "granted": true,
+      "categories": ["analytics", "performance"],
+      "dataCategories": ["usage-data", "device-info"],
+      "retentionPeriod": "P1Y",
+      "thirdParties": []
+    }
+  ],
+  
+  "userInfo": {
+    "age": 34,
+    "isMinor": false,
+    "parentalConsent": null,
+    "language": "en",
+    "region": "EU"
+  },
+  
+  "metadata": {
+    "source": "web-signup-form",
+    "sourceUrl": "https://example.com/signup",
+    "ipAddress": "192.0.2.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)...",
+    "consentFormVersion": "2.3",
+    "privacyPolicyVersion": "4.1",
+    "privacyPolicyUrl": "https://example.com/privacy",
+    "termsVersion": "3.2",
+    "language": "en"
+  },
+  
+  "auditTrail": [
+    {
+      "timestamp": "2025-01-15T10:30:00Z",
+      "action": "created",
+      "actor": "system",
+      "ipAddress": "192.0.2.1",
+      "changes": null
+    }
+  ],
+  
+  "verification": {
+    "method": "double-opt-in",
+    "verifiedAt": "2025-01-15T10:35:00Z",
+    "verificationToken": "verify-abc123..."
+  }
+}</div>
+
+            <h2>Purpose Specification</h2>
+
+            <p>
+                The "purposes" array is the heart of granular consent management. Each purpose represents a
+                specific reason for processing personal data, and users can grant or deny consent for each
+                purpose independently.
+            </p>
+
+            <h3>Purpose Object Structure</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>purposeId</td>
+                        <td>Yes</td>
+                        <td>Unique identifier for this purpose (kebab-case recommended)</td>
+                    </tr>
+                    <tr>
+                        <td>purposeName</td>
+                        <td>Yes</td>
+                        <td>Human-readable name for the purpose</td>
+                    </tr>
+                    <tr>
+                        <td>description</td>
+                        <td>Yes</td>
+                        <td>Clear, plain-language description of what this purpose entails</td>
+                    </tr>
+                    <tr>
+                        <td>granted</td>
+                        <td>Yes</td>
+                        <td>Boolean indicating whether consent is granted for this purpose</td>
+                    </tr>
+                    <tr>
+                        <td>categories</td>
+                        <td>No</td>
+                        <td>Array of category tags for classification (e.g., "marketing", "analytics")</td>
+                    </tr>
+                    <tr>
+                        <td>dataCategories</td>
+                        <td>Yes</td>
+                        <td>Types of personal data processed for this purpose</td>
+                    </tr>
+                    <tr>
+                        <td>retentionPeriod</td>
+                        <td>Yes</td>
+                        <td>How long data will be retained (ISO 8601 duration format)</td>
+                    </tr>
+                    <tr>
+                        <td>thirdParties</td>
+                        <td>Yes</td>
+                        <td>Array of third parties who will receive data for this purpose</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Standard Purpose Categories</h3>
+
+            <p>
+                WIA-CORE-002 defines standard purpose categories to promote consistency across implementations:
+            </p>
+
+            <ul>
+                <li><strong>marketing:</strong> Marketing communications and promotional activities</li>
+                <li><strong>analytics:</strong> Usage analytics and performance monitoring</li>
+                <li><strong>personalization:</strong> Customizing user experience and content</li>
+                <li><strong>advertising:</strong> Targeted advertising and ad delivery</li>
+                <li><strong>social-media:</strong> Social media integration and sharing</li>
+                <li><strong>research:</strong> Product research and development</li>
+                <li><strong>security:</strong> Security and fraud prevention</li>
+                <li><strong>support:</strong> Customer support and service delivery</li>
+                <li><strong>legal:</strong> Legal compliance and obligations</li>
+                <li><strong>contract:</strong> Contract fulfillment and service delivery</li>
+            </ul>
+
+            <h2>Legal Basis and Jurisdiction</h2>
+
+            <p>
+                Different regulations recognize different legal bases for processing personal data. WIA-CORE-002
+                supports all major legal bases:
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Legal Basis</th>
+                        <th>Description</th>
+                        <th>When Used</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>consent</td>
+                        <td>User has given explicit consent</td>
+                        <td>Marketing, optional analytics, data sharing</td>
+                    </tr>
+                    <tr>
+                        <td>contract</td>
+                        <td>Processing necessary to fulfill a contract</td>
+                        <td>Service delivery, payment processing</td>
+                    </tr>
+                    <tr>
+                        <td>legal-obligation</td>
+                        <td>Required by law</td>
+                        <td>Tax records, regulatory reporting</td>
+                    </tr>
+                    <tr>
+                        <td>legitimate-interest</td>
+                        <td>Organization's legitimate interests (with balancing test)</td>
+                        <td>Fraud prevention, security measures</td>
+                    </tr>
+                    <tr>
+                        <td>vital-interest</td>
+                        <td>Necessary to protect life or health</td>
+                        <td>Medical emergencies, safety threats</td>
+                    </tr>
+                    <tr>
+                        <td>public-interest</td>
+                        <td>Performing tasks in the public interest</td>
+                        <td>Government services, public health</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Jurisdiction Codes</h3>
+
+            <p>
+                The jurisdiction field uses ISO 3166-1 alpha-2 codes (e.g., "US", "GB", "DE") or special codes
+                for regulatory regions:
+            </p>
+
+            <ul>
+                <li><strong>EU:</strong> European Union (GDPR applies)</li>
+                <li><strong>EEA:</strong> European Economic Area</li>
+                <li><strong>US-CA:</strong> California, USA (CCPA/CPRA applies)</li>
+                <li><strong>US-VA:</strong> Virginia, USA (VCDPA applies)</li>
+                <li><strong>US-CO:</strong> Colorado, USA (CPA applies)</li>
+                <li><strong>GLOBAL:</strong> Multi-jurisdictional (uses most restrictive requirements)</li>
+            </ul>
+
+            <h2>Consent Lifecycle States</h2>
+
+            <p>
+                Consent records progress through a defined lifecycle, with state transitions tracked in the
+                audit trail:
+            </p>
+
+            <div class="highlight">
+                <h4>State Definitions</h4>
+                <ul>
+                    <li><strong>pending:</strong> Consent has been requested but not yet confirmed (e.g., awaiting
+                        email verification or parental approval)</li>
+                    <li><strong>active:</strong> Consent is valid and in effect</li>
+                    <li><strong>revoked:</strong> User has withdrawn consent</li>
+                    <li><strong>expired:</strong> Consent has passed its expiration date</li>
+                    <li><strong>suspended:</strong> Temporarily suspended (e.g., during investigation)</li>
+                    <li><strong>superseded:</strong> Replaced by a newer consent record</li>
+                </ul>
+            </div>
+
+            <h3>State Transition Example</h3>
+
+            <div class="code-block">"auditTrail": [
+  {
+    "timestamp": "2025-01-15T10:30:00Z",
+    "action": "created",
+    "actor": "system",
+    "previousState": null,
+    "newState": "pending",
+    "reason": "User signup initiated"
+  },
+  {
+    "timestamp": "2025-01-15T10:35:00Z",
+    "action": "verified",
+    "actor": "user-789012",
+    "previousState": "pending",
+    "newState": "active",
+    "reason": "Email verified via confirmation link"
+  },
+  {
+    "timestamp": "2025-06-20T14:22:00Z",
+    "action": "updated",
+    "actor": "user-789012",
+    "previousState": "active",
+    "newState": "active",
+    "changes": {
+      "purposes.marketing-email.granted": {
+        "old": true,
+        "new": false
+      }
+    },
+    "reason": "User updated preferences via preference center"
+  },
+  {
+    "timestamp": "2025-12-01T09:15:00Z",
+    "action": "revoked",
+    "actor": "user-789012",
+    "previousState": "active",
+    "newState": "revoked",
+    "reason": "User requested account deletion"
+  }
+]</div>
+
+            <h2>Metadata and Context</h2>
+
+            <p>
+                The metadata object captures contextual information that may be critical for proving valid
+                consent or investigating disputes:
+            </p>
+
+            <ul>
+                <li><strong>source:</strong> Where consent was obtained (e.g., "web-signup", "mobile-app", "in-person")</li>
+                <li><strong>sourceUrl:</strong> Specific page or screen where consent was obtained</li>
+                <li><strong>ipAddress:</strong> IP address of the user at time of consent (for audit purposes)</li>
+                <li><strong>userAgent:</strong> Browser/app information</li>
+                <li><strong>consentFormVersion:</strong> Version of the consent form presented to the user</li>
+                <li><strong>privacyPolicyVersion:</strong> Version of privacy policy in effect</li>
+                <li><strong>privacyPolicyUrl:</strong> URL to archived version of privacy policy</li>
+                <li><strong>language:</strong> Language in which consent was presented</li>
+                <li><strong>customFields:</strong> Organization-specific metadata (extensible)</li>
+            </ul>
+
+            <p>
+                This metadata is crucial for demonstrating that consent was informed and freely given—the user
+                saw a specific version of your privacy policy, in their language, with clear explanations.
+            </p>
+
+            <h2>Data Categories</h2>
+
+            <p>
+                WIA-CORE-002 provides a standardized taxonomy of data categories to ensure consistency across
+                organizations:
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Examples</th>
+                        <th>Sensitivity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>contact-info</td>
+                        <td>Email, phone, address</td>
+                        <td>Standard</td>
+                    </tr>
+                    <tr>
+                        <td>identification</td>
+                        <td>Name, date of birth, government ID</td>
+                        <td>Standard</td>
+                    </tr>
+                    <tr>
+                        <td>financial</td>
+                        <td>Credit card, bank account, transaction history</td>
+                        <td>Sensitive</td>
+                    </tr>
+                    <tr>
+                        <td>health</td>
+                        <td>Medical records, health conditions</td>
+                        <td>Sensitive</td>
+                    </tr>
+                    <tr>
+                        <td>biometric</td>
+                        <td>Fingerprints, facial recognition, DNA</td>
+                        <td>Sensitive</td>
+                    </tr>
+                    <tr>
+                        <td>location</td>
+                        <td>GPS coordinates, IP address, address</td>
+                        <td>Standard</td>
+                    </tr>
+                    <tr>
+                        <td>behavioral</td>
+                        <td>Browsing history, purchase history, app usage</td>
+                        <td>Standard</td>
+                    </tr>
+                    <tr>
+                        <td>preferences</td>
+                        <td>User settings, favorites, interests</td>
+                        <td>Standard</td>
+                    </tr>
+                    <tr>
+                        <td>communications</td>
+                        <td>Emails, messages, call records</td>
+                        <td>Standard</td>
+                    </tr>
+                    <tr>
+                        <td>employment</td>
+                        <td>Job title, employer, work history</td>
+                        <td>Standard</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Retention Periods</h2>
+
+            <p>
+                Retention periods use ISO 8601 duration format for precision and internationalization:
+            </p>
+
+            <ul>
+                <li><strong>P1Y:</strong> 1 year</li>
+                <li><strong>P2Y:</strong> 2 years</li>
+                <li><strong>P6M:</strong> 6 months</li>
+                <li><strong>P90D:</strong> 90 days</li>
+                <li><strong>P7Y:</strong> 7 years (common for financial records)</li>
+                <li><strong>INDEFINITE:</strong> No expiration (must be justified under legal basis)</li>
+            </ul>
+
+            <h2>Child Consent Handling</h2>
+
+            <p>
+                For users identified as minors, additional fields are required:
+            </p>
+
+            <div class="code-block">"userInfo": {
+  "age": 14,
+  "isMinor": true,
+  "parentalConsent": {
+    "required": true,
+    "obtained": true,
+    "parentId": "parent-456789",
+    "parentEmail": "parent@example.com",
+    "verificationMethod": "credit-card-check",
+    "verifiedAt": "2025-01-15T10:40:00Z"
+  },
+  "ageVerificationMethod": "self-reported",
+  "jurisdiction": "US"
+}</div>
+
+            <h2>Validation Rules</h2>
+
+            <p>
+                WIA-CORE-002 includes comprehensive validation rules to ensure data quality:
+            </p>
+
+            <ul>
+                <li>consentId must be a valid UUID</li>
+                <li>timestamp must be ISO 8601 format and not in the future</li>
+                <li>expiresAt (if present) must be after timestamp</li>
+                <li>status must be one of the defined enum values</li>
+                <li>purposes array must contain at least one purpose</li>
+                <li>Each purpose must have purposeId, purposeName, description, granted, and dataCategories</li>
+                <li>jurisdiction must be a valid ISO 3166 code or special code</li>
+                <li>For minors, parental consent information must be present if required by jurisdiction</li>
+                <li>auditTrail must have at least one entry (creation event)</li>
+            </ul>
+
+            <h2>Extensibility</h2>
+
+            <p>
+                Organizations can extend the standard with custom fields in a "custom" namespace:
+            </p>
+
+            <div class="code-block">"custom": {
+  "organizationId": "org-123",
+  "department": "marketing",
+  "campaignId": "summer-2025",
+  "internalReferenceId": "ref-xyz-789",
+  "complianceOfficerApproval": {
+    "approved": true,
+    "approver": "jane.doe@example.com",
+    "approvedAt": "2025-01-14T15:00:00Z"
+  }
+}</div>
+
+            <p>
+                Custom fields do not affect validation and are ignored by systems that don't recognize them,
+                ensuring forward compatibility.
+            </p>
+
+            <h2>Multi-Language Support</h2>
+
+            <p>
+                For organizations operating globally, purpose descriptions can be provided in multiple languages:
+            </p>
+
+            <div class="code-block">"purposes": [
+  {
+    "purposeId": "marketing-email",
+    "purposeName": {
+      "en": "Email Marketing Communications",
+      "es": "Comunicaciones de Marketing por Correo Electrónico",
+      "de": "E-Mail-Marketing-Kommunikation",
+      "fr": "Communications Marketing par E-mail"
+    },
+    "description": {
+      "en": "Receive promotional emails about our products",
+      "es": "Recibir correos promocionales sobre nuestros productos",
+      "de": "Werbe-E-Mails über unsere Produkte erhalten",
+      "fr": "Recevoir des e-mails promotionnels sur nos produits"
+    },
+    "granted": true,
+    ...
+  }
+]</div>
+
+            <h2>Implementation Checklist</h2>
+
+            <p>
+                To implement Phase 1 compliance, organizations should:
+            </p>
+
+            <ol>
+                <li>Review existing consent data structures and identify gaps</li>
+                <li>Map existing fields to WIA-CORE-002 required fields</li>
+                <li>Implement JSON schema validation for new consent records</li>
+                <li>Create migration scripts for legacy consent data</li>
+                <li>Update consent capture forms to collect all required metadata</li>
+                <li>Implement audit trail tracking for all consent operations</li>
+                <li>Test validation rules with sample data</li>
+                <li>Document any custom extensions in the "custom" namespace</li>
+                <li>Train teams on the new data format</li>
+                <li>Set up monitoring for validation failures</li>
+            </ol>
+
+            <h2>Chapter Summary</h2>
+
+            <p>
+                Phase 1 establishes the data foundation for universal consent management. By standardizing
+                consent record formats, WIA-CORE-002 enables interoperability, auditability, and compliance
+                across systems and organizations. The comprehensive structure captures all legally required
+                information while remaining extensible for future needs.
+            </p>
+
+            <p>
+                In the next chapter, we'll explore Phase 2: the API interfaces that enable programmatic
+                consent management and system integration.
+            </p>
+
+            <div class="nav">
+                <a href="chapter3.html">← Chapter 3</a>
+                <a href="chapter5.html">Chapter 5 →</a>
+            </div>
+        </article>
+
+        <footer>
+            <p>WIA-CORE-002: Universal Consent Management Standard</p>
+            <p>© 2025 SmileStory Inc. / WIA · 弘益人間 (Benefit All Humanity)</p>
+        </footer>
+    </div>
+</body>
+</html>

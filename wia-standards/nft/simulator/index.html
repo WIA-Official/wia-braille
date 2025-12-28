@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT Simulator - WIA-FIN-009</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: rgba(30, 41, 59, 0.8);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #22c55e;
+            text-decoration: none;
+        }
+
+        .logo span {
+            opacity: 0.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .tab:hover {
+            border-color: rgba(34, 197, 94, 0.5);
+            color: #cbd5e1;
+        }
+
+        .tab.active {
+            background: #22c55e;
+            color: #0f172a;
+            border-color: #22c55e;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #22c55e;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #22c55e;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #22c55e;
+            color: #0f172a;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background: #10b981;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #22c55e;
+            border: 1px solid #22c55e;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .output {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .output pre {
+            margin: 0;
+            color: #22c55e;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .nft-preview {
+            background: rgba(15, 23, 42, 0.5);
+            border: 2px solid rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .nft-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .nft-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #22c55e;
+            margin-bottom: 0.5rem;
+        }
+
+        .nft-id {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .attribute-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .attribute {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .attribute-trait {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .attribute-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #22c55e;
+        }
+
+        .marketplace-item {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .marketplace-item:hover {
+            border-color: #22c55e;
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+
+        .item-image {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            flex-shrink: 0;
+        }
+
+        .item-info {
+            flex-grow: 1;
+        }
+
+        .item-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #22c55e;
+            margin-bottom: 0.5rem;
+        }
+
+        .item-meta {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        .item-price {
+            text-align: right;
+        }
+
+        .price-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .price-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #22c55e;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-box {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #22c55e;
+        }
+
+        .success-message {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid #22c55e;
+            border-radius: 8px;
+            padding: 1rem;
+            color: #22c55e;
+            margin-top: 1rem;
+        }
+
+        .warning-message {
+            background: rgba(234, 179, 8, 0.1);
+            border: 1px solid #eab308;
+            border-radius: 8px;
+            padding: 1rem;
+            color: #eab308;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .marketplace-item {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .item-price {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <a href="../index.html" class="logo">🖼️ WIA-FIN-009 <span>NFT Simulator</span></a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">📝 Metadata Generator</div>
+            <div class="tab" onclick="switchTab(1)">⚡ Minting Simulator</div>
+            <div class="tab" onclick="switchTab(2)">🏪 Marketplace</div>
+            <div class="tab" onclick="switchTab(3)">💰 Royalty Calculator</div>
+            <div class="tab" onclick="switchTab(4)">📚 Collection Manager</div>
+        </div>
+
+        <!-- Tab 1: Metadata Generator -->
+        <div class="tab-content active" id="tab-0">
+            <div class="card">
+                <h2 class="card-title">NFT Metadata Generator</h2>
+
+                <div class="form-group">
+                    <label>Token Standard</label>
+                    <select id="tokenStandard">
+                        <option value="ERC-721">ERC-721 (Unique NFT)</option>
+                        <option value="ERC-1155">ERC-1155 (Multi-Token)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="nftName" placeholder="My Awesome NFT">
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="nftDescription" placeholder="A unique digital collectible..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Image URL (IPFS or HTTP)</label>
+                    <input type="text" id="nftImage" placeholder="ipfs://QmX...">
+                </div>
+
+                <div class="form-group">
+                    <label>External URL</label>
+                    <input type="text" id="nftExternalUrl" placeholder="https://myproject.com/nft/1">
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Attributes</h3>
+                <div id="attributesContainer">
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>Trait Type</label>
+                            <input type="text" class="attr-trait" placeholder="Background">
+                        </div>
+                        <div class="form-group">
+                            <label>Value</label>
+                            <input type="text" class="attr-value" placeholder="Blue">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary" onclick="addAttribute()">+ Add Attribute</button>
+                <br><br>
+                <button class="btn" onclick="generateMetadata()">Generate Metadata</button>
+
+                <div class="output" id="metadataOutput" style="display: none;">
+                    <pre id="metadataJson"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Minting Simulator -->
+        <div class="tab-content" id="tab-1">
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-label">Total Minted</div>
+                    <div class="stat-value" id="totalMinted">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Gas Used (ETH)</div>
+                    <div class="stat-value" id="gasUsed">0.000</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Success Rate</div>
+                    <div class="stat-value" id="successRate">0%</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Mint New NFT</h2>
+
+                <div class="form-group">
+                    <label>Recipient Address</label>
+                    <input type="text" id="mintRecipient" placeholder="0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb">
+                </div>
+
+                <div class="form-group">
+                    <label>Token URI (Metadata)</label>
+                    <input type="text" id="mintTokenUri" placeholder="ipfs://QmX.../metadata.json">
+                </div>
+
+                <div class="form-group">
+                    <label>Royalty Percentage</label>
+                    <input type="number" id="mintRoyalty" value="10" min="0" max="100" step="0.5">
+                </div>
+
+                <button class="btn" onclick="simulateMint()">Mint NFT</button>
+
+                <div id="mintResult"></div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Recently Minted NFTs</h2>
+                <div id="mintedNfts"></div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Marketplace Simulator -->
+        <div class="tab-content" id="tab-2">
+            <div class="card">
+                <h2 class="card-title">List NFT for Sale</h2>
+
+                <div class="form-group">
+                    <label>NFT Token ID</label>
+                    <input type="text" id="listTokenId" placeholder="1">
+                </div>
+
+                <div class="form-group">
+                    <label>Price (ETH)</label>
+                    <input type="number" id="listPrice" placeholder="1.5" step="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label>Listing Duration (days)</label>
+                    <select id="listDuration">
+                        <option value="7">7 days</option>
+                        <option value="14">14 days</option>
+                        <option value="30">30 days</option>
+                        <option value="90">90 days</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="listNft()">List for Sale</button>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Marketplace Listings</h2>
+                <div id="marketplaceListings">
+                    <div class="marketplace-item">
+                        <div class="item-image">🎨</div>
+                        <div class="item-info">
+                            <div class="item-title">Crypto Punk #7804</div>
+                            <div class="item-meta">Owner: 0x742d...bEb • Listed 2 days ago</div>
+                        </div>
+                        <div class="item-price">
+                            <div class="price-label">Price</div>
+                            <div class="price-value">4.2 ETH</div>
+                        </div>
+                        <button class="btn">Buy Now</button>
+                    </div>
+
+                    <div class="marketplace-item">
+                        <div class="item-image">🖼️</div>
+                        <div class="item-info">
+                            <div class="item-title">Bored Ape #1234</div>
+                            <div class="item-meta">Owner: 0x8f3a...c2d • Listed 5 days ago</div>
+                        </div>
+                        <div class="item-price">
+                            <div class="price-label">Price</div>
+                            <div class="price-value">12.5 ETH</div>
+                        </div>
+                        <button class="btn">Buy Now</button>
+                    </div>
+
+                    <div class="marketplace-item">
+                        <div class="item-image">🎮</div>
+                        <div class="item-info">
+                            <div class="item-title">Axie #9876</div>
+                            <div class="item-meta">Owner: 0x1a2b...f5e • Listed 1 day ago</div>
+                        </div>
+                        <div class="item-price">
+                            <div class="price-label">Price</div>
+                            <div class="price-value">0.8 ETH</div>
+                        </div>
+                        <button class="btn">Buy Now</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Royalty Calculator -->
+        <div class="tab-content" id="tab-3">
+            <div class="card">
+                <h2 class="card-title">NFT Royalty Calculator</h2>
+
+                <div class="form-group">
+                    <label>Sale Price (ETH)</label>
+                    <input type="number" id="salePrice" value="10" step="0.1" oninput="calculateRoyalty()">
+                </div>
+
+                <div class="form-group">
+                    <label>Creator Royalty (%)</label>
+                    <input type="number" id="creatorRoyalty" value="10" min="0" max="50" step="0.5" oninput="calculateRoyalty()">
+                </div>
+
+                <div class="form-group">
+                    <label>Marketplace Fee (%)</label>
+                    <input type="number" id="marketplaceFee" value="2.5" min="0" max="10" step="0.1" oninput="calculateRoyalty()">
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-label">Creator Earns</div>
+                        <div class="stat-value" id="creatorEarns">1.00</div>
+                        <div class="stat-label" style="margin-top: 0.5rem;">ETH</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Marketplace Fee</div>
+                        <div class="stat-value" id="marketplaceEarns">0.25</div>
+                        <div class="stat-label" style="margin-top: 0.5rem;">ETH</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Seller Receives</div>
+                        <div class="stat-value" id="sellerReceives">8.75</div>
+                        <div class="stat-label" style="margin-top: 0.5rem;">ETH</div>
+                    </div>
+                </div>
+
+                <h3 style="color: #22c55e; margin: 2rem 0 1rem;">Multi-Sale Projection</h3>
+
+                <div class="form-group">
+                    <label>Number of Sales</label>
+                    <input type="number" id="numSales" value="10" min="1" oninput="calculateRoyalty()">
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-label">Total Volume</div>
+                        <div class="stat-value" id="totalVolume">100.0</div>
+                        <div class="stat-label" style="margin-top: 0.5rem;">ETH</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Total Creator Royalties</div>
+                        <div class="stat-value" id="totalCreatorRoyalties">10.0</div>
+                        <div class="stat-label" style="margin-top: 0.5rem;">ETH</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Total Marketplace Fees</div>
+                        <div class="stat-value" id="totalMarketplaceFees">2.5</div>
+                        <div class="stat-label" style="margin-top: 0.5rem;">ETH</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Collection Manager -->
+        <div class="tab-content" id="tab-4">
+            <div class="card">
+                <h2 class="card-title">Create NFT Collection</h2>
+
+                <div class="form-group">
+                    <label>Collection Name</label>
+                    <input type="text" id="collectionName" placeholder="My NFT Collection">
+                </div>
+
+                <div class="form-group">
+                    <label>Symbol</label>
+                    <input type="text" id="collectionSymbol" placeholder="MNFT">
+                </div>
+
+                <div class="form-group">
+                    <label>Total Supply</label>
+                    <input type="number" id="collectionSupply" value="10000" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label>Mint Price (ETH)</label>
+                    <input type="number" id="collectionMintPrice" value="0.08" step="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label>Royalty Percentage</label>
+                    <input type="number" id="collectionRoyalty" value="7.5" min="0" max="50" step="0.5">
+                </div>
+
+                <button class="btn" onclick="createCollection()">Create Collection</button>
+
+                <div id="collectionResult"></div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Collection Verification</h2>
+
+                <div class="form-group">
+                    <label>Contract Address</label>
+                    <input type="text" id="verifyContract" placeholder="0x...">
+                </div>
+
+                <button class="btn btn-secondary" onclick="verifyCollection()">Verify Collection</button>
+
+                <div id="verificationResult"></div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Popular Collections</h2>
+
+                <div class="grid">
+                    <div class="nft-preview">
+                        <div class="nft-image">🦍</div>
+                        <div class="nft-name">Bored Ape Yacht Club</div>
+                        <div class="nft-id">10,000 items • Floor: 45 ETH</div>
+                        <div class="attribute-list">
+                            <div class="attribute">
+                                <div class="attribute-trait">Volume</div>
+                                <div class="attribute-value">$2.1B</div>
+                            </div>
+                            <div class="attribute">
+                                <div class="attribute-trait">Owners</div>
+                                <div class="attribute-value">6,400</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nft-preview">
+                        <div class="nft-image">💎</div>
+                        <div class="nft-name">CryptoPunks</div>
+                        <div class="nft-id">10,000 items • Floor: 68 ETH</div>
+                        <div class="attribute-list">
+                            <div class="attribute">
+                                <div class="attribute-trait">Volume</div>
+                                <div class="attribute-value">$3.7B</div>
+                            </div>
+                            <div class="attribute">
+                                <div class="attribute-trait">Owners</div>
+                                <div class="attribute-value">3,700</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nft-preview">
+                        <div class="nft-image">🎨</div>
+                        <div class="nft-name">Art Blocks</div>
+                        <div class="nft-id">250,000+ items • Floor: 0.05 ETH</div>
+                        <div class="attribute-list">
+                            <div class="attribute">
+                                <div class="attribute-trait">Volume</div>
+                                <div class="attribute-value">$1.3B</div>
+                            </div>
+                            <div class="attribute">
+                                <div class="attribute-trait">Owners</div>
+                                <div class="attribute-value">35,000</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(index) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+
+            contents.forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+        }
+
+        // Tab 1: Metadata Generator
+        function addAttribute() {
+            const container = document.getElementById('attributesContainer');
+            const newAttr = document.createElement('div');
+            newAttr.className = 'grid';
+            newAttr.innerHTML = `
+                <div class="form-group">
+                    <label>Trait Type</label>
+                    <input type="text" class="attr-trait" placeholder="Rarity">
+                </div>
+                <div class="form-group">
+                    <label>Value</label>
+                    <input type="text" class="attr-value" placeholder="Legendary">
+                </div>
+            `;
+            container.appendChild(newAttr);
+        }
+
+        function generateMetadata() {
+            const standard = document.getElementById('tokenStandard').value;
+            const name = document.getElementById('nftName').value || 'Unnamed NFT';
+            const description = document.getElementById('nftDescription').value || '';
+            const image = document.getElementById('nftImage').value || '';
+            const externalUrl = document.getElementById('nftExternalUrl').value || '';
+
+            const attributes = [];
+            const traitInputs = document.querySelectorAll('.attr-trait');
+            const valueInputs = document.querySelectorAll('.attr-value');
+
+            traitInputs.forEach((trait, index) => {
+                if (trait.value && valueInputs[index].value) {
+                    attributes.push({
+                        trait_type: trait.value,
+                        value: valueInputs[index].value
+                    });
+                }
+            });
+
+            const metadata = {
+                name,
+                description,
+                image,
+                external_url: externalUrl,
+                attributes
+            };
+
+            if (standard === 'ERC-1155') {
+                metadata.decimals = 0;
+            }
+
+            document.getElementById('metadataOutput').style.display = 'block';
+            document.getElementById('metadataJson').textContent = JSON.stringify(metadata, null, 2);
+        }
+
+        // Tab 2: Minting Simulator
+        let mintedCount = 0;
+        let totalGas = 0;
+        const mintedNfts = [];
+
+        function simulateMint() {
+            const recipient = document.getElementById('mintRecipient').value;
+            const tokenUri = document.getElementById('mintTokenUri').value;
+            const royalty = document.getElementById('mintRoyalty').value;
+
+            if (!recipient || !tokenUri) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            // Simulate gas cost (0.003 - 0.008 ETH)
+            const gas = (Math.random() * 0.005 + 0.003).toFixed(6);
+            totalGas = (parseFloat(totalGas) + parseFloat(gas)).toFixed(6);
+            mintedCount++;
+
+            const tokenId = mintedCount;
+            const timestamp = new Date().toLocaleString();
+
+            mintedNfts.unshift({
+                tokenId,
+                recipient: recipient.substring(0, 10) + '...' + recipient.substring(recipient.length - 6),
+                royalty,
+                gas,
+                timestamp
+            });
+
+            // Update stats
+            document.getElementById('totalMinted').textContent = mintedCount;
+            document.getElementById('gasUsed').textContent = totalGas;
+            document.getElementById('successRate').textContent = '100%';
+
+            // Show success message
+            document.getElementById('mintResult').innerHTML = `
+                <div class="success-message">
+                    ✓ Successfully minted NFT #${tokenId}<br>
+                    Gas used: ${gas} ETH<br>
+                    Transaction: 0x${Math.random().toString(16).substring(2, 42)}...
+                </div>
+            `;
+
+            // Update minted NFTs list
+            updateMintedList();
+        }
+
+        function updateMintedList() {
+            const container = document.getElementById('mintedNfts');
+            container.innerHTML = mintedNfts.map(nft => `
+                <div class="nft-preview" style="margin-bottom: 1rem;">
+                    <div class="nft-image">🖼️</div>
+                    <div class="nft-name">NFT #${nft.tokenId}</div>
+                    <div class="nft-id">${nft.recipient} • ${nft.timestamp}</div>
+                    <div class="attribute-list">
+                        <div class="attribute">
+                            <div class="attribute-trait">Royalty</div>
+                            <div class="attribute-value">${nft.royalty}%</div>
+                        </div>
+                        <div class="attribute">
+                            <div class="attribute-trait">Gas</div>
+                            <div class="attribute-value">${nft.gas}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Tab 3: Marketplace
+        function listNft() {
+            const tokenId = document.getElementById('listTokenId').value;
+            const price = document.getElementById('listPrice').value;
+            const duration = document.getElementById('listDuration').value;
+
+            if (!tokenId || !price) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const container = document.getElementById('marketplaceListings');
+            const newListing = document.createElement('div');
+            newListing.className = 'marketplace-item';
+            newListing.innerHTML = `
+                <div class="item-image">🖼️</div>
+                <div class="item-info">
+                    <div class="item-title">NFT #${tokenId}</div>
+                    <div class="item-meta">Owner: You • Listed just now</div>
+                </div>
+                <div class="item-price">
+                    <div class="price-label">Price</div>
+                    <div class="price-value">${price} ETH</div>
+                </div>
+                <button class="btn btn-secondary" onclick="cancelListing(this)">Cancel</button>
+            `;
+            container.insertBefore(newListing, container.firstChild);
+
+            // Clear form
+            document.getElementById('listTokenId').value = '';
+            document.getElementById('listPrice').value = '';
+        }
+
+        function cancelListing(btn) {
+            btn.closest('.marketplace-item').remove();
+        }
+
+        // Tab 4: Royalty Calculator
+        function calculateRoyalty() {
+            const salePrice = parseFloat(document.getElementById('salePrice').value) || 0;
+            const creatorRoyalty = parseFloat(document.getElementById('creatorRoyalty').value) || 0;
+            const marketplaceFee = parseFloat(document.getElementById('marketplaceFee').value) || 0;
+            const numSales = parseInt(document.getElementById('numSales').value) || 1;
+
+            const creatorEarns = (salePrice * creatorRoyalty / 100).toFixed(3);
+            const marketplaceEarns = (salePrice * marketplaceFee / 100).toFixed(3);
+            const sellerReceives = (salePrice - parseFloat(creatorEarns) - parseFloat(marketplaceEarns)).toFixed(3);
+
+            document.getElementById('creatorEarns').textContent = creatorEarns;
+            document.getElementById('marketplaceEarns').textContent = marketplaceEarns;
+            document.getElementById('sellerReceives').textContent = sellerReceives;
+
+            // Multi-sale projection
+            const totalVolume = (salePrice * numSales).toFixed(1);
+            const totalCreatorRoyalties = (parseFloat(creatorEarns) * numSales).toFixed(1);
+            const totalMarketplaceFees = (parseFloat(marketplaceEarns) * numSales).toFixed(1);
+
+            document.getElementById('totalVolume').textContent = totalVolume;
+            document.getElementById('totalCreatorRoyalties').textContent = totalCreatorRoyalties;
+            document.getElementById('totalMarketplaceFees').textContent = totalMarketplaceFees;
+        }
+
+        // Tab 5: Collection Manager
+        function createCollection() {
+            const name = document.getElementById('collectionName').value;
+            const symbol = document.getElementById('collectionSymbol').value;
+            const supply = document.getElementById('collectionSupply').value;
+            const mintPrice = document.getElementById('collectionMintPrice').value;
+            const royalty = document.getElementById('collectionRoyalty').value;
+
+            if (!name || !symbol) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const contractAddress = '0x' + Math.random().toString(16).substring(2, 42);
+
+            document.getElementById('collectionResult').innerHTML = `
+                <div class="success-message">
+                    ✓ Collection created successfully!<br>
+                    Contract: ${contractAddress}<br>
+                    Name: ${name} (${symbol})<br>
+                    Supply: ${supply} • Mint Price: ${mintPrice} ETH • Royalty: ${royalty}%
+                </div>
+            `;
+        }
+
+        function verifyCollection() {
+            const contract = document.getElementById('verifyContract').value;
+
+            if (!contract) {
+                alert('Please enter a contract address');
+                return;
+            }
+
+            // Simulate verification check
+            const isVerified = Math.random() > 0.3;
+
+            if (isVerified) {
+                document.getElementById('verificationResult').innerHTML = `
+                    <div class="success-message">
+                        ✓ Collection verified!<br>
+                        Contract: ${contract}<br>
+                        Standard: ERC-721<br>
+                        Total Supply: 10,000<br>
+                        Minted: 7,234<br>
+                        <br>
+                        Verification checks passed:<br>
+                        • Smart contract verified on Etherscan<br>
+                        • Metadata URI accessible<br>
+                        • Royalties configured correctly<br>
+                        • No suspicious activity detected
+                    </div>
+                `;
+            } else {
+                document.getElementById('verificationResult').innerHTML = `
+                    <div class="warning-message">
+                        ⚠ Verification failed<br>
+                        Some checks did not pass. Please review:<br>
+                        • Contract not verified on Etherscan<br>
+                        • Suspicious mint patterns detected<br>
+                        • Consider auditing before trading
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize royalty calculator
+        calculateRoyalty();
+    </script>
+</body>
+</html>

@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-SEC-014 HSM Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 0;
+            border-bottom: 2px solid #8B5CF6;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #8B5CF6;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 1rem;
+            color: #8B5CF6;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 2px solid #8B5CF6;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            background: #8B5CF6;
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 150px;
+            padding: 1rem;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-button:hover {
+            border-color: #8B5CF6;
+        }
+
+        .tab-button.active {
+            background: #8B5CF6;
+            border-color: #8B5CF6;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .demo-section {
+            margin-bottom: 2rem;
+        }
+
+        .demo-section h3 {
+            color: #8B5CF6;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        .input-group input,
+        .input-group textarea,
+        .input-group select {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .input-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .button {
+            padding: 0.75rem 1.5rem;
+            background: #8B5CF6;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .button:hover {
+            background: #7c3aed;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        .output {
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #94a3b8;
+        }
+
+        .success {
+            color: #22c55e;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .info-box {
+            background: #1e3a5f;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 4px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .qr-canvas {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            border-top: 2px solid #8B5CF6;
+            margin-top: 3rem;
+            color: #94a3b8;
+        }
+
+        .philosophy {
+            font-size: 1.3rem;
+            color: #8B5CF6;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🔧</div>
+            <h1>Hardware Security Module Simulator</h1>
+            <p>WIA-SEC-014 Interactive Demo</p>
+            <a href="../index.html" class="back-link">← Back to Main</a>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('data-format')">📊 Data Format</button>
+            <button class="tab-button" onclick="switchTab('algorithms')">🔐 Algorithms</button>
+            <button class="tab-button" onclick="switchTab('protocol')">⚡ Protocol</button>
+            <button class="tab-button" onclick="switchTab('integration')">🔌 Integration</button>
+            <button class="tab-button" onclick="switchTab('qr-vc')">📱 QR & VC</button>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div id="tab-data-format" class="tab-content active">
+            <div class="demo-section">
+                <h3>HSM Key Object Format</h3>
+                <div class="info-box">
+                    HSM key objects follow PKCS#11 standard format with metadata for secure key storage and management.
+                </div>
+
+                <div class="input-group">
+                    <label>Key Type:</label>
+                    <select id="keyType">
+                        <option value="RSA-2048">RSA-2048</option>
+                        <option value="RSA-4096">RSA-4096</option>
+                        <option value="ECC-P256">ECC-P256</option>
+                        <option value="ECC-P384">ECC-P384</option>
+                        <option value="AES-256">AES-256</option>
+                        <option value="AES-128">AES-128</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Key Label:</label>
+                    <input type="text" id="keyLabel" placeholder="e.g., master-signing-key">
+                </div>
+
+                <div class="input-group">
+                    <label>Key Usage:</label>
+                    <select id="keyUsage">
+                        <option value="sign-verify">Sign & Verify</option>
+                        <option value="encrypt-decrypt">Encrypt & Decrypt</option>
+                        <option value="wrap-unwrap">Wrap & Unwrap</option>
+                        <option value="derive">Derive</option>
+                    </select>
+                </div>
+
+                <button class="button" onclick="generateKeyObject()">Generate Key Object</button>
+
+                <div id="keyObjectOutput" class="output"></div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div id="tab-algorithms" class="tab-content">
+            <div class="demo-section">
+                <h3>Cryptographic Operations</h3>
+                <div class="info-box">
+                    Perform cryptographic operations using HSM-protected keys. All operations happen within the secure boundary.
+                </div>
+
+                <div class="input-group">
+                    <label>Operation Type:</label>
+                    <select id="operationType" onchange="updateOperationUI()">
+                        <option value="sign">Digital Signature (RSA-PSS)</option>
+                        <option value="encrypt">Encryption (RSA-OAEP)</option>
+                        <option value="mac">HMAC Generation</option>
+                        <option value="hash">Cryptographic Hash</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Input Data:</label>
+                    <textarea id="operationInput" placeholder="Enter data to process...">Hello from Hardware Security Module!</textarea>
+                </div>
+
+                <div class="input-group">
+                    <label>Key Handle (simulated):</label>
+                    <input type="text" id="keyHandle" value="0x4A3B2C1D" readonly>
+                </div>
+
+                <button class="button" onclick="performOperation()">Execute Operation</button>
+
+                <div id="operationOutput" class="output"></div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div id="tab-protocol" class="tab-content">
+            <div class="demo-section">
+                <h3>HSM Communication Protocol</h3>
+                <div class="info-box">
+                    Simulate secure communication with HSM using authenticated and encrypted channels.
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <h4 style="color: #8B5CF6; margin-bottom: 1rem;">Request</h4>
+
+                        <div class="input-group">
+                            <label>Command:</label>
+                            <select id="hsmCommand">
+                                <option value="C_GenerateKey">C_GenerateKey</option>
+                                <option value="C_Sign">C_Sign</option>
+                                <option value="C_Encrypt">C_Encrypt</option>
+                                <option value="C_GetMechanismList">C_GetMechanismList</option>
+                                <option value="C_GetSlotInfo">C_GetSlotInfo</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Session ID:</label>
+                            <input type="text" id="sessionId" value="SESSION-8F7E6D5C4B3A">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Parameters (JSON):</label>
+                            <textarea id="commandParams">{"mechanism": "CKM_RSA_PKCS", "keySize": 2048}</textarea>
+                        </div>
+
+                        <button class="button" onclick="sendHSMCommand()">Send Command</button>
+                    </div>
+
+                    <div>
+                        <h4 style="color: #8B5CF6; margin-bottom: 1rem;">Response</h4>
+                        <div id="hsmResponse" class="output" style="min-height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div id="tab-integration" class="tab-content">
+            <div class="demo-section">
+                <h3>Application Integration</h3>
+                <div class="info-box">
+                    Generate integration code for popular programming languages and frameworks.
+                </div>
+
+                <div class="input-group">
+                    <label>Language/Framework:</label>
+                    <select id="integrationLang" onchange="generateIntegrationCode()">
+                        <option value="javascript">JavaScript (Node.js)</option>
+                        <option value="python">Python</option>
+                        <option value="java">Java</option>
+                        <option value="csharp">C#</option>
+                        <option value="go">Go</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Use Case:</label>
+                    <select id="integrationUseCase" onchange="generateIntegrationCode()">
+                        <option value="sign">Digital Signature</option>
+                        <option value="encrypt">Data Encryption</option>
+                        <option value="keygen">Key Generation</option>
+                        <option value="jwt">JWT Signing</option>
+                    </select>
+                </div>
+
+                <button class="button" onclick="generateIntegrationCode()">Generate Code</button>
+
+                <div id="integrationCode" class="output"></div>
+            </div>
+        </div>
+
+        <!-- Tab 5: QR & VC -->
+        <div id="tab-qr-vc" class="tab-content">
+            <div class="demo-section">
+                <h3>QR Code & Verifiable Credentials</h3>
+                <div class="info-box">
+                    Generate HSM-backed verifiable credentials and QR codes for secure identity verification.
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <div class="input-group">
+                            <label>Credential Type:</label>
+                            <select id="vcType">
+                                <option value="identity">Identity Credential</option>
+                                <option value="access">Access Token</option>
+                                <option value="certificate">Digital Certificate</option>
+                                <option value="license">Software License</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Subject DID:</label>
+                            <input type="text" id="subjectDID" value="did:wia:user:12345">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Issuer DID:</label>
+                            <input type="text" id="issuerDID" value="did:wia:hsm:sec-014">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Claims (JSON):</label>
+                            <textarea id="vcClaims">{"name": "John Doe", "role": "admin", "expiry": "2026-12-31"}</textarea>
+                        </div>
+
+                        <button class="button" onclick="generateVC()">Generate VC & QR</button>
+                    </div>
+
+                    <div>
+                        <div id="vcOutput" class="output"></div>
+                        <div id="qrCode" class="qr-canvas"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="philosophy">弘益人間 (홍익인간)</div>
+            <p>Benefit All Humanity</p>
+            <p>&copy; 2025 WIA (World Certification Industry Association)</p>
+        </footer>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Tab 1: Key Object Generation
+        function generateKeyObject() {
+            const keyType = document.getElementById('keyType').value;
+            const keyLabel = document.getElementById('keyLabel').value || 'unnamed-key';
+            const keyUsage = document.getElementById('keyUsage').value;
+
+            const keyObject = {
+                version: '1.0',
+                standard: 'WIA-SEC-014',
+                keyId: 'key-' + Math.random().toString(36).substr(2, 9),
+                label: keyLabel,
+                type: keyType,
+                usage: keyUsage,
+                attributes: {
+                    CKA_TOKEN: true,
+                    CKA_PRIVATE: true,
+                    CKA_SENSITIVE: true,
+                    CKA_EXTRACTABLE: false,
+                    CKA_MODIFIABLE: false
+                },
+                metadata: {
+                    createdAt: new Date().toISOString(),
+                    createdBy: 'hsm-simulator',
+                    fipsMode: true,
+                    slot: 0
+                }
+            };
+
+            document.getElementById('keyObjectOutput').innerHTML =
+                '<span class="success">✓ Key Object Generated</span>\n\n' +
+                JSON.stringify(keyObject, null, 2);
+        }
+
+        // Tab 2: Cryptographic Operations
+        function performOperation() {
+            const opType = document.getElementById('operationType').value;
+            const input = document.getElementById('operationInput').value;
+            const keyHandle = document.getElementById('keyHandle').value;
+
+            let result = {
+                operation: opType,
+                input: input,
+                keyHandle: keyHandle,
+                timestamp: new Date().toISOString(),
+                status: 'success'
+            };
+
+            // Simulate different operations
+            switch(opType) {
+                case 'sign':
+                    result.signature = 'SIG:' + btoa(input).substr(0, 64) + '...';
+                    result.algorithm = 'RSA-PSS-SHA256';
+                    break;
+                case 'encrypt':
+                    result.ciphertext = 'ENC:' + btoa(input).substr(0, 64) + '...';
+                    result.algorithm = 'RSA-OAEP';
+                    break;
+                case 'mac':
+                    result.mac = 'MAC:' + btoa(input).substr(0, 32);
+                    result.algorithm = 'HMAC-SHA256';
+                    break;
+                case 'hash':
+                    result.hash = 'HASH:' + btoa(input).substr(0, 32);
+                    result.algorithm = 'SHA-256';
+                    break;
+            }
+
+            document.getElementById('operationOutput').innerHTML =
+                '<span class="success">✓ Operation Completed</span>\n\n' +
+                JSON.stringify(result, null, 2);
+        }
+
+        // Tab 3: HSM Protocol
+        function sendHSMCommand() {
+            const command = document.getElementById('hsmCommand').value;
+            const sessionId = document.getElementById('sessionId').value;
+            const params = document.getElementById('commandParams').value;
+
+            const response = {
+                status: 'CKR_OK',
+                sessionId: sessionId,
+                command: command,
+                timestamp: new Date().toISOString(),
+                data: null
+            };
+
+            // Simulate different responses
+            switch(command) {
+                case 'C_GenerateKey':
+                    response.data = {
+                        keyHandle: '0x' + Math.random().toString(16).substr(2, 8).toUpperCase(),
+                        keyType: 'CKK_RSA',
+                        keySize: 2048
+                    };
+                    break;
+                case 'C_Sign':
+                    response.data = {
+                        signature: 'SIG:' + btoa(sessionId).substr(0, 64) + '...'
+                    };
+                    break;
+                case 'C_GetMechanismList':
+                    response.data = {
+                        mechanisms: ['CKM_RSA_PKCS', 'CKM_RSA_PKCS_PSS', 'CKM_SHA256', 'CKM_AES_GCM']
+                    };
+                    break;
+                case 'C_GetSlotInfo':
+                    response.data = {
+                        slotId: 0,
+                        description: 'WIA HSM Slot 0',
+                        firmwareVersion: '2.40',
+                        flags: 'CKF_TOKEN_PRESENT | CKF_HW_SLOT'
+                    };
+                    break;
+            }
+
+            document.getElementById('hsmResponse').innerHTML =
+                '<span class="success">✓ Response Received</span>\n\n' +
+                JSON.stringify(response, null, 2);
+        }
+
+        // Tab 4: Integration Code
+        function generateIntegrationCode() {
+            const lang = document.getElementById('integrationLang').value;
+            const useCase = document.getElementById('integrationUseCase').value;
+
+            let code = '';
+
+            if (lang === 'javascript' && useCase === 'sign') {
+                code = `const pkcs11 = require('pkcs11js');
+const hsm = new pkcs11.PKCS11();
+
+// Initialize HSM
+hsm.load('/usr/lib/libpkcs11.so');
+hsm.C_Initialize();
+
+// Open session
+const slot = 0;
+const session = hsm.C_OpenSession(slot, pkcs11.CKF_SERIAL_SESSION | pkcs11.CKF_RW_SESSION);
+
+// Login
+hsm.C_Login(session, pkcs11.CKU_USER, 'pin');
+
+// Find signing key
+const keyHandle = findKey(session, 'signing-key');
+
+// Sign data
+const data = Buffer.from('Hello, HSM!');
+const signature = hsm.C_Sign(session, {
+  mechanism: pkcs11.CKM_RSA_PKCS_PSS,
+  parameter: {
+    hashAlg: pkcs11.CKM_SHA256,
+    mgf: pkcs11.CKG_MGF1_SHA256
+  }
+}, keyHandle, data);
+
+console.log('Signature:', signature.toString('base64'));
+
+// Cleanup
+hsm.C_Logout(session);
+hsm.C_CloseSession(session);
+hsm.C_Finalize();`;
+            } else if (lang === 'python' && useCase === 'sign') {
+                code = `import PyKCS11
+
+# Initialize HSM
+lib = PyKCS11.PyKCS11Lib()
+lib.load('/usr/lib/libpkcs11.so')
+
+# Open session
+slot = lib.getSlotList()[0]
+session = lib.openSession(slot)
+session.login('pin')
+
+# Find signing key
+key = session.findObjects([
+    (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
+    (PyKCS11.CKA_LABEL, 'signing-key')
+])[0]
+
+# Sign data
+data = b'Hello, HSM!'
+mechanism = PyKCS11.Mechanism(PyKCS11.CKM_SHA256_RSA_PKCS, None)
+signature = session.sign(key, data, mechanism)
+
+print(f'Signature: {signature.hex()}')
+
+# Cleanup
+session.logout()
+session.closeSession()`;
+            } else if (lang === 'java' && useCase === 'sign') {
+                code = `import iaik.pkcs.pkcs11.*;
+
+// Initialize HSM
+Module module = Module.getInstance("/usr/lib/libpkcs11.so");
+module.initialize(null);
+
+// Open session
+Slot slot = module.getSlotList(Module.SlotRequirement.TOKEN_PRESENT)[0];
+Token token = slot.getToken();
+Session session = token.openSession(true, true, null, null);
+session.login(Session.UserType.USER, "pin".toCharArray());
+
+// Find signing key
+PrivateKey signingKey = (PrivateKey) findKey(session, "signing-key");
+
+// Sign data
+byte[] data = "Hello, HSM!".getBytes();
+Mechanism mechanism = Mechanism.get(PKCS11Constants.CKM_SHA256_RSA_PKCS);
+session.signInit(mechanism, signingKey);
+byte[] signature = session.sign(data);
+
+System.out.println("Signature: " + Base64.getEncoder().encodeToString(signature));
+
+// Cleanup
+session.logout();
+session.closeSession();`;
+            } else {
+                code = `// Integration code for ${lang} - ${useCase}
+// Coming soon...`;
+            }
+
+            document.getElementById('integrationCode').textContent = code;
+        }
+
+        // Tab 5: Verifiable Credentials
+        function generateVC() {
+            const vcType = document.getElementById('vcType').value;
+            const subjectDID = document.getElementById('subjectDID').value;
+            const issuerDID = document.getElementById('issuerDID').value;
+            const claims = document.getElementById('vcClaims').value;
+
+            const vc = {
+                '@context': ['https://www.w3.org/2018/credentials/v1'],
+                type: ['VerifiableCredential', vcType],
+                issuer: issuerDID,
+                issuanceDate: new Date().toISOString(),
+                credentialSubject: {
+                    id: subjectDID,
+                    ...JSON.parse(claims)
+                },
+                proof: {
+                    type: 'RsaSignature2018',
+                    created: new Date().toISOString(),
+                    proofPurpose: 'assertionMethod',
+                    verificationMethod: issuerDID + '#key-1',
+                    jws: 'eyJhbGc...HSM_SIGNED_' + btoa(subjectDID).substr(0, 32)
+                }
+            };
+
+            document.getElementById('vcOutput').innerHTML =
+                '<span class="success">✓ Verifiable Credential Generated</span>\n\n' +
+                JSON.stringify(vc, null, 2);
+
+            // Generate QR code
+            const qrData = 'wia://vc/' + btoa(JSON.stringify(vc)).substr(0, 100);
+            document.getElementById('qrCode').innerHTML =
+                `<div style="padding: 20px; background: white;">
+                    <div style="width: 200px; height: 200px; margin: 0 auto; background: #000; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; text-align: center;">
+                        QR Code<br/>${qrData.substr(0, 20)}...
+                    </div>
+                    <p style="color: #333; margin-top: 10px; font-size: 14px;">Scan to verify credential</p>
+                </div>`;
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            generateIntegrationCode();
+        });
+    </script>
+</body>
+</html>

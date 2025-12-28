@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Phase 2 - API Interface & Control Systems - WIA ROB-012</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%); color: #e0e0e0; line-height: 1.8; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); padding: 40px 20px; text-align: center; box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3); margin-bottom: 40px; }
+        h1 { font-size: 2.5em; margin-bottom: 10px; color: #ffffff; }
+        .chapter-info { color: #E9D5FF; font-size: 1.1em; }
+        nav { background: #1e1e3f; padding: 15px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); }
+        nav a { color: #8B5CF6; text-decoration: none; margin: 0 15px; font-weight: 500; transition: all 0.3s; }
+        nav a:hover { color: #C4B5FD; }
+        .content-section { background: #1e1e3f; padding: 40px; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); border-left: 5px solid #8B5CF6; }
+        h2 { color: #8B5CF6; font-size: 2em; margin-bottom: 20px; margin-top: 30px; }
+        h3 { color: #C4B5FD; font-size: 1.5em; margin-bottom: 15px; margin-top: 25px; }
+        h4 { color: #DDD6FE; font-size: 1.2em; margin-bottom: 10px; margin-top: 20px; }
+        p { margin-bottom: 15px; color: #d0d0d0; }
+        code { background: #0f0f23; padding: 2px 8px; border-radius: 4px; color: #C4B5FD; font-family: 'Courier New', monospace; font-size: 0.9em; }
+        pre { background: #0f0f23; padding: 20px; border-radius: 10px; overflow-x: auto; margin: 20px 0; border: 1px solid #8B5CF6; }
+        pre code { background: none; padding: 0; color: #e0e0e0; font-size: 0.95em; line-height: 1.6; }
+        table { width: 100%; border-collapse: collapse; margin: 25px 0; background: #2d2d5f; border-radius: 10px; overflow: hidden; }
+        th { background: #8B5CF6; color: white; padding: 15px; text-align: left; font-weight: 600; }
+        td { padding: 12px 15px; border-bottom: 1px solid #3a3a6a; }
+        tr:hover { background: rgba(139, 92, 246, 0.1); }
+        .key-takeaways { background: rgba(139, 92, 246, 0.1); border-left: 4px solid #8B5CF6; padding: 20px; margin: 30px 0; border-radius: 8px; }
+        .key-takeaways h3 { margin-top: 0; }
+        .key-takeaways ul { margin-left: 20px; margin-top: 15px; }
+        .key-takeaways li { margin: 10px 0; }
+        footer { text-align: center; padding: 30px 0; margin-top: 40px; border-top: 1px solid #334155; color: #94a3b8; }
+        .philosophy { color: #ffd700; font-size: 1.1rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chapter 5: Phase 2 - API Interface & Control Systems</h1>
+            <p class="chapter-info">RESTful APIs for Robot Control and Management</p>
+        </header>
+
+        <nav>
+            <a href="index.html">← Table of Contents</a>
+            <a href="chapter4.html">← Previous</a>
+            <a href="chapter6.html">Next →</a>
+        </nav>
+
+        <div class="content-section">
+            <h2>5.1 API Architecture Overview</h2>
+            <p>Phase 2 of the WIA Security Robot Standard defines comprehensive RESTful API interfaces enabling remote control, configuration, monitoring, and data retrieval from security robots. These APIs build upon Phase 1 data formats, providing programmatic access to all robot capabilities through standardized HTTP endpoints.</p>
+
+            <p>The API architecture follows REST principles with resource-based URLs, standard HTTP methods (GET, POST, PUT, PATCH, DELETE), stateless operations, and JSON request/response bodies. This familiar pattern reduces learning curves for developers and enables integration with standard web development frameworks and tools.</p>
+
+            <p>All APIs support versioning through URL paths (e.g., /v1/robots/) to maintain backward compatibility as the standard evolves. Deprecated API versions remain accessible for transition periods allowing gradual migration to newer versions without breaking existing integrations.</p>
+
+            <h3>Base URL Structure</h3>
+            <p>API endpoints follow a consistent hierarchical structure:</p>
+            <pre><code>https://{robot_address}/api/v1/{resource}/{id}/{action}
+
+Examples:
+https://robot-001.local/api/v1/robots/ROB-SEC-001/status
+https://robot-001.local/api/v1/patrol/routes
+https://robot-001.local/api/v1/sensors/cam_front_01/snapshot
+https://robot-001.local/api/v1/commands/navigate</code></pre>
+
+            <h3>Authentication Methods</h3>
+            <p>Phase 2 supports multiple authentication schemes to accommodate diverse security requirements and deployment scenarios.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Use Case</th>
+                        <th>Security Level</th>
+                        <th>Complexity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>API Key (Bearer Token)</td>
+                        <td>Internal networks, simple integrations</td>
+                        <td>Medium</td>
+                        <td>Low</td>
+                    </tr>
+                    <tr>
+                        <td>OAuth 2.0</td>
+                        <td>Enterprise SSO integration</td>
+                        <td>High</td>
+                        <td>Medium</td>
+                    </tr>
+                    <tr>
+                        <td>mTLS (Mutual TLS)</td>
+                        <td>High-security environments</td>
+                        <td>Very High</td>
+                        <td>High</td>
+                    </tr>
+                    <tr>
+                        <td>JWT (JSON Web Tokens)</td>
+                        <td>Microservices, distributed systems</td>
+                        <td>High</td>
+                        <td>Medium</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>5.2 Robot Control APIs</h2>
+            <p>Control APIs enable operators and automated systems to command robot actions, modify operational parameters, and manage patrol routes.</p>
+
+            <h3>Start/Stop Operations</h3>
+            <p>Basic operational control includes starting and stopping patrol operations, returning robots to charging bases, and emergency stops.</p>
+
+            <pre><code>POST /api/v1/robots/{robot_id}/commands/start_patrol
+Authorization: Bearer {api_key}
+Content-Type: application/json
+
+{
+  "route_id": "route_alpha_1",
+  "priority": "normal",
+  "duration_minutes": 240,
+  "start_immediately": true
+}
+
+Response (200 OK):
+{
+  "command_id": "cmd_20251226_103045",
+  "status": "accepted",
+  "estimated_start": "2025-12-26T10:30:50Z",
+  "estimated_completion": "2025-12-26T14:30:50Z"
+}</code></pre>
+
+            <h3>Navigation Commands</h3>
+            <p>Direct navigation control allows operators to send robots to specific locations for investigation or response to incidents.</p>
+
+            <pre><code>POST /api/v1/robots/{robot_id}/commands/navigate
+Authorization: Bearer {api_key}
+Content-Type: application/json
+
+{
+  "destination": {
+    "type": "geographic",
+    "latitude": 37.7749,
+    "longitude": -122.4194
+  },
+  "speed": "normal",
+  "avoid_crowds": true,
+  "arrival_action": "patrol_area"
+}
+
+Response (202 Accepted):
+{
+  "command_id": "cmd_20251226_103101",
+  "status": "executing",
+  "eta_seconds": 127,
+  "route": {
+    "distance_meters": 245,
+    "waypoints": 8
+  }
+}</code></pre>
+
+            <h3>Emergency Stop</h3>
+            <p>Emergency stop commands have highest priority and override all other operations. Robots receiving emergency stops immediately halt motion and await further instructions.</p>
+
+            <pre><code>POST /api/v1/robots/{robot_id}/commands/emergency_stop
+Authorization: Bearer {api_key}
+Content-Type: application/json
+
+{
+  "reason": "safety_concern",
+  "operator_id": "operator_jane_doe"
+}
+
+Response (200 OK):
+{
+  "command_id": "cmd_20251226_103115",
+  "status": "executed",
+  "stopped_at": "2025-12-26T10:31:15.234Z",
+  "location": {
+    "latitude": 37.7750,
+    "longitude": -122.4195
+  }
+}</code></pre>
+
+            <h2>5.3 Configuration Management APIs</h2>
+            <p>Configuration APIs enable administrators to adjust robot operational parameters, update patrol routes, configure sensors, and manage alert thresholds.</p>
+
+            <h3>Patrol Route Configuration</h3>
+            <p>Security operations define patrol routes specifying waypoints, dwell times, and actions to perform at each location. Routes can include randomization elements to prevent predictability.</p>
+
+            <pre><code>PUT /api/v1/patrol/routes/{route_id}
+Authorization: Bearer {api_key}
+Content-Type: application/json
+
+{
+  "route_id": "route_alpha_1",
+  "name": "Building A Perimeter - Standard",
+  "enabled": true,
+  "schedule": {
+    "days": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+    "start_time": "18:00",
+    "end_time": "06:00"
+  },
+  "waypoints": [
+    {
+      "id": "wp_001",
+      "location": {"latitude": 37.7749, "longitude": -122.4194},
+      "dwell_seconds": 30,
+      "actions": ["360_scan", "thermal_check"],
+      "alert_zones": ["perimeter_fence_north"]
+    },
+    {
+      "id": "wp_002",
+      "location": {"latitude": 37.7751, "longitude": -122.4196},
+      "dwell_seconds": 45,
+      "actions": ["door_check", "access_log_review"],
+      "alert_zones": ["entrance_gate_b"]
+    }
+  ],
+  "options": {
+    "randomize_waypoint_order": false,
+    "add_random_waypoints": true,
+    "max_random_waypoints": 2,
+    "speed": "normal"
+  }
+}
+
+Response (200 OK):
+{
+  "route_id": "route_alpha_1",
+  "status": "updated",
+  "validation": "passed",
+  "estimated_duration_minutes": 185
+}</code></pre>
+
+            <h3>Sensor Configuration</h3>
+            <p>Sensor parameters can be adjusted to optimize performance for specific environments or operational requirements. Camera settings include resolution, frame rate, exposure, and white balance. LIDAR sensitivity and range can be tuned. Alert thresholds determine when events trigger notifications.</p>
+
+            <pre><code>PATCH /api/v1/sensors/{sensor_id}/config
+Authorization: Bearer {api_key}
+Content-Type: application/json
+
+{
+  "resolution": "1920x1080",
+  "fps": 30,
+  "exposure": "auto",
+  "night_mode": {
+    "enabled": true,
+    "activation_lux": 10,
+    "ir_illumination": true
+  },
+  "motion_detection": {
+    "enabled": true,
+    "sensitivity": 0.7,
+    "min_object_size": 100,
+    "ignore_zones": [
+      {"x": 0, "y": 0, "width": 100, "height": 50}
+    ]
+  }
+}
+
+Response (200 OK):
+{
+  "sensor_id": "cam_front_01",
+  "status": "configured",
+  "restart_required": false
+}</code></pre>
+
+            <h2>5.4 Status Monitoring and Data Retrieval</h2>
+            <p>Monitoring APIs provide real-time and historical data about robot operations, health, and detected events.</p>
+
+            <h3>Real-time Status Query</h3>
+            <p>Status endpoints return current robot state using Phase 1 data formats. These queries support operational dashboards and automated monitoring systems.</p>
+
+            <pre><code>GET /api/v1/robots/{robot_id}/status
+Authorization: Bearer {api_key}
+
+Response (200 OK):
+{
+  "$schema": "https://wiastandards.com/schemas/security-robot/v1.0.0/status.json",
+  "version": "1.0.0",
+  "timestamp": "2025-12-26T10:31:30.123Z",
+  "robot_id": "ROB-SEC-001",
+  "status": {
+    "operational_state": "patrolling",
+    "location": {...},
+    "battery": {...},
+    "health": {...}
+  },
+  "sensors": {...},
+  "patrol": {...}
+}</code></pre>
+
+            <h3>Historical Data Retrieval</h3>
+            <p>Historical APIs enable retrieval of past patrol routes, sensor readings, alerts, and events for analysis, auditing, and compliance reporting.</p>
+
+            <pre><code>GET /api/v1/robots/{robot_id}/history/patrol
+Authorization: Bearer {api_key}
+Parameters:
+  start_time: 2025-12-25T18:00:00Z
+  end_time: 2025-12-26T06:00:00Z
+  include_waypoints: true
+
+Response (200 OK):
+{
+  "robot_id": "ROB-SEC-001",
+  "period": {
+    "start": "2025-12-25T18:00:00Z",
+    "end": "2025-12-26T06:00:00Z"
+  },
+  "summary": {
+    "total_distance_km": 15.7,
+    "total_duration_hours": 11.5,
+    "patrol_cycles": 3,
+    "alerts_generated": 7
+  },
+  "patrols": [
+    {
+      "patrol_id": "patrol_20251225_180012",
+      "route_id": "route_alpha_1",
+      "start_time": "2025-12-25T18:00:12Z",
+      "end_time": "2025-12-25T22:03:45Z",
+      "waypoints_visited": 12,
+      "distance_km": 5.2,
+      "alerts": [...]
+    }
+  ]
+}</code></pre>
+
+            <h3>Alert History and Search</h3>
+            <p>Alert APIs support querying past security events with filtering by type, severity, location, and time range. Advanced search capabilities enable incident investigation and pattern analysis.</p>
+
+            <pre><code>GET /api/v1/robots/{robot_id}/alerts
+Authorization: Bearer {api_key}
+Parameters:
+  start_time: 2025-12-25T00:00:00Z
+  end_time: 2025-12-26T23:59:59Z
+  severity: high,critical
+  alert_type: intrusion_detected,suspicious_behavior
+  limit: 50
+
+Response (200 OK):
+{
+  "total_alerts": 127,
+  "returned": 50,
+  "alerts": [
+    {
+      "alert_id": "alert_20251226_103045_001",
+      "timestamp": "2025-12-26T10:30:45.123Z",
+      "alert_type": "intrusion_detected",
+      "severity": "high",
+      "confidence": 0.92,
+      "location": {...},
+      "media_urls": [...]
+    }
+  ]
+}</code></pre>
+
+            <h2>5.5 Error Handling and Response Codes</h2>
+            <p>Consistent error handling enables robust client implementations and clear debugging. Phase 2 defines standard HTTP status codes and error response formats.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status Code</th>
+                        <th>Meaning</th>
+                        <th>Common Scenarios</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>200 OK</td>
+                        <td>Request succeeded</td>
+                        <td>Successful GET, PUT operations</td>
+                    </tr>
+                    <tr>
+                        <td>201 Created</td>
+                        <td>Resource created</td>
+                        <td>POST creating new routes, configurations</td>
+                    </tr>
+                    <tr>
+                        <td>202 Accepted</td>
+                        <td>Request accepted, processing asynchronously</td>
+                        <td>Long-running commands like navigation</td>
+                    </tr>
+                    <tr>
+                        <td>400 Bad Request</td>
+                        <td>Invalid request format or parameters</td>
+                        <td>Malformed JSON, validation failures</td>
+                    </tr>
+                    <tr>
+                        <td>401 Unauthorized</td>
+                        <td>Authentication required or failed</td>
+                        <td>Missing or invalid API key</td>
+                    </tr>
+                    <tr>
+                        <td>403 Forbidden</td>
+                        <td>Insufficient permissions</td>
+                        <td>Attempting restricted operations</td>
+                    </tr>
+                    <tr>
+                        <td>404 Not Found</td>
+                        <td>Resource doesn't exist</td>
+                        <td>Invalid robot ID, route not found</td>
+                    </tr>
+                    <tr>
+                        <td>409 Conflict</td>
+                        <td>Request conflicts with current state</td>
+                        <td>Robot already executing command</td>
+                    </tr>
+                    <tr>
+                        <td>429 Too Many Requests</td>
+                        <td>Rate limit exceeded</td>
+                        <td>Too many API calls in time window</td>
+                    </tr>
+                    <tr>
+                        <td>500 Internal Server Error</td>
+                        <td>Server-side error</td>
+                        <td>Unexpected system failures</td>
+                    </tr>
+                    <tr>
+                        <td>503 Service Unavailable</td>
+                        <td>Temporary unavailability</td>
+                        <td>Maintenance mode, system overload</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Error Response Format</h3>
+            <p>Error responses follow standardized JSON structure providing error codes, messages, and context for debugging.</p>
+
+            <pre><code>{
+  "error": {
+    "code": "INVALID_ROUTE",
+    "message": "Patrol route contains unreachable waypoint",
+    "details": {
+      "waypoint_id": "wp_007",
+      "issue": "Location outside mapped area",
+      "suggested_action": "Update waypoint coordinates or expand mapped area"
+    },
+    "request_id": "req_20251226_103045",
+    "timestamp": "2025-12-26T10:30:45.123Z"
+  }
+}</code></pre>
+
+            <h2>5.6 Rate Limiting and Throttling</h2>
+            <p>To prevent API abuse and ensure fair resource allocation across multiple clients, Phase 2 implements rate limiting using token bucket algorithms.</p>
+
+            <p>Different endpoint categories have different rate limits reflecting their resource intensity and typical usage patterns. Status queries support high request rates (60 per minute). Control commands have moderate limits (20 per minute). Configuration changes are more restricted (5 per minute).</p>
+
+            <p>Rate limit information appears in response headers, allowing clients to implement adaptive throttling:</p>
+
+            <pre><code>X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 42
+X-RateLimit-Reset: 1735212000</code></pre>
+
+            <p>When rate limits are exceeded, APIs return 429 status with retry-after header indicating when requests can resume.</p>
+
+            <div class="key-takeaways">
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li>Phase 2 defines comprehensive RESTful APIs for robot control, configuration, and monitoring using standard HTTP methods and JSON payloads</li>
+                    <li>Multiple authentication methods (API keys, OAuth 2.0, mTLS, JWT) support diverse security requirements from simple integrations to high-security deployments</li>
+                    <li>Control APIs enable remote operation including start/stop, navigation commands, emergency stops, and patrol route management</li>
+                    <li>Configuration APIs allow adjustment of sensors, alert thresholds, and operational parameters without requiring physical access to robots</li>
+                    <li>Standardized error handling with consistent HTTP status codes and structured error responses enables robust client implementations and clear debugging</li>
+                </ul>
+            </div>
+
+            <h2>Review Questions</h2>
+            <ol>
+                <li>Why does Phase 2 support multiple authentication methods rather than mandating a single approach? What trade-offs exist between API key and mTLS authentication?</li>
+                <li>Explain how API versioning through URL paths (e.g., /v1/, /v2/) maintains backward compatibility. What challenges might arise during version transitions?</li>
+                <li>Compare synchronous (200 OK) versus asynchronous (202 Accepted) response patterns for command execution. When is each appropriate?</li>
+                <li>Design a rate limiting strategy for a security operations center controlling 50 robots. How would you allocate rate limits across different API categories?</li>
+                <li>Describe scenarios where a 409 Conflict response is more appropriate than a 400 Bad Request. Provide specific examples from security robot operations.</li>
+                <li>How do standardized error response formats assist in debugging failed API integrations? What information should error responses include?</li>
+            </ol>
+
+            <h2>Looking Ahead</h2>
+            <p>While Phase 2 APIs handle request-response interactions effectively, many security applications require continuous bidirectional communication. Chapter 6 explores Phase 3: Communication Protocols, examining real-time streaming protocols for video feeds, sensor telemetry, and immediate alert delivery using MQTT, WebSocket, and RTSP standards.</p>
+        </div>
+
+        <nav>
+            <a href="index.html">← Table of Contents</a>
+            <a href="chapter4.html">← Previous</a>
+            <a href="chapter6.html">Next →</a>
+        </nav>
+
+        <footer>
+            <p class="philosophy">弘益人間 · Benefit All Humanity</p>
+            <p>WIA Security Robot Standard - ROB-012</p>
+            <p>© 2025 MIT License</p>
+        </footer>
+    </div>
+</body>
+</html>

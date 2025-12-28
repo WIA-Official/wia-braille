@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA LiDAR Sensor Simulator - SEMI-014</title>
+    <style>
+        :root {
+            --primary: #06B6D4;
+            --primary-dark: #0891B2;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; color: var(--primary); }
+        .subtitle { color: var(--text-muted); font-size: 1.1rem; }
+
+        /* Language Selector */
+        .lang-selector {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .lang-selector label {
+            color: var(--text-muted);
+            margin-right: 10px;
+            font-size: 0.9rem;
+        }
+        .lang-selector select {
+            padding: 8px 16px;
+            background: var(--bg-card);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            min-width: 200px;
+        }
+        .lang-selector select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        .tab:hover { border-color: var(--primary); }
+        .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Panels */
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            min-height: 500px;
+        }
+        .panel.active { display: block; }
+        .panel h2 { color: var(--primary); margin-bottom: 20px; }
+        .panel h3 { color: var(--text); margin-top: 25px; margin-bottom: 15px; }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        .form-group textarea {
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        /* Buttons */
+        .btn-center {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        .btn {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3); }
+        .btn-secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        /* Results */
+        .result-box {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-top: 20px;
+        }
+        .result-box h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        .result-item {
+            padding: 12px;
+            background: var(--bg-card);
+            margin-bottom: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .result-label { color: var(--text-muted); }
+        .result-value { color: var(--primary); font-weight: 600; font-size: 1.1rem; }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .info-box strong { color: var(--primary); }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: var(--bg);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        tr:hover { background: rgba(6, 182, 212, 0.05); }
+
+        /* Code Block */
+        pre {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        code {
+            color: var(--primary);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📡 WIA LiDAR Sensor Simulator</h1>
+            <p class="subtitle">SEMI-014: Automotive, Solid-State, FMCW LiDAR Systems</p>
+        </header>
+
+        <div class="lang-selector">
+            <label for="language">🌍 Select Language:</label>
+            <select id="language" onchange="updateLanguage(this.value)">
+                <option value="en">English</option>
+                <option value="ko">한국어 (Korean)</option>
+                <option value="zh">中文 (Chinese)</option>
+                <option value="ja">日本語 (Japanese)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="fr">Français (French)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="ar">العربية (Arabic)</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+                <option value="pt">Português (Portuguese)</option>
+                <option value="ru">Русский (Russian)</option>
+                <option value="it">Italiano (Italian)</option>
+                <option value="tr">Türkçe (Turkish)</option>
+                <option value="vi">Tiếng Việt (Vietnamese)</option>
+                <option value="th">ไทย (Thai)</option>
+                <option value="pl">Polski (Polish)</option>
+                <option value="nl">Nederlands (Dutch)</option>
+                <option value="sv">Svenska (Swedish)</option>
+                <option value="no">Norsk (Norwegian)</option>
+                <option value="da">Dansk (Danish)</option>
+                <option value="fi">Suomi (Finnish)</option>
+                <option value="cs">Čeština (Czech)</option>
+                <option value="hu">Magyar (Hungarian)</option>
+                <option value="ro">Română (Romanian)</option>
+                <option value="el">Ελληνικά (Greek)</option>
+                <option value="he">עברית (Hebrew)</option>
+                <option value="id">Bahasa Indonesia (Indonesian)</option>
+                <option value="ms">Bahasa Melayu (Malay)</option>
+                <option value="fil">Filipino</option>
+                <option value="uk">Українська (Ukrainian)</option>
+                <option value="bg">Български (Bulgarian)</option>
+                <option value="hr">Hrvatski (Croatian)</option>
+                <option value="sr">Српски (Serbian)</option>
+                <option value="sk">Slovenčina (Slovak)</option>
+                <option value="sl">Slovenščina (Slovenian)</option>
+                <option value="lt">Lietuvių (Lithuanian)</option>
+                <option value="lv">Latviešu (Latvian)</option>
+                <option value="et">Eesti (Estonian)</option>
+                <option value="fa">فارسی (Persian)</option>
+                <option value="ur">اردو (Urdu)</option>
+                <option value="bn">বাংলা (Bengali)</option>
+                <option value="ta">தமிழ் (Tamil)</option>
+                <option value="te">తెలుగు (Telugu)</option>
+                <option value="mr">मराठी (Marathi)</option>
+                <option value="gu">ગુજરાતી (Gujarati)</option>
+                <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                <option value="ml">മലയാളം (Malayalam)</option>
+                <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                <option value="sw">Kiswahili (Swahili)</option>
+                <option value="am">አማርኛ (Amharic)</option>
+                <option value="ne">नेपाली (Nepali)</option>
+                <option value="si">සිංහල (Sinhala)</option>
+                <option value="km">ខ្មែរ (Khmer)</option>
+                <option value="lo">ລາວ (Lao)</option>
+                <option value="my">မြန်မာ (Burmese)</option>
+                <option value="ka">ქართული (Georgian)</option>
+                <option value="hy">Հայերեն (Armenian)</option>
+                <option value="az">Azərbaycan (Azerbaijani)</option>
+                <option value="kk">Қазақ (Kazakh)</option>
+                <option value="uz">Oʻzbek (Uzbek)</option>
+                <option value="mn">Монгол (Mongolian)</option>
+                <option value="is">Íslenska (Icelandic)</option>
+                <option value="ga">Gaeilge (Irish)</option>
+                <option value="cy">Cymraeg (Welsh)</option>
+                <option value="mt">Malti (Maltese)</option>
+                <option value="sq">Shqip (Albanian)</option>
+                <option value="mk">Македонски (Macedonian)</option>
+                <option value="bs">Bosanski (Bosnian)</option>
+                <option value="af">Afrikaans</option>
+                <option value="zu">isiZulu (Zulu)</option>
+                <option value="xh">isiXhosa (Xhosa)</option>
+                <option value="st">Sesotho (Sotho)</option>
+                <option value="sn">chiShona (Shona)</option>
+                <option value="yo">Yorùbá (Yoruba)</option>
+                <option value="ig">Igbo</option>
+                <option value="ha">Hausa</option>
+                <option value="so">Soomaali (Somali)</option>
+                <option value="mg">Malagasy</option>
+                <option value="eu">Euskara (Basque)</option>
+                <option value="gl">Galego (Galician)</option>
+                <option value="ca">Català (Catalan)</option>
+                <option value="la">Latina (Latin)</option>
+                <option value="eo">Esperanto</option>
+                <option value="jv">Basa Jawa (Javanese)</option>
+                <option value="su">Basa Sunda (Sundanese)</option>
+                <option value="ceb">Cebuano</option>
+                <option value="hmn">Hmong</option>
+                <option value="ny">Chichewa</option>
+                <option value="lb">Lëtzebuergesch (Luxembourgish)</option>
+                <option value="fy">Frysk (Frisian)</option>
+                <option value="gd">Gàidhlig (Scots Gaelic)</option>
+                <option value="yi">ייִדיש (Yiddish)</option>
+                <option value="haw">ʻŌlelo Hawaiʻi (Hawaiian)</option>
+                <option value="sm">Gagana Samoa (Samoan)</option>
+                <option value="mi">Te Reo Māori (Maori)</option>
+                <option value="tl">Tagalog</option>
+            </select>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">📊 LiDAR Specifications</div>
+            <div class="tab" onclick="switchTab(1)">🔢 Range Calculator</div>
+            <div class="tab" onclick="switchTab(2)">📡 Point Cloud</div>
+            <div class="tab" onclick="switchTab(3)">🔗 ADAS Integration</div>
+            <div class="tab" onclick="switchTab(4)">🧪 Testing Suite</div>
+        </div>
+
+        <!-- Tab 1: LiDAR Specifications -->
+        <div class="panel active" id="panel0">
+            <h2>📊 LiDAR Specifications Configurator</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Configure and compare different LiDAR sensor specifications</p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Sensor Type</label>
+                    <select id="sensorType">
+                        <option value="mechanical">Mechanical Scanning</option>
+                        <option value="solid-state-mems">Solid-State MEMS</option>
+                        <option value="solid-state-opa">Solid-State OPA</option>
+                        <option value="flash">Flash LiDAR</option>
+                        <option value="fmcw">FMCW LiDAR</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Wavelength</label>
+                    <select id="wavelength">
+                        <option value="905">905nm (Near-IR)</option>
+                        <option value="1550">1550nm (Eye-Safe IR)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Maximum Range (m)</label>
+                    <input type="number" id="maxRange" value="200" min="10" max="500">
+                </div>
+                <div class="form-group">
+                    <label>Range Accuracy (cm)</label>
+                    <input type="number" id="accuracy" value="2" min="0.5" max="10" step="0.1">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Horizontal FOV (degrees)</label>
+                    <input type="number" id="hfov" value="360" min="20" max="360">
+                </div>
+                <div class="form-group">
+                    <label>Vertical FOV (degrees)</label>
+                    <input type="number" id="vfov" value="30" min="10" max="90">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Angular Resolution (degrees)</label>
+                    <input type="number" id="angRes" value="0.1" min="0.05" max="1" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Points per Second</label>
+                    <input type="number" id="pointRate" value="1000000" min="10000" max="10000000" step="10000">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Detector Type</label>
+                <select id="detector">
+                    <option value="apd">APD (Avalanche Photodiode)</option>
+                    <option value="spad">SPAD (Single Photon Avalanche Diode)</option>
+                    <option value="sipm">SiPM (Silicon Photomultiplier)</option>
+                </select>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="calculateSpecs()">Calculate Performance</button>
+            </div>
+
+            <div class="result-box" id="specResults" style="display: none;">
+                <h4>Performance Analysis</h4>
+                <div id="specResultContent"></div>
+            </div>
+
+            <div class="info-box">
+                <strong>Note:</strong> Mechanical scanners offer 360° coverage but have moving parts. Solid-state LiDARs (MEMS, OPA, Flash) have no moving parts, enabling compact designs and higher reliability. FMCW LiDAR can measure velocity directly and has better interference immunity.
+            </div>
+        </div>
+
+        <!-- Tab 2: Range Calculator -->
+        <div class="panel" id="panel1">
+            <h2>🔢 Range and Resolution Calculator</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Calculate range capabilities and resolution requirements</p>
+
+            <h3>Time-of-Flight (ToF) Calculations</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Pulse Duration (ns)</label>
+                    <input type="number" id="pulseDuration" value="5" min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Measurement Time (µs)</label>
+                    <input type="number" id="measTime" value="1.33" step="0.01" min="0.1" max="10">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Laser Power (W)</label>
+                    <input type="number" id="laserPower" value="10" min="0.1" max="100" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Target Reflectivity (%)</label>
+                    <input type="number" id="reflectivity" value="10" min="1" max="100">
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="calculateRange()">Calculate Range</button>
+            </div>
+
+            <div class="result-box" id="rangeResults" style="display: none;">
+                <h4>Range Calculation Results</h4>
+                <div id="rangeResultContent"></div>
+            </div>
+
+            <h3 style="margin-top: 40px;">Angular Resolution Calculator</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Number of Horizontal Lines</label>
+                    <input type="number" id="hLines" value="3600" min="100" max="10000">
+                </div>
+                <div class="form-group">
+                    <label>Number of Vertical Lines</label>
+                    <input type="number" id="vLines" value="300" min="10" max="1000">
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="calculateResolution()">Calculate Resolution</button>
+            </div>
+
+            <div class="result-box" id="resResults" style="display: none;">
+                <h4>Resolution Results</h4>
+                <div id="resResultContent"></div>
+            </div>
+
+            <div class="info-box">
+                <strong>ToF Principle:</strong> Distance = (Speed of Light × Time) / 2 = (3×10⁸ m/s × t) / 2. For 200m range, round-trip time is ~1.33µs.
+            </div>
+        </div>
+
+        <!-- Tab 3: Point Cloud Protocols -->
+        <div class="panel" id="panel2">
+            <h2>📡 Point Cloud Data Protocols</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Configure point cloud output formats and protocols</p>
+
+            <div class="form-group">
+                <label>Output Format</label>
+                <select id="pcFormat">
+                    <option value="pcl">PCL (Point Cloud Library)</option>
+                    <option value="las">LAS (LASer format)</option>
+                    <option value="pcd">PCD (Point Cloud Data)</option>
+                    <option value="xyz">XYZ ASCII</option>
+                    <option value="ply">PLY (Polygon)</option>
+                    <option value="custom">Custom Binary</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Data Fields</label>
+                <div style="margin-top: 10px;">
+                    <label style="display: inline-block; margin-right: 20px;">
+                        <input type="checkbox" id="field_xyz" checked> X, Y, Z Coordinates
+                    </label>
+                    <label style="display: inline-block; margin-right: 20px;">
+                        <input type="checkbox" id="field_intensity" checked> Intensity
+                    </label>
+                    <label style="display: inline-block; margin-right: 20px;">
+                        <input type="checkbox" id="field_timestamp" checked> Timestamp
+                    </label>
+                    <label style="display: inline-block; margin-right: 20px;">
+                        <input type="checkbox" id="field_rgb"> RGB Color
+                    </label>
+                    <label style="display: inline-block; margin-right: 20px;">
+                        <input type="checkbox" id="field_velocity"> Velocity (FMCW)
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Communication Protocol</label>
+                    <select id="commProtocol">
+                        <option value="ethernet-udp">Ethernet (UDP)</option>
+                        <option value="ethernet-tcp">Ethernet (TCP)</option>
+                        <option value="can">CAN Bus</option>
+                        <option value="canfd">CAN-FD</option>
+                        <option value="automotive-eth">Automotive Ethernet</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Data Rate (Mbps)</label>
+                    <input type="number" id="dataRate" value="100" min="1" max="1000">
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="generatePointCloud()">Generate Sample Data</button>
+            </div>
+
+            <div class="result-box" id="pcResults" style="display: none;">
+                <h4>Sample Point Cloud Data</h4>
+                <pre><code id="pcSample"></code></pre>
+            </div>
+
+            <h3>ROS/ROS2 Integration</h3>
+            <div class="form-group">
+                <label>ROS Version</label>
+                <select id="rosVersion">
+                    <option value="ros2">ROS2 (Humble, Iron, Rolling)</option>
+                    <option value="ros1">ROS1 (Noetic)</option>
+                </select>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-secondary" onclick="generateROSConfig()">Generate ROS Config</button>
+            </div>
+
+            <div class="result-box" id="rosResults" style="display: none;">
+                <h4>ROS Configuration</h4>
+                <pre><code id="rosSample"></code></pre>
+            </div>
+
+            <div class="info-box">
+                <strong>Standard Message Types:</strong> sensor_msgs/PointCloud2 (ROS), PCL PointXYZI/PointXYZRGB. Typical data rates: 10-100 Mbps for automotive LiDAR with 1M+ points/sec.
+            </div>
+        </div>
+
+        <!-- Tab 4: ADAS Integration -->
+        <div class="panel" id="panel3">
+            <h2>🔗 ADAS/AV Integration Configurator</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Configure LiDAR integration with ADAS and autonomous vehicle systems</p>
+
+            <h3>Sensor Fusion Configuration</h3>
+            <div class="form-group">
+                <label>Sensor Suite</label>
+                <div style="margin-top: 10px;">
+                    <label style="display: block; margin-bottom: 10px;">
+                        <input type="checkbox" id="fusion_camera" checked> Camera (vision)
+                    </label>
+                    <label style="display: block; margin-bottom: 10px;">
+                        <input type="checkbox" id="fusion_radar" checked> Radar (77/79 GHz)
+                    </label>
+                    <label style="display: block; margin-bottom: 10px;">
+                        <input type="checkbox" id="fusion_ultrasonic"> Ultrasonic sensors
+                    </label>
+                    <label style="display: block; margin-bottom: 10px;">
+                        <input type="checkbox" id="fusion_gnss"> GNSS/IMU
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Safety Level (ISO 26262)</label>
+                    <select id="safetyLevel">
+                        <option value="asil-b">ASIL B</option>
+                        <option value="asil-c">ASIL C</option>
+                        <option value="asil-d">ASIL D</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Redundancy Level</label>
+                    <select id="redundancy">
+                        <option value="single">Single LiDAR</option>
+                        <option value="dual">Dual LiDAR</option>
+                        <option value="multi">Multi-LiDAR (3+)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Operating Temperature (°C)</label>
+                    <input type="text" id="opTemp" value="-40 to +85" readonly>
+                </div>
+                <div class="form-group">
+                    <label>IP Rating</label>
+                    <select id="ipRating">
+                        <option value="ip67">IP67</option>
+                        <option value="ip68">IP68</option>
+                        <option value="ip69k">IP69K</option>
+                    </select>
+                </div>
+            </div>
+
+            <h3>Vehicle Integration</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Vehicle Type</label>
+                    <select id="vehicleType">
+                        <option value="passenger">Passenger Car (L3/L4)</option>
+                        <option value="commercial">Commercial Vehicle</option>
+                        <option value="robotaxi">Robotaxi (L4/L5)</option>
+                        <option value="shuttle">Autonomous Shuttle</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ECU Interface</label>
+                    <select id="ecuInterface">
+                        <option value="can">CAN Bus</option>
+                        <option value="automotive-eth">Automotive Ethernet</option>
+                        <option value="flexray">FlexRay</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="generateADASConfig()">Generate Integration Config</button>
+            </div>
+
+            <div class="result-box" id="adasResults" style="display: none;">
+                <h4>ADAS Integration Configuration</h4>
+                <div id="adasResultContent"></div>
+            </div>
+
+            <div class="info-box">
+                <strong>Key Standards:</strong> ISO 26262 (functional safety), AEC-Q100 (automotive qualification), IEC 60825 (laser safety Class 1). LiDAR + Camera fusion improves object detection accuracy by 20-30%.
+            </div>
+        </div>
+
+        <!-- Tab 5: Testing Suite -->
+        <div class="panel" id="panel4">
+            <h2>🧪 LiDAR Testing and Validation Suite</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Configure test scenarios and validation parameters</p>
+
+            <h3>Environmental Testing</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Test Condition</th>
+                        <th>Standard</th>
+                        <th>Pass Criteria</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Rain (50mm/h)</td>
+                        <td>ISO 22628</td>
+                        <td>Detection range ≥ 100m</td>
+                    </tr>
+                    <tr>
+                        <td>Fog (Visibility 50m)</td>
+                        <td>SAE J2735</td>
+                        <td>Detection ≥ 30m @ 10% reflectivity</td>
+                    </tr>
+                    <tr>
+                        <td>Snow (Light/Heavy)</td>
+                        <td>Custom</td>
+                        <td>Point cloud noise &lt; 5%</td>
+                    </tr>
+                    <tr>
+                        <td>Direct Sunlight</td>
+                        <td>ISO 11452</td>
+                        <td>No false positives</td>
+                    </tr>
+                    <tr>
+                        <td>Temperature Cycling</td>
+                        <td>AEC-Q100</td>
+                        <td>-40°C to +85°C, 1000 cycles</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Performance Testing</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Target Reflectivity (%)</label>
+                    <input type="number" id="testReflectivity" value="10" min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Required Detection Range (m)</label>
+                    <input type="number" id="testRange" value="200" min="10" max="500">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Frame Rate (Hz)</label>
+                    <input type="number" id="frameRate" value="10" min="1" max="30">
+                </div>
+                <div class="form-group">
+                    <label>Point Density (pts/m² @ 10m)</label>
+                    <input type="number" id="pointDensity" value="1000" min="100" max="10000">
+                </div>
+            </div>
+
+            <div class="btn-center">
+                <button class="btn" onclick="runTestSuite()">Run Test Suite</button>
+            </div>
+
+            <div class="result-box" id="testResults" style="display: none;">
+                <h4>Test Results</h4>
+                <div id="testResultContent"></div>
+            </div>
+
+            <h3>Interference Testing</h3>
+            <div class="info-box">
+                <strong>Multi-LiDAR Interference:</strong> Test crosstalk between multiple LiDAR sensors. FMCW LiDAR has inherent immunity to interference. ToF LiDAR requires time-division or frequency-division multiplexing.
+            </div>
+
+            <div class="form-group">
+                <label>Number of Concurrent LiDARs</label>
+                <input type="number" id="numLidars" value="3" min="1" max="10">
+            </div>
+
+            <div class="btn-center">
+                <button class="btn btn-secondary" onclick="testInterference()">Test Interference</button>
+            </div>
+
+            <div class="result-box" id="interferenceResults" style="display: none;">
+                <h4>Interference Analysis</h4>
+                <div id="interferenceContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+
+        function updateLanguage(lang) {
+            currentLang = lang;
+            console.log('Language changed to:', lang);
+            // In a full implementation, this would update all UI text
+        }
+
+        function switchTab(index) {
+            // Hide all panels and deactivate tabs
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+            // Show selected panel and activate tab
+            document.getElementById('panel' + index).classList.add('active');
+            document.querySelectorAll('.tab')[index].classList.add('active');
+        }
+
+        function calculateSpecs() {
+            const sensorType = document.getElementById('sensorType').value;
+            const wavelength = document.getElementById('wavelength').value;
+            const maxRange = parseFloat(document.getElementById('maxRange').value);
+            const accuracy = parseFloat(document.getElementById('accuracy').value);
+            const hfov = parseFloat(document.getElementById('hfov').value);
+            const vfov = parseFloat(document.getElementById('vfov').value);
+            const angRes = parseFloat(document.getElementById('angRes').value);
+            const pointRate = parseFloat(document.getElementById('pointRate').value);
+            const detector = document.getElementById('detector').value;
+
+            const totalPoints = (hfov / angRes) * (vfov / angRes);
+            const frameRate = pointRate / totalPoints;
+            const eyeSafety = wavelength === '1550' ? 'Class 1 (Eye-Safe)' : 'Class 1M (Caution)';
+            const powerConsumption = sensorType === 'mechanical' ? '15-30W' : sensorType.includes('solid-state') ? '5-15W' : '20-40W';
+
+            let html = `
+                <div class="result-item">
+                    <span class="result-label">Total Points per Frame:</span>
+                    <span class="result-value">${totalPoints.toLocaleString()}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Theoretical Frame Rate:</span>
+                    <span class="result-value">${frameRate.toFixed(1)} Hz</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Eye Safety Class:</span>
+                    <span class="result-value">${eyeSafety}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Estimated Power:</span>
+                    <span class="result-value">${powerConsumption}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Sensor Architecture:</span>
+                    <span class="result-value">${sensorType.toUpperCase()}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Detector Type:</span>
+                    <span class="result-value">${detector.toUpperCase()}</span>
+                </div>
+            `;
+
+            document.getElementById('specResultContent').innerHTML = html;
+            document.getElementById('specResults').style.display = 'block';
+        }
+
+        function calculateRange() {
+            const pulseDuration = parseFloat(document.getElementById('pulseDuration').value);
+            const measTime = parseFloat(document.getElementById('measTime').value);
+            const laserPower = parseFloat(document.getElementById('laserPower').value);
+            const reflectivity = parseFloat(document.getElementById('reflectivity').value) / 100;
+
+            const calculatedRange = (3e8 * measTime * 1e-6) / 2;
+            const rangeResolution = (3e8 * pulseDuration * 1e-9) / 2;
+            const estimatedSNR = laserPower * reflectivity * 100; // Simplified
+
+            let html = `
+                <div class="result-item">
+                    <span class="result-label">Calculated Range:</span>
+                    <span class="result-value">${calculatedRange.toFixed(2)} m</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Range Resolution:</span>
+                    <span class="result-value">${(rangeResolution * 100).toFixed(2)} cm</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Measurement Time:</span>
+                    <span class="result-value">${measTime} µs</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Estimated SNR:</span>
+                    <span class="result-value">${estimatedSNR.toFixed(1)} (arbitrary units)</span>
+                </div>
+            `;
+
+            document.getElementById('rangeResultContent').innerHTML = html;
+            document.getElementById('rangeResults').style.display = 'block';
+        }
+
+        function calculateResolution() {
+            const hLines = parseFloat(document.getElementById('hLines').value);
+            const vLines = parseFloat(document.getElementById('vLines').value);
+
+            const hResolution = 360 / hLines;
+            const vResolution = 30 / vLines; // Assuming 30° vertical FOV
+
+            let html = `
+                <div class="result-item">
+                    <span class="result-label">Horizontal Angular Resolution:</span>
+                    <span class="result-value">${hResolution.toFixed(3)}°</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Vertical Angular Resolution:</span>
+                    <span class="result-value">${vResolution.toFixed(3)}°</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Total Points per Frame:</span>
+                    <span class="result-value">${(hLines * vLines).toLocaleString()}</span>
+                </div>
+            `;
+
+            document.getElementById('resResultContent').innerHTML = html;
+            document.getElementById('resResults').style.display = 'block';
+        }
+
+        function generatePointCloud() {
+            const format = document.getElementById('pcFormat').value;
+            const hasIntensity = document.getElementById('field_intensity').checked;
+            const hasTimestamp = document.getElementById('field_timestamp').checked;
+            const hasRGB = document.getElementById('field_rgb').checked;
+            const hasVelocity = document.getElementById('field_velocity').checked;
+
+            let sample = '';
+            if (format === 'pcl' || format === 'pcd') {
+                sample = `# Point Cloud Data v0.7\n`;
+                sample += `VERSION 0.7\nFIELDS x y z`;
+                if (hasIntensity) sample += ' intensity';
+                if (hasTimestamp) sample += ' timestamp';
+                if (hasRGB) sample += ' rgb';
+                if (hasVelocity) sample += ' velocity';
+                sample += `\nSIZE 4 4 4`;
+                if (hasIntensity) sample += ' 4';
+                if (hasTimestamp) sample += ' 8';
+                if (hasRGB) sample += ' 4';
+                if (hasVelocity) sample += ' 4';
+                sample += `\nTYPE F F F`;
+                if (hasIntensity) sample += ' F';
+                if (hasTimestamp) sample += ' U';
+                if (hasRGB) sample += ' U';
+                if (hasVelocity) sample += ' F';
+                sample += `\nCOUNT 1 1 1`;
+                if (hasIntensity) sample += ' 1';
+                if (hasTimestamp) sample += ' 1';
+                if (hasRGB) sample += ' 1';
+                if (hasVelocity) sample += ' 1';
+                sample += `\nWIDTH 1000000\nHEIGHT 1\nVIEWPOINT 0 0 0 1 0 0 0\nPOINTS 1000000\nDATA binary\n`;
+                sample += `# Sample points:\n`;
+                for (let i = 0; i < 5; i++) {
+                    const x = (Math.random() * 200 - 100).toFixed(3);
+                    const y = (Math.random() * 200 - 100).toFixed(3);
+                    const z = (Math.random() * 10 - 5).toFixed(3);
+                    sample += `${x} ${y} ${z}`;
+                    if (hasIntensity) sample += ` ${Math.floor(Math.random() * 255)}`;
+                    if (hasTimestamp) sample += ` ${Date.now()}`;
+                    if (hasRGB) sample += ` ${Math.floor(Math.random() * 16777215)}`;
+                    if (hasVelocity) sample += ` ${(Math.random() * 30).toFixed(2)}`;
+                    sample += '\n';
+                }
+            } else if (format === 'xyz') {
+                sample = `# X Y Z`;
+                if (hasIntensity) sample += ' I';
+                sample += '\n';
+                for (let i = 0; i < 10; i++) {
+                    sample += `${(Math.random() * 200 - 100).toFixed(3)} ${(Math.random() * 200 - 100).toFixed(3)} ${(Math.random() * 10 - 5).toFixed(3)}`;
+                    if (hasIntensity) sample += ` ${Math.floor(Math.random() * 255)}`;
+                    sample += '\n';
+                }
+            }
+
+            document.getElementById('pcSample').textContent = sample;
+            document.getElementById('pcResults').style.display = 'block';
+        }
+
+        function generateROSConfig() {
+            const rosVersion = document.getElementById('rosVersion').value;
+
+            let config = '';
+            if (rosVersion === 'ros2') {
+                config = `# ROS2 LiDAR Driver Configuration\n\n`;
+                config += `lidar_driver:\n`;
+                config += `  ros__parameters:\n`;
+                config += `    frame_id: "lidar_link"\n`;
+                config += `    scan_topic: "/scan"\n`;
+                config += `    cloud_topic: "/points"\n`;
+                config += `    device_ip: "192.168.1.201"\n`;
+                config += `    device_port: 2368\n`;
+                config += `    min_range: 0.5\n`;
+                config += `    max_range: 200.0\n`;
+                config += `    angle_min: -3.14159\n`;
+                config += `    angle_max: 3.14159\n`;
+                config += `    use_sim_time: false\n\n`;
+                config += `# Launch command:\n`;
+                config += `# ros2 launch lidar_driver lidar.launch.py\n`;
+            } else {
+                config = `# ROS1 LiDAR Driver Configuration\n\n`;
+                config += `<launch>\n`;
+                config += `  <node pkg="velodyne_driver" type="velodyne_node" name="lidar_driver">\n`;
+                config += `    <param name="frame_id" value="lidar_link"/>\n`;
+                config += `    <param name="device_ip" value="192.168.1.201"/>\n`;
+                config += `    <param name="port" value="2368"/>\n`;
+                config += `    <param name="min_range" value="0.5"/>\n`;
+                config += `    <param name="max_range" value="200.0"/>\n`;
+                config += `  </node>\n`;
+                config += `</launch>\n`;
+            }
+
+            document.getElementById('rosSample').textContent = config;
+            document.getElementById('rosResults').style.display = 'block';
+        }
+
+        function generateADASConfig() {
+            const safetyLevel = document.getElementById('safetyLevel').value;
+            const redundancy = document.getElementById('redundancy').value;
+            const vehicleType = document.getElementById('vehicleType').value;
+            const ipRating = document.getElementById('ipRating').value;
+            const ecuInterface = document.getElementById('ecuInterface').value;
+
+            const hasCamera = document.getElementById('fusion_camera').checked;
+            const hasRadar = document.getElementById('fusion_radar').checked;
+
+            let html = `
+                <div class="result-item">
+                    <span class="result-label">Safety Level:</span>
+                    <span class="result-value">${safetyLevel.toUpperCase()}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Redundancy:</span>
+                    <span class="result-value">${redundancy}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">IP Rating:</span>
+                    <span class="result-value">${ipRating.toUpperCase()}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">ECU Interface:</span>
+                    <span class="result-value">${ecuInterface.toUpperCase()}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Sensor Fusion:</span>
+                    <span class="result-value">LiDAR${hasCamera ? ' + Camera' : ''}${hasRadar ? ' + Radar' : ''}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Vehicle Application:</span>
+                    <span class="result-value">${vehicleType}</span>
+                </div>
+            `;
+
+            document.getElementById('adasResultContent').innerHTML = html;
+            document.getElementById('adasResults').style.display = 'block';
+        }
+
+        function runTestSuite() {
+            const reflectivity = parseFloat(document.getElementById('testReflectivity').value);
+            const range = parseFloat(document.getElementById('testRange').value);
+            const frameRate = parseFloat(document.getElementById('frameRate').value);
+            const pointDensity = parseFloat(document.getElementById('pointDensity').value);
+
+            const passRain = range >= 100 ? 'PASS' : 'FAIL';
+            const passFog = range >= 30 ? 'PASS' : 'FAIL';
+            const passFrame = frameRate >= 10 ? 'PASS' : 'FAIL';
+            const passDensity = pointDensity >= 500 ? 'PASS' : 'FAIL';
+
+            let html = `
+                <div class="result-item">
+                    <span class="result-label">Rain Test (50mm/h):</span>
+                    <span class="result-value" style="color: ${passRain === 'PASS' ? 'var(--secondary)' : 'var(--danger)'};">${passRain}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Fog Test (Visibility 50m):</span>
+                    <span class="result-value" style="color: ${passFog === 'PASS' ? 'var(--secondary)' : 'var(--danger)'};">${passFog}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Frame Rate Test:</span>
+                    <span class="result-value" style="color: ${passFrame === 'PASS' ? 'var(--secondary)' : 'var(--danger)'};">${passFrame} (${frameRate} Hz)</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Point Density Test:</span>
+                    <span class="result-value" style="color: ${passDensity === 'PASS' ? 'var(--secondary)' : 'var(--danger)'};">${passDensity} (${pointDensity} pts/m²)</span>
+                </div>
+            `;
+
+            document.getElementById('testResultContent').innerHTML = html;
+            document.getElementById('testResults').style.display = 'block';
+        }
+
+        function testInterference() {
+            const numLidars = parseInt(document.getElementById('numLidars').value);
+
+            const interferenceProb = Math.min(numLidars * 8, 95);
+            const mitigation = numLidars > 2 ? 'Time-division multiplexing recommended' : 'Low interference risk';
+            const fmcwBenefit = numLidars > 1 ? 'FMCW LiDAR: No interference' : 'N/A';
+
+            let html = `
+                <div class="result-item">
+                    <span class="result-label">Number of LiDARs:</span>
+                    <span class="result-value">${numLidars}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">ToF Interference Probability:</span>
+                    <span class="result-value">${interferenceProb}%</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Mitigation Strategy:</span>
+                    <span class="result-value">${mitigation}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">FMCW Advantage:</span>
+                    <span class="result-value">${fmcwBenefit}</span>
+                </div>
+            `;
+
+            document.getElementById('interferenceContent').innerHTML = html;
+            document.getElementById('interferenceResults').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

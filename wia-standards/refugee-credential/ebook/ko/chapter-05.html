@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제5장: Phase 2 - 알고리즘 - WIA 전자책</title>
+</head>
+<body>
+
+<p><a href="chapter-04.html">이전 장</a> | <a href="index.html">목차</a> | <a href="chapter-06.html">다음 장</a></p>
+
+<hr>
+
+<h1>제5장: Phase 2 - 알고리즘</h1>
+
+<blockquote>
+<p><strong>홍익인간 (弘益人間)</strong></p>
+<p>"널리 인간을 이롭게 하라"</p>
+<p>알고리즘은 자격증명 검증의 핵심입니다. 이 장에서는 증거를 신뢰도 점수로 변환하고, 동료를 매칭하며, 역량을 평가하는 핵심 알고리즘을 상세히 설명합니다.</p>
+</blockquote>
+
+<hr>
+
+<h2>5.1 신뢰도 계산 알고리즘</h2>
+
+<p>자격증명 신뢰도 계산의 주요 알고리즘:</p>
+
+<h3>알고리즘 개요</h3>
+
+<pre>
+def calculate_confidence(credential: RefugeeCredential) -> float:
+    """
+    자격증명의 전체 신뢰도 점수를 계산합니다.
+
+    Returns:
+        float: 0에서 99 사이의 신뢰도 점수
+    """
+    # 기본 수준 신뢰도로 시작
+    level = credential.verification.level
+    base_confidence = get_base_confidence(level)
+
+    # 보너스 계산
+    bonuses = calculate_bonuses(credential)
+
+    # 페널티 계산
+    penalties = calculate_penalties(credential)
+
+    # 범위와 함께 결합
+    final = base_confidence + bonuses - penalties
+    return max(0, min(99, final))  # 99%에서 상한선, 100%는 절대 없음
+
+
+def get_base_confidence(level: int) -> float:
+    """검증 수준별 기본 신뢰도."""
+    BASE_SCORES = {
+        1: 30.0,   # 자기 선언
+        2: 60.0,   # 동료 검증
+        3: 80.0,   # 평가 기반
+        4: 95.0    # 문서 검증
+    }
+    return BASE_SCORES.get(level, 0)
+</pre>
+
+<h3>보너스 계산</h3>
+
+<pre>
+def calculate_bonuses(credential: RefugeeCredential) -> float:
+    """적용 가능한 모든 보너스를 계산합니다."""
+    bonus = 0.0
+
+    # 다중 동료 검증 (최대 +15%)
+    peer_count = count_peer_verifications(credential)
+    if peer_count > 2:
+        bonus += min(15, (peer_count - 2) * 5)
+
+    # 높은 평가 점수 (+5-10%)
+    avg_score = get_average_assessment_score(credential)
+    if avg_score and avg_score >= 90:
+        bonus += 10
+    elif avg_score and avg_score >= 80:
+        bonus += 5
+
+    # 일관성 보너스 (+10%)
+    if check_information_consistency(credential):
+        bonus += 10
+
+    # 디지털 증거 보너스 (+5%)
+    if has_digital_evidence(credential):
+        bonus += 5
+
+    return bonus
+</pre>
+
+<h3>페널티 계산</h3>
+
+<pre>
+def calculate_penalties(credential: RefugeeCredential) -> float:
+    """적용 가능한 모든 페널티를 계산합니다."""
+    penalty = 0.0
+
+    # 충돌하는 정보 (각 -10%)
+    conflicts = count_conflicts(credential)
+    penalty += conflicts * 10
+
+    # 검증 경과 기간 (연간 -1%)
+    years_old = get_verification_age_years(credential)
+    penalty += min(20, years_old)  # 20% 페널티 상한선
+
+    # 불완전한 정보 (-5%)
+    if has_incomplete_fields(credential):
+        penalty += 5
+
+    return penalty
+</pre>
+
+<hr>
+
+<h2>5.2 동료 매칭 알고리즘</h2>
+
+<p>잠재적 동료 검증자를 찾는 알고리즘:</p>
+
+<h3>매칭 프로세스</h3>
+
+<pre>
+def find_peer_verifiers(
+    holder: HolderIdentity,
+    claim: EducationRecord | WorkExperience,
+    peer_network: PeerNetwork
+) -> List[PotentialPeer]:
+    """
+    자격증명 주장에 대한 잠재적 동료 검증자를 찾습니다.
+
+    Args:
+        holder: 자격증명 보유자
+        claim: 검증할 특정 주장
+        peer_network: 동료 레지스트리 접근
+
+    Returns:
+        관련성으로 순위가 매겨진 잠재적 동료 목록
+    """
+    candidates = []
+
+    # 기관/고용주로 검색
+    institution_peers = peer_network.search_by_institution(
+        institution_id=claim.institution.wiaId,
+        start_date=claim.startDate,
+        end_date=claim.endDate,
+        exclude_did=holder.did
+    )
+
+    # 겹치는 기간으로 필터링
+    for peer in institution_peers:
+        overlap = calculate_overlap(
+            claim.startDate, claim.endDate,
+            peer.startDate, peer.endDate
+        )
+        if overlap >= MIN_OVERLAP_MONTHS:
+            candidates.append(PotentialPeer(
+                peer=peer,
+                overlap_months=overlap,
+                relevance_score=calculate_relevance(peer, claim)
+            ))
+
+    # 관련성으로 정렬
+    candidates.sort(key=lambda x: x.relevance_score, reverse=True)
+
+    # 상위 후보 반환
+    return candidates[:MAX_PEER_SUGGESTIONS]
+</pre>
+
+<h3>관련성 점수</h3>
+
+<pre>
+def calculate_relevance(peer: Peer, claim: Claim) -> float:
+    """
+    동료가 검증에 얼마나 관련 있는지 계산합니다.
+
+    요소:
+    - 시간 중첩
+    - 같은 학과/분야
+    - 동료 자신의 검증 수준
+    - 이전 성공적인 검증
+    """
+    score = 0.0
+
+    # 시간 중첩 (0-30점)
+    overlap = calculate_overlap_months(peer, claim)
+    score += min(30, overlap * 2)
+
+    # 같은 학과 (0-25점)
+    if peer.department == claim.department:
+        score += 25
+    elif peer.faculty == claim.faculty:
+        score += 15
+
+    # 동료 검증 수준 (0-25점)
+    score += peer.verification_level * 6.25
+
+    # 실적 (0-20점)
+    success_rate = peer.verification_success_rate
+    score += success_rate * 20
+
+    return score
+</pre>
+
+<h3>담합 방지 조치</h3>
+
+<pre>
+블라인드 검증 프로토콜:
+
+1. 동료가 검증 요청 수신
+2. 동료는 다음만 봄:
+   - 기관 이름
+   - 기간
+   - 일반 학문 분야
+3. 동료는 다음을 보지 못함:
+   - 다른 동료의 응답
+   - 보유자의 정확한 주장
+   - 구체적인 날짜나 성적
+4. 동료가 자신의 기억 제공:
+   - 이 사람을 알았는가?
+   - 그들의 역할/직위는?
+   - 어떤 기간?
+   - 특정 기억이 있는가?
+5. 시스템이 동료 응답을 보유자 주장과 비교
+6. 일치 및 불일치 분석
+</pre>
+
+<hr>
+
+<h2>5.3 역량 평가 시스템</h2>
+
+<p>기술 기반 검증을 위한 알고리즘:</p>
+
+<h3>평가 선택</h3>
+
+<pre>
+def select_assessment(
+    credential: RefugeeCredential,
+    target_competency: str
+) -> Assessment:
+    """
+    역량 검증을 위한 적절한 평가를 선택합니다.
+    """
+    # ESCO 코드에서 도메인 가져오기
+    domain = get_domain_from_esco(target_competency)
+
+    # 사용 가능한 평가 찾기
+    assessments = assessment_registry.find_by_domain(domain)
+
+    # 언어 가용성으로 필터링
+    holder_languages = [l.language for l in credential.languages
+                       if l.overall >= 'B2']
+    assessments = [a for a in assessments
+                  if a.language in holder_languages]
+
+    # 주장된 수준에 따라 선택
+    claimed_level = get_claimed_level(credential, target_competency)
+
+    # 적절한 난이도 반환
+    return select_by_difficulty(assessments, claimed_level)
+</pre>
+
+<h3>평가 도메인</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>도메인</strong></td>
+        <td><strong>평가 유형</strong></td>
+        <td><strong>시간</strong></td>
+    </tr>
+    <tr>
+        <td>의료</td>
+        <td>임상 추론, 해부학, 시술</td>
+        <td>3-4시간</td>
+    </tr>
+    <tr>
+        <td>공학</td>
+        <td>기술 문제, 설계, 계산</td>
+        <td>2-3시간</td>
+    </tr>
+    <tr>
+        <td>교육</td>
+        <td>교육학, 수업 계획, 교실 시나리오</td>
+        <td>2시간</td>
+    </tr>
+    <tr>
+        <td>IT/소프트웨어</td>
+        <td>코딩 과제, 시스템 설계</td>
+        <td>2-4시간</td>
+    </tr>
+    <tr>
+        <td>회계</td>
+        <td>재무 분석, 규정, 계산</td>
+        <td>2시간</td>
+    </tr>
+    <tr>
+        <td>법률</td>
+        <td>사례 분석, 법적 추론</td>
+        <td>3시간</td>
+    </tr>
+</table>
+
+<h3>점수를 신뢰도로 매핑</h3>
+
+<pre>
+def assessment_to_confidence(
+    score: float,
+    max_score: float,
+    assessment_difficulty: str
+) -> float:
+    """
+    평가 점수를 신뢰도 기여로 변환합니다.
+    """
+    percentage = (score / max_score) * 100
+
+    # 난이도 배수
+    multipliers = {
+        'basic': 0.8,
+        'intermediate': 1.0,
+        'advanced': 1.2,
+        'expert': 1.4
+    }
+
+    # 점수에서 기본 신뢰도
+    if percentage >= 90:
+        base = 85
+    elif percentage >= 80:
+        base = 75
+    elif percentage >= 70:
+        base = 65
+    elif percentage >= 60:
+        base = 55
+    else:
+        base = 40  # 완료를 위한 최소값
+
+    return min(95, base * multipliers[assessment_difficulty])
+</pre>
+
+<hr>
+
+<h2>5.4 문서 검증 알고리즘</h2>
+
+<p>AI 기반 문서 인증:</p>
+
+<h3>검증 파이프라인</h3>
+
+<pre>
+def verify_document(document: DocumentScan) -> VerificationResult:
+    """
+    다단계 문서 검증 프로세스.
+    """
+    result = VerificationResult()
+
+    # 1단계: 이미지 품질 검사
+    quality = check_image_quality(document)
+    if quality.score < MIN_QUALITY:
+        result.add_warning("낮은 이미지 품질")
+
+    # 2단계: 문서 유형 분류
+    doc_type = classify_document_type(document)
+    result.document_type = doc_type
+
+    # 3단계: OCR 추출
+    extracted_text = perform_ocr(document, doc_type.language)
+    result.extracted_data = parse_extracted_text(extracted_text, doc_type)
+
+    # 4단계: 변조 탐지
+    tampering = detect_tampering(document)
+    if tampering.detected:
+        result.add_error("변조 감지됨", tampering.details)
+        return result
+
+    # 5단계: 교차 참조 확인
+    if doc_type.institution_id:
+        institution_check = check_institution_records(
+            doc_type.institution_id,
+            result.extracted_data
+        )
+        result.institution_verified = institution_check.verified
+
+    # 6단계: 신뢰도 계산
+    result.confidence = calculate_document_confidence(result)
+
+    return result
+</pre>
+
+<h3>변조 탐지</h3>
+
+<pre>
+def detect_tampering(document: DocumentScan) -> TamperingResult:
+    """
+    AI 기반 변조 탐지.
+
+    검사 항목:
+    - 디지털 조작 아티팩트
+    - 폰트 불일치
+    - 인감/스탬프 이상
+    - 날짜 형식 불일치
+    - 종이 질감 불규칙성
+    """
+    checks = []
+
+    # ELA (오류 수준 분석)
+    ela_result = perform_ela_analysis(document)
+    checks.append(('ela', ela_result))
+
+    # 폰트 분석
+    font_result = analyze_font_consistency(document)
+    checks.append(('font', font_result))
+
+    # 인감 검증
+    seal_result = verify_seal_authenticity(document)
+    checks.append(('seal', seal_result))
+
+    # 메타데이터 분석
+    meta_result = analyze_metadata(document)
+    checks.append(('metadata', meta_result))
+
+    # 결과 집계
+    tampering_score = aggregate_tampering_checks(checks)
+
+    return TamperingResult(
+        detected=tampering_score > TAMPERING_THRESHOLD,
+        score=tampering_score,
+        details=generate_tampering_report(checks)
+    )
+</pre>
+
+<hr>
+
+<h2>5.5 다중 소스 집계</h2>
+
+<p>여러 소스의 증거 결합:</p>
+
+<h3>증거 집계</h3>
+
+<pre>
+def aggregate_evidence(evidence_list: List[Evidence]) -> AggregatedResult:
+    """
+    여러 증거를 통합 신뢰도로 집계합니다.
+
+    감소 수익률과 일관성 보너스를 가진
+    가중 결합을 사용합니다.
+    """
+    if not evidence_list:
+        return AggregatedResult(confidence=0)
+
+    # 유형별로 그룹화
+    by_type = group_evidence_by_type(evidence_list)
+
+    # 유형별 신뢰도 계산
+    type_confidences = {}
+    for etype, evidence in by_type.items():
+        type_confidences[etype] = calculate_type_confidence(evidence)
+
+    # 가중치 적용
+    weights = {
+        'document_scan': 0.30,
+        'peer_attestation': 0.25,
+        'assessment_result': 0.25,
+        'institutional_record': 0.30,
+        'digital_footprint': 0.10,
+        'portfolio': 0.10
+    }
+
+    weighted_sum = sum(
+        type_confidences.get(t, 0) * w
+        for t, w in weights.items()
+    )
+
+    # 정규화
+    total_weight = sum(
+        w for t, w in weights.items()
+        if t in type_confidences
+    )
+
+    base_confidence = weighted_sum / total_weight if total_weight > 0 else 0
+
+    # 일관성 보너스
+    consistency = check_cross_source_consistency(evidence_list)
+    bonus = consistency * 10  # 최대 +10%
+
+    return AggregatedResult(
+        confidence=min(99, base_confidence + bonus),
+        type_breakdown=type_confidences,
+        consistency_score=consistency
+    )
+</pre>
+
+<hr>
+
+<h2>5.6 자격 결정</h2>
+
+<p>다양한 기회에 대한 자격 결정 알고리즘:</p>
+
+<h3>고용 자격</h3>
+
+<pre>
+def check_employment_eligibility(
+    credential: RefugeeCredential,
+    job_requirements: JobRequirements
+) -> EligibilityResult:
+    """
+    자격증명 보유자가 고용 자격이 있는지 확인합니다.
+    """
+    result = EligibilityResult()
+
+    # 교육 요구사항 확인
+    if job_requirements.education:
+        edu_match = match_education(
+            credential.education,
+            job_requirements.education
+        )
+        result.education_met = edu_match.meets_requirements
+        result.education_confidence = edu_match.confidence
+
+    # 경험 요구사항 확인
+    if job_requirements.experience_years:
+        exp_match = match_experience(
+            credential.workExperience,
+            job_requirements.experience_years,
+            job_requirements.experience_field
+        )
+        result.experience_met = exp_match.meets_requirements
+        result.experience_confidence = exp_match.confidence
+
+    # 역량 요구사항 확인
+    if job_requirements.competencies:
+        comp_match = match_competencies(
+            credential.competencies,
+            job_requirements.competencies
+        )
+        result.competencies_met = comp_match.meets_requirements
+
+    # 언어 요구사항 확인
+    if job_requirements.languages:
+        lang_match = match_languages(
+            credential.languages,
+            job_requirements.languages
+        )
+        result.languages_met = lang_match.meets_requirements
+
+    # 전체 자격
+    result.eligible = (
+        result.education_met and
+        result.experience_met and
+        result.competencies_met and
+        result.languages_met
+    )
+
+    result.overall_confidence = calculate_overall_confidence(result)
+
+    return result
+</pre>
+
+<hr>
+
+<h2>5.7 성능 요구사항</h2>
+
+<p>모든 알고리즘은 성능 표준을 충족해야 합니다:</p>
+
+<h3>지연 시간 요구사항</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>작업</strong></td>
+        <td><strong>최대 지연 시간</strong></td>
+        <td><strong>p99 목표</strong></td>
+    </tr>
+    <tr>
+        <td>신뢰도 계산</td>
+        <td>100ms</td>
+        <td>50ms</td>
+    </tr>
+    <tr>
+        <td>동료 매칭</td>
+        <td>500ms</td>
+        <td>200ms</td>
+    </tr>
+    <tr>
+        <td>문서 검증</td>
+        <td>5s</td>
+        <td>3s</td>
+    </tr>
+    <tr>
+        <td>평가 점수</td>
+        <td>200ms</td>
+        <td>100ms</td>
+    </tr>
+    <tr>
+        <td>자격 확인</td>
+        <td>300ms</td>
+        <td>150ms</td>
+    </tr>
+</table>
+
+<h3>정확도 요구사항</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>알고리즘</strong></td>
+        <td><strong>메트릭</strong></td>
+        <td><strong>목표</strong></td>
+    </tr>
+    <tr>
+        <td>변조 탐지</td>
+        <td>참 양성률</td>
+        <td>>95%</td>
+    </tr>
+    <tr>
+        <td>변조 탐지</td>
+        <td>거짓 양성률</td>
+        <td><5%</td>
+    </tr>
+    <tr>
+        <td>동료 매칭</td>
+        <td>상위 10에 관련 결과</td>
+        <td>>80%</td>
+    </tr>
+    <tr>
+        <td>문서 OCR</td>
+        <td>문자 정확도</td>
+        <td>>98%</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>5.8 장 요약</h2>
+
+<p>이 장의 핵심 내용:</p>
+
+<ul>
+    <li>[REF] 신뢰도 계산은 기본 수준, 보너스, 페널티를 결합</li>
+    <li>[REF] 동료 매칭은 담합 방지 조치가 있는 관련성 점수 사용</li>
+    <li>[REF] 역량 평가는 언어 지원이 있는 도메인별</li>
+    <li>[REF] 문서 검증은 다단계 AI 분석 사용</li>
+    <li>[REF] 다중 소스 집계는 일관성 보너스 제공</li>
+    <li>[REF] 엄격한 성능 요구사항이 응답성 보장</li>
+</ul>
+
+<hr>
+
+<p><a href="chapter-04.html">이전: 데이터 형식</a> | <a href="index.html">목차</a> | <a href="chapter-06.html">다음: 통신 프로토콜</a></p>
+
+<hr>
+
+<p><strong>Copyright 2025 Smilestory Inc. / WIA</strong></p>
+<p>MIT 라이선스로 배포</p>
+
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-SEC-021 DDoS Protection Simulator | WIA Standards</title>
+    <style>
+        :root { --primary: #8B5CF6; --primary-dark: #7C3AED; --bg: #0f172a; --bg-card: #1e293b; --text: #f8fafc; --text-muted: #94a3b8; --border: #334155; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --gold: #ffd700; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border); margin-bottom: 30px; }
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .nav-home { color: var(--text); text-decoration: none; font-weight: bold; }
+        .breadcrumb { display: flex; gap: 8px; font-size: 0.85rem; color: var(--text-muted); }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb .current { color: var(--primary); }
+        .lang-switch { display: flex; gap: 5px; }
+        .lang-btn { padding: 6px 12px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); border-radius: 6px; cursor: pointer; }
+        .lang-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .hero { text-align: center; margin-bottom: 40px; }
+        .hero h1 { font-size: 2.5rem; background: linear-gradient(90deg, var(--primary), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 15px; }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; }
+
+        .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+        .tab { padding: 12px 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; color: var(--text-muted); transition: all 0.3s; }
+        .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .tab:hover { border-color: var(--primary); }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        .sim-container { background: var(--bg-card); border-radius: 16px; padding: 30px; border: 1px solid var(--border); }
+        .sim-title { font-size: 1.3rem; color: var(--primary); margin-bottom: 20px; }
+
+        .attack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+        .attack-card { background: var(--bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+        .attack-icon { font-size: 3rem; text-align: center; margin-bottom: 15px; }
+        .attack-name { font-size: 1.2rem; color: var(--primary); margin-bottom: 10px; text-align: center; }
+        .attack-desc { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; }
+
+        .metric-display { background: var(--bg); padding: 25px; border-radius: 12px; margin-top: 20px; border: 1px solid var(--border); }
+        .metric-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .metric-label { color: var(--text-muted); }
+        .metric-value { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+
+        .slider-control { margin: 20px 0; }
+        .slider-control label { display: block; color: var(--text-muted); margin-bottom: 8px; }
+        .slider { width: 100%; height: 6px; border-radius: 3px; background: var(--border); outline: none; }
+        .slider::-webkit-slider-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--primary); cursor: pointer; }
+
+        .traffic-visual { width: 100%; height: 200px; background: var(--bg); border-radius: 12px; margin: 20px 0; position: relative; overflow: hidden; border: 1px solid var(--border); }
+        .traffic-bar { position: absolute; bottom: 0; width: 3%; height: 0; background: linear-gradient(to top, var(--primary), var(--gold)); animation: trafficPulse 2s infinite; }
+        @keyframes trafficPulse { 0%, 100% { height: 20%; } 50% { height: 80%; } }
+
+        .protocol-flow { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 20px 0; padding: 20px; background: var(--bg); border-radius: 12px; }
+        .flow-item { padding: 15px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; }
+        .flow-arrow { color: var(--primary); font-size: 1.5rem; }
+
+        .code-block { background: #000; padding: 20px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: var(--success); overflow-x: auto; margin-top: 15px; }
+
+        .btn { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
+        .btn:hover { background: var(--primary-dark); }
+        .btn-secondary { background: var(--bg); border: 1px solid var(--border); }
+
+        .integration-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0; }
+        .integration-card { background: var(--bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+        .integration-card .emoji { font-size: 2.5rem; margin-bottom: 10px; }
+        .integration-card h4 { color: var(--primary); margin-bottom: 10px; }
+
+        .qr-container { display: flex; justify-content: center; align-items: center; gap: 30px; flex-wrap: wrap; margin: 30px 0; }
+        .qr-box { background: white; padding: 20px; border-radius: 12px; text-align: center; }
+        .qr-placeholder { width: 200px; height: 200px; background: linear-gradient(135deg, var(--bg-card), var(--bg)); border: 2px dashed var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 3rem; }
+
+        footer { margin-top: 50px; text-align: center; padding: 20px; border-top: 1px solid var(--border); }
+        footer p { color: var(--text-muted); font-size: 0.9rem; }
+        .philosophy { color: #ffd700; margin-bottom: 10px; font-size: 1.1rem; }
+
+        @media (max-width: 768px) { .tabs { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-nav">
+            <div class="nav-left">
+                <a href="https://wiastandards.com" class="nav-home" target="_blank">🤟 WIA Standards</a>
+                <div class="breadcrumb">
+                    <a href="/ddos-protection/">WIA-SEC-021</a>
+                    <span>›</span>
+                    <span class="current">Simulator</span>
+                </div>
+            </div>
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('ko')">KO</button>
+            </div>
+        </div>
+
+        <div class="hero">
+            <h1>🛡️ DDoS Protection Simulator</h1>
+            <p data-en="Interactive demonstration of DDoS attack detection, traffic scrubbing, and mitigation strategies" data-ko="DDoS 공격 탐지, 트래픽 스크러빙 및 완화 전략의 대화형 시연">Interactive demonstration of DDoS attack detection, traffic scrubbing, and mitigation strategies</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showPanel('data-format')" data-en="Data Format" data-ko="데이터 형식">Data Format</div>
+            <div class="tab" onclick="showPanel('algorithms')" data-en="Algorithms" data-ko="알고리즘">Algorithms</div>
+            <div class="tab" onclick="showPanel('protocol')" data-en="Protocol" data-ko="프로토콜">Protocol</div>
+            <div class="tab" onclick="showPanel('integration')" data-en="Integration" data-ko="통합">Integration</div>
+            <div class="tab" onclick="showPanel('qr-vc')" data-en="QR & VC" data-ko="QR & VC">QR & VC</div>
+        </div>
+
+        <!-- Panel 1: Data Format -->
+        <div id="data-format" class="panel active">
+            <div class="sim-container">
+                <h2 class="sim-title" data-en="DDoS Attack Data Formats" data-ko="DDoS 공격 데이터 형식">DDoS Attack Data Formats</h2>
+
+                <div class="attack-grid">
+                    <div class="attack-card">
+                        <div class="attack-icon">🌊</div>
+                        <div class="attack-name" data-en="UDP Flood" data-ko="UDP 플러드">UDP Flood</div>
+                        <div class="attack-desc" data-en="Volumetric attack overwhelming bandwidth with UDP packets" data-ko="UDP 패킷으로 대역폭을 압도하는 대량 공격">Volumetric attack overwhelming bandwidth with UDP packets</div>
+                    </div>
+
+                    <div class="attack-card">
+                        <div class="attack-icon">⚡</div>
+                        <div class="attack-name" data-en="SYN Flood" data-ko="SYN 플러드">SYN Flood</div>
+                        <div class="attack-desc" data-en="TCP connection exhaustion attack exploiting handshake" data-ko="핸드셰이크를 악용한 TCP 연결 고갈 공격">TCP connection exhaustion attack exploiting handshake</div>
+                    </div>
+
+                    <div class="attack-card">
+                        <div class="attack-icon">🔍</div>
+                        <div class="attack-name" data-en="HTTP Flood" data-ko="HTTP 플러드">HTTP Flood</div>
+                        <div class="attack-desc" data-en="Application-layer attack with legitimate-looking requests" data-ko="정상적으로 보이는 요청을 사용한 애플리케이션 계층 공격">Application-layer attack with legitimate-looking requests</div>
+                    </div>
+
+                    <div class="attack-card">
+                        <div class="attack-icon">🐌</div>
+                        <div class="attack-name" data-en="Slowloris" data-ko="Slowloris">Slowloris</div>
+                        <div class="attack-desc" data-en="Low-bandwidth attack holding connections open indefinitely" data-ko="연결을 무한정 열어두는 저대역폭 공격">Low-bandwidth attack holding connections open indefinitely</div>
+                    </div>
+
+                    <div class="attack-card">
+                        <div class="attack-icon">💥</div>
+                        <div class="attack-name" data-en="DNS Amplification" data-ko="DNS 증폭">DNS Amplification</div>
+                        <div class="attack-desc" data-en="Reflection attack amplifying traffic via DNS servers" data-ko="DNS 서버를 통한 트래픽 증폭 반사 공격">Reflection attack amplifying traffic via DNS servers</div>
+                    </div>
+
+                    <div class="attack-card">
+                        <div class="attack-icon">🌐</div>
+                        <div class="attack-name" data-en="NTP Amplification" data-ko="NTP 증폭">NTP Amplification</div>
+                        <div class="attack-desc" data-en="Network Time Protocol exploitation for traffic multiplication" data-ko="트래픽 증폭을 위한 네트워크 시간 프로토콜 악용">Network Time Protocol exploitation for traffic multiplication</div>
+                    </div>
+                </div>
+
+                <div class="code-block">// Sample DDoS Attack Detection Data Structure
+{
+  "attackID": "ddos-20250125-001",
+  "timestamp": "2025-01-25T14:30:00Z",
+  "attackType": "UDP_FLOOD",
+  "metrics": {
+    "trafficVolume": "150 Gbps",
+    "packetsPerSecond": 50000000,
+    "sourceIPs": 125000,
+    "targetIP": "203.0.113.10",
+    "attackDuration": "15 minutes"
+  },
+  "mitigation": {
+    "strategy": "TRAFFIC_SCRUBBING",
+    "scrubCenterLocation": "Singapore",
+    "blockedIPs": 118500,
+    "legitimateTrafficPreserved": "98.5%"
+  }
+}</div>
+            </div>
+        </div>
+
+        <!-- Panel 2: Algorithms -->
+        <div id="algorithms" class="panel">
+            <div class="sim-container">
+                <h2 class="sim-title" data-en="DDoS Mitigation Algorithms" data-ko="DDoS 완화 알고리즘">DDoS Mitigation Algorithms</h2>
+
+                <div class="slider-control">
+                    <label data-en="Traffic Threshold (Gbps)" data-ko="트래픽 임계값 (Gbps)">Traffic Threshold (Gbps)</label>
+                    <input type="range" class="slider" min="1" max="100" value="50" id="thresholdSlider" oninput="updateThreshold(this.value)">
+                    <span id="thresholdValue" style="color: var(--primary); font-weight: bold;">50 Gbps</span>
+                </div>
+
+                <div class="traffic-visual">
+                    <div class="traffic-bar" style="left: 5%;"></div>
+                    <div class="traffic-bar" style="left: 15%; animation-delay: 0.2s;"></div>
+                    <div class="traffic-bar" style="left: 25%; animation-delay: 0.4s;"></div>
+                    <div class="traffic-bar" style="left: 35%; animation-delay: 0.6s;"></div>
+                    <div class="traffic-bar" style="left: 45%; animation-delay: 0.8s;"></div>
+                    <div class="traffic-bar" style="left: 55%; animation-delay: 1s;"></div>
+                    <div class="traffic-bar" style="left: 65%; animation-delay: 1.2s;"></div>
+                    <div class="traffic-bar" style="left: 75%; animation-delay: 1.4s;"></div>
+                    <div class="traffic-bar" style="left: 85%; animation-delay: 1.6s;"></div>
+                    <div class="traffic-bar" style="left: 95%; animation-delay: 1.8s;"></div>
+                </div>
+
+                <div class="metric-display">
+                    <div class="metric-row">
+                        <span class="metric-label" data-en="Detection Rate" data-ko="탐지율">Detection Rate</span>
+                        <span class="metric-value" id="detectionRate">99.2%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label" data-en="False Positive Rate" data-ko="오탐률">False Positive Rate</span>
+                        <span class="metric-value" id="falsePositive">0.5%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label" data-en="Mitigation Time" data-ko="완화 시간">Mitigation Time</span>
+                        <span class="metric-value" id="mitigationTime">12s</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label" data-en="Legitimate Traffic Preserved" data-ko="정상 트래픽 보존">Legitimate Traffic Preserved</span>
+                        <span class="metric-value" id="legitimateTraffic">98.7%</span>
+                    </div>
+                </div>
+
+                <div class="code-block">// Adaptive Rate Limiting Algorithm
+function adaptiveRateLimit(trafficPattern, threshold) {
+  const baseline = analyzeBaselineTraffic();
+  const anomalyScore = calculateAnomalyScore(trafficPattern, baseline);
+
+  if (anomalyScore > threshold) {
+    const dynamicLimit = calculateDynamicLimit(trafficPattern);
+    return {
+      action: 'RATE_LIMIT',
+      limit: dynamicLimit,
+      duration: calculateDuration(anomalyScore)
+    };
+  }
+
+  return { action: 'ALLOW', limit: null };
+}
+
+// Traffic Pattern Analysis
+function analyzePattern(packets) {
+  return {
+    sourceIPEntropy: calculateEntropy(packets.sourceIPs),
+    packetSizeVariance: calculateVariance(packets.sizes),
+    temporalPattern: detectTemporalAnomalies(packets.timestamps),
+    protocolDistribution: analyzeProtocols(packets)
+  };
+}</div>
+            </div>
+        </div>
+
+        <!-- Panel 3: Protocol -->
+        <div id="protocol" class="panel">
+            <div class="sim-container">
+                <h2 class="sim-title" data-en="DDoS Protection Protocol Flow" data-ko="DDoS 보호 프로토콜 흐름">DDoS Protection Protocol Flow</h2>
+
+                <div class="protocol-flow">
+                    <div class="flow-item" data-en="1. Traffic Monitoring" data-ko="1. 트래픽 모니터링">1. Traffic Monitoring</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-item" data-en="2. Anomaly Detection" data-ko="2. 이상 탐지">2. Anomaly Detection</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-item" data-en="3. Attack Classification" data-ko="3. 공격 분류">3. Attack Classification</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-item" data-en="4. Mitigation Activation" data-ko="4. 완화 활성화">4. Mitigation Activation</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-item" data-en="5. Traffic Scrubbing" data-ko="5. 트래픽 스크러빙">5. Traffic Scrubbing</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-item" data-en="6. Clean Traffic Routing" data-ko="6. 정상 트래픽 라우팅">6. Clean Traffic Routing</div>
+                </div>
+
+                <div style="margin: 30px 0;">
+                    <h3 style="color: var(--primary); margin-bottom: 15px;" data-en="Layer 3-4 Protection" data-ko="계층 3-4 보호">Layer 3-4 Protection</h3>
+                    <div class="code-block">// SYN Flood Protection
+SYN_COOKIE_VALIDATION:
+  - Enable SYN cookies for TCP handshake
+  - Validate client legitimacy before connection
+  - Track connection state in stateless manner
+
+// UDP Flood Mitigation
+RATE_LIMITING:
+  - Per-source IP rate limiting
+  - Per-destination port limiting
+  - Geographic-based filtering
+  - Dynamic threshold adjustment</div>
+                </div>
+
+                <div style="margin: 30px 0;">
+                    <h3 style="color: var(--primary); margin-bottom: 15px;" data-en="Layer 7 Protection" data-ko="계층 7 보호">Layer 7 Protection</h3>
+                    <div class="code-block">// HTTP Flood Protection
+CHALLENGE_RESPONSE:
+  - JavaScript challenge for bot detection
+  - CAPTCHA for suspicious requests
+  - Cookie validation for session tracking
+  - User-Agent fingerprinting
+
+// Slowloris Protection
+CONNECTION_TIMEOUT:
+  - Aggressive timeout for slow connections
+  - Maximum concurrent connections per IP
+  - Request completion time limits
+  - HTTP header size restrictions</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 4: Integration -->
+        <div id="integration" class="panel">
+            <div class="sim-container">
+                <h2 class="sim-title" data-en="DDoS Protection Integration" data-ko="DDoS 보호 통합">DDoS Protection Integration</h2>
+
+                <div class="integration-grid">
+                    <div class="integration-card">
+                        <div class="emoji">☁️</div>
+                        <h4 data-en="Cloud Provider" data-ko="클라우드 제공업체">Cloud Provider</h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;" data-en="AWS Shield, Azure DDoS, GCP Armor" data-ko="AWS Shield, Azure DDoS, GCP Armor">AWS Shield, Azure DDoS, GCP Armor</p>
+                    </div>
+
+                    <div class="integration-card">
+                        <div class="emoji">🌐</div>
+                        <h4 data-en="CDN Services" data-ko="CDN 서비스">CDN Services</h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;" data-en="Cloudflare, Akamai, Fastly" data-ko="Cloudflare, Akamai, Fastly">Cloudflare, Akamai, Fastly</p>
+                    </div>
+
+                    <div class="integration-card">
+                        <div class="emoji">🔥</div>
+                        <h4 data-en="WAF Integration" data-ko="WAF 통합">WAF Integration</h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;" data-en="Web Application Firewall" data-ko="웹 애플리케이션 방화벽">Web Application Firewall</p>
+                    </div>
+
+                    <div class="integration-card">
+                        <div class="emoji">📊</div>
+                        <h4 data-en="SIEM Systems" data-ko="SIEM 시스템">SIEM Systems</h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;" data-en="Security Information & Event Management" data-ko="보안 정보 및 이벤트 관리">Security Information & Event Management</p>
+                    </div>
+
+                    <div class="integration-card">
+                        <div class="emoji">🤖</div>
+                        <h4 data-en="ML Detection" data-ko="ML 탐지">ML Detection</h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;" data-en="Machine Learning anomaly detection" data-ko="머신러닝 이상 탐지">Machine Learning anomaly detection</p>
+                    </div>
+
+                    <div class="integration-card">
+                        <div class="emoji">🔔</div>
+                        <h4 data-en="Alert Systems" data-ko="경고 시스템">Alert Systems</h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;" data-en="Real-time notifications & dashboards" data-ko="실시간 알림 및 대시보드">Real-time notifications & dashboards</p>
+                    </div>
+                </div>
+
+                <div class="code-block" style="margin-top: 30px;">// Integration API Example
+const DDoSProtection = {
+  // Initialize protection
+  init: async (config) => {
+    return await fetch('/api/ddos/init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        threshold: config.threshold,
+        mitigationStrategy: config.strategy,
+        cdnProvider: config.cdn,
+        wafRules: config.wafRules
+      })
+    });
+  },
+
+  // Monitor traffic
+  monitor: (callback) => {
+    const ws = new WebSocket('wss://api.example.com/ddos/monitor');
+    ws.onmessage = (event) => {
+      const metrics = JSON.parse(event.data);
+      callback(metrics);
+    };
+  },
+
+  // Manual mitigation trigger
+  mitigate: async (attackType) => {
+    return await fetch('/api/ddos/mitigate', {
+      method: 'POST',
+      body: JSON.stringify({ attackType })
+    });
+  }
+};</div>
+            </div>
+        </div>
+
+        <!-- Panel 5: QR & VC -->
+        <div id="qr-vc" class="panel">
+            <div class="sim-container">
+                <h2 class="sim-title" data-en="QR Code & Verifiable Credentials" data-ko="QR 코드 및 검증 가능한 자격증명">QR Code & Verifiable Credentials</h2>
+
+                <div class="qr-container">
+                    <div>
+                        <h3 style="color: var(--primary); margin-bottom: 15px; text-align: center;" data-en="DDoS Protection Certificate" data-ko="DDoS 보호 인증서">DDoS Protection Certificate</h3>
+                        <div class="qr-box">
+                            <div class="qr-placeholder">📱</div>
+                        </div>
+                        <p style="text-align: center; margin-top: 10px; color: var(--text-muted);" data-en="Scan to verify protection status" data-ko="보호 상태 확인을 위해 스캔">Scan to verify protection status</p>
+                    </div>
+
+                    <div>
+                        <h3 style="color: var(--primary); margin-bottom: 15px; text-align: center;" data-en="Mitigation Report VC" data-ko="완화 보고서 VC">Mitigation Report VC</h3>
+                        <div class="qr-box">
+                            <div class="qr-placeholder">🔐</div>
+                        </div>
+                        <p style="text-align: center; margin-top: 10px; color: var(--text-muted);" data-en="Verifiable credential for audit" data-ko="감사를 위한 검증 가능한 자격증명">Verifiable credential for audit</p>
+                    </div>
+                </div>
+
+                <div class="code-block">// Verifiable Credential for DDoS Protection
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://wiastandards.com/credentials/ddos/v1"
+  ],
+  "type": ["VerifiableCredential", "DDoSProtectionCertificate"],
+  "issuer": "did:wia:sec-021:protection-authority",
+  "issuanceDate": "2025-01-25T14:30:00Z",
+  "credentialSubject": {
+    "id": "did:web:example.com",
+    "protectionLevel": "enterprise",
+    "capabilities": {
+      "maxMitigationCapacity": "100 Gbps",
+      "protectionLayers": ["L3", "L4", "L7"],
+      "globalCoverage": true,
+      "scrubCenters": ["us-east", "eu-west", "ap-southeast"],
+      "slaUptime": "99.99%"
+    },
+    "certification": {
+      "standard": "WIA-SEC-021",
+      "version": "1.0",
+      "validUntil": "2026-01-25T14:30:00Z"
+    }
+  },
+  "proof": {
+    "type": "Ed25519Signature2020",
+    "created": "2025-01-25T14:30:00Z",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:wia:sec-021#key-1",
+    "proofValue": "z3FXQz...signature..."
+  }
+}</div>
+
+                <div style="margin-top: 30px;">
+                    <button class="btn" onclick="generateQR()" data-en="Generate QR Code" data-ko="QR 코드 생성">Generate QR Code</button>
+                    <button class="btn btn-secondary" onclick="verifyVC()" data-en="Verify Credential" data-ko="자격증명 검증" style="margin-left: 10px;">Verify Credential</button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p class="philosophy">弘益人間 · 널리 인간을 이롭게 하라 · Benefit All Humanity</p>
+            <p data-en="From the Republic of Korea to the World" data-ko="대한민국에서 세계로">From the Republic of Korea to the World</p>
+            <p style="margin-top: 10px;">© 2025 World Certification Industry Association (WIA)</p>
+        </footer>
+    </div>
+
+    <script>
+        function showPanel(panelId) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(panelId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function setLang(lang) {
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.lang-btn:${lang === 'en' ? 'first-child' : 'last-child'}`).classList.add('active');
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute(`data-${lang}`);
+            });
+            localStorage.setItem('wia-lang', lang);
+        }
+
+        function updateThreshold(value) {
+            document.getElementById('thresholdValue').textContent = value + ' Gbps';
+            // Simulate metric updates
+            const detection = (95 + Math.random() * 4).toFixed(1);
+            const falsePos = (0.3 + Math.random() * 0.5).toFixed(1);
+            const mitTime = (10 + Math.random() * 5).toFixed(0);
+            const legitTraffic = (97 + Math.random() * 2).toFixed(1);
+
+            document.getElementById('detectionRate').textContent = detection + '%';
+            document.getElementById('falsePositive').textContent = falsePos + '%';
+            document.getElementById('mitigationTime').textContent = mitTime + 's';
+            document.getElementById('legitimateTraffic').textContent = legitTraffic + '%';
+        }
+
+        function generateQR() {
+            alert('QR Code generation would integrate with a QR library in production');
+        }
+
+        function verifyVC() {
+            alert('Verifiable Credential verification would connect to DID resolver in production');
+        }
+
+        const savedLang = localStorage.getItem('wia-lang');
+        if (savedLang) setLang(savedLang);
+    </script>
+</body>
+</html>

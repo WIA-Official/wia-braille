@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 7: UTM 보안 | WIA-SPACE-021</title>
+    <style>
+        * {margin: 0; padding: 0; box-sizing: border-box;}
+        body {font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; background: #1a1a2e; color: #eee; line-height: 1.8; padding: 20px;}
+        .container {max-width: 900px; margin: 0 auto; padding: 40px 20px;}
+        header {margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px solid #e94560;}
+        .chapter-number {color: #e94560; font-size: 1.2em; font-weight: bold; margin-bottom: 10px;}
+        h1 {font-size: 2.5em; color: #fff; margin-bottom: 20px;}
+        h2 {font-size: 1.8em; color: #e94560; margin-top: 40px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid rgba(233, 69, 96, 0.3);}
+        h3 {font-size: 1.4em; color: #e94560; margin-top: 30px; margin-bottom: 15px;}
+        p {margin-bottom: 15px; color: #ddd; text-align: justify;}
+        ul, ol {margin: 20px 0 20px 30px;}
+        li {margin: 10px 0; color: #ddd;}
+        .info-box {background: rgba(233, 69, 96, 0.1); border-left: 4px solid #e94560; padding: 20px; margin: 25px 0; border-radius: 5px;}
+        .info-box h4 {color: #e94560; margin-bottom: 10px;}
+        .warning-box {background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 5px;}
+        .warning-box h4 {color: #ffc107; margin-bottom: 10px;}
+        .code-box {background: rgba(0, 0, 0, 0.3); border: 1px solid #444; border-radius: 5px; padding: 15px; margin: 20px 0; font-family: 'Courier New', monospace; overflow-x: auto;}
+        table {width: 100%; border-collapse: collapse; margin: 25px 0;}
+        th, td {border: 1px solid #444; padding: 12px; text-align: left;}
+        th {background: rgba(233, 69, 96, 0.2); color: #e94560; font-weight: bold;}
+        tr:nth-child(even) {background: rgba(255, 255, 255, 0.02);}
+        .nav-buttons {display: flex; justify-content: space-between; margin-top: 50px; padding-top: 30px; border-top: 2px solid #e94560;}
+        .nav-button {background: rgba(233, 69, 96, 0.1); color: #e94560; padding: 12px 24px; border: 2px solid #e94560; border-radius: 5px; text-decoration: none; transition: all 0.3s ease;}
+        .nav-button:hover {background: rgba(233, 69, 96, 0.2); transform: translateY(-2px);}
+        footer {text-align: center; margin-top: 50px; padding-top: 20px; border-top: 2px solid #444; color: #888;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-number">Chapter 7</div>
+            <h1>🔒 UTM 보안 및 사이버 보안</h1>
+        </header>
+
+        <h2>7.1 UTM 보안의 중요성</h2>
+        <p>UTM 시스템은 수백만 대의 드론을 관리하는 critical infrastructure이므로, 보안 침해 시 치명적인 결과를 초래할 수 있습니다. 악의적인 공격자가 드론을 해킹하거나 UTM 시스템을 마비시키면 다음과 같은 위험이 발생합니다:</p>
+        <ul>
+            <li>드론 납치 및 악용 (테러, 범죄)</li>
+            <li>프라이버시 침해 (불법 감시)</li>
+            <li>공역 혼란 및 충돌 사고</li>
+            <li>중요 인프라 파괴</li>
+            <li>대규모 서비스 중단 (DoS)</li>
+        </ul>
+
+        <h2>7.2 UTM 위협 모델</h2>
+        <h3>7.2.1 드론 레벨 위협</h3>
+        <table>
+            <thead><tr><th>위협</th><th>설명</th><th>영향</th></tr></thead>
+            <tbody>
+                <tr><td>GPS 스푸핑</td><td>가짜 GPS 신호로 드론 위치 조작</td><td>드론이 잘못된 위치로 이동, 충돌</td></tr>
+                <tr><td>통신 재밍</td><td>드론-USS 간 통신 차단</td><td>제어 불능, 자동 착륙</td></tr>
+                <tr><td>펌웨어 변조</td><td>드론 소프트웨어를 악성 코드로 교체</td><td>완전한 드론 장악</td></tr>
+                <tr><td>센서 속임수</td><td>DAA 센서에 거짓 정보 주입</td><td>충돌 회피 실패</td></tr>
+                <tr><td>물리적 공격</td><td>드론 납치, 파괴</td><td>드론 손실, 데이터 유출</td></tr>
+            </tbody>
+        </table>
+
+        <h3>7.2.2 USS/FIMS 레벨 위협</h3>
+        <ul>
+            <li><strong>DDoS 공격:</strong> USS/FIMS 서버를 다운시켜 모든 드론 운영 마비</li>
+            <li><strong>데이터베이스 침입:</strong> 운영자 정보, 비행 계획 등 민감 데이터 유출</li>
+            <li><strong>중간자 공격 (MITM):</strong> USS-FIMS 통신을 가로채 변조</li>
+            <li><strong>권한 상승:</strong> 일반 사용자가 관리자 권한 획득</li>
+            <li><strong>내부자 위협:</strong> 시스템 관리자의 악의적 행동</li>
+        </ul>
+
+        <h2>7.3 다층 보안 아키텍처</h2>
+        <p>UTM 보안은 여러 계층에서 구현되어 단일 실패 지점을 방지합니다:</p>
+
+        <h3>7.3.1 물리적 보안</h3>
+        <ul>
+            <li>드론 하드웨어에 TPM (Trusted Platform Module) 칩 내장</li>
+            <li>변조 방지 봉인 (Tamper-evident seals)</li>
+            <li>안전한 부팅 (Secure Boot) 메커니즘</li>
+            <li>서버 시설의 물리적 접근 통제</li>
+        </ul>
+
+        <h3>7.3.2 네트워크 보안</h3>
+        <div class="code-box">
+네트워크 보안 계층:
+
+1. 전송 암호화: TLS 1.3
+2. VPN: USS-FIMS 간 전용 VPN
+3. 방화벽: 화이트리스트 기반 트래픽 필터링
+4. IDS/IPS: 침입 탐지 및 차단 시스템
+5. DDoS 방어: 클라우드 기반 DDoS 완화 서비스
+        </div>
+
+        <h3>7.3.3 애플리케이션 보안</h3>
+        <ul>
+            <li><strong>인증:</strong> OAuth 2.0, OpenID Connect로 신원 확인</li>
+            <li><strong>권한 부여:</strong> RBAC (Role-Based Access Control)</li>
+            <li><strong>입력 검증:</strong> SQL Injection, XSS 등 공격 방어</li>
+            <li><strong>보안 코딩:</strong> OWASP Top 10 준수</li>
+            <li><strong>정기 감사:</strong> 코드 리뷰, 보안 스캔</li>
+        </ul>
+
+        <h3>7.3.4 데이터 보안</h3>
+        <table>
+            <thead><tr><th>데이터 상태</th><th>보안 조치</th></tr></thead>
+            <tbody>
+                <tr><td>전송 중 (In Transit)</td><td>TLS/SSL 암호화, VPN</td></tr>
+                <tr><td>저장 중 (At Rest)</td><td>AES-256 암호화, 키 관리 시스템</td></tr>
+                <tr><td>사용 중 (In Use)</td><td>메모리 암호화, 안전한 Enclave</td></tr>
+            </tbody>
+        </table>
+
+        <h2>7.4 인증 및 신원 관리</h2>
+        <h3>7.4.1 다단계 인증 (MFA)</h3>
+        <p>중요한 작업(비행 승인, 시스템 설정 변경 등)에는 다단계 인증을 요구합니다:</p>
+        <ol>
+            <li>지식 기반: 비밀번호</li>
+            <li>소유 기반: OTP, 하드웨어 토큰</li>
+            <li>생체 기반: 지문, 얼굴 인식</li>
+        </ol>
+
+        <h3>7.4.2 PKI (Public Key Infrastructure)</h3>
+        <p>디지털 인증서를 사용하여 드론, USS, FIMS의 신원을 검증합니다:</p>
+        <ul>
+            <li>각 드론은 제조 시 고유한 디지털 인증서 발급</li>
+            <li>USS와 FIMS는 정부 인증 기관(CA)에서 인증서 획득</li>
+            <li>모든 통신에서 상호 TLS (mTLS) 인증</li>
+            <li>인증서 폐기 목록 (CRL) 정기 업데이트</li>
+        </ul>
+
+        <h2>7.5 GPS 보안</h2>
+        <p>GPS는 드론 항법의 핵심이지만, 보안에 취약합니다. UTM은 다음 기술로 GPS 공격을 방어합니다:</p>
+
+        <h3>7.5.1 GPS 스푸핑 탐지</h3>
+        <ul>
+            <li><strong>다중 GNSS:</strong> GPS, GLONASS, Galileo, BeiDou를 동시에 사용하여 교차 검증</li>
+            <li><strong>관성 센서 융합:</strong> IMU, 기압계, 나침반 데이터와 GPS 비교</li>
+            <li><strong>신호 품질 모니터링:</strong> 비정상적인 신호 강도나 지연 감지</li>
+            <li><strong>지형 매칭:</strong> 라이다나 카메라로 실제 지형과 GPS 위치 대조</li>
+        </ul>
+
+        <h3>7.5.2 안티 재밍</h3>
+        <ul>
+            <li>방향성 안테나로 재밍 신호 차단</li>
+            <li>적응형 필터로 간섭 신호 제거</li>
+            <li>GPS 없이도 비행 가능한 VIO (Visual-Inertial Odometry)</li>
+        </ul>
+
+        <div class="warning-box">
+            <h4>⚠️ GPS 의존성 줄이기</h4>
+            <p>미래의 UTM은 GPS에 대한 의존성을 줄이는 방향으로 발전합니다. 5G 위치 서비스, SLAM, 비전 기반 항법 등 대체 기술이 개발되고 있습니다.</p>
+        </div>
+
+        <h2>7.6 사이버 공격 대응</h2>
+        <h3>7.6.1 침입 탐지 및 대응 (IDS/IPS)</h3>
+        <p>UTM 시스템은 실시간으로 이상 징후를 모니터링하고 자동 대응합니다:</p>
+        <ul>
+            <li>비정상적인 로그인 시도 차단</li>
+            <li>SQL Injection, XSS 등 공격 패턴 탐지</li>
+            <li>비정상적인 API 호출 빈도 탐지</li>
+            <li>의심스러운 IP 주소 블랙리스팅</li>
+        </ul>
+
+        <h3>7.6.2 사고 대응 계획</h3>
+        <p>보안 침해 발생 시 다음 절차를 따릅니다:</p>
+        <ol>
+            <li><strong>탐지:</strong> 침해 사고를 즉시 감지 (평균 탐지 시간 < 10분)</li>
+            <li><strong>격리:</strong> 감염된 시스템을 네트워크에서 분리</li>
+            <li><strong>분석:</strong> 포렌식 분석으로 공격 경로와 범위 파악</li>
+            <li><strong>복구:</strong> 백업에서 시스템 복원, 취약점 패치</li>
+            <li><strong>사후 검토:</strong> 재발 방지 대책 수립</li>
+            <li><strong>통보:</strong> 영향받은 사용자 및 당국에 통보</li>
+        </ol>
+
+        <h2>7.7 드론 보안 인증</h2>
+        <h3>7.7.1 보안 표준</h3>
+        <p>드론과 UTM 시스템은 다음 보안 표준을 준수해야 합니다:</p>
+        <ul>
+            <li><strong>ISO/IEC 27001:</strong> 정보 보안 관리 시스템</li>
+            <li><strong>NIST Cybersecurity Framework:</strong> 미국 사이버 보안 프레임워크</li>
+            <li><strong>RTCA DO-326A:</strong> 항공 전자 보안</li>
+            <li><strong>ASTM F3201:</strong> 드론 보안 위협 평가</li>
+        </ul>
+
+        <h3>7.7.2 침투 테스트</h3>
+        <p>시스템 배포 전 전문 해커 팀이 의도적으로 공격을 시도하여 취약점을 발견합니다:</p>
+        <ul>
+            <li>화이트박스 테스트: 내부 정보 제공</li>
+            <li>블랙박스 테스트: 외부 공격자 시뮬레이션</li>
+            <li>레드팀 vs 블루팀 훈련</li>
+        </ul>
+
+        <h2>7.8 프라이버시 보호</h2>
+        <h3>7.8.1 데이터 최소화</h3>
+        <p>개인정보를 최소한으로만 수집하고 보관합니다:</p>
+        <ul>
+            <li>비행 경로는 저장하되, 운영자 신원은 암호화</li>
+            <li>영상 데이터는 즉시 삭제 또는 익명화</li>
+            <li>보관 기간 제한 (예: 90일 후 자동 삭제)</li>
+        </ul>
+
+        <h3>7.8.2 사용자 권리</h3>
+        <p>GDPR 및 기타 프라이버시 법규에 따라 사용자에게 다음 권리를 보장합니다:</p>
+        <ul>
+            <li>데이터 열람 권리</li>
+            <li>데이터 삭제 요청 권리 (Right to be Forgotten)</li>
+            <li>데이터 이동 권리 (Data Portability)</li>
+            <li>마케팅 목적 사용 거부 권리</li>
+        </ul>
+
+        <h2>7.9 공급망 보안</h2>
+        <p>드론 제조 과정에서 악성 코드가 삽입될 수 있으므로, 공급망 전체의 보안이 중요합니다:</p>
+        <ul>
+            <li>부품 공급업체 보안 인증</li>
+            <li>제조 과정 감사</li>
+            <li>소프트웨어 무결성 검증 (코드 서명)</li>
+            <li>하드웨어 신뢰 루트 (Root of Trust)</li>
+        </ul>
+
+        <h2>7.10 보안의 미래</h2>
+        <h3>7.10.1 양자 암호</h3>
+        <p>양자 컴퓨터가 기존 암호를 깰 수 있으므로, 양자 내성 암호(Post-Quantum Cryptography)로 전환해야 합니다.</p>
+
+        <h3>7.10.2 AI 기반 보안</h3>
+        <ul>
+            <li>AI로 0-day 공격 패턴 자동 학습</li>
+            <li>이상 징후를 실시간으로 탐지</li>
+            <li>자동화된 사고 대응</li>
+        </ul>
+
+        <h2>7.11 요약</h2>
+        <p>UTM 보안은 드론, 네트워크, 애플리케이션, 데이터의 다층 방어를 통해 구현됩니다. GPS 스푸핑, DDoS, 해킹 등 다양한 위협에 대응하기 위해 암호화, 인증, 침입 탐지, 사고 대응 등의 보안 조치가 필수입니다. 프라이버시 보호와 공급망 보안도 중요한 고려사항입니다.</p>
+
+        <p>다음 장에서는 UTM의 미래와 완전 자동화에 대해 알아보겠습니다.</p>
+
+        <div class="nav-buttons">
+            <a href="chapter-06.html" class="nav-button">← 이전 장</a>
+            <a href="index.html" class="nav-button">📚 목차로</a>
+            <a href="chapter-08.html" class="nav-button">다음 장 →</a>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / WIA</p>
+            <p><strong>弘益人間</strong> (홍익인간) &middot; Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

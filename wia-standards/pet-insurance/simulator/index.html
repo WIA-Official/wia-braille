@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Insurance Simulator 🛡️</title>
+    <style>
+        :root {
+            --primary: #F59E0B;
+            --primary-dark: #D97706;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, var(--primary), #FBBF24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        .header p { color: var(--text-muted); font-size: 1.1rem; }
+        .lang-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+            z-index: 1000;
+        }
+        .lang-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 15px 25px;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: var(--primary); }
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        .grid { display: grid; gap: 20px; }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+        }
+        .card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-center {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .btn {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .result-box {
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+        .result-box h4 {
+            color: var(--primary);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-label { color: var(--text-muted); }
+        .result-value {
+            font-weight: bold;
+            color: var(--text);
+        }
+
+        pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid var(--border);
+        }
+        pre code {
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .plan-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .plan-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+        }
+        .plan-card.selected {
+            border-color: var(--primary);
+            background: rgba(245, 158, 11, 0.1);
+        }
+        .plan-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        .plan-price {
+            font-size: 2rem;
+            color: var(--text);
+            margin-bottom: 15px;
+        }
+        .plan-features {
+            text-align: left;
+            margin-top: 15px;
+        }
+        .plan-features li {
+            padding: 5px 0;
+            color: var(--text-muted);
+        }
+
+        .claim-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .status-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .status-approved { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .status-rejected { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .status-processing { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+
+        footer {
+            margin-top: 60px;
+            padding: 30px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+        footer .philosophy {
+            color: #ffd700;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        footer p {
+            color: var(--text-muted);
+            margin: 5px 0;
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+            .tab {
+                width: 100%;
+                text-align: center;
+            }
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="lang-switch">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('ko')">KO</button>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ <span data-en="Pet Insurance Simulator" data-ko="반려동물 보험 시뮬레이터">Pet Insurance Simulator</span></h1>
+            <p data-en="Explore pet insurance coverage, claims, and premium calculations" data-ko="반려동물 보험 보장, 청구 및 보험료 계산 체험">Explore pet insurance coverage, claims, and premium calculations</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showPanel(0)" data-en="📊 Data Format" data-ko="📊 데이터 형식">📊 Data Format</button>
+            <button class="tab" onclick="showPanel(1)" data-en="🔢 Premium Calculator" data-ko="🔢 보험료 계산기">🔢 Premium Calculator</button>
+            <button class="tab" onclick="showPanel(2)" data-en="📋 Claims Processing" data-ko="📋 청구 처리">📋 Claims Processing</button>
+            <button class="tab" onclick="showPanel(3)" data-en="🔗 Health Integration" data-ko="🔗 건강 기록 통합">🔗 Health Integration</button>
+            <button class="tab" onclick="showPanel(4)" data-en="📱 QR & VC" data-ko="📱 QR & VC">📱 QR & VC</button>
+        </div>
+
+        <!-- Panel 0: Data Format -->
+        <div class="panel active" id="panel-0">
+            <div class="card">
+                <h3 data-en="📊 Insurance Policy Data Format" data-ko="📊 보험 정책 데이터 형식">📊 Insurance Policy Data Format</h3>
+                <pre><code>{
+  "policyId": "PET-INS-2025-001234",
+  "standardVersion": "WIA-PET-010-v1.0.0",
+  "pet": {
+    "id": "PET-2025-789456",
+    "name": "Buddy",
+    "species": "Dog",
+    "breed": "Golden Retriever",
+    "birthDate": "2020-05-15",
+    "microchipId": "985112345678901",
+    "healthPassportId": "WIA-PET-HEALTH-001234"
+  },
+  "owner": {
+    "id": "OWNER-2025-456789",
+    "name": "John Smith",
+    "email": "john.smith@example.com",
+    "phone": "+1-555-123-4567",
+    "address": {
+      "street": "123 Main St",
+      "city": "San Francisco",
+      "state": "CA",
+      "zipCode": "94102",
+      "country": "US"
+    }
+  },
+  "plan": {
+    "tier": "Premium",
+    "coverageType": "Comprehensive",
+    "annualLimit": 15000,
+    "deductible": 250,
+    "coInsurance": 20,
+    "monthlyPremium": 89.99,
+    "startDate": "2025-01-01",
+    "renewalDate": "2026-01-01"
+  },
+  "coverage": {
+    "accidents": true,
+    "illnesses": true,
+    "wellness": true,
+    "dental": true,
+    "hereditary": true,
+    "chronic": true,
+    "prescriptions": true,
+    "emergencyCare": true,
+    "specialistCare": true,
+    "surgery": true,
+    "hospitalization": true,
+    "diagnostics": true
+  },
+  "exclusions": [
+    "Pre-existing conditions",
+    "Cosmetic procedures",
+    "Breeding costs",
+    "Elective procedures"
+  ],
+  "riskFactors": {
+    "age": 4,
+    "breedRisk": "Medium",
+    "location": "Urban",
+    "priorClaims": 2,
+    "healthScore": 85
+  },
+  "blockchain": {
+    "policyHash": "0x1234567890abcdef...",
+    "timestamp": "2025-01-01T00:00:00Z",
+    "network": "Ethereum",
+    "smartContract": "0xabcdef1234567890..."
+  }
+}</code></pre>
+                <div class="btn-center">
+                    <button class="btn btn-primary" onclick="validateDataFormat()">
+                        <span data-en="Validate Format" data-ko="형식 검증">Validate Format</span>
+                    </button>
+                </div>
+                <div id="data-result"></div>
+            </div>
+        </div>
+
+        <!-- Panel 1: Premium Calculator -->
+        <div class="panel" id="panel-1">
+            <div class="grid grid-2">
+                <div class="card">
+                    <h3 data-en="🔢 Premium Calculator" data-ko="🔢 보험료 계산기">🔢 Premium Calculator</h3>
+                    <div class="form-group">
+                        <label data-en="Pet Species:" data-ko="반려동물 종류:">Pet Species:</label>
+                        <select id="species">
+                            <option value="dog">Dog</option>
+                            <option value="cat">Cat</option>
+                            <option value="rabbit">Rabbit</option>
+                            <option value="bird">Bird</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Pet Age (years):" data-ko="나이 (년):">Pet Age (years):</label>
+                        <input type="number" id="age" value="3" min="0" max="25">
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Breed Risk Level:" data-ko="품종 위험도:">Breed Risk Level:</label>
+                        <select id="breedRisk">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Location:" data-ko="지역:">Location:</label>
+                        <select id="location">
+                            <option value="urban">Urban</option>
+                            <option value="suburban">Suburban</option>
+                            <option value="rural">Rural</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Coverage Tier:" data-ko="보장 등급:">Coverage Tier:</label>
+                        <select id="tier">
+                            <option value="basic">Basic</option>
+                            <option value="standard">Standard</option>
+                            <option value="premium">Premium</option>
+                        </select>
+                    </div>
+                    <div class="btn-center">
+                        <button class="btn btn-primary" onclick="calculatePremium()">
+                            <span data-en="Calculate Premium" data-ko="보험료 계산">Calculate Premium</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 data-en="💰 Premium Breakdown" data-ko="💰 보험료 내역">💰 Premium Breakdown</h3>
+                    <div id="premium-result">
+                        <p style="color: var(--text-muted); text-align: center; padding: 40px 0;">
+                            <span data-en="Enter pet details to calculate premium" data-ko="반려동물 정보를 입력하여 보험료 계산">Enter pet details to calculate premium</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-3" style="margin-top: 30px;">
+                <div class="plan-card" onclick="selectPlan('basic')">
+                    <div class="plan-name" data-en="Basic" data-ko="기본">Basic</div>
+                    <div class="plan-price">$39<span style="font-size: 1rem;">/mo</span></div>
+                    <ul class="plan-features">
+                        <li>✅ <span data-en="Accidents" data-ko="사고">Accidents</span></li>
+                        <li>✅ <span data-en="Basic Illnesses" data-ko="기본 질병">Basic Illnesses</span></li>
+                        <li>❌ <span data-en="Wellness" data-ko="웰니스">Wellness</span></li>
+                        <li>❌ <span data-en="Dental" data-ko="치과">Dental</span></li>
+                        <li data-en="$5,000 Annual Limit" data-ko="연간 한도 $5,000">$5,000 Annual Limit</li>
+                    </ul>
+                </div>
+                <div class="plan-card" onclick="selectPlan('standard')">
+                    <div class="plan-name" data-en="Standard" data-ko="표준">Standard</div>
+                    <div class="plan-price">$59<span style="font-size: 1rem;">/mo</span></div>
+                    <ul class="plan-features">
+                        <li>✅ <span data-en="Accidents" data-ko="사고">Accidents</span></li>
+                        <li>✅ <span data-en="Illnesses" data-ko="질병">Illnesses</span></li>
+                        <li>✅ <span data-en="Wellness" data-ko="웰니스">Wellness</span></li>
+                        <li>✅ <span data-en="Dental" data-ko="치과">Dental</span></li>
+                        <li data-en="$10,000 Annual Limit" data-ko="연간 한도 $10,000">$10,000 Annual Limit</li>
+                    </ul>
+                </div>
+                <div class="plan-card" onclick="selectPlan('premium')">
+                    <div class="plan-name" data-en="Premium" data-ko="프리미엄">Premium</div>
+                    <div class="plan-price">$89<span style="font-size: 1rem;">/mo</span></div>
+                    <ul class="plan-features">
+                        <li>✅ <span data-en="All Coverage" data-ko="전체 보장">All Coverage</span></li>
+                        <li>✅ <span data-en="Hereditary" data-ko="유전 질환">Hereditary</span></li>
+                        <li>✅ <span data-en="Chronic Conditions" data-ko="만성 질환">Chronic Conditions</span></li>
+                        <li>✅ <span data-en="Specialist Care" data-ko="전문 진료">Specialist Care</span></li>
+                        <li data-en="$15,000 Annual Limit" data-ko="연간 한도 $15,000">$15,000 Annual Limit</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 2: Claims Processing -->
+        <div class="panel" id="panel-2">
+            <div class="grid grid-2">
+                <div class="card">
+                    <h3 data-en="📋 Submit Claim" data-ko="📋 청구 제출">📋 Submit Claim</h3>
+                    <div class="form-group">
+                        <label data-en="Policy ID:" data-ko="보험증권 번호:">Policy ID:</label>
+                        <input type="text" id="claimPolicyId" value="PET-INS-2025-001234">
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Claim Type:" data-ko="청구 유형:">Claim Type:</label>
+                        <select id="claimType">
+                            <option value="accident">Accident</option>
+                            <option value="illness">Illness</option>
+                            <option value="wellness">Wellness</option>
+                            <option value="dental">Dental</option>
+                            <option value="surgery">Surgery</option>
+                            <option value="emergency">Emergency</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Treatment Date:" data-ko="치료 날짜:">Treatment Date:</label>
+                        <input type="date" id="treatmentDate" value="2025-12-20">
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Claim Amount ($):" data-ko="청구 금액 ($):">Claim Amount ($):</label>
+                        <input type="number" id="claimAmount" value="850" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Veterinary Clinic:" data-ko="동물병원:">Veterinary Clinic:</label>
+                        <input type="text" id="clinic" value="City Pet Hospital">
+                    </div>
+                    <div class="form-group">
+                        <label data-en="Description:" data-ko="설명:">Description:</label>
+                        <textarea id="description" rows="3">Routine checkup and vaccination</textarea>
+                    </div>
+                    <div class="btn-center">
+                        <button class="btn btn-primary" onclick="processClaim()">
+                            <span data-en="Process Claim" data-ko="청구 처리">Process Claim</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 data-en="🔍 Claim Result" data-ko="🔍 청구 결과">🔍 Claim Result</h3>
+                    <div id="claim-result">
+                        <p style="color: var(--text-muted); text-align: center; padding: 40px 0;">
+                            <span data-en="Submit a claim to see processing results" data-ko="청구를 제출하여 처리 결과 확인">Submit a claim to see processing results</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 30px;">
+                <h3 data-en="📊 Recent Claims" data-ko="📊 최근 청구">📊 Recent Claims</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border);">
+                            <th style="padding: 12px; text-align: left; color: var(--primary);" data-en="Claim ID" data-ko="청구 ID">Claim ID</th>
+                            <th style="padding: 12px; text-align: left; color: var(--primary);" data-en="Type" data-ko="유형">Type</th>
+                            <th style="padding: 12px; text-align: left; color: var(--primary);" data-en="Amount" data-ko="금액">Amount</th>
+                            <th style="padding: 12px; text-align: left; color: var(--primary);" data-en="Date" data-ko="날짜">Date</th>
+                            <th style="padding: 12px; text-align: left; color: var(--primary);" data-en="Status" data-ko="상태">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <td style="padding: 12px;">CLM-2025-001</td>
+                            <td style="padding: 12px;">Wellness</td>
+                            <td style="padding: 12px;">$180</td>
+                            <td style="padding: 12px;">2025-12-15</td>
+                            <td style="padding: 12px;"><span class="claim-status status-approved" data-en="Approved" data-ko="승인됨">Approved</span></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <td style="padding: 12px;">CLM-2025-002</td>
+                            <td style="padding: 12px;">Emergency</td>
+                            <td style="padding: 12px;">$1,250</td>
+                            <td style="padding: 12px;">2025-12-18</td>
+                            <td style="padding: 12px;"><span class="claim-status status-processing" data-en="Processing" data-ko="처리 중">Processing</span></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <td style="padding: 12px;">CLM-2025-003</td>
+                            <td style="padding: 12px;">Dental</td>
+                            <td style="padding: 12px;">$420</td>
+                            <td style="padding: 12px;">2025-12-20</td>
+                            <td style="padding: 12px;"><span class="claim-status status-pending" data-en="Pending" data-ko="대기 중">Pending</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Panel 3: Health Integration -->
+        <div class="panel" id="panel-3">
+            <div class="card">
+                <h3 data-en="🔗 Health Record Integration" data-ko="🔗 건강 기록 통합">🔗 Health Record Integration</h3>
+                <p style="margin-bottom: 20px; color: var(--text-muted);">
+                    <span data-en="Connect pet health passport data with insurance policy for automated claims and premium adjustments." data-ko="반려동물 건강 여권 데이터를 보험 정책과 연결하여 자동 청구 및 보험료 조정.">Connect pet health passport data with insurance policy for automated claims and premium adjustments.</span>
+                </p>
+                <pre><code>{
+  "integration": {
+    "healthPassportId": "WIA-PET-HEALTH-001234",
+    "insurancePolicyId": "PET-INS-2025-001234",
+    "syncEnabled": true,
+    "lastSync": "2025-12-25T10:30:00Z"
+  },
+  "healthData": {
+    "vaccinations": [
+      {
+        "type": "Rabies",
+        "date": "2024-05-15",
+        "nextDue": "2025-05-15",
+        "verified": true
+      },
+      {
+        "type": "DHPP",
+        "date": "2024-06-01",
+        "nextDue": "2025-06-01",
+        "verified": true
+      }
+    ],
+    "medicalHistory": [
+      {
+        "date": "2024-08-20",
+        "condition": "Ear Infection",
+        "treatment": "Antibiotics",
+        "cost": 180,
+        "claimSubmitted": true,
+        "claimStatus": "approved"
+      }
+    ],
+    "preventiveCare": {
+      "annualCheckup": "2024-12-01",
+      "dentalCleaning": "2024-09-15",
+      "heartwormTest": "2024-07-10"
+    }
+  },
+  "premiumAdjustments": {
+    "baseRate": 89.99,
+    "healthScoreDiscount": -5.00,
+    "preventiveCareDiscount": -3.00,
+    "adjustedRate": 81.99
+  },
+  "claimAutomation": {
+    "autoSubmit": true,
+    "preApprovalThreshold": 500,
+    "documentAutoFetch": true
+  }
+}</code></pre>
+                <div class="btn-center">
+                    <button class="btn btn-primary" onclick="syncHealthData()">
+                        <span data-en="Sync Health Data" data-ko="건강 데이터 동기화">Sync Health Data</span>
+                    </button>
+                </div>
+                <div id="health-result"></div>
+            </div>
+
+            <div class="grid grid-2" style="margin-top: 30px;">
+                <div class="card">
+                    <h3 data-en="📊 Health Score Impact" data-ko="📊 건강 점수 영향">📊 Health Score Impact</h3>
+                    <div class="result-item">
+                        <span class="result-label" data-en="Current Health Score:" data-ko="현재 건강 점수:">Current Health Score:</span>
+                        <span class="result-value" style="color: var(--success);">85/100</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label" data-en="Premium Discount:" data-ko="보험료 할인:">Premium Discount:</span>
+                        <span class="result-value" style="color: var(--success);">-$8.00/mo</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label" data-en="Claims Processed:" data-ko="처리된 청구:">Claims Processed:</span>
+                        <span class="result-value">12</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label" data-en="Auto-Approved:" data-ko="자동 승인:">Auto-Approved:</span>
+                        <span class="result-value">9 (75%)</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 data-en="🎯 Coverage Recommendations" data-ko="🎯 보장 권장 사항">🎯 Coverage Recommendations</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="padding: 10px; border-bottom: 1px solid var(--border);">
+                            ✅ <span data-en="Annual checkup completed" data-ko="연간 검진 완료">Annual checkup completed</span>
+                        </li>
+                        <li style="padding: 10px; border-bottom: 1px solid var(--border);">
+                            ⚠️ <span data-en="Dental cleaning due in 2 months" data-ko="2개월 후 치과 세척 필요">Dental cleaning due in 2 months</span>
+                        </li>
+                        <li style="padding: 10px; border-bottom: 1px solid var(--border);">
+                            ✅ <span data-en="All vaccinations current" data-ko="모든 예방 접종 최신">All vaccinations current</span>
+                        </li>
+                        <li style="padding: 10px;">
+                            💡 <span data-en="Consider wellness plan upgrade" data-ko="웰니스 플랜 업그레이드 고려">Consider wellness plan upgrade</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 4: QR & VC -->
+        <div class="panel" id="panel-4">
+            <div class="grid grid-2">
+                <div class="card">
+                    <h3 data-en="📱 Generate QR Code" data-ko="📱 QR 코드 생성">📱 Generate QR Code</h3>
+                    <p style="margin-bottom: 20px; color: var(--text-muted);">
+                        <span data-en="Generate QR code for quick policy verification at veterinary clinics." data-ko="동물병원에서 빠른 보험 확인을 위한 QR 코드 생성.">Generate QR code for quick policy verification at veterinary clinics.</span>
+                    </p>
+                    <div class="form-group">
+                        <label data-en="Policy ID:" data-ko="보험증권 번호:">Policy ID:</label>
+                        <input type="text" id="qrPolicyId" value="PET-INS-2025-001234">
+                    </div>
+                    <div class="btn-center">
+                        <button class="btn btn-primary" onclick="generateQR()">
+                            <span data-en="Generate QR Code" data-ko="QR 코드 생성">Generate QR Code</span>
+                        </button>
+                    </div>
+                    <div id="qr-display" style="text-align: center; margin-top: 20px;">
+                        <div style="width: 200px; height: 200px; background: white; margin: 0 auto; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #333;">
+                            QR Code
+                        </div>
+                        <p style="margin-top: 15px; color: var(--text-muted); font-size: 0.9rem;">
+                            <span data-en="Scan at any WIA-certified veterinary clinic" data-ko="WIA 인증 동물병원에서 스캔">Scan at any WIA-certified veterinary clinic</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 data-en="🎫 Verifiable Credential" data-ko="🎫 검증 가능한 자격 증명">🎫 Verifiable Credential</h3>
+                    <p style="margin-bottom: 20px; color: var(--text-muted);">
+                        <span data-en="W3C Verifiable Credential for insurance policy verification." data-ko="보험증권 검증을 위한 W3C 검증 가능한 자격 증명.">W3C Verifiable Credential for insurance policy verification.</span>
+                    </p>
+                    <pre><code>{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://wiastandards.com/credentials/pet-insurance/v1"
+  ],
+  "type": ["VerifiableCredential", "PetInsurancePolicy"],
+  "issuer": {
+    "id": "did:wia:insurance:premium-pet-insurance",
+    "name": "Premium Pet Insurance Co."
+  },
+  "issuanceDate": "2025-01-01T00:00:00Z",
+  "expirationDate": "2026-01-01T00:00:00Z",
+  "credentialSubject": {
+    "id": "did:wia:pet:001234",
+    "policyId": "PET-INS-2025-001234",
+    "owner": "John Smith",
+    "pet": {
+      "name": "Buddy",
+      "species": "Dog",
+      "microchipId": "985112345678901"
+    },
+    "coverage": {
+      "tier": "Premium",
+      "annualLimit": 15000,
+      "deductible": 250
+    },
+    "status": "Active"
+  },
+  "proof": {
+    "type": "Ed25519Signature2020",
+    "created": "2025-01-01T00:00:00Z",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:wia:insurance#key-1",
+    "proofValue": "z3FXQzM2NjE4NTA..."
+  }
+}</code></pre>
+                    <div class="btn-center">
+                        <button class="btn btn-primary" onclick="generateVC()">
+                            <span data-en="Generate Credential" data-ko="자격 증명 생성">Generate Credential</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 30px;">
+                <h3 data-en="🔐 Blockchain Verification" data-ko="🔐 블록체인 검증">🔐 Blockchain Verification</h3>
+                <div class="result-item">
+                    <span class="result-label" data-en="Policy Hash:" data-ko="보험증권 해시:">Policy Hash:</span>
+                    <span class="result-value" style="font-family: monospace; font-size: 0.85rem;">0x1234567890abcdef...</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label" data-en="Blockchain Network:" data-ko="블록체인 네트워크:">Blockchain Network:</span>
+                    <span class="result-value">Ethereum Mainnet</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label" data-en="Smart Contract:" data-ko="스마트 계약:">Smart Contract:</span>
+                    <span class="result-value" style="font-family: monospace; font-size: 0.85rem;">0xabcdef1234567890...</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label" data-en="Verification Status:" data-ko="검증 상태:">Verification Status:</span>
+                    <span class="result-value" style="color: var(--success);">✅ <span data-en="Verified" data-ko="검증됨">Verified</span></span>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p class="philosophy" data-en="弘益人間 · Benefit All Humanity" data-ko="弘益人間 · 널리 인간을 이롭게 하라">弘益人間 · Benefit All Humanity</p>
+            <p>WIA - World Certification Industry Association</p>
+            <p>© 2025 MIT License</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentLang = localStorage.getItem('wiaLang') || 'en';
+
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('wiaLang', lang);
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute('data-' + lang);
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+        }
+
+        function showPanel(index) {
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.panel').forEach((panel, i) => {
+                panel.classList.toggle('active', i === index);
+            });
+        }
+
+        function validateDataFormat() {
+            const result = document.getElementById('data-result');
+            result.innerHTML = `
+                <div class="result-box">
+                    <h4>✅ ${currentLang === 'en' ? 'Validation Successful' : '검증 성공'}</h4>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Standard Version:' : '표준 버전:'}</span>
+                        <span class="result-value">WIA-PET-010-v1.0.0</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Schema Validation:' : '스키마 검증:'}</span>
+                        <span class="result-value" style="color: var(--success);">Passed</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Required Fields:' : '필수 필드:'}</span>
+                        <span class="result-value">18/18</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Blockchain Verified:' : '블록체인 검증:'}</span>
+                        <span class="result-value" style="color: var(--success);">Yes</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function calculatePremium() {
+            const species = document.getElementById('species').value;
+            const age = parseInt(document.getElementById('age').value);
+            const breedRisk = document.getElementById('breedRisk').value;
+            const location = document.getElementById('location').value;
+            const tier = document.getElementById('tier').value;
+
+            let basePremium = 50;
+
+            // Species factor
+            const speciesFactor = { dog: 1.2, cat: 1.0, rabbit: 0.8, bird: 0.7 };
+            basePremium *= speciesFactor[species] || 1.0;
+
+            // Age factor
+            if (age < 2) basePremium *= 0.9;
+            else if (age < 5) basePremium *= 1.0;
+            else if (age < 8) basePremium *= 1.3;
+            else basePremium *= 1.6;
+
+            // Breed risk factor
+            const riskFactor = { low: 0.9, medium: 1.0, high: 1.2 };
+            basePremium *= riskFactor[breedRisk] || 1.0;
+
+            // Location factor
+            const locationFactor = { urban: 1.1, suburban: 1.0, rural: 0.9 };
+            basePremium *= locationFactor[location] || 1.0;
+
+            // Tier factor
+            const tierFactor = { basic: 0.7, standard: 1.0, premium: 1.5 };
+            basePremium *= tierFactor[tier] || 1.0;
+
+            const monthlyPremium = basePremium.toFixed(2);
+            const annualPremium = (basePremium * 12).toFixed(2);
+
+            const result = document.getElementById('premium-result');
+            result.innerHTML = `
+                <div class="result-item">
+                    <span class="result-label">${currentLang === 'en' ? 'Monthly Premium:' : '월 보험료:'}</span>
+                    <span class="result-value" style="color: var(--primary); font-size: 1.8rem;">$${monthlyPremium}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">${currentLang === 'en' ? 'Annual Premium:' : '연간 보험료:'}</span>
+                    <span class="result-value">$${annualPremium}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">${currentLang === 'en' ? 'Species Factor:' : '종 요인:'}</span>
+                    <span class="result-value">${species.charAt(0).toUpperCase() + species.slice(1)}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">${currentLang === 'en' ? 'Age Factor:' : '나이 요인:'}</span>
+                    <span class="result-value">${age} years</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">${currentLang === 'en' ? 'Risk Level:' : '위험 수준:'}</span>
+                    <span class="result-value">${breedRisk.charAt(0).toUpperCase() + breedRisk.slice(1)}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">${currentLang === 'en' ? 'Coverage Tier:' : '보장 등급:'}</span>
+                    <span class="result-value">${tier.charAt(0).toUpperCase() + tier.slice(1)}</span>
+                </div>
+            `;
+        }
+
+        function selectPlan(plan) {
+            document.querySelectorAll('.plan-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.target.closest('.plan-card').classList.add('selected');
+        }
+
+        function processClaim() {
+            const amount = parseFloat(document.getElementById('claimAmount').value);
+            const claimType = document.getElementById('claimType').value;
+            const deductible = 250;
+            const coInsurance = 0.2;
+
+            const afterDeductible = Math.max(0, amount - deductible);
+            const insurancePays = afterDeductible * (1 - coInsurance);
+            const youPay = amount - insurancePays;
+
+            const claimId = 'CLM-2025-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+
+            const result = document.getElementById('claim-result');
+            result.innerHTML = `
+                <div class="result-box">
+                    <h4>✅ ${currentLang === 'en' ? 'Claim Processed' : '청구 처리됨'}</h4>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Claim ID:' : '청구 ID:'}</span>
+                        <span class="result-value">${claimId}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Total Amount:' : '총 금액:'}</span>
+                        <span class="result-value">$${amount.toFixed(2)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Deductible:' : '본인 부담금:'}</span>
+                        <span class="result-value">-$${deductible.toFixed(2)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Insurance Pays (80%):' : '보험사 부담 (80%):'}</span>
+                        <span class="result-value" style="color: var(--success);">$${insurancePays.toFixed(2)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'You Pay:' : '본인 부담:'}</span>
+                        <span class="result-value" style="color: var(--warning);">$${youPay.toFixed(2)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Status:' : '상태:'}</span>
+                        <span class="result-value"><span class="claim-status status-approved">${currentLang === 'en' ? 'Approved' : '승인됨'}</span></span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function syncHealthData() {
+            const result = document.getElementById('health-result');
+            result.innerHTML = `
+                <div class="result-box">
+                    <h4>✅ ${currentLang === 'en' ? 'Health Data Synchronized' : '건강 데이터 동기화됨'}</h4>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Records Synced:' : '동기화된 기록:'}</span>
+                        <span class="result-value">24</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Vaccinations:' : '예방 접종:'}</span>
+                        <span class="result-value" style="color: var(--success);">Up to date</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Health Score:' : '건강 점수:'}</span>
+                        <span class="result-value" style="color: var(--success);">85/100</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">${currentLang === 'en' ? 'Premium Adjustment:' : '보험료 조정:'}</span>
+                        <span class="result-value" style="color: var(--success);">-$8.00/mo</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateQR() {
+            alert(currentLang === 'en' ? 'QR Code generated successfully!' : 'QR 코드가 성공적으로 생성되었습니다!');
+        }
+
+        function generateVC() {
+            alert(currentLang === 'en' ? 'Verifiable Credential generated!' : '검증 가능한 자격 증명이 생성되었습니다!');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => setLang(currentLang));
+    </script>
+</body>
+</html>

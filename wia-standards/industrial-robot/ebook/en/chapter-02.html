@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Robot Anatomy and Kinematics - WIA-ROB-003</title>
+</head>
+<body>
+
+<p><a href="index.html">🏭 WIA-ROB-003 Industrial Robot Standard Ebook</a> | Chapter 2 of 8</p>
+
+<hr>
+
+<h1>⚙️ Chapter 2: Robot Anatomy and Kinematics</h1>
+
+<blockquote>
+<p><strong>"The beauty of a robot lies not in its appearance, but in the mathematics that govern its motion."</strong></p>
+<p>Understanding robot kinematics is essential for programming, troubleshooting, and optimizing industrial robot systems.</p>
+</blockquote>
+
+<hr>
+
+<h2>2.1 Mechanical Structure</h2>
+
+<p>An industrial robot's mechanical structure consists of interconnected rigid bodies (links) connected by joints that allow relative motion. This fundamental architecture enables the robot to position its end-effector (tool) anywhere within its workspace.</p>
+
+<h3>2.1.1 Links and Joints</h3>
+
+<p><strong>Links</strong> are the rigid structural members of a robot. In a typical 6-axis articulated robot:</p>
+
+<ul>
+    <li><strong>Link 0 (Base):</strong> Fixed to the ground or mounting surface</li>
+    <li><strong>Link 1 (Lower Arm):</strong> Rotates about the base (J1)</li>
+    <li><strong>Link 2 (Upper Arm):</strong> Connected to lower arm via shoulder joint (J2)</li>
+    <li><strong>Link 3 (Forearm):</strong> Connected to upper arm via elbow joint (J3)</li>
+    <li><strong>Links 4-6 (Wrist Assembly):</strong> Three intersecting axes providing tool orientation</li>
+</ul>
+
+<p><strong>Joints</strong> provide the degrees of freedom. Industrial robots primarily use two types:</p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Joint Type</th>
+            <th>Symbol</th>
+            <th>Motion</th>
+            <th>Typical Range</th>
+            <th>Applications</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Revolute (R)</td>
+            <td>θ</td>
+            <td>Rotational</td>
+            <td>-180° to +180° (typically)</td>
+            <td>Most industrial robots</td>
+        </tr>
+        <tr>
+            <td>Prismatic (P)</td>
+            <td>d</td>
+            <td>Linear/Translational</td>
+            <td>0 to 2000mm (varies)</td>
+            <td>Cartesian robots, SCARA Z-axis</td>
+        </tr>
+        <tr>
+            <td>Cylindrical (C)</td>
+            <td>r, θ, z</td>
+            <td>Combination</td>
+            <td>Varies</td>
+            <td>Specialized applications</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>2.1.2 Standard Robot Configurations</h3>
+
+<p><strong>Articulated (RRR...R) - All Revolute Joints</strong></p>
+
+<p>The most common configuration, typically with 6 revolute joints (6R):</p>
+
+<pre>
+Configuration: 6R (RRRRRR)
+Joints: J1 (base rotation), J2 (shoulder), J3 (elbow),
+        J4 (wrist rotation), J5 (wrist bend), J6 (flange rotation)
+
+Workspace: Near-spherical
+Singularities: 3 (shoulder, elbow, wrist)
+Payload Capacity: Highest (structural rigidity)
+</pre>
+
+<p><strong>SCARA (RRPR) Configuration</strong></p>
+
+<pre>
+Configuration: RRPR
+Joints: J1 (base rotation), J2 (elbow rotation),
+        J3 (vertical prismatic), J4 (wrist rotation)
+
+Workspace: Cylindrical
+Speed: Highest for pick-and-place
+Rigidity: Excellent in vertical direction
+</pre>
+
+<p><strong>Delta (Parallel Mechanism)</strong></p>
+
+<p>Delta robots use parallel kinematics where multiple kinematic chains connect the base to the end-effector. This provides high speed but limited workspace.</p>
+
+<pre>
+Configuration: 3 parallel RRR chains
+Advantages:
+  - Very high speed (200+ picks/min)
+  - Low moving mass
+  - High stiffness
+Limitations:
+  - Limited workspace (inverted cone)
+  - Complex inverse kinematics
+</pre>
+
+<h3>2.1.3 Coordinate Systems</h3>
+
+<p>Multiple coordinate systems are used in robot control:</p>
+
+<ol>
+    <li><strong>World Coordinate System (WCS):</strong> Fixed reference frame, typically aligned with the factory floor</li>
+    <li><strong>Robot Base Coordinate System (BCS):</strong> Origin at robot base, Z-axis vertical</li>
+    <li><strong>Tool Center Point (TCP):</strong> Origin at the functional point of the end-effector</li>
+    <li><strong>Workpiece Coordinate System:</strong> Defined relative to the part being manipulated</li>
+    <li><strong>Joint Space:</strong> Angles/positions of each joint (θ₁, θ₂, ..., θₙ)</li>
+</ol>
+
+<hr>
+
+<h2>2.2 Degrees of Freedom (DOF)</h2>
+
+<p>A robot's degrees of freedom determine its ability to position and orient its end-effector in 3D space.</p>
+
+<h3>2.2.1 Required DOF for General Tasks</h3>
+
+<p>In 3D space, an object has 6 degrees of freedom:</p>
+
+<ul>
+    <li><strong>3 Translational DOF:</strong> Position (X, Y, Z)</li>
+    <li><strong>3 Rotational DOF:</strong> Orientation (Roll, Pitch, Yaw) or (Rx, Ry, Rz)</li>
+</ul>
+
+<p><strong>Minimum DOF Requirements:</strong></p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Task Type</th>
+            <th>Required DOF</th>
+            <th>Example Robot</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Point-to-point movement (vertical approach)</td>
+            <td>3 (XYZ)</td>
+            <td>Simple Cartesian</td>
+        </tr>
+        <tr>
+            <td>Planar manipulation</td>
+            <td>3 (X, Y, Rz)</td>
+            <td>3-axis SCARA</td>
+        </tr>
+        <tr>
+            <td>Full 3D positioning with simple orientation</td>
+            <td>4-5</td>
+            <td>4-axis SCARA or 5-axis articulated</td>
+        </tr>
+        <tr>
+            <td>Arbitrary position and orientation</td>
+            <td>6</td>
+            <td>6-axis articulated robot</td>
+        </tr>
+        <tr>
+            <td>Redundant (obstacle avoidance)</td>
+            <td>7+</td>
+            <td>7-axis collaborative robots</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>2.2.2 Redundancy and Singularities</h3>
+
+<p><strong>Kinematic Redundancy (DOF > 6):</strong></p>
+
+<p>Robots with more than 6 DOF are kinematically redundant, offering advantages:</p>
+
+<ul>
+    <li>Multiple joint configurations can achieve the same end-effector pose</li>
+    <li>Ability to avoid obstacles while maintaining end-effector position</li>
+    <li>Improved manipulability near singularities</li>
+    <li>Optimization of criteria like energy efficiency or joint limits</li>
+</ul>
+
+<p><strong>Example:</strong> KUKA LBR iiwa (7-axis cobot) can reach around obstacles that would block a 6-axis robot.</p>
+
+<p><strong>Singularities:</strong></p>
+
+<p>Singular configurations occur when a robot loses one or more degrees of freedom. At singularities:</p>
+
+<ul>
+    <li>Infinite joint velocities may be required for certain end-effector velocities</li>
+    <li>Control becomes unstable</li>
+    <li>The robot cannot move in certain directions</li>
+</ul>
+
+<p><strong>Common Singularities in 6-Axis Robots:</strong></p>
+
+<ol>
+    <li><strong>Shoulder Singularity:</strong> Occurs when the wrist center lies on the J1 axis</li>
+    <li><strong>Elbow Singularity:</strong> Occurs when the arm is fully extended or retracted</li>
+    <li><strong>Wrist Singularity:</strong> Occurs when J4 and J6 axes align</li>
+</ol>
+
+<p><strong>Avoiding Singularities:</strong></p>
+<ul>
+    <li>Path planning algorithms that detect and avoid singular regions</li>
+    <li>Joint limit monitoring to prevent approaching singular configurations</li>
+    <li>Redundant DOF allowing alternative configurations</li>
+    <li>Damped least-squares (DLS) methods in inverse kinematics</li>
+</ul>
+
+<hr>
+
+<h2>2.3 Forward Kinematics</h2>
+
+<p>Forward kinematics (FK) computes the position and orientation of the end-effector given the joint angles/positions. This is the "easy" problem with a unique solution.</p>
+
+<h3>2.3.1 Denavit-Hartenberg (DH) Parameters</h3>
+
+<p>The DH convention provides a systematic way to describe robot kinematics using 4 parameters per link:</p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Parameter</th>
+            <th>Symbol</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Link Length</td>
+            <td>aᵢ</td>
+            <td>Distance between Zᵢ and Zᵢ₊₁ along Xᵢ</td>
+        </tr>
+        <tr>
+            <td>Link Twist</td>
+            <td>αᵢ</td>
+            <td>Angle between Zᵢ and Zᵢ₊₁ about Xᵢ</td>
+        </tr>
+        <tr>
+            <td>Link Offset</td>
+            <td>dᵢ</td>
+            <td>Distance between Xᵢ₋₁ and Xᵢ along Zᵢ</td>
+        </tr>
+        <tr>
+            <td>Joint Angle</td>
+            <td>θᵢ</td>
+            <td>Angle between Xᵢ₋₁ and Xᵢ about Zᵢ</td>
+        </tr>
+    </tbody>
+</table>
+
+<p><strong>Transformation Matrix:</strong></p>
+
+<p>The transformation from frame i-1 to frame i is given by:</p>
+
+<pre>
+     ⎡ cos(θᵢ)  -sin(θᵢ)cos(αᵢ)   sin(θᵢ)sin(αᵢ)  aᵢcos(θᵢ) ⎤
+Tᵢ = ⎢ sin(θᵢ)   cos(θᵢ)cos(αᵢ)  -cos(θᵢ)sin(αᵢ)  aᵢsin(θᵢ) ⎥
+     ⎢    0          sin(αᵢ)           cos(αᵢ)          dᵢ     ⎥
+     ⎣    0             0                  0             1      ⎦
+</pre>
+
+<p>The overall transformation from base to end-effector is:</p>
+
+<pre>
+T₀ⁿ = T₁ × T₂ × T₃ × ... × Tₙ
+</pre>
+
+<h3>2.3.2 Example: 6-Axis Articulated Robot</h3>
+
+<p><strong>Typical DH Parameters for ABB IRB 6700 Style Robot:</strong></p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Joint i</th>
+            <th>θᵢ (variable)</th>
+            <th>dᵢ (mm)</th>
+            <th>aᵢ (mm)</th>
+            <th>αᵢ (degrees)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td>θ₁*</td>
+            <td>780</td>
+            <td>320</td>
+            <td>-90°</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>θ₂*</td>
+            <td>0</td>
+            <td>1280</td>
+            <td>0°</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>θ₃*</td>
+            <td>0</td>
+            <td>200</td>
+            <td>-90°</td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>θ₄*</td>
+            <td>1142</td>
+            <td>0</td>
+            <td>90°</td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td>θ₅*</td>
+            <td>0</td>
+            <td>0</td>
+            <td>-90°</td>
+        </tr>
+        <tr>
+            <td>6</td>
+            <td>θ₆*</td>
+            <td>200</td>
+            <td>0</td>
+            <td>0°</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>*θᵢ are the joint variables that change during robot motion</p>
+
+<p><strong>WIA-ROB-003 Standard Format for FK:</strong></p>
+
+<pre>
+{
+  "format": "WIA-ROB-003-FK-v1.0",
+  "timestamp": "2025-01-15T10:30:00Z",
+  "robot_id": "IRB6700-155-285",
+  "joint_positions": {
+    "J1": 45.0,    // degrees
+    "J2": -30.0,
+    "J3": 60.0,
+    "J4": 0.0,
+    "J5": 90.0,
+    "J6": 0.0
+  },
+  "tcp_position": {
+    "x": 1850.42,  // mm
+    "y": 520.18,
+    "z": 1420.65,
+    "rx": 0.0,     // degrees (tool orientation)
+    "ry": 60.0,
+    "rz": 45.0
+  },
+  "transformation_matrix": [
+    [0.5, -0.866, 0.0, 1850.42],
+    [0.75, 0.433, -0.5, 520.18],
+    [0.433, 0.25, 0.866, 1420.65],
+    [0.0, 0.0, 0.0, 1.0]
+  ]
+}
+</pre>
+
+<hr>
+
+<h2>2.4 Inverse Kinematics</h2>
+
+<p>Inverse kinematics (IK) computes the joint angles/positions required to achieve a desired end-effector pose. This is the "hard" problem that may have multiple solutions, no solution, or infinite solutions.</p>
+
+<h3>2.4.1 Analytical vs. Numerical Solutions</h3>
+
+<p><strong>Analytical (Closed-Form) Solutions:</strong></p>
+
+<p>For robots with special geometric properties (e.g., 6R robots with spherical wrist), analytical solutions exist:</p>
+
+<p><strong>Advantages:</strong></p>
+<ul>
+    <li>Fast computation (microseconds)</li>
+    <li>All solutions can be found</li>
+    <li>No convergence issues</li>
+    <li>Deterministic behavior</li>
+</ul>
+
+<p><strong>Disadvantages:</strong></p>
+<ul>
+    <li>Only available for specific robot geometries</li>
+    <li>Complex mathematical derivation</li>
+    <li>Difficult to extend to redundant robots</li>
+</ul>
+
+<p><strong>Numerical (Iterative) Solutions:</strong></p>
+
+<p>Methods like Jacobian-based techniques or optimization:</p>
+
+<p><strong>Advantages:</strong></p>
+<ul>
+    <li>Applicable to any robot geometry</li>
+    <li>Can handle redundancy</li>
+    <li>Can optimize additional criteria</li>
+</ul>
+
+<p><strong>Disadvantages:</strong></p>
+<ul>
+    <li>Slower computation (milliseconds)</li>
+    <li>May not converge</li>
+    <li>May get stuck in local minima</li>
+    <li>Only finds one solution at a time</li>
+</ul>
+
+<h3>2.4.2 Multiple Solutions</h3>
+
+<p>A 6-axis robot typically has up to 8 possible IK solutions for a given end-effector pose. These correspond to different robot configurations:</p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Solution</th>
+            <th>Shoulder</th>
+            <th>Elbow</th>
+            <th>Wrist</th>
+            <th>Typical Use Case</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td>Left</td>
+            <td>Up</td>
+            <td>Non-flip</td>
+            <td>Default configuration</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>Left</td>
+            <td>Up</td>
+            <td>Flip</td>
+            <td>Overhead work</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>Left</td>
+            <td>Down</td>
+            <td>Non-flip</td>
+            <td>Reaching under obstacles</td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>Left</td>
+            <td>Down</td>
+            <td>Flip</td>
+            <td>Complex paths</td>
+        </tr>
+        <tr>
+            <td>5-8</td>
+            <td>Right</td>
+            <td>Up/Down</td>
+            <td>Flip/Non-flip</td>
+            <td>Alternative approaches</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>2.4.3 Solution Selection Criteria</h3>
+
+<p>When multiple IK solutions exist, the controller must select one based on criteria such as:</p>
+
+<ol>
+    <li><strong>Minimum Joint Motion:</strong> Solution closest to current position (default for point-to-point moves)</li>
+    <li><strong>Obstacle Avoidance:</strong> Configuration that avoids collisions</li>
+    <li><strong>Joint Limit Margins:</strong> Solution farthest from joint limits</li>
+    <li><strong>Singularity Avoidance:</strong> Configuration with best manipulability</li>
+    <li><strong>Energy Efficiency:</strong> Minimize power consumption</li>
+    <li><strong>User Preference:</strong> Specified configuration (elbow-up, wrist-flip, etc.)</li>
+</ol>
+
+<p><strong>WIA-ROB-003 IK Request Format:</strong></p>
+
+<pre>
+{
+  "format": "WIA-ROB-003-IK-v1.0",
+  "target_pose": {
+    "x": 2000.0,
+    "y": 500.0,
+    "z": 1200.0,
+    "rx": 0.0,
+    "ry": 90.0,
+    "rz": 45.0
+  },
+  "constraints": {
+    "preferred_solution": "elbow_up",
+    "avoid_singularities": true,
+    "min_joint_margin": 5.0,  // degrees
+    "max_joint_velocity": 100.0  // deg/s
+  },
+  "current_joint_positions": [30.0, -45.0, 60.0, 0.0, 45.0, 0.0]
+}
+</pre>
+
+<p><strong>IK Response:</strong></p>
+
+<pre>
+{
+  "success": true,
+  "solutions": [
+    {
+      "solution_id": 1,
+      "joint_positions": [45.2, -31.8, 62.4, 5.2, 88.6, 45.0],
+      "configuration": "left-elbow_up-nonflip",
+      "manipulability": 0.87,
+      "distance_from_current": 18.3,  // degrees (RMS)
+      "singularity_proximity": 0.15,
+      "joint_margin_min": 12.5  // degrees
+    },
+    {
+      "solution_id": 2,
+      "joint_positions": [45.2, -31.8, 62.4, 185.2, -88.6, -135.0],
+      "configuration": "left-elbow_up-flip",
+      "manipulability": 0.82,
+      "distance_from_current": 142.8,
+      "singularity_proximity": 0.22,
+      "joint_margin_min": 8.3
+    }
+  ],
+  "recommended_solution": 1,
+  "computation_time_ms": 2.4
+}
+</pre>
+
+<hr>
+
+<h2>2.5 Workspace and Envelope</h2>
+
+<h3>2.5.1 Reachable Workspace</h3>
+
+<p>The <strong>reachable workspace</strong> is the set of all points in 3D space that the robot's TCP can reach, considering only position (not orientation).</p>
+
+<p><strong>Factors Affecting Workspace:</strong></p>
+
+<ul>
+    <li>Link lengths (longer links = larger workspace)</li>
+    <li>Joint ranges (limited by mechanical stops and software limits)</li>
+    <li>Robot mounting (floor, wall, ceiling, angle)</li>
+    <li>Obstacle geometry (safety barriers, fixtures)</li>
+</ul>
+
+<p><strong>Workspace Shapes by Robot Type:</strong></p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Robot Type</th>
+            <th>Workspace Shape</th>
+            <th>Volume Formula</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>6-Axis Articulated</td>
+            <td>Near-spherical with exclusion zone</td>
+            <td>V ≈ (4/3)π(R³ - r³)</td>
+        </tr>
+        <tr>
+            <td>SCARA</td>
+            <td>Cylindrical annulus</td>
+            <td>V = πh(R² - r²)</td>
+        </tr>
+        <tr>
+            <td>Delta</td>
+            <td>Inverted cone/sphere</td>
+            <td>V ≈ (1/3)πr²h</td>
+        </tr>
+        <tr>
+            <td>Cartesian</td>
+            <td>Rectangular prism</td>
+            <td>V = L × W × H</td>
+        </tr>
+    </tbody>
+</table>
+
+<p><strong>Example: ABB IRB 6700-155/2.85</strong></p>
+
+<pre>
+Reach: 2850 mm
+Workspace Type: Spherical shell
+Inner Dead Zone Radius: ~800 mm
+Outer Radius: 2850 mm
+Workspace Volume: ≈ 86 m³
+
+Joint Ranges:
+  J1: ±180° (full rotation)
+  J2: -60° to +85°
+  J3: -180° to +70°
+  J4: ±300° (advanced version)
+  J5: ±120°
+  J6: ±360°
+</pre>
+
+<h3>2.5.2 Dexterous Workspace</h3>
+
+<p>The <strong>dexterous workspace</strong> is the subset where the TCP can achieve any orientation. This is typically much smaller than the reachable workspace.</p>
+
+<p><strong>Applications Requiring Dexterous Workspace:</strong></p>
+<ul>
+    <li>Complex assembly operations</li>
+    <li>Deburring with specific tool angles</li>
+    <li>Spray painting (maintaining angle to surface)</li>
+    <li>Arc welding (torch angle control)</li>
+</ul>
+
+<h3>2.5.3 WIA-ROB-003 Workspace Definition</h3>
+
+<p><strong>Workspace Specification Format:</strong></p>
+
+<pre>
+{
+  "format": "WIA-ROB-003-WORKSPACE-v1.0",
+  "robot_model": "IRB6700-155-285",
+  "mounting": {
+    "type": "floor",  // floor, wall, ceiling, angled
+    "height": 0,      // mm above reference plane
+    "orientation": [0, 0, 0]  // roll, pitch, yaw
+  },
+  "reachable_workspace": {
+    "type": "spherical_shell",
+    "outer_radius": 2850,  // mm
+    "inner_radius": 800,   // mm
+    "volume": 86000000     // mm³
+  },
+  "dexterous_workspace": {
+    "type": "spherical",
+    "radius": 1800,        // mm
+    "center": [0, 0, 1200],
+    "volume": 24000000     // mm³
+  },
+  "safety_zones": [
+    {
+      "zone_id": "exclusion_1",
+      "type": "cylinder",
+      "center": [1000, 0, 0],
+      "radius": 300,
+      "height": 2000,
+      "action": "emergency_stop"
+    }
+  ]
+}
+</pre>
+
+<hr>
+
+<h2>2.6 Jacobian Matrix and Velocity Kinematics</h2>
+
+<p>The <strong>Jacobian matrix</strong> relates joint velocities to end-effector velocities, crucial for smooth motion and force control.</p>
+
+<h3>2.6.1 Definition</h3>
+
+<p>For a 6-DOF robot:</p>
+
+<pre>
+v = J(θ) × θ̇
+
+where:
+  v = [vₓ, vᵧ, vᵤ, ωₓ, ωᵧ, ωᵤ]ᵀ  (end-effector velocity: 3 linear + 3 angular)
+  J(θ) = 6×6 Jacobian matrix (function of joint angles)
+  θ̇ = [θ̇₁, θ̇₂, ..., θ̇₆]ᵀ  (joint velocities)
+</pre>
+
+<h3>2.6.2 Applications</h3>
+
+<ol>
+    <li><strong>Velocity Control:</strong> Convert desired Cartesian velocity to joint velocities</li>
+    <li><strong>Force Control:</strong> J^T relates joint torques to end-effector forces</li>
+    <li><strong>Singularity Detection:</strong> det(J) = 0 indicates singularity</li>
+    <li><strong>Manipulability Analysis:</strong> Measure of dexterity at a configuration</li>
+</ol>
+
+<p><strong>Manipulability Index:</strong></p>
+
+<pre>
+w(θ) = √det(J(θ)J(θ)ᵀ)
+
+High w: Robot is highly maneuverable
+Low w: Near singularity, limited motion capability
+</pre>
+
+<hr>
+
+<h2>2.7 Summary</h2>
+
+<p>This chapter covered the mathematical foundations of robot motion:</p>
+
+<ul>
+    <li>Robot anatomy consists of links connected by joints (revolute or prismatic)</li>
+    <li>DOF determines the robot's ability to position and orient its end-effector</li>
+    <li>Forward kinematics (FK) computes TCP pose from joint angles using DH parameters</li>
+    <li>Inverse kinematics (IK) computes joint angles from desired TCP pose - multiple solutions possible</li>
+    <li>Workspace defines the volume the robot can reach, affected by joint limits and geometry</li>
+    <li>Jacobian matrix relates joint and Cartesian velocities, enabling smooth motion control</li>
+    <li>WIA-ROB-003 defines standard formats for all kinematic computations</li>
+</ul>
+
+<p><strong>Key Takeaways:</strong></p>
+<ul>
+    <li>Understanding kinematics is essential for robot programming and troubleshooting</li>
+    <li>Singularities must be avoided for stable control</li>
+    <li>IK solution selection significantly impacts cycle time and safety</li>
+    <li>Workspace analysis prevents collisions and optimizes robot placement</li>
+</ul>
+
+<p>Next chapter: Control systems and programming languages for industrial robots.</p>
+
+<hr>
+
+<p><strong>Previous:</strong> <a href="chapter-01.html">← Chapter 1: Introduction</a></p>
+<p><strong>Next:</strong> <a href="chapter-03.html">Chapter 3: Control Systems and Programming →</a></p>
+
+<hr>
+
+<footer>
+    <p><strong>弘益人間 (Hongik Ingan)</strong> · Benefit All Humanity</p>
+    <p>WIA - World Certification Industry Association</p>
+    <p>© 2025 MIT License</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Image Processing & Analysis | WIA-DEF-011</title>
+    <style>
+        :root { --bg: #0f172a; --bg-secondary: #1e293b; --bg-tertiary: #334155; --primary: #8B5CF6; --text: #f1f5f9; --text-secondary: #cbd5e1; --border: #475569; --success: #10b981; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-secondary); padding: 3rem; border-radius: 10px; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: var(--bg-tertiary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--primary); font-weight: bold; }
+        tr:hover { background: var(--bg-tertiary); }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: var(--bg); text-decoration: none; border-radius: 5px; transition: all 0.3s ease; }
+        .btn:hover { background: var(--success); transform: translateY(-2px); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', monospace; color: var(--success); }
+        .formula-box { background: var(--bg); border: 1px solid var(--primary); padding: 1.5rem; margin: 1.5rem 0; border-radius: 5px; font-family: 'Monaco', monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">Chapter 5</p>
+        <h1>Image Processing & Analysis</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            Transform raw sensor data into actionable intelligence through advanced processing techniques.
+        </p>
+
+        <h2>Processing Pipeline Overview</h2>
+        <p>
+            Raw reconnaissance satellite data undergoes extensive processing before reaching intelligence analysts. The WIA-DEF-011 standard defines a multi-stage pipeline transforming sensor telemetry into georeferenced imagery products suitable for intelligence exploitation. This processing corrects sensor artifacts, compensates for platform motion and Earth curvature, enhances interpretability, and extracts intelligence features.
+        </p>
+        <p>
+            Processing levels progress from raw uncalibrated data (Level 0) through radiometric correction (Level 1A), geometric correction (Level 1B), orthorectification (Level 2), mosaicking (Level 3), to derived intelligence products (Level 4). Each level adds value while maintaining rigorous metadata documenting all transformations applied. The standard specifies quality metrics for each processing level.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Level</th>
+                    <th>Description</th>
+                    <th>Processing Applied</th>
+                    <th>Typical Use</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Level 0</td>
+                    <td>Raw sensor data</td>
+                    <td>None - unprocessed telemetry</td>
+                    <td>Archive, special processing</td>
+                </tr>
+                <tr>
+                    <td>Level 1A</td>
+                    <td>Radiometric correction</td>
+                    <td>Dark current, flat field, gain</td>
+                    <td>Sensor calibration</td>
+                </tr>
+                <tr>
+                    <td>Level 1B</td>
+                    <td>Sensor geometry</td>
+                    <td>Platform attitude, ephemeris</td>
+                    <td>Preliminary geolocation</td>
+                </tr>
+                <tr>
+                    <td>Level 2</td>
+                    <td>Orthorectified</td>
+                    <td>Terrain correction, map projection</td>
+                    <td>GIS integration, exploitation</td>
+                </tr>
+                <tr>
+                    <td>Level 3</td>
+                    <td>Mosaic/composite</td>
+                    <td>Multi-image registration</td>
+                    <td>Wide-area coverage products</td>
+                </tr>
+                <tr>
+                    <td>Level 4</td>
+                    <td>Derived products</td>
+                    <td>Feature extraction, change detection</td>
+                    <td>Automated intelligence</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Radiometric Correction</h2>
+        <p>
+            Radiometric correction removes systematic sensor artifacts to produce imagery where pixel values accurately represent scene radiance. Three primary corrections transform raw digital numbers to calibrated radiance values that can be compared across different sensors and collection times.
+        </p>
+
+        <h3>Dark Current Subtraction</h3>
+        <p>
+            Detector thermal noise generates spurious signal even in complete darkness. Dark current correction subtracts this baseline offset measured during on-orbit calibration with the shutter closed. The WIA-DEF-011 standard requires dark frames collected every orbit to track temperature-dependent variations.
+        </p>
+        <div class="formula-box">
+            <strong>Dark Current Correction:</strong><br><br>
+            DN_corrected = DN_raw - Dark_Current(T)<br><br>
+            Where:<br>
+            • DN_raw = Raw pixel digital number<br>
+            • Dark_Current(T) = Temperature-dependent offset<br>
+            • T = Focal plane temperature (°C)<br><br>
+            Typical values:<br>
+            Dark current: 0.1-10 DN/second<br>
+            Temperature coefficient: 2× per 10°C
+        </div>
+
+        <h3>Flat Field Correction</h3>
+        <p>
+            Individual detector elements exhibit varying sensitivity due to manufacturing tolerances and radiation damage. Flat field correction normalizes pixel response using calibration data from uniform illumination targets. This removes pixel-to-pixel variations and corrects for vignetting effects.
+        </p>
+        <div class="formula-box">
+            <strong>Flat Field Correction:</strong><br><br>
+            DN_flat = (DN_corrected / Gain_pixel) × Reference_Gain<br><br>
+            Where:<br>
+            • Gain_pixel = Per-pixel sensitivity<br>
+            • Reference_Gain = Average detector gain<br><br>
+            Calibration target: Uniform bright surface<br>
+            Update frequency: Monthly
+        </div>
+
+        <h3>Atmospheric Correction</h3>
+        <p>
+            Earth's atmosphere scatters and absorbs light between the ground and satellite, degrading image quality and altering spectral signatures. Atmospheric correction estimates and removes these effects to recover true surface reflectance. This proves critical for multispectral and hyperspectral exploitation.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Atmospheric Effect</th>
+                    <th>Impact</th>
+                    <th>Correction Method</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Rayleigh scattering</td>
+                    <td>Blue haze, reduced contrast</td>
+                    <td>Model-based removal</td>
+                </tr>
+                <tr>
+                    <td>Aerosol scattering</td>
+                    <td>Wavelength-dependent haze</td>
+                    <td>Dark object subtraction</td>
+                </tr>
+                <tr>
+                    <td>Water vapor absorption</td>
+                    <td>Reduced NIR/SWIR signal</td>
+                    <td>MODTRAN radiative transfer</td>
+                </tr>
+                <tr>
+                    <td>Ozone absorption</td>
+                    <td>Attenuated UV/blue bands</td>
+                    <td>Climatology correction</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Geometric Correction</h2>
+        <p>
+            Geometric correction transforms sensor coordinates to geographic coordinates, enabling precise geolocation and integration with GIS databases. This multi-step process accounts for platform motion, Earth curvature, terrain relief, and map projection.
+        </p>
+
+        <h3>Orthorectification</h3>
+        <p>
+            Orthorectification removes geometric distortions from terrain relief and off-nadir viewing, producing imagery where every pixel represents the same ground area. This enables accurate distance and area measurements directly from imagery.
+        </p>
+        <div class="formula-box">
+            <strong>Sensor-to-Ground Transformation:</strong><br><br>
+            [X, Y, Z]_ground = R(t) × [x, y, f]_sensor + [X₀, Y₀, Z₀]_sat(t)<br><br>
+            Where:<br>
+            • R(t) = Time-dependent rotation matrix (attitude)<br>
+            • [x, y, f] = Sensor focal plane coordinates<br>
+            • [X₀, Y₀, Z₀] = Satellite position vector<br>
+            • t = Image acquisition time<br><br>
+            Accuracy requirements (WIA-DEF-011):<br>
+            • Horizontal: &lt;5 meters CE90<br>
+            • Vertical: &lt;10 meters LE90
+        </div>
+
+        <h3>DEM Correction</h3>
+        <p>
+            Digital Elevation Models provide terrain heights required for orthorectification. The WIA-DEF-011 standard specifies DEM accuracy requirements based on mission type - tactical applications require 10-meter vertical accuracy, while strategic analysis accepts 30-90 meter DEMs from SRTM or ASTER.
+        </p>
+
+        <h2>Image Enhancement</h2>
+        <p>
+            Enhancement techniques improve visual interpretability without changing fundamental information content. The WIA-DEF-011 standard recommends specific enhancement methods for different intelligence applications while requiring that original data remain accessible.
+        </p>
+
+        <h3>Contrast Enhancement</h3>
+        <p>
+            Most reconnaissance imagery uses only a fraction of available dynamic range, appearing low-contrast and muddy. Histogram equalization redistributes pixel values to span the full display range, revealing subtle features. For reconnaissance, adaptive histogram equalization operating on local image regions provides superior results.
+        </p>
+
+        <h3>Sharpening</h3>
+        <p>
+            Unsharp masking enhances edges and fine details by subtracting a blurred version of the image. This compensates for MTF degradation and atmospheric blur, though excessive sharpening amplifies noise and creates artifacts.
+        </p>
+        <div class="formula-box">
+            <strong>Unsharp Mask:</strong><br><br>
+            I_sharp = I_original + α × (I_original - I_blurred)<br><br>
+            Where:<br>
+            • α = Sharpening strength (0.5-2.0)<br>
+            • I_blurred = Gaussian blur (σ = 1-2 pixels)<br><br>
+            Recommended values:<br>
+            • Light sharpening: α = 0.5-1.0<br>
+            • Moderate: α = 1.0-1.5<br>
+            • Strong: α = 1.5-2.0
+        </div>
+
+        <h2>Feature Extraction</h2>
+        <p>
+            Automated feature extraction identifies intelligence targets in imagery, enabling rapid exploitation of large data volumes. The WIA-DEF-011 standard defines performance metrics for automated detection including probability of detection, false alarm rate, and geolocation accuracy.
+        </p>
+
+        <h3>Edge Detection</h3>
+        <p>
+            Edge detection locates sharp brightness transitions corresponding to object boundaries, roads, buildings, and other features of intelligence interest. The Sobel and Canny operators provide robust edge detection resistant to noise.
+        </p>
+
+        <h3>Object Detection</h3>
+        <p>
+            Modern object detection employs deep learning convolutional neural networks trained on labeled imagery. These systems achieve human-level performance detecting vehicles, aircraft, ships, and infrastructure. The WIA-DEF-011 standard specifies training data requirements and performance benchmarks.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Target Type</th>
+                    <th>Detection Method</th>
+                    <th>PD Required</th>
+                    <th>FAR Allowed</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Aircraft</td>
+                    <td>Template matching, CNN</td>
+                    <td>&gt;95%</td>
+                    <td>&lt;1 per 100 km²</td>
+                </tr>
+                <tr>
+                    <td>Vehicles</td>
+                    <td>HOG features, CNN</td>
+                    <td>&gt;90%</td>
+                    <td>&lt;5 per 100 km²</td>
+                </tr>
+                <tr>
+                    <td>Ships</td>
+                    <td>SAR CFAR, CNN</td>
+                    <td>&gt;98%</td>
+                    <td>&lt;0.1 per 100 km²</td>
+                </tr>
+                <tr>
+                    <td>Buildings</td>
+                    <td>Segmentation, CNN</td>
+                    <td>&gt;85%</td>
+                    <td>&lt;10 per km²</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Change Detection</h2>
+        <p>
+            Change detection compares multi-temporal imagery to identify new construction, vehicle movements, and activity patterns. Simple differencing highlights all changes but suffers from illumination variations and registration errors. Advanced techniques account for seasonal variations and multi-sensor differences.
+        </p>
+        <div class="formula-box">
+            <strong>Simple Change Detection:</strong><br><br>
+            Δ = |I₂(x,y) - I₁(x,y)|<br><br>
+            Where:<br>
+            • I₁ = Image at time t₁<br>
+            • I₂ = Image at time t₂<br>
+            • Δ = Change magnitude<br><br>
+            Threshold: Δ > 3σ (3 standard deviations)<br>
+            Filters false positives from shadows, clouds
+        </div>
+
+        <div class="info-box">
+            <h3>Advanced Change Detection Methods:</h3>
+            <ul>
+                <li><strong>Principal Component Analysis:</strong> Isolates change patterns from scene variations</li>
+                <li><strong>Multivariate Alteration Detection:</strong> Handles multi-spectral data optimally</li>
+                <li><strong>Deep Learning:</strong> Semantic change detection classifying change types</li>
+                <li><strong>Persistent Scatterer Analysis:</strong> Tracks infrastructure changes over years</li>
+            </ul>
+        </div>
+
+        <div class="highlight-box">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>Processing progresses through 6 levels from raw data to derived intelligence products</li>
+                <li>Radiometric correction removes sensor artifacts through dark current, flat field, and atmospheric corrections</li>
+                <li>Orthorectification transforms sensor geometry to accurate map coordinates using DEMs</li>
+                <li>Image enhancement improves interpretability through contrast adjustment and sharpening</li>
+                <li>Automated feature extraction detects targets with &gt;90% probability and low false alarm rates</li>
+                <li>Change detection identifies activity by comparing multi-temporal imagery</li>
+                <li>WIA-DEF-011 specifies quality metrics and processing requirements for each level</li>
+            </ul>
+        </div>
+
+        <h2>Review Questions</h2>
+        <div class="info-box">
+            <ol>
+                <li>Describe the six processing levels and the transformations applied at each stage.</li>
+                <li>Why is dark current correction temperature-dependent and how often should it be updated?</li>
+                <li>Explain how atmospheric scattering affects imagery and describe two correction approaches.</li>
+                <li>What geometric corrections are required to transform sensor coordinates to ground coordinates?</li>
+                <li>Calculate sharpened pixel value for original=100, blurred=80, α=1.5.</li>
+                <li>What are the WIA-DEF-011 requirements for vehicle detection PD and FAR?</li>
+                <li>Compare simple differencing vs MAD for multi-spectral change detection.</li>
+            </ol>
+        </div>
+
+        <h2>Summary</h2>
+        <p>
+            This chapter examined the image processing pipeline that transforms raw reconnaissance satellite data into intelligence products. We explored radiometric corrections removing sensor artifacts, geometric corrections enabling precise geolocation, and enhancement techniques improving interpretability. Automated feature extraction employs deep learning for target detection, while change detection reveals activity patterns.
+        </p>
+        <p>
+            The WIA-DEF-011 standard defines six processing levels with specific quality requirements, ensuring consistent product quality across different sensor systems. Understanding these processing techniques enables intelligence analysts to properly interpret imagery and assess its suitability for mission requirements. The next chapter examines orbital mechanics and mission planning for reconnaissance operations.
+        </p>
+
+        <div class="nav-buttons">
+            <a href="chapter-04.html" class="btn">← Previous: SIGINT</a>
+            <a href="index.html" class="btn">📚 Contents</a>
+            <a href="chapter-06.html" class="btn">Next: Orbital Coverage →</a>
+        </div>
+    </div>
+</body>
+</html>

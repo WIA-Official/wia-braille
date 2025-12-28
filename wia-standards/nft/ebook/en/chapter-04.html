@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Smart Contract Development | WIA-FIN-009</title>
+    <style>
+        * {margin: 0; padding: 0; box-sizing: border-box;}
+        body {font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.8;}
+        .header {background: rgba(30, 41, 59, 0.8); border-bottom: 1px solid rgba(34, 197, 94, 0.2); padding: 2rem; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);}
+        .header-content {max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;}
+        .logo {font-size: 1.5rem; font-weight: 800; color: #22c55e; text-decoration: none;}
+        nav a {color: #94a3b8; text-decoration: none; margin-left: 2rem;}
+        .container {max-width: 900px; margin: 0 auto; padding: 3rem 2rem;}
+        .chapter-number {display: inline-block; background: #22c55e; color: #0f172a; font-size: 0.875rem; font-weight: 800; padding: 0.5rem 1rem; border-radius: 20px; margin-bottom: 1rem;}
+        h1 {font-size: 3rem; font-weight: 800; background: linear-gradient(135deg, #22c55e 0%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+        h2 {font-size: 2rem; font-weight: 700; color: #22c55e; margin: 3rem 0 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(34, 197, 94, 0.2);}
+        h3 {font-size: 1.5rem; font-weight: 600; color: #10b981; margin: 2rem 0 1rem;}
+        p {margin-bottom: 1.5rem; color: #cbd5e1; font-size: 1.125rem;}
+        .code-block {background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto;}
+        .code-block pre {color: #22c55e; font-family: 'Courier New', monospace; font-size: 0.85rem; line-height: 1.6;}
+        ul {margin: 1.5rem 0; padding-left: 2rem; color: #cbd5e1;}
+        li {margin-bottom: 0.75rem; font-size: 1.125rem;}
+        .warning-box {background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; padding: 1.5rem; margin: 2rem 0;}
+        .warning-box h4 {color: #eab308; margin-bottom: 1rem;}
+        .navigation {display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(34, 197, 94, 0.2);}
+        .nav-button {display: inline-block; padding: 1rem 2rem; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px; color: #22c55e; text-decoration: none; font-weight: 600;}
+        footer {background: rgba(15, 23, 42, 0.8); padding: 2rem; text-align: center; border-top: 1px solid rgba(34, 197, 94, 0.2); margin-top: 4rem; color: #64748b;}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <a href="index.html" class="logo">🖼️ WIA-FIN-009</a>
+            <nav><a href="index.html">Contents</a><a href="../../index.html">Home</a></nav>
+        </div>
+    </div>
+    <div class="container">
+        <div class="chapter-header">
+            <span class="chapter-number">CHAPTER 4</span>
+            <h1>Smart Contract Development</h1>
+        </div>
+
+        <p>Building secure, efficient NFT smart contracts requires understanding Solidity, blockchain mechanics, and battle-tested development patterns. This chapter guides you through creating production-ready NFT contracts using industry best practices.</p>
+
+        <h2>Setting Up Development Environment</h2>
+
+        <h3>Required Tools</h3>
+        <ul>
+            <li><strong>Hardhat:</strong> Development environment for compiling, testing, and deploying contracts</li>
+            <li><strong>OpenZeppelin Contracts:</strong> Secure, audited implementations of token standards</li>
+            <li><strong>Ethers.js:</strong> Library for interacting with Ethereum blockchain</li>
+            <li><strong>Waffle:</strong> Testing framework for smart contracts</li>
+        </ul>
+
+        <div class="code-block"><pre>// Initialize project
+npm init -y
+npm install --save-dev hardhat @nomiclabs/hardhat-waffle
+npm install @openzeppelin/contracts
+
+npx hardhat init</pre></div>
+
+        <h2>Building an ERC-721 NFT Contract</h2>
+
+        <h3>Basic Implementation</h3>
+
+        <div class="code-block"><pre>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+
+contract MyNFT is ERC721, ERC721URIStorage, Ownable {
+    using Counters for Counters.Counter;
+    Counters.Counter private _tokenIds;
+
+    uint256 public constant MAX_SUPPLY = 10000;
+    uint256 public constant MINT_PRICE = 0.08 ether;
+
+    constructor() ERC721("MyNFT Collection", "MNFT") {}
+
+    function mint(string memory tokenURI) public payable returns (uint256) {
+        require(_tokenIds.current() < MAX_SUPPLY, "Max supply reached");
+        require(msg.value >= MINT_PRICE, "Insufficient payment");
+
+        _tokenIds.increment();
+        uint256 newTokenId = _tokenIds.current();
+
+        _safeMint(msg.sender, newTokenId);
+        _setTokenURI(newTokenId, tokenURI);
+
+        return newTokenId;
+    }
+
+    function withdraw() public onlyOwner {
+        uint256 balance = address(this).balance;
+        payable(owner()).transfer(balance);
+    }
+
+    // Override required by Solidity
+    function tokenURI(uint256 tokenId)
+        public view override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public view override(ERC721, ERC721URIStorage)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+
+    function _burn(uint256 tokenId)
+        internal override(ERC721, ERC721URIStorage)
+    {
+        super._burn(tokenId);
+    }
+}</pre></div>
+
+        <h2>Adding Royalty Support (ERC-2981)</h2>
+
+        <p>ERC-2981 is the standard for NFT royalties, enabling creators to earn from secondary sales across all compatible marketplaces.</p>
+
+        <div class="code-block"><pre>import "@openzeppelin/contracts/token/common/ERC2981.sol";
+
+contract MyNFTWithRoyalties is ERC721, ERC721URIStorage, ERC2981, Ownable {
+    // ... previous code ...
+
+    constructor() ERC721("MyNFT", "MNFT") {
+        // Set 7.5% royalty for all tokens
+        _setDefaultRoyalty(msg.sender, 750); // 750 basis points = 7.5%
+    }
+
+    function setTokenRoyalty(
+        uint256 tokenId,
+        address receiver,
+        uint96 feeNumerator
+    ) public onlyOwner {
+        _setTokenRoyalty(tokenId, receiver, feeNumerator);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public view override(ERC721, ERC721URIStorage, ERC2981)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+}</pre></div>
+
+        <h2>Gas Optimization Techniques</h2>
+
+        <h3>Batch Minting</h3>
+
+        <div class="code-block"><pre>function batchMint(address[] calldata recipients, string[] calldata uris)
+    public onlyOwner
+{
+    require(recipients.length == uris.length, "Arrays must match");
+    require(
+        _tokenIds.current() + recipients.length <= MAX_SUPPLY,
+        "Exceeds max supply"
+    );
+
+    for (uint256 i = 0; i < recipients.length; i++) {
+        _tokenIds.increment();
+        uint256 newTokenId = _tokenIds.current();
+        _safeMint(recipients[i], newTokenId);
+        _setTokenURI(newTokenId, uris[i]);
+    }
+}</pre></div>
+
+        <h3>Storage Optimization</h3>
+        <ul>
+            <li>Pack variables into 32-byte slots</li>
+            <li>Use uint256 instead of smaller types (paradoxically cheaper)</li>
+            <li>Minimize storage writes—most expensive operation</li>
+            <li>Use events for data that doesn't need on-chain storage</li>
+        </ul>
+
+        <h2>Security Best Practices</h2>
+
+        <div class="warning-box">
+            <h4>⚠️ Critical Security Considerations</h4>
+            <ul>
+                <li><strong>Reentrancy:</strong> Always use checks-effects-interactions pattern</li>
+                <li><strong>Integer Overflow:</strong> Solidity 0.8+ has built-in protection, but verify</li>
+                <li><strong>Access Control:</strong> Properly restrict administrative functions</li>
+                <li><strong>External Calls:</strong> Never trust external contract calls</li>
+                <li><strong>Front-running:</strong> Consider commit-reveal for sensitive operations</li>
+            </ul>
+        </div>
+
+        <h3>Reentrancy Protection</h3>
+
+        <div class="code-block"><pre>import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+contract SafeNFT is ERC721, ReentrancyGuard {
+    function mint() public payable nonReentrant {
+        // Minting logic protected from reentrancy
+    }
+}</pre></div>
+
+        <h2>Testing Smart Contracts</h2>
+
+        <div class="code-block"><pre>const { expect } = require("chai");
+const { ethers } = require("hardhat");
+
+describe("MyNFT", function () {
+    let nft;
+    let owner;
+    let addr1;
+
+    beforeEach(async function () {
+        [owner, addr1] = await ethers.getSigners();
+        const NFT = await ethers.getContractFactory("MyNFT");
+        nft = await NFT.deploy();
+        await nft.deployed();
+    });
+
+    it("Should mint NFT with correct payment", async function () {
+        const tokenURI = "ipfs://QmTest...";
+        const mintPrice = ethers.utils.parseEther("0.08");
+
+        await expect(
+            nft.connect(addr1).mint(tokenURI, { value: mintPrice })
+        ).to.emit(nft, "Transfer");
+
+        expect(await nft.ownerOf(1)).to.equal(addr1.address);
+    });
+
+    it("Should reject insufficient payment", async function () {
+        const tokenURI = "ipfs://QmTest...";
+        const lowPrice = ethers.utils.parseEther("0.01");
+
+        await expect(
+            nft.connect(addr1).mint(tokenURI, { value: lowPrice })
+        ).to.be.revertedWith("Insufficient payment");
+    });
+
+    it("Should respect max supply", async function () {
+        // Test max supply enforcement
+    });
+});</pre></div>
+
+        <h2>Deployment Strategies</h2>
+
+        <h3>Deployment Script</h3>
+
+        <div class="code-block"><pre>async function main() {
+    const NFT = await ethers.getContractFactory("MyNFT");
+
+    console.log("Deploying NFT contract...");
+    const nft = await NFT.deploy();
+    await nft.deployed();
+
+    console.log("NFT deployed to:", nft.address);
+
+    // Verify on Etherscan
+    if (network.name !== "hardhat") {
+        console.log("Waiting for block confirmations...");
+        await nft.deployTransaction.wait(6);
+        await verify(nft.address, []);
+    }
+}
+
+main()
+    .then(() => process.exit(0))
+    .catch((error) => {
+        console.error(error);
+        process.exit(1);
+    });</pre></div>
+
+        <h3>Multi-Stage Deployment</h3>
+        <ul>
+            <li>Deploy to testnet (Goerli, Sepolia) first</li>
+            <li>Comprehensive testing with real transactions</li>
+            <li>Security audit before mainnet deployment</li>
+            <li>Use multi-sig wallet for contract ownership</li>
+            <li>Consider upgradeability patterns for complex projects</li>
+        </ul>
+
+        <h2>Advanced Patterns</h2>
+
+        <h3>Whitelist/Presale Implementation</h3>
+
+        <div class="code-block"><pre>import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+
+contract PresaleNFT is ERC721 {
+    bytes32 public merkleRoot;
+    mapping(address => bool) public hasMinted;
+
+    function setMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
+        merkleRoot = _merkleRoot;
+    }
+
+    function whitelistMint(bytes32[] calldata proof)
+        public payable
+    {
+        require(!hasMinted[msg.sender], "Already minted");
+        bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
+        require(
+            MerkleProof.verify(proof, merkleRoot, leaf),
+            "Invalid proof"
+        );
+
+        hasMinted[msg.sender] = true;
+        // Mint logic
+    }
+}</pre></div>
+
+        <h2>Conclusion</h2>
+
+        <p>Smart contract development requires meticulous attention to security, gas efficiency, and user experience. Always use audited libraries like OpenZeppelin, write comprehensive tests, and conduct security audits before mainnet deployment. The immutable nature of blockchain means mistakes are permanent and potentially costly.</p>
+
+        <div class="navigation">
+            <a href="chapter-03.html" class="nav-button">← Previous: Metadata & IPFS</a>
+            <a href="chapter-05.html" class="nav-button">Next: Marketplaces →</a>
+        </div>
+    </div>
+    <footer><p>© 2025 SmileStory Inc. / WIA</p><p>弘益人間 (홍익인간) · Benefit All Humanity</p></footer>
+</body>
+</html>

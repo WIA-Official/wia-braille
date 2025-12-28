@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Edge Computing & Analytics - WIA-IND-027</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #8B5CF6; --text: #f1f5f9; --text-dim: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--surface); padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
+        h1 { color: var(--primary); font-size: 2.5em; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; }
+        h2 { color: var(--primary); font-size: 1.8em; margin-top: 40px; margin-bottom: 20px; }
+        h3 { color: var(--primary); font-size: 1.4em; margin-top: 30px; margin-bottom: 15px; }
+        p { margin-bottom: 15px; color: var(--text-dim); }
+        .highlight { background: rgba(139, 92, 246, 0.2); padding: 20px; border-left: 4px solid var(--primary); margin: 20px 0; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 25px 0; background: var(--bg); }
+        th, td { padding: 15px; text-align: left; border: 1px solid var(--border); }
+        th { background: var(--primary); color: var(--text); font-weight: 600; }
+        tr:hover { background: rgba(139, 92, 246, 0.1); }
+        code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-family: 'Courier New', monospace; color: var(--primary); }
+        pre { background: var(--bg); padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; border: 1px solid var(--border); }
+        pre code { padding: 0; background: transparent; }
+        .key-takeaways { background: rgba(139, 92, 246, 0.1); padding: 25px; border-radius: 8px; margin: 30px 0; }
+        .key-takeaways h3 { margin-top: 0; }
+        .key-takeaways ul { margin-left: 20px; }
+        .key-takeaways li { margin: 10px 0; color: var(--text-dim); }
+        .review-questions { background: var(--bg); padding: 25px; border-radius: 8px; margin: 30px 0; border: 2px solid var(--primary); }
+        .review-questions h3 { margin-top: 0; }
+        .review-questions ol { margin-left: 20px; }
+        .review-questions li { margin: 15px 0; color: var(--text-dim); }
+        .navigation { display: flex; justify-between: space-between; margin-top: 40px; padding-top: 20px; border-top: 2px solid var(--border); }
+        .nav-button { background: var(--primary); color: var(--text); padding: 12px 24px; text-decoration: none; border-radius: 6px; transition: background 0.3s; }
+        .nav-button:hover { background: #7C3AED; }
+        .diagram { background: var(--bg); padding: 20px; border-radius: 8px; margin: 20px 0; font-family: monospace; overflow-x: auto; border: 1px solid var(--border); }
+        ul { margin-left: 20px; margin-bottom: 15px; }
+        li { margin: 8px 0; color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chapter 5: Edge Computing & Analytics</h1>
+        <div class="highlight">
+            <strong>WIA-IND-027 Standard</strong><br>
+            Implementing intelligent edge processing for real-time industrial analytics and decision making
+        </div>
+
+        <h2>5.1 Edge Computing Architecture</h2>
+        <p>Edge computing brings data processing closer to industrial equipment, reducing latency, bandwidth costs, and cloud dependency. The WIA-IND-027 standard defines edge gateways as critical components that perform protocol translation, data filtering, local analytics, and autonomous decision making.</p>
+
+        <h3>5.1.1 Edge Gateway Functions</h3>
+        <table>
+            <thead>
+                <tr><th>Function</th><th>Purpose</th><th>Benefit</th><th>Latency Impact</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Protocol Translation</td><td>Convert OPC-UA, Modbus, PROFINET to unified format</td><td>Interoperability</td><td>+5-20ms</td></tr>
+                <tr><td>Data Normalization</td><td>Unit conversion, timestamp sync, type mapping</td><td>Consistency</td><td>+1-5ms</td></tr>
+                <tr><td>Filtering & Aggregation</td><td>Dead-band, statistical sampling</td><td>50-90% bandwidth reduction</td><td>+2-10ms</td></tr>
+                <tr><td>Local Analytics</td><td>Anomaly detection, predictive models</td><td>Real-time alerts</td><td>+10-100ms</td></tr>
+                <tr><td>Store-and-Forward</td><td>Buffer during network outages</td><td>Zero data loss</td><td>+0ms (async)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>5.1.2 Dead-band Filtering Implementation</h3>
+        <p>Dead-band filtering transmits only significant value changes, dramatically reducing network traffic:</p>
+
+        <pre><code>// TypeScript Dead-band Filter
+class DeadbandFilter {
+  private lastTransmitted: Map&lt;string, number&gt; = new Map();
+  private threshold: number;
+
+  constructor(threshold: number) {
+    this.threshold = threshold;
+  }
+
+  filter(sensorId: string, value: number): { transmit: boolean; value?: number } {
+    const last = this.lastTransmitted.get(sensorId);
+
+    if (last === undefined) {
+      // Always transmit first value
+      this.lastTransmitted.set(sensorId, value);
+      return { transmit: true, value };
+    }
+
+    const change = Math.abs(value - last);
+
+    if (change >= this.threshold) {
+      this.lastTransmitted.set(sensorId, value);
+      return { transmit: true, value };
+    }
+
+    return { transmit: false };
+  }
+
+  reset(sensorId: string) {
+    this.lastTransmitted.delete(sensorId);
+  }
+}
+
+// Usage Example
+const filter = new DeadbandFilter(0.5); // ±0.5°C threshold
+
+const temperatures = [45.1, 45.15, 45.12, 45.18, 45.6, 45.58, 45.55, 44.9];
+let transmitted = 0;
+
+temperatures.forEach((temp, i) => {
+  const result = filter.filter('temp-sensor-001', temp);
+
+  if (result.transmit) {
+    transmitted++;
+    console.log(`[${i}] TRANSMIT: ${temp}°C`);
+    mqttPublish('sensors/temp-001', temp);
+  } else {
+    console.log(`[${i}] Suppress: ${temp}°C`);
+  }
+});
+
+console.log(`\nData reduction: ${((1 - transmitted/temperatures.length) * 100).toFixed(1)}%`);
+// Output: Data reduction: 62.5% (3 transmissions out of 8 samples)</code></pre>
+
+        <h2>5.2 Statistical Aggregation</h2>
+        <p>For high-frequency sensors, statistical summaries preserve important characteristics while reducing data volume by 99%+:</p>
+
+        <pre><code>// Statistical Aggregation Engine
+interface StatisticalSummary {
+  mean: number;
+  min: number;
+  max: number;
+  stddev: number;
+  count: number;
+  timestamp: number;
+}
+
+class StatisticalAggregator {
+  private samples: number[] = [];
+  private windowMs: number;
+  private startTime: number;
+
+  constructor(windowMs: number) {
+    this.windowMs = windowMs;
+    this.startTime = Date.now();
+  }
+
+  addSample(value: number): StatisticalSummary | null {
+    this.samples.push(value);
+
+    const elapsed = Date.now() - this.startTime;
+
+    if (elapsed >= this.windowMs) {
+      const summary = this.computeSummary();
+      this.samples = [];
+      this.startTime = Date.now();
+      return summary;
+    }
+
+    return null;
+  }
+
+  private computeSummary(): StatisticalSummary {
+    const n = this.samples.length;
+    const sum = this.samples.reduce((a, b) => a + b, 0);
+    const mean = sum / n;
+
+    const min = Math.min(...this.samples);
+    const max = Math.max(...this.samples);
+
+    const variance = this.samples
+      .map(x => Math.pow(x - mean, 2))
+      .reduce((a, b) => a + b, 0) / n;
+
+    const stddev = Math.sqrt(variance);
+
+    return {
+      mean,
+      min,
+      max,
+      stddev,
+      count: n,
+      timestamp: Date.now()
+    };
+  }
+}
+
+// Example: 100Hz vibration sensor aggregated to 1-minute summaries
+const aggregator = new StatisticalAggregator(60000); // 60 seconds
+
+// Simulate 100Hz sampling (6000 samples per minute)
+const interval = setInterval(() => {
+  const vibration = 0.5 + Math.random() * 0.1; // 0.5-0.6 mm/s RMS
+  const summary = aggregator.addSample(vibration);
+
+  if (summary) {
+    console.log(`Aggregated summary for ${summary.count} samples:`);
+    console.log(`  Mean: ${summary.mean.toFixed(4)} mm/s`);
+    console.log(`  Range: ${summary.min.toFixed(4)} - ${summary.max.toFixed(4)}`);
+    console.log(`  StdDev: ${summary.stddev.toFixed(4)}`);
+
+    // Publish summary to cloud (1 message vs 6000)
+    mqttPublish('sensors/vibration-001/stats', JSON.stringify(summary));
+  }
+}, 10); // 10ms = 100Hz
+
+// Data reduction: 99.98% (1 message per 60 seconds vs 100 per second)</code></pre>
+
+        <h2>5.3 Edge Analytics</h2>
+
+        <h3>5.3.1 Anomaly Detection - Z-Score Method</h3>
+        <p>Detect statistical outliers using standard deviation analysis:</p>
+
+        <pre><code>// Z-Score Anomaly Detection
+class ZScoreDetector {
+  private history: number[] = [];
+  private maxHistory: number;
+  private threshold: number; // Typical: 3 (99.7% of data within ±3σ)
+
+  constructor(maxHistory: number = 100, threshold: number = 3) {
+    this.maxHistory = maxHistory;
+    this.threshold = threshold;
+  }
+
+  detect(value: number): { anomaly: boolean; zScore: number; mean: number; stddev: number } {
+    this.history.push(value);
+
+    if (this.history.length > this.maxHistory) {
+      this.history.shift(); // Remove oldest
+    }
+
+    const mean = this.history.reduce((a, b) => a + b) / this.history.length;
+    const variance = this.history
+      .map(x => Math.pow(x - mean, 2))
+      .reduce((a, b) => a + b) / this.history.length;
+    const stddev = Math.sqrt(variance);
+
+    const zScore = stddev === 0 ? 0 : (value - mean) / stddev;
+    const anomaly = Math.abs(zScore) > this.threshold;
+
+    if (anomaly) {
+      console.log(`ANOMALY DETECTED: Value=${value}, Z-Score=${zScore.toFixed(2)}, Mean=${mean.toFixed(2)}, StdDev=${stddev.toFixed(2)}`);
+    }
+
+    return { anomaly, zScore, mean, stddev };
+  }
+}
+
+// Usage: Temperature monitoring
+const detector = new ZScoreDetector(50, 3); // Last 50 samples, 3σ threshold
+
+// Normal operation: 44-46°C
+for (let i = 0; i < 50; i++) {
+  detector.detect(45 + (Math.random() - 0.5)); // Build history
+}
+
+// Sudden spike
+const result = detector.detect(52); // Anomaly!
+// Output: ANOMALY DETECTED: Value=52, Z-Score=14.00, Mean=45.02, StdDev=0.50</code></pre>
+
+        <h3>5.3.2 Moving Average Deviation</h3>
+        <table>
+            <thead>
+                <tr><th>Window Size</th><th>Response Time</th><th>False Positives</th><th>Use Case</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>5 samples</td><td>Fast</td><td>High</td><td>Rapid process changes</td></tr>
+                <tr><td>20 samples</td><td>Medium</td><td>Medium</td><td>General monitoring</td></tr>
+                <tr><td>50 samples</td><td>Slow</td><td>Low</td><td>Stable processes</td></tr>
+                <tr><td>100 samples</td><td>Very slow</td><td>Very low</td><td>Long-term trending</td></tr>
+            </tbody>
+        </table>
+
+        <h2>5.4 Edge Machine Learning</h2>
+        <p>Deploying lightweight ML models at the edge enables real-time inference without cloud round-trips:</p>
+
+        <pre><code>// TensorFlow Lite on Edge Gateway (Python)
+import tflite_runtime.interpreter as tflite
+import numpy as np
+
+class EdgeMLPredictor:
+    def __init__(self, model_path):
+        # Load quantized TensorFlow Lite model
+        self.interpreter = tflite.Interpreter(model_path=model_path)
+        self.interpreter.allocate_tensors()
+
+        self.input_details = self.interpreter.get_input_details()
+        self.output_details = self.interpreter.get_output_details()
+
+    def predict_remaining_life(self, vibration_features):
+        """
+        Predict Remaining Useful Life (RUL) from vibration features
+        Features: [RMS, Peak, Kurtosis, Skewness, Spectral_Energy]
+        """
+        # Normalize features (mean=0, std=1)
+        normalized = (vibration_features - self.mean) / self.std
+
+        # Reshape for model input
+        input_data = np.array([normalized], dtype=np.float32)
+
+        # Run inference
+        self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
+        self.interpreter.invoke()
+
+        # Get prediction
+        rul_hours = self.interpreter.get_tensor(self.output_details[0]['index'])[0][0]
+
+        return rul_hours
+
+# Usage
+predictor = EdgeMLPredictor('/models/bearing_rul_model.tflite')
+
+# Real-time vibration analysis
+vibration_data = read_vibration_sensor()  # 10kHz samples
+features = extract_features(vibration_data)  # [RMS, Peak, Kurtosis, Skewness, Energy]
+
+rul = predictor.predict_remaining_life(features)
+print(f"Predicted RUL: {rul:.1f} hours ({rul/24:.1f} days)")
+
+if rul < 48:  # Less than 2 days
+    send_alert(f"Bearing failure predicted in {rul:.1f} hours. Schedule maintenance.")
+
+# Inference time: ~5-20ms on edge device vs 200-500ms cloud round-trip</code></pre>
+
+        <h2>5.5 Store-and-Forward</h2>
+        <p>Buffering ensures zero data loss during network interruptions:</p>
+
+        <pre><code>// Store-and-Forward Queue Manager
+class StoreAndForwardQueue {
+  private queue: any[] = [];
+  private maxSize: number;
+  private isOnline: boolean = true;
+  private cloudAPI: any;
+
+  constructor(cloudAPI: any, maxSize: number = 10000) {
+    this.cloudAPI = cloudAPI;
+    this.maxSize = maxSize;
+
+    // Periodic connectivity check
+    setInterval(() => this.checkConnectivity(), 30000);
+  }
+
+  async send(data: any): Promise&lt;void&gt; {
+    if (this.isOnline) {
+      try {
+        await this.cloudAPI.send(data);
+        console.log('Data sent to cloud');
+      } catch (error) {
+        console.error('Cloud connection lost, buffering data');
+        this.isOnline = false;
+        this.enqueue(data);
+      }
+    } else {
+      this.enqueue(data);
+    }
+  }
+
+  private enqueue(data: any): void {
+    this.queue.push({
+      data,
+      timestamp: Date.now()
+    });
+
+    if (this.queue.length > this.maxSize) {
+      const discarded = this.queue.shift(); // Remove oldest
+      console.warn(`Queue full, discarded oldest record from ${new Date(discarded.timestamp)}`);
+    }
+
+    console.log(`Buffered: ${this.queue.length} records`);
+  }
+
+  private async checkConnectivity(): Promise&lt;void&gt; {
+    try {
+      await this.cloudAPI.ping();
+
+      if (!this.isOnline) {
+        console.log('Cloud connection restored, flushing buffer');
+        this.isOnline = true;
+        await this.flush();
+      }
+    } catch (error) {
+      this.isOnline = false;
+    }
+  }
+
+  private async flush(): Promise&lt;void&gt; {
+    while (this.queue.length > 0 && this.isOnline) {
+      const record = this.queue[0];
+
+      try {
+        await this.cloudAPI.send(record.data);
+        this.queue.shift(); // Remove after successful send
+        console.log(`Flushed record, ${this.queue.length} remaining`);
+      } catch (error) {
+        console.error('Failed to flush, will retry');
+        this.isOnline = false;
+        break;
+      }
+    }
+
+    if (this.queue.length === 0) {
+      console.log('Buffer fully flushed');
+    }
+  }
+}
+
+// Example: Sensor data with network resilience
+const queue = new StoreAndForwardQueue(cloudAPI, 5000);
+
+setInterval(() => {
+  const data = {
+    sensorId: 'temp-001',
+    value: readTemperatureSensor(),
+    timestamp: Date.now()
+  };
+
+  queue.send(data); // Automatically buffers if offline
+}, 1000);</code></pre>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li><strong>Edge Functions:</strong> Protocol translation (+5-20ms), normalization (+1-5ms), filtering (50-90% reduction), analytics (+10-100ms), buffering (0ms async)</li>
+                <li><strong>Dead-band Filtering:</strong> Transmit only significant changes (±threshold), achieves 50-90% bandwidth reduction with zero information loss</li>
+                <li><strong>Statistical Aggregation:</strong> 99%+ data reduction for high-frequency sensors by transmitting min/max/mean/stddev summaries instead of raw samples</li>
+                <li><strong>Anomaly Detection:</strong> Z-score method (±3σ detects 99.7% outliers), moving average deviation (window size vs. false positives tradeoff)</li>
+                <li><strong>Edge ML:</strong> TensorFlow Lite enables 5-20ms inference at edge vs 200-500ms cloud latency, ideal for predictive maintenance and quality prediction</li>
+                <li><strong>Store-and-Forward:</strong> Buffering (typically 5K-10K records) ensures zero data loss during network outages, automatic flush on reconnection</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li><strong>Bandwidth Calculation:</strong> 100 sensors @ 1Hz, each sending 64 bytes. With 80% dead-band reduction, calculate daily bandwidth savings (bytes/day).</li>
+                <li><strong>Dead-band Threshold:</strong> Temperature oscillates ±0.3°C around setpoint. Choose dead-band threshold to transmit 20% of samples. Justify your choice.</li>
+                <li><strong>Statistical Aggregation:</strong> 10kHz vibration sensor, 32-bit float per sample. Calculate data rate and reduction with 1-second aggregation (5 statistics).</li>
+                <li><strong>Anomaly Detection:</strong> Last 100 samples: mean=45°C, stddev=2°C. New value=52°C. Calculate Z-score. Is it an anomaly (threshold=3σ)?</li>
+                <li><strong>Edge ML vs Cloud:</strong> Edge inference 10ms, cloud 300ms. For 100 predictions/second, calculate latency improvement and bandwidth savings.</li>
+                <li><strong>Buffer Sizing:</strong> Network outages average 2 hours. Sensors generate 1KB/sec. Calculate buffer size (MB) for zero data loss with 20% safety margin.</li>
+                <li><strong>Moving Average Window:</strong> Process changes rapidly (5-minute cycles). Choose window size (5, 20, 50, 100 samples) for alarm detection. Explain tradeoffs.</li>
+                <li><strong>Architecture Design:</strong> Design edge gateway for 50 PLCs (Modbus, 1Hz), 200 sensors (MQTT, 10Hz). Specify CPU, RAM, storage for 7-day buffering.</li>
+            </ol>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-04.html" class="nav-button">← Previous Chapter</a>
+            <a href="chapter-06.html" class="nav-button">Next Chapter: Time-Series Data →</a>
+        </div>
+    </div>
+</body>
+</html>

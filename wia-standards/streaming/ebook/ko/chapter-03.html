@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제3장: 데이터 형식 - WIA 스트리밍</title>
+    <link rel="icon" href="/favicon.ico">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #0f172a; color: #e2e8f0; line-height: 1.8;">
+
+<nav style="margin-bottom: 30px; padding: 15px; background: #1e293b; border-radius: 8px;">
+    <a href="index.html" style="color: #a855f7; text-decoration: none;">📚 목차</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <span style="color: #64748b;">제3장 / 8장</span>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-02.html" style="color: #a855f7; text-decoration: none;">← 이전</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-04.html" style="color: #a855f7; text-decoration: none;">다음 →</a>
+</nav>
+
+<h1 style="color: #a855f7;">제3장: 데이터 형식</h1>
+
+<blockquote style="background: #1e293b; padding: 20px; border-left: 4px solid #fbbf24; margin: 20px 0;">
+<p style="color: #fbbf24; font-style: italic;">"표준화된 형식은 상호운용성의 시작입니다."</p>
+</blockquote>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">3.1 비디오 컨테이너 형식</h2>
+
+<p>컨테이너는 비디오, 오디오, 자막, 메타데이터를 하나의 파일로 묶는 래퍼입니다.</p>
+
+<h3 style="color: #a855f7;">3.1.1 주요 컨테이너 형식</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">형식</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">확장자</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">스트리밍</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">권장 용도</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>MPEG-TS</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">.ts</td>
+        <td style="border: 1px solid #475569; color: #10b981;">HLS</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">라이브 스트리밍</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>fMP4</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">.m4s, .mp4</td>
+        <td style="border: 1px solid #475569; color: #10b981;">DASH, HLS</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">VOD, 범용</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>MP4</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">.mp4</td>
+        <td style="border: 1px solid #475569; color: #fbbf24;">제한적</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">다운로드, 호환성</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>WebM</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">.webm</td>
+        <td style="border: 1px solid #475569; color: #10b981;">DASH</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">웹 브라우저</td>
+    </tr>
+</table>
+
+<h3 style="color: #a855f7;">3.1.2 WIA 권장 형식</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #fbbf24;">📺 라이브 스트리밍:</span>
+   컨테이너: MPEG-TS (.ts)
+   세그먼트: 2-6초
+   프로토콜: HLS, LL-HLS
+
+<span style="color: #fbbf24;">🎬 VOD (주문형):</span>
+   컨테이너: fMP4 (.m4s)
+   세그먼트: 4-10초
+   프로토콜: DASH, HLS
+
+<span style="color: #fbbf24;">🎥 다운로드:</span>
+   컨테이너: MP4 (.mp4)
+   최적화: FastStart (moov atom 앞쪽 배치)
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">3.2 비디오 코덱</h2>
+
+<h3 style="color: #a855f7;">3.2.1 H.264 (AVC) 설정</h3>
+
+<p>가장 보편적으로 지원되는 비디오 코덱입니다.</p>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">매개변수</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">권장값</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">설명</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Profile</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">High</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">최고 압축 효율</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Level</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">4.0-4.2</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1080p @ 30fps</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>GOP Size</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">2-4초 (60-120 frames)</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">키프레임 간격</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>B-frames</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">2-3</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">양방향 예측 프레임</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Rate Control</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">CBR or VBR</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">일정 or 가변 비트레이트</td>
+    </tr>
+</table>
+
+<p><strong style="color: #fbbf24;">FFmpeg 인코딩 예시:</strong></p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;"># 1080p @ 5 Mbps</span>
+<span style="color: #94a3b8;">ffmpeg -i input.mp4 \
+  -c:v libx264 \
+  -profile:v high \
+  -level 4.2 \
+  -b:v 5M \
+  -maxrate 5.5M \
+  -bufsize 10M \
+  -g 60 \
+  -keyint_min 60 \
+  -sc_threshold 0 \
+  -bf 2 \
+  -pix_fmt yuv420p \
+  -movflags +faststart \
+  output_1080p.mp4</span>
+</pre>
+
+<h3 style="color: #a855f7;">3.2.2 H.265 (HEVC) 설정</h3>
+
+<p>H.264 대비 50% 대역폭 절감이 가능합니다.</p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;"># 4K @ 15 Mbps (H.264라면 30 Mbps 필요)</span>
+<span style="color: #94a3b8;">ffmpeg -i input.mp4 \
+  -c:v libx265 \
+  -preset medium \
+  -crf 23 \
+  -b:v 15M \
+  -maxrate 16.5M \
+  -bufsize 30M \
+  -pix_fmt yuv420p \
+  output_4k.mp4</span>
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">3.3 오디오 코덱</h2>
+
+<h3 style="color: #a855f7;">3.3.1 오디오 형식 비교</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">코덱</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">비트레이트</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">채널</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">용도</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>AAC-LC</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">128-192 kbps</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">스테레오</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">일반 강의</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>AAC-HE</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">64-96 kbps</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">스테레오</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">저대역폭</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>Opus</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">96-128 kbps</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">스테레오</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">WebRTC, 최고 품질</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>MP3</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">128-320 kbps</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">스테레오</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">호환성 (구형 기기)</td>
+    </tr>
+</table>
+
+<h3 style="color: #a855f7;">3.3.2 WIA 오디오 표준</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #a855f7; overflow-x: auto;">
+<span style="color: #fbbf24;">필수 사양:</span>
+
+<span style="color: #94a3b8;">코덱:</span>      AAC-LC
+<span style="color: #94a3b8;">샘플레이트:</span> 48 kHz
+<span style="color: #94a3b8;">비트레이트:</span> 128 kbps (최소), 192 kbps (권장)
+<span style="color: #94a3b8;">채널:</span>      스테레오 (2.0)
+
+<span style="color: #fbbf24;">선택 사양 (고급):</span>
+
+<span style="color: #94a3b8;">음악 강의:</span>  AAC-LC @ 256 kbps
+<span style="color: #94a3b8;">저대역폭:</span>   AAC-HE @ 64 kbps
+<span style="color: #94a3b8;">실시간:</span>     Opus @ 96-128 kbps
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">3.4 자막 및 캡션</h2>
+
+<h3 style="color: #a855f7;">3.4.1 자막 형식</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">형식</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">확장자</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">특징</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">권장</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>WebVTT</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">.vtt</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">HTML5 표준, 스타일링</td>
+        <td style="border: 1px solid #475569; color: #10b981;">⭐ 1순위</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>SRT</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">.srt</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">간단, 범용</td>
+        <td style="border: 1px solid #475569; color: #fbbf24;">호환성</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>TTML</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">.ttml</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">XML 기반, 복잡</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">방송용</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>CEA-608/708</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">임베디드</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">비디오 스트림 내장</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">TV 방송</td>
+    </tr>
+</table>
+
+<h3 style="color: #a855f7;">3.4.2 WebVTT 예시</h3>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #64748b;">WEBVTT</span>
+
+<span style="color: #64748b;">NOTE</span>
+<span style="color: #94a3b8;">WIA 교육 스트리밍 표준 - 한국어 자막</span>
+
+<span style="color: #fbbf24;">00:00:00.000 --> 00:00:05.000</span>
+<span style="color: #94a3b8;">안녕하세요. WIA 스트리밍 표준 강의에 오신 것을 환영합니다.</span>
+
+<span style="color: #fbbf24;">00:00:05.500 --> 00:00:10.000</span>
+<span style="color: #94a3b8;">오늘은 적응형 비트레이트 스트리밍에 대해 배워보겠습니다.</span>
+
+<span style="color: #fbbf24;">00:00:10.500 --> 00:00:15.000 line:10%</span>
+<span style="color: #e2e8f0;"><c.speaker>강사:</c></span> <span style="color: #94a3b8;">ABR은 네트워크 상태에 따라...</span>
+</pre>
+
+<h3 style="color: #a855f7;">3.4.3 접근성 요구사항</h3>
+
+<p>WIA 표준은 다음 접근성 기능을 필수로 요구합니다:</p>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">자막 (Captions)</strong> — 청각 장애인을 위한 대사 및 소리 설명</li>
+    <li><strong style="color: #e2e8f0;">오디오 설명 (Audio Description)</strong> — 시각 장애인을 위한 장면 설명</li>
+    <li><strong style="color: #e2e8f0;">수어 통역</strong> — 별도 비디오 트랙 또는 PIP (Picture-in-Picture)</li>
+    <li><strong style="color: #e2e8f0;">다국어 지원</strong> — 최소 2개 언어 (원본 + 영어/한국어)</li>
+</ul>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">3.5 메타데이터 표준</h2>
+
+<h3 style="color: #a855f7;">3.5.1 교육 콘텐츠 메타데이터</h3>
+
+<p>WIA는 JSON-LD 기반 메타데이터 스키마를 정의합니다.</p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; overflow-x: auto;">
+<span style="color: #94a3b8;">{</span>
+  <span style="color: #fbbf24;">"@context"</span>: <span style="color: #10b981;">"https://schema.org"</span>,
+  <span style="color: #fbbf24;">"@type"</span>: <span style="color: #10b981;">"VideoObject"</span>,
+  <span style="color: #fbbf24;">"name"</span>: <span style="color: #10b981;">"WIA 스트리밍 표준 - 제1강"</span>,
+  <span style="color: #fbbf24;">"description"</span>: <span style="color: #10b981;">"적응형 비트레이트 스트리밍 소개"</span>,
+  <span style="color: #fbbf24;">"duration"</span>: <span style="color: #10b981;">"PT45M30S"</span>,
+  <span style="color: #fbbf24;">"uploadDate"</span>: <span style="color: #10b981;">"2025-01-15"</span>,
+  <span style="color: #fbbf24;">"contentUrl"</span>: <span style="color: #10b981;">"https://cdn.example.com/video.m3u8"</span>,
+  <span style="color: #fbbf24;">"thumbnailUrl"</span>: <span style="color: #10b981;">"https://cdn.example.com/thumb.jpg"</span>,
+  <span style="color: #fbbf24;">"educationalLevel"</span>: <span style="color: #10b981;">"대학교"</span>,
+  <span style="color: #fbbf24;">"learningResourceType"</span>: <span style="color: #10b981;">"강의"</span>,
+  <span style="color: #fbbf24;">"inLanguage"</span>: <span style="color: #10b981;">"ko-KR"</span>,
+  <span style="color: #fbbf24;">"creator"</span>: <span style="color: #94a3b8;">{</span>
+    <span style="color: #fbbf24;">"@type"</span>: <span style="color: #10b981;">"Person"</span>,
+    <span style="color: #fbbf24;">"name"</span>: <span style="color: #10b981;">"홍길동 교수"</span>
+  <span style="color: #94a3b8;">}</span>,
+  <span style="color: #fbbf24;">"publisher"</span>: <span style="color: #94a3b8;">{</span>
+    <span style="color: #fbbf24;">"@type"</span>: <span style="color: #10b981;">"Organization"</span>,
+    <span style="color: #fbbf24;">"name"</span>: <span style="color: #10b981;">"WIA 교육원"</span>
+  <span style="color: #94a3b8;">}</span>
+<span style="color: #94a3b8;">}</span>
+</pre>
+
+<h3 style="color: #a855f7;">3.5.2 비디오 품질 메타데이터</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">필드</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">타입</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">설명</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>resolution</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">string</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">"1920x1080", "1280x720"</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>bitrate</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">integer</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">5000000 (5 Mbps)</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>framerate</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">float</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">30.0, 60.0</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>codec</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">string</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">"h264", "h265", "vp9"</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>audioCodec</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">string</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">"aac", "opus"</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">3.6 비트레이트 레더 (Bitrate Ladder)</h2>
+
+<h3 style="color: #a855f7;">3.6.1 WIA 표준 비트레이트 레더</h3>
+
+<p>모든 교육 콘텐츠는 다음 비트레이트 레더를 따라야 합니다:</p>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">해상도</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">비디오 (H.264)</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">오디오 (AAC)</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">총 비트레이트</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>240p (426×240)</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">250 kbps</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">64 kbps</td>
+        <td style="border: 1px solid #475569; color: #fbbf24;">314 kbps</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>360p (640×360)</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">500 kbps</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">96 kbps</td>
+        <td style="border: 1px solid #475569; color: #fbbf24;">596 kbps</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>480p (854×480)</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1000 kbps</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">128 kbps</td>
+        <td style="border: 1px solid #475569; color: #fbbf24;">1.13 Mbps</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>720p (1280×720)</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">2500 kbps</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">128 kbps</td>
+        <td style="border: 1px solid #475569; color: #fbbf24;">2.63 Mbps</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>1080p (1920×1080)</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">5000 kbps</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">192 kbps</td>
+        <td style="border: 1px solid #475569; color: #fbbf24;">5.19 Mbps</td>
+    </tr>
+</table>
+
+<h3 style="color: #a855f7;">3.6.2 저대역폭 최적화</h3>
+
+<p>개발도상국 및 농촌 지역 학생을 위한 특별 레더:</p>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #fbbf24; overflow-x: auto;">
+<span style="color: #fbbf24;">🌍 저대역폭 레더 (< 1 Mbps 네트워크):</span>
+
+<span style="color: #94a3b8;">144p (256×144) @ 150 kbps</span>
+   - 슬라이드 기반 강의 최적화
+   - 텍스트 가독성 우선
+   - 오디오: 64 kbps AAC-HE
+
+<span style="color: #94a3b8;">240p (426×240) @ 250 kbps</span>
+   - 일반 강의
+   - 화면 공유 가능
+
+<span style="color: #fbbf24;">💡 팁:</span>
+   - 정적 콘텐츠 (PPT) → 낮은 비트레이트 효과적
+   - 동적 콘텐츠 (실험) → 높은 비트레이트 필요
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">3.7 썸네일 및 미리보기</h2>
+
+<h3 style="color: #a855f7;">3.7.1 썸네일 스펙</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">용도</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">크기</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">형식</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>리스트 뷰</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">320×180 (16:9)</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">JPEG, WebP</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>플레이어</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1280×720</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">JPEG, WebP</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>소셜 미디어</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1200×630 (Open Graph)</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">JPEG</td>
+    </tr>
+</table>
+
+<h3 style="color: #a855f7;">3.7.2 Trick Play 미리보기</h3>
+
+<p>마우스 호버 시 미리보기를 위한 저품질 비디오 트랙:</p>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">해상도:</strong> 160×90 (매우 작음)</li>
+    <li><strong style="color: #e2e8f0;">프레임:</strong> 1fps (초당 1 프레임)</li>
+    <li><strong style="color: #e2e8f0;">비트레이트:</strong> 50 kbps</li>
+    <li><strong style="color: #e2e8f0;">형식:</strong> WebP 애니메이션 또는 I-frame 비디오</li>
+</ul>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #c4b5fd;">장 요약</h2>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #a855f7;">항목</th>
+        <th style="border: 1px solid #475569; color: #a855f7;">WIA 표준</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>컨테이너</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">fMP4 (DASH), MPEG-TS (HLS)</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>비디오 코덱</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">H.264 (기본), H.265 (4K)</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>오디오 코덱</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">AAC-LC @ 128-192 kbps</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>자막</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">WebVTT (필수)</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>비트레이트 레더</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">240p ~ 1080p (6단계)</td>
+    </tr>
+</table>
+
+<nav style="margin-top: 30px; padding: 15px; background: #1e293b; border-radius: 8px; display: flex; justify-content: space-between;">
+    <a href="chapter-02.html" style="color: #a855f7; text-decoration: none;">← 제2장: 기술 아키텍처</a>
+    <a href="chapter-04.html" style="color: #a855f7; text-decoration: none;">제4장: API 명세 →</a>
+</nav>
+
+<p style="text-align: center; color: #fbbf24; margin-top: 40px;">弘益人間 · 널리 인간을 이롭게 하라</p>
+<p style="text-align: center; color: #64748b;">© 2025 WIA - 세계지능연합</p>
+
+</body>
+</html>

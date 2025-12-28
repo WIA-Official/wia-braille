@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>제6장: 스트리밍 데이터 품질 - WIA-DATA-013</title>
+    <style>
+        body{font-family:'Malgun Gothic',sans-serif;line-height:1.8;max-width:1000px;margin:0 auto;padding:40px 20px;background:#0f172a;color:#e2e8f0}
+        h1,h2,h3{color:#10B981;margin-top:40px}
+        h1{font-size:2.5em;border-bottom:3px solid #10B981;padding-bottom:15px}
+        h2{font-size:2em;border-bottom:2px solid #334155;padding-bottom:10px}
+        code{background:#1e293b;padding:2px 6px;border-radius:4px;color:#10B981;font-family:'Courier New',monospace}
+        pre{background:#1e293b;border-left:4px solid #10B981;padding:20px;border-radius:8px;overflow-x:auto}
+        table{width:100%;border-collapse:collapse;margin:20px 0;background:#1e293b}
+        th,td{padding:12px;text-align:left;border:1px solid #334155}
+        th{background:#10B981;color:#0f172a;font-weight:bold}
+        .highlight{background:rgba(16,185,129,0.1);border-left:4px solid #10B981;padding:15px;margin:20px 0;border-radius:8px}
+        ul,ol{margin:15px 0;padding-left:30px}
+        li{margin:10px 0}
+    </style>
+</head>
+<body>
+<h1>제6장: 스트리밍 데이터 품질</h1>
+
+<h2>개요</h2>
+<p>스트리밍 데이터 품질은 실시간 애플리케이션의 신뢰성과 정확성을 결정하는 핵심 요소입니다. 이 장에서는 지연(Latency), 순서(Ordering), 중복(Duplicates) 문제를 다루고, 데이터 품질을 보장하기 위한 전략과 구현 방법을 제시합니다.</p>
+
+<h2>데이터 품질 차원</h2>
+<table>
+<tr><th>차원</th><th>설명</th><th>문제점</th><th>영향</th><th>해결 방법</th></tr>
+<tr><td>정확성</td><td>데이터가 올바른가?</td><td>잘못된 값, 형식 오류</td><td>잘못된 의사결정</td><td>검증, 스키마 적용</td></tr>
+<tr><td>완전성</td><td>모든 데이터가 있는가?</td><td>누락된 필드/이벤트</td><td>불완전한 분석</td><td>필수 필드 검증</td></tr>
+<tr><td>일관성</td><td>데이터가 일치하는가?</td><td>중복, 충돌</td><td>부정확한 집계</td><td>중복 제거, 조정</td></tr>
+<tr><td>시의성</td><td>제때 도착하는가?</td><td>높은 지연, 늦은 도착</td><td>실시간성 상실</td><td>워터마크, SLA</td></tr>
+<tr><td>유효성</td><td>비즈니스 규칙 준수?</td><td>허용 범위 벗어남</td><td>운영 오류</td><td>규칙 엔진</td></tr>
+</table>
+
+<h2>지연 시간 관리</h2>
+<p>스트리밍 시스템에서 지연은 이벤트 발생부터 처리 완료까지의 시간을 의미하며, 여러 단계에서 발생합니다.</p>
+
+<h3>지연 유형 및 측정</h3>
+<pre><code>// 엔드-투-엔드 지연 분해
+총 지연 = 생산 지연 + 네트워크 지연 + 큐잉 지연 + 처리 지연 + 출력 지연
+
+┌─────────────┐
+│ 이벤트 발생  │  T0 = 이벤트 타임스탬프
+└─────────────┘
+       ↓
+┌─────────────┐
+│ Producer    │  T1 = Producer 전송 시간
+│   (생산)    │  생산 지연 = T1 - T0
+└─────────────┘
+       ↓
+┌─────────────┐
+│   Kafka     │  T2 = Kafka 저장 시간
+│  (전송)     │  네트워크 지연 = T2 - T1
+└─────────────┘
+       ↓
+┌─────────────┐
+│  Consumer   │  T3 = Consumer 수신 시간
+│  (대기)     │  큐잉 지연 = T3 - T2
+└─────────────┘
+       ↓
+┌─────────────┐
+│  처리 로직   │  T4 = 처리 완료 시간
+│             │  처리 지연 = T4 - T3
+└─────────────┘
+       ↓
+┌─────────────┐
+│  결과 출력   │  T5 = 최종 출력 시간
+│             │  출력 지연 = T5 - T4
+└─────────────┘
+
+엔드-투-엔드 지연 = T5 - T0
+</code></pre>
+
+<h3>지연 모니터링 구현</h3>
+<pre><code>// 이벤트에 타임스탬프 포함
+public class Event {
+    private String id;
+    private long eventTime;      // 이벤트 발생 시간
+    private long ingestionTime;  // 시스템 수신 시간
+    private long processingTime; // 처리 시작 시간
+    // ...
+}
+
+// Flink에서 지연 추적
+public class LatencyTrackingFunction
+    extends RichMapFunction<Event, EnrichedEvent> {
+
+    private transient Counter eventsProcessed;
+    private transient Histogram latencyHistogram;
+
+    @Override
+    public void open(Configuration parameters) {
+        MetricGroup metricGroup = getRuntimeContext().getMetricGroup();
+
+        eventsProcessed = metricGroup.counter("events_processed");
+
+        latencyHistogram = metricGroup.histogram("latency_ms",
+            new DescriptiveStatisticsHistogram(10000));
+    }
+
+    @Override
+    public EnrichedEvent map(Event event) {
+        long now = System.currentTimeMillis();
+
+        // 엔드-투-엔드 지연 계산
+        long e2eLatency = now - event.getEventTime();
+
+        // 처리 지연 계산
+        long processingLatency = now - event.getIngestionTime();
+
+        // 메트릭 업데이트
+        eventsProcessed.inc();
+        latencyHistogram.update(e2eLatency);
+
+        // SLA 위반 체크
+        if (e2eLatency > SLA_THRESHOLD_MS) {
+            logSlaViolation(event, e2eLatency);
+        }
+
+        return new EnrichedEvent(event, e2eLatency, processingLatency);
+    }
+}
+
+// Python: Kafka 지연 모니터링
+from confluent_kafka import Consumer, TopicPartition
+import time
+
+def calculate_consumer_lag(consumer, topic, partition):
+    """컨슈머 래그 (미처리 메시지 수) 계산"""
+    tp = TopicPartition(topic, partition)
+
+    # 현재 오프셋
+    committed = consumer.committed([tp])[0].offset
+
+    # 최신 오프셋
+    low, high = consumer.get_watermark_offsets(tp)
+
+    lag = high - committed
+    return lag
+
+def calculate_time_lag(consumer, topic, partition):
+    """시간 기반 래그 계산"""
+    tp = TopicPartition(topic, partition)
+
+    # 현재 처리 중인 메시지의 타임스탬프
+    current_offset = consumer.committed([tp])[0].offset
+    consumer.seek(tp, current_offset)
+    msg = consumer.poll(timeout=1.0)
+
+    if msg:
+        msg_timestamp = msg.timestamp()[1]  # 메시지 타임스탬프
+        time_lag = (time.time() * 1000) - msg_timestamp
+        return time_lag / 1000  # 초 단위
+
+    return 0
+
+# 사용 예
+consumer = Consumer({'bootstrap.servers': 'localhost:9092', 'group.id': 'monitor'})
+consumer.subscribe(['events'])
+
+while True:
+    lag = calculate_consumer_lag(consumer, 'events', 0)
+    time_lag = calculate_time_lag(consumer, 'events', 0)
+
+    print(f"Message lag: {lag}, Time lag: {time_lag:.2f}s")
+    time.sleep(5)
+</code></pre>
+
+<h2>이벤트 순서 보장</h2>
+<p>분산 스트리밍 시스템에서 이벤트 순서는 자동으로 보장되지 않습니다. 순서를 보장하기 위한 전략이 필요합니다.</p>
+
+<h3>순서 보장 전략</h3>
+<table>
+<tr><th>전략</th><th>방법</th><th>장점</th><th>단점</th><th>사용 사례</th></tr>
+<tr><td>파티션 키</td><td>동일 키 → 동일 파티션</td><td>간단함</td><td>파티션 내에서만 순서 보장</td><td>사용자별 이벤트</td></tr>
+<tr><td>단일 파티션</td><td>모든 메시지 → 1개 파티션</td><td>전역 순서 보장</td><td>확장성 없음</td><td>소규모 데이터</td></tr>
+<tr><td>타임스탬프</td><td>이벤트 시간으로 정렬</td><td>늦은 도착 처리 가능</td><td>복잡도 증가</td><td>시계열 분석</td></tr>
+<tr><td>시퀀스 번호</td><td>순차 번호 부여</td><td>명확한 순서</td><td>생성 시 오버헤드</td><td>트랜잭션 로그</td></tr>
+</table>
+
+<h3>순서 보장 구현</h3>
+<pre><code>// Kafka Producer: 파티션 키로 순서 보장
+public class OrderedProducer {
+    private final KafkaProducer<String, Event> producer;
+
+    public void sendOrdered(String userId, Event event) {
+        // 동일 userId는 항상 같은 파티션으로 전송 → 순서 보장
+        ProducerRecord<String, Event> record =
+            new ProducerRecord<>("events", userId, event);
+
+        producer.send(record, (metadata, exception) -> {
+            if (exception != null) {
+                // 재시도 시 순서 유지
+                retryWithOrdering(userId, event);
+            }
+        });
+    }
+
+    private void retryWithOrdering(String userId, Event event) {
+        // max.in.flight.requests.per.connection=1 설정으로 순서 보장
+        // 또는 순차 재시도 구현
+    }
+}
+
+// Flink: 이벤트 시간 기반 정렬
+public class OrderingFunction
+    extends KeyedProcessFunction<String, Event, Event> {
+
+    // 순서가 맞지 않는 이벤트를 버퍼링
+    private transient MapState<Long, Event> outOfOrderBuffer;
+    private transient ValueState<Long> lastProcessedSequence;
+
+    @Override
+    public void open(Configuration parameters) {
+        outOfOrderBuffer = getRuntimeContext().getMapState(
+            new MapStateDescriptor<>("buffer", Long.class, Event.class));
+
+        lastProcessedSequence = getRuntimeContext().getState(
+            new ValueStateDescriptor<>("last_seq", Long.class));
+    }
+
+    @Override
+    public void processElement(Event event, Context ctx, Collector<Event> out)
+            throws Exception {
+
+        long currentSeq = event.getSequenceNumber();
+        Long lastSeq = lastProcessedSequence.value();
+
+        if (lastSeq == null) {
+            lastSeq = -1L;
+        }
+
+        if (currentSeq == lastSeq + 1) {
+            // 순서대로 도착 → 즉시 출력
+            out.collect(event);
+            lastProcessedSequence.update(currentSeq);
+
+            // 버퍼에서 다음 이벤트 확인
+            emitBufferedEvents(out);
+
+        } else if (currentSeq > lastSeq + 1) {
+            // 미래 이벤트 → 버퍼링
+            outOfOrderBuffer.put(currentSeq, event);
+
+            // 타이머 설정 (일정 시간 후 강제 출력)
+            ctx.timerService().registerEventTimeTimer(
+                ctx.timestamp() + BUFFER_TIMEOUT_MS);
+
+        } else {
+            // 과거 이벤트 → 로깅 후 버림 또는 Late Data 처리
+            handleLateEvent(event, out);
+        }
+    }
+
+    private void emitBufferedEvents(Collector<Event> out) throws Exception {
+        Long lastSeq = lastProcessedSequence.value();
+
+        while (outOfOrderBuffer.contains(lastSeq + 1)) {
+            Event bufferedEvent = outOfOrderBuffer.get(lastSeq + 1);
+            out.collect(bufferedEvent);
+            outOfOrderBuffer.remove(lastSeq + 1);
+            lastSeq++;
+            lastProcessedSequence.update(lastSeq);
+        }
+    }
+
+    @Override
+    public void onTimer(long timestamp, OnTimerContext ctx, Collector<Event> out)
+            throws Exception {
+        // 타임아웃 → 버퍼의 모든 이벤트 강제 출력
+        for (Map.Entry<Long, Event> entry : outOfOrderBuffer.entries()) {
+            out.collect(entry.getValue());
+        }
+        outOfOrderBuffer.clear();
+    }
+}
+
+// 워터마크를 사용한 이벤트 시간 처리
+WatermarkStrategy<Event> watermarkStrategy =
+    WatermarkStrategy
+        .<Event>forBoundedOutOfOrderness(Duration.ofSeconds(10))
+        .withTimestampAssigner((event, timestamp) -> event.getEventTime());
+
+DataStream<Event> stream = env
+    .addSource(kafkaSource)
+    .assignTimestampsAndWatermarks(watermarkStrategy)
+    .keyBy(Event::getUserId)
+    .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+    .process(new OrderSensitiveWindowFunction());
+</code></pre>
+
+<h2>중복 처리</h2>
+<p>네트워크 재시도, 장애 복구 등으로 인해 중복 이벤트가 발생할 수 있습니다.</p>
+
+<h3>중복 탐지 및 제거 방법</h3>
+<table>
+<tr><th>방법</th><th>구현</th><th>장점</th><th>단점</th></tr>
+<tr><td>고유 ID</td><td>이벤트 ID 추적</td><td>정확함</td><td>메모리 사용</td></tr>
+<tr><td>멱등성 키</td><td>Kafka 멱등 Producer</td><td>자동 중복 제거</td><td>Kafka에 한정</td></tr>
+<tr><td>타임스탬프 윈도우</td><td>시간 범위 내 중복 체크</td><td>메모리 효율적</td><td>윈도우 외 중복 미감지</td></tr>
+<tr><td>Bloom Filter</td><td>확률적 중복 체크</td><td>공간 효율적</td><td>False Positive 가능</td></tr>
+</table>
+
+<h3>중복 제거 구현</h3>
+<pre><code>// Kafka Idempotent Producer (자동 중복 제거)
+Properties props = new Properties();
+props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true); // 멱등성 활성화
+props.put(ProducerConfig.ACKS_CONFIG, "all");
+props.put(ProducerConfig.RETRIES_CONFIG, Integer.MAX_VALUE);
+props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
+
+KafkaProducer<String, String> producer = new KafkaProducer<>(props);
+
+// Flink: 상태 기반 중복 제거
+public class DeduplicationFunction
+    extends KeyedProcessFunction<String, Event, Event> {
+
+    // 최근 N분간의 이벤트 ID 저장
+    private transient MapState<String, Long> seenEvents;
+
+    @Override
+    public void open(Configuration parameters) {
+        StateTtlConfig ttlConfig = StateTtlConfig
+            .newBuilder(Time.minutes(10))
+            .setUpdateType(StateTtlConfig.UpdateType.OnCreateAndWrite)
+            .setStateVisibility(
+                StateTtlConfig.StateVisibility.NeverReturnExpired)
+            .build();
+
+        MapStateDescriptor<String, Long> descriptor =
+            new MapStateDescriptor<>("seen-events", String.class, Long.class);
+        descriptor.enableTimeToLive(ttlConfig);
+
+        seenEvents = getRuntimeContext().getMapState(descriptor);
+    }
+
+    @Override
+    public void processElement(Event event, Context ctx, Collector<Event> out)
+            throws Exception {
+
+        String eventId = event.getId();
+
+        if (!seenEvents.contains(eventId)) {
+            // 첫 번째 출현 → 처리
+            seenEvents.put(eventId, ctx.timestamp());
+            out.collect(event);
+        } else {
+            // 중복 → 로깅 후 버림
+            logDuplicate(event);
+        }
+    }
+}
+
+// Bloom Filter를 사용한 메모리 효율적인 중복 체크
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnels;
+
+public class BloomFilterDeduplicator {
+    private final BloomFilter<String> bloomFilter;
+    private final Set<String> confirmedDuplicates;
+
+    public BloomFilterDeduplicator(long expectedInsertions, double fpp) {
+        // expectedInsertions: 예상 삽입 수
+        // fpp: False Positive 확률 (예: 0.01 = 1%)
+        bloomFilter = BloomFilter.create(
+            Funnels.stringFunnel(Charsets.UTF_8),
+            expectedInsertions,
+            fpp
+        );
+        confirmedDuplicates = new HashSet<>();
+    }
+
+    public boolean isDuplicate(String eventId) {
+        if (bloomFilter.mightContain(eventId)) {
+            // Bloom Filter가 '있을 수도 있음'을 반환
+            // → 정확한 확인을 위해 Set 체크
+            if (confirmedDuplicates.contains(eventId)) {
+                return true; // 확실한 중복
+            } else {
+                // False Positive → 첫 번째 출현으로 간주
+                confirmedDuplicates.add(eventId);
+                return false;
+            }
+        } else {
+            // Bloom Filter가 '없음'을 확신
+            bloomFilter.put(eventId);
+            confirmedDuplicates.add(eventId);
+            return false;
+        }
+    }
+}
+
+// Spark Structured Streaming: dropDuplicates
+DataFrame deduplicated = inputDF
+    .dropDuplicates("event_id")  // event_id로 중복 제거
+    .writeStream()
+    .format("console")
+    .start();
+
+// 윈도우 기반 중복 제거 (메모리 효율적)
+DataFrame windowedDedup = inputDF
+    .withWatermark("timestamp", "10 minutes")
+    .dropDuplicates("event_id", "timestamp")  // 10분 윈도우 내 중복 제거
+    .writeStream()
+    .start();
+</code></pre>
+
+<h2>데이터 검증 및 정제</h2>
+<pre><code>// 스키마 검증 (Confluent Schema Registry)
+@Bean
+public KafkaProducer<String, GenericRecord> avroProducer() {
+    Properties props = new Properties();
+    props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+    props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+        StringSerializer.class);
+    props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+        KafkaAvroSerializer.class);
+    props.put("schema.registry.url", "http://localhost:8081");
+
+    return new KafkaProducer<>(props);
+}
+
+// 데이터 검증 파이프라인
+public class ValidationPipeline {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env =
+            StreamExecutionEnvironment.getExecutionEnvironment();
+
+        DataStream<Event> events = env.addSource(kafkaSource);
+
+        // 멀티 스텝 검증
+        SingleOutputStreamOperator<Event> validated = events
+            .filter(new SchemaValidator())      // 1. 스키마 검증
+            .filter(new RangeValidator())       // 2. 범위 검증
+            .filter(new BusinessRuleValidator()) // 3. 비즈니스 규칙 검증
+            .process(new EnrichmentFunction()); // 4. 데이터 보강
+
+        // 사이드 아웃풋으로 무효 데이터 분리
+        OutputTag<Event> invalidTag = new OutputTag<Event>("invalid"){};
+
+        SingleOutputStreamOperator<Event> processed = events
+            .process(new ValidationFunction(invalidTag));
+
+        DataStream<Event> validEvents = processed;
+        DataStream<Event> invalidEvents = processed.getSideOutput(invalidTag);
+
+        // 유효 데이터 처리
+        validEvents.addSink(new ProcessingSink());
+
+        // 무효 데이터는 Dead Letter Queue로
+        invalidEvents.addSink(new DeadLetterQueueSink());
+
+        env.execute("Validation Pipeline");
+    }
+}
+
+// 검증 함수 구현
+public class ValidationFunction
+    extends ProcessFunction<Event, Event> {
+
+    private final OutputTag<Event> invalidTag;
+
+    public ValidationFunction(OutputTag<Event> invalidTag) {
+        this.invalidTag = invalidTag;
+    }
+
+    @Override
+    public void processElement(Event event, Context ctx, Collector<Event> out) {
+        List<ValidationError> errors = new ArrayList<>();
+
+        // 필수 필드 검증
+        if (event.getUserId() == null || event.getUserId().isEmpty()) {
+            errors.add(new ValidationError("userId", "Required field missing"));
+        }
+
+        // 데이터 타입 검증
+        if (event.getAmount() < 0) {
+            errors.add(new ValidationError("amount", "Must be non-negative"));
+        }
+
+        // 범위 검증
+        if (event.getQuantity() > 1000) {
+            errors.add(new ValidationError("quantity", "Exceeds maximum"));
+        }
+
+        // 비즈니스 규칙 검증
+        if (event.getStatus().equals("PAID") && event.getPaymentId() == null) {
+            errors.add(new ValidationError("paymentId",
+                "Required for PAID status"));
+        }
+
+        if (errors.isEmpty()) {
+            // 유효한 이벤트
+            out.collect(event);
+        } else {
+            // 무효한 이벤트 → 사이드 아웃풋
+            event.setValidationErrors(errors);
+            ctx.output(invalidTag, event);
+        }
+    }
+}
+
+// Python: Pandas를 사용한 데이터 품질 검증
+import pandas as pd
+
+def validate_streaming_data(df):
+    """스트리밍 데이터 검증 및 정제"""
+    # 1. 중복 제거
+    df = df.drop_duplicates(subset=['event_id'])
+
+    # 2. 결측값 처리
+    df['user_id'].fillna('UNKNOWN', inplace=True)
+    df.dropna(subset=['timestamp', 'event_type'], inplace=True)
+
+    # 3. 데이터 타입 검증
+    df['amount'] = pd.to_numeric(df['amount'], errors='coerce')
+    df = df[df['amount'].notna()]
+
+    # 4. 범위 검증
+    df = df[(df['amount'] >= 0) & (df['amount'] <= 1000000)]
+
+    # 5. 이상치 탐지 (IQR 방법)
+    Q1 = df['amount'].quantile(0.25)
+    Q3 = df['amount'].quantile(0.75)
+    IQR = Q3 - Q1
+    df = df[~((df['amount'] < (Q1 - 1.5 * IQR)) |
+              (df['amount'] > (Q3 + 1.5 * IQR)))]
+
+    return df
+</code></pre>
+
+<h2>품질 메트릭 및 SLA</h2>
+<table>
+<tr><th>메트릭</th><th>목표</th><th>측정 방법</th><th>경보 임계값</th></tr>
+<tr><td>엔드-투-엔드 지연</td><td>P95 < 1초</td><td>이벤트 시간 vs 처리 시간</td><td>P95 > 2초</td></tr>
+<tr><td>처리 지연</td><td>P99 < 500ms</td><td>수신 시간 vs 완료 시간</td><td>P99 > 1초</td></tr>
+<tr><td>데이터 신선도</td><td>컨슈머 래그 < 1000</td><td>최신 오프셋 - 현재 오프셋</td><td>래그 > 10000</td></tr>
+<tr><td>유효성 비율</td><td>> 99.9%</td><td>유효 이벤트 / 전체 이벤트</td><td>< 99%</td></tr>
+<tr><td>중복 비율</td><td>< 0.1%</td><td>중복 이벤트 / 전체 이벤트</td><td>> 1%</td></tr>
+<tr><td>순서 위반</td><td>< 0.01%</td><td>순서 벗어난 이벤트 수</td><td>> 0.1%</td></tr>
+</table>
+
+<h2>품질 모니터링 대시보드</h2>
+<pre><code>// Prometheus + Grafana 메트릭
+# 지연 시간 히스토그램
+streaming_latency_seconds{quantile="0.5"} 0.05
+streaming_latency_seconds{quantile="0.95"} 0.8
+streaming_latency_seconds{quantile="0.99"} 1.5
+
+# 처리량
+streaming_events_processed_total 1234567
+
+# 오류율
+streaming_events_invalid_total / streaming_events_total > 0.01
+
+# 컨슈머 래그
+streaming_consumer_lag{topic="events", partition="0"} 1500
+
+# 데이터 품질 점수
+streaming_quality_score = (valid_events / total_events) * 100
+</code></pre>
+
+<h2>요약</h2>
+<p>스트리밍 데이터 품질은 지연, 순서, 중복 관리를 통해 보장됩니다. 워터마크와 이벤트 시간 처리로 늦은 도착을 처리하고, 파티션 키와 시퀀스 번호로 순서를 보장하며, 멱등성과 중복 제거로 일관성을 유지합니다. 지속적인 모니터링과 검증을 통해 높은 데이터 품질을 달성할 수 있습니다.</p>
+
+<h2>복습 문제</h2>
+<ol>
+<li>스트리밍 시스템에서 엔드-투-엔드 지연의 구성 요소를 설명하고, 각각을 측정하는 방법을 논의하세요.</li>
+<li>이벤트 순서를 보장하기 위한 다양한 전략을 비교하고, 각각의 트레이드오프를 설명하세요.</li>
+<li>중복 이벤트가 발생하는 원인과 중복을 탐지하고 제거하는 방법을 논의하세요.</li>
+<li>워터마크의 개념과 늦게 도착하는 데이터를 처리하는 방법을 설명하세요.</li>
+<li>스트리밍 데이터 품질을 측정하고 모니터링하는 메트릭과 SLA를 제시하세요.</li>
+</ol>
+
+<p style="text-align:center;margin-top:50px;color:#64748b">
+© 2025 SmileStory Inc. / WIA · 弘益人間 (홍익인간) · Benefit All Humanity
+</p>
+</body>
+</html>

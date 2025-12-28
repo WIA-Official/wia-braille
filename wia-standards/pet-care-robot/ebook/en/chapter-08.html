@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 8: Implementation Guide - WIA-PET-CARE-ROBOT</title>
+</head>
+<body>
+<p><a href="index.html">Table of Contents</a></p>
+
+<h1>Chapter 8: Implementation Guide</h1>
+
+<blockquote>
+"Hongik Ingan: Careful implementation ensures technology truly serves those it is meant to help."
+</blockquote>
+
+<hr>
+
+<h2>8.1 System Architecture</h2>
+
+<pre>
+Service Architecture
+====================
+
++------------------+
+|   Mobile Apps    |
+|  (iOS/Android)   |
++------------------+
+        |
++------------------+
+|   API Gateway    |
++------------------+
+        |
++-------+-------+-------+-------+
+|       |       |       |       |
+v       v       v       v       v
+Robot   Feeding Play    Health  Notify
+Control Service Service Service Service
+|       |       |       |       |
++-------+-------+-------+-------+
+        |
++-------+-------+
+|               |
+v               v
+PostgreSQL    Redis
++ TimescaleDB  (Cache)
+</pre>
+
+<hr>
+
+<h2>8.2 Core Services</h2>
+
+<table border="1">
+<tr>
+<th>Service</th>
+<th>Responsibility</th>
+<th>Technology</th>
+</tr>
+<tr>
+<td>Robot Control</td>
+<td>Command dispatch, status</td>
+<td>Rust/Go</td>
+</tr>
+<tr>
+<td>Feeding Service</td>
+<td>Schedule, dispense, track</td>
+<td>Rust</td>
+</tr>
+<tr>
+<td>Play Service</td>
+<td>Sessions, AI adaptation</td>
+<td>Python + Rust</td>
+</tr>
+<tr>
+<td>Health Service</td>
+<td>Metrics, patterns, alerts</td>
+<td>Python</td>
+</tr>
+<tr>
+<td>Safety Service</td>
+<td>Real-time monitoring</td>
+<td>Rust</td>
+</tr>
+<tr>
+<td>Notification</td>
+<td>Push, email, SMS</td>
+<td>Node.js</td>
+</tr>
+<tr>
+<td>Stream Service</td>
+<td>Video/audio streaming</td>
+<td>Rust + WebRTC</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>8.3 Database Schema</h2>
+
+<pre>
+Core Tables
+===========
+
+-- Robot registration
+CREATE TABLE care_robots (
+  robot_id UUID PRIMARY KEY,
+  household_id UUID NOT NULL,
+  robot_type VARCHAR(30) NOT NULL,
+  model VARCHAR(100) NOT NULL,
+  firmware_version VARCHAR(20),
+  capabilities JSONB NOT NULL,
+  status VARCHAR(20) DEFAULT 'OFFLINE',
+  configuration JSONB,
+  registered_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Feeding configuration
+CREATE TABLE feeding_configurations (
+  config_id UUID PRIMARY KEY,
+  robot_id UUID REFERENCES care_robots,
+  pet_id UUID NOT NULL,
+  daily_target_grams DECIMAL(6,1),
+  max_single_portion DECIMAL(6,1),
+  min_time_between INTEGER,
+  access_control JSONB
+);
+
+-- Feeding records
+CREATE TABLE feeding_records (
+  record_id UUID PRIMARY KEY,
+  robot_id UUID REFERENCES care_robots,
+  pet_id UUID NOT NULL,
+  dispensed_grams DECIMAL(6,1),
+  consumed_grams DECIMAL(6,1),
+  duration_seconds INTEGER,
+  started_at TIMESTAMPTZ
+);
+
+-- Environment readings (TimescaleDB)
+CREATE TABLE environment_readings (
+  time TIMESTAMPTZ NOT NULL,
+  robot_id UUID NOT NULL,
+  sensor_type VARCHAR(30),
+  value DECIMAL(10,2),
+  unit VARCHAR(20)
+);
+SELECT create_hypertable('environment_readings', 'time');
+
+-- Safety events
+CREATE TABLE safety_events (
+  event_id UUID PRIMARY KEY,
+  robot_id UUID REFERENCES care_robots,
+  event_type VARCHAR(50) NOT NULL,
+  severity VARCHAR(20) NOT NULL,
+  details JSONB,
+  occurred_at TIMESTAMPTZ DEFAULT NOW()
+);
+</pre>
+
+<hr>
+
+<h2>8.4 Communication Protocols</h2>
+
+<pre>
+Robot Communication Stack
+=========================
+
+MQTT Topics:
+  robot/{id}/status      - Robot status updates
+  robot/{id}/command     - Commands to robot
+  robot/{id}/response    - Command responses
+  robot/{id}/sensors/#   - Sensor data
+  robot/{id}/alerts      - Safety alerts
+
+WebSocket Channels:
+  /ws/robot/{id}/stream  - Video/audio
+  /ws/robot/{id}/control - Real-time control
+
+REST API:
+  /api/v1/robots         - Robot management
+  /api/v1/feeding        - Feeding control
+  /api/v1/play           - Play sessions
+  /api/v1/health         - Health metrics
+  /api/v1/safety         - Safety status
+
+Security:
+  - TLS 1.3 for all connections
+  - OAuth 2.0 + JWT tokens
+  - Certificate pinning for robots
+  - Rate limiting per client
+</pre>
+
+<hr>
+
+<h2>8.5 Deployment</h2>
+
+<pre>
+DOCKER COMPOSE
+==============
+
+version: '3.8'
+services:
+  robot-api:
+    image: wia/care-robot-api:latest
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://db:5432/care_robot
+      REDIS_URL: redis://redis:6379
+      MQTT_BROKER: mqtt://mqtt:1883
+    depends_on:
+      - db
+      - redis
+      - mqtt
+
+  safety-service:
+    image: wia/safety-service:latest
+    environment:
+      ALERT_THRESHOLD_MS: 100
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  stream-service:
+    image: wia/stream-service:latest
+    ports:
+      - "8084:8084"
+    environment:
+      TURN_SERVER: turn.example.com
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+      - "8883:8883"
+
+  db:
+    image: timescale/timescaledb:latest-pg15
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+
+volumes:
+  pgdata:
+  redis_data:
+</pre>
+
+<hr>
+
+<h2>8.6 Security Requirements</h2>
+
+<table border="1">
+<tr>
+<th>Layer</th>
+<th>Protection</th>
+</tr>
+<tr>
+<td>Transport</td>
+<td>TLS 1.3, certificate pinning</td>
+</tr>
+<tr>
+<td>Authentication</td>
+<td>OAuth 2.0, device certificates</td>
+</tr>
+<tr>
+<td>Authorization</td>
+<td>RBAC, per-robot permissions</td>
+</tr>
+<tr>
+<td>Data at Rest</td>
+<td>AES-256 encryption</td>
+</tr>
+<tr>
+<td>Video/Audio</td>
+<td>End-to-end encryption option</td>
+</tr>
+<tr>
+<td>Firmware</td>
+<td>Signed updates only</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>8.7 Firmware Requirements</h2>
+
+<pre>
+Robot Firmware Standards
+========================
+
+Core Requirements:
+  - Secure boot
+  - Signed firmware updates
+  - Rollback capability
+  - Watchdog timer
+  - Safe mode fallback
+
+Communication:
+  - MQTT client
+  - TLS support
+  - Certificate storage
+  - Offline queue
+
+Safety:
+  - Local safety monitoring
+  - Emergency stop logic
+  - Failsafe behaviors
+  - Sensor validation
+
+Updates:
+  - OTA update support
+  - Delta updates preferred
+  - Scheduled update windows
+  - Owner consent required
+</pre>
+
+<hr>
+
+<h2>8.8 Testing Requirements</h2>
+
+<pre>
+Testing Checklist
+=================
+
+Safety Testing:
+  [ ] Emergency stop response < 100ms
+  [ ] Collision avoidance accuracy
+  [ ] Pet detection reliability
+  [ ] Child safety features
+  [ ] Failsafe activation
+
+Functional Testing:
+  [ ] Feeding accuracy +/- 5%
+  [ ] Schedule execution
+  [ ] Multi-pet recognition
+  [ ] Play session management
+  [ ] Health metric collection
+
+Integration Testing:
+  [ ] Cloud connectivity
+  [ ] Mobile app control
+  [ ] Health service sync
+  [ ] Smart home integration
+
+Stress Testing:
+  [ ] 24/7 operation
+  [ ] Network interruption
+  [ ] Power cycling
+  [ ] Concurrent users
+
+Compliance Testing:
+  [ ] Material safety
+  [ ] Electrical safety
+  [ ] RF emissions
+  [ ] Privacy requirements
+</pre>
+
+<hr>
+
+<h2>8.9 Compliance Checklist</h2>
+
+<pre>
+Implementation Compliance
+=========================
+
+Robot Hardware:
+  [ ] Safety sensors installed
+  [ ] Emergency stop functional
+  [ ] Pet-safe materials verified
+  [ ] Noise level < 50dB
+  [ ] Electrical safety certified
+
+Feeding System:
+  [ ] Portion accuracy verified
+  [ ] Pet recognition working
+  [ ] Multi-pet support tested
+  [ ] Daily limits enforced
+  [ ] Veterinary override supported
+
+Play System:
+  [ ] Laser eye-safety zones
+  [ ] Speed limits enforced
+  [ ] Engagement detection working
+  [ ] Auto-stop on fatigue
+  [ ] Session logging complete
+
+Safety:
+  [ ] All failsafes tested
+  [ ] Pet proximity detection
+  [ ] Emergency stop < 100ms
+  [ ] Child safety verified
+  [ ] Event logging complete
+
+Privacy:
+  [ ] Data encryption verified
+  [ ] Consent management
+  [ ] Retention policies
+  [ ] Delete capability
+  [ ] Sharing controls
+</pre>
+
+<hr>
+
+<h2>8.10 Support Integration</h2>
+
+<pre>
+Support Resources
+=================
+
+Documentation:
+  - API reference
+  - Integration guides
+  - Troubleshooting
+  - Safety manuals
+
+Monitoring:
+  - Health dashboards
+  - Alert management
+  - Log aggregation
+  - Performance metrics
+
+Support Channels:
+  - In-app help
+  - Email support
+  - Phone hotline (safety)
+  - Community forums
+
+Training:
+  - Setup guides
+  - Pet introduction
+  - Feature tutorials
+  - Safety training
+</pre>
+
+<hr>
+
+<h2>Chapter Summary</h2>
+
+<ul>
+<li>[OK] Microservices architecture for scalability</li>
+<li>[OK] PostgreSQL + TimescaleDB for data</li>
+<li>[OK] MQTT + WebSocket for real-time</li>
+<li>[OK] Docker-based deployment</li>
+<li>[OK] Comprehensive security measures</li>
+<li>[OK] Complete testing requirements</li>
+</ul>
+
+<hr>
+
+<h2>Document Information</h2>
+
+<table border="1">
+<tr><td>Standard</td><td>WIA-PET-CARE-ROBOT Version 1.0.0</td></tr>
+<tr><td>Document</td><td>Implementation Ebook</td></tr>
+<tr><td>Status</td><td>Active</td></tr>
+<tr><td>Philosophy</td><td>Hongik Ingan</td></tr>
+</table>
+
+<hr>
+
+<p><a href="chapter-07.html">Previous: Chapter 7 - Safety Systems</a> | <a href="index.html">Return to Table of Contents</a></p>
+
+</body>
+</html>

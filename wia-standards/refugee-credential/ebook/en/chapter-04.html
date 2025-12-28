@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Phase 1 - Data Format Standard - WIA Ebook</title>
+</head>
+<body>
+
+<p><a href="chapter-03.html">Previous Chapter</a> | <a href="index.html">Table of Contents</a> | <a href="chapter-05.html">Next Chapter</a></p>
+
+<hr>
+
+<h1>Chapter 4: Phase 1 - Data Format Standard</h1>
+
+<blockquote>
+<p><strong>Hongik Ingan</strong></p>
+<p>"Benefit all humanity"</p>
+<p>A standardized data format ensures that refugee credentials can be understood and processed by any compliant system worldwide. This chapter defines the complete schema specifications.</p>
+</blockquote>
+
+<hr>
+
+<h2>4.1 JSON Schema Overview</h2>
+
+<p>All WIA Refugee Credential data uses JSON format with strict schema validation:</p>
+
+<h3>Schema Design Principles</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>Principle</strong></td>
+        <td><strong>Implementation</strong></td>
+    </tr>
+    <tr>
+        <td>Extensibility</td>
+        <td>Additional properties allowed in designated areas</td>
+    </tr>
+    <tr>
+        <td>Internationalization</td>
+        <td>All text fields support multiple languages</td>
+    </tr>
+    <tr>
+        <td>Versioning</td>
+        <td>Schema version in every document</td>
+    </tr>
+    <tr>
+        <td>Validation</td>
+        <td>JSON Schema Draft 2020-12 compatible</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>4.2 RefugeeCredential Root Schema</h2>
+
+<p>The root credential object structure:</p>
+
+<pre>
+interface RefugeeCredential {
+  // Metadata
+  credentialId: string;        // UUID v4
+  version: string;             // "1.0.0"
+  schemaVersion: string;       // "2025-01"
+  created: string;             // ISO 8601 datetime
+  updated: string;             // ISO 8601 datetime
+  status: CredentialStatus;    // active | suspended | revoked
+
+  // Core Data
+  holder: HolderIdentity;
+  education: EducationRecord[];
+  competencies: CompetencyRecord[];
+  languages: LanguageAbility[];
+  workExperience: WorkExperience[];
+
+  // Verification
+  verification: VerificationInfo;
+
+  // Signatures
+  signatures: DigitalSignature[];
+}
+
+type CredentialStatus = 'active' | 'suspended' | 'revoked';
+</pre>
+
+<h3>Example Root Document</h3>
+
+<pre>
+{
+  "credentialId": "550e8400-e29b-41d4-a716-446655440000",
+  "version": "1.0.0",
+  "schemaVersion": "2025-01",
+  "created": "2025-01-15T10:30:00Z",
+  "updated": "2025-03-20T14:45:00Z",
+  "status": "active",
+  "holder": { ... },
+  "education": [ ... ],
+  "competencies": [ ... ],
+  "languages": [ ... ],
+  "workExperience": [ ... ],
+  "verification": { ... },
+  "signatures": [ ... ]
+}
+</pre>
+
+<hr>
+
+<h2>4.3 HolderIdentity Schema</h2>
+
+<p>Complete holder identity specification:</p>
+
+<pre>
+interface HolderIdentity {
+  // Decentralized Identifier
+  did: string;                 // "did:wia:ref:abc123..."
+
+  // Names (multi-script support)
+  names: {
+    original: {
+      script: string;          // "arab" | "cyrl" | "latn" | etc.
+      value: string;           // Name in original script
+    };
+    transliterations: {
+      [languageCode: string]: string;  // ISO 639-1 codes
+    };
+    preferred?: string;        // Preferred display name
+  };
+
+  // Demographics
+  dateOfBirth: string;         // ISO 8601 date
+  placeOfBirth?: {
+    city?: string;
+    country: string;           // ISO 3166-1 alpha-2
+  };
+  gender?: 'male' | 'female' | 'other' | 'undisclosed';
+
+  // Nationality (can have multiple)
+  nationalities: string[];     // ISO 3166-1 alpha-2 codes
+
+  // Biometric Binding
+  biometricHash?: string;      // SHA-256 of biometric template
+  biometricType?: 'fingerprint' | 'face' | 'iris';
+
+  // Photo
+  photo?: {
+    data: string;              // Base64 encoded
+    format: 'jpeg' | 'png';
+    captureDate: string;
+  };
+
+  // Contact (optional, privacy-sensitive)
+  contact?: {
+    email?: string;
+    phone?: string;
+    address?: AddressType;
+  };
+}
+</pre>
+
+<h3>Name Handling Example</h3>
+
+<pre>
+{
+  "names": {
+    "original": {
+      "script": "arab",
+      "value": "Name in Arabic script here"
+    },
+    "transliterations": {
+      "en": "Ahmad Hassan Mohammed",
+      "de": "Ahmad Hassan Mohammed",
+      "fr": "Ahmad Hassan Mohammed"
+    },
+    "preferred": "Dr. Ahmad Hassan"
+  }
+}
+</pre>
+
+<p>[i] Note: Transliterations follow ISO 233 for Arabic, ISO 9 for Cyrillic.</p>
+
+<hr>
+
+<h2>4.4 EducationRecord Schema</h2>
+
+<p>Education records capture academic credentials:</p>
+
+<pre>
+interface EducationRecord {
+  recordId: string;            // UUID v4
+
+  // Institution
+  institution: {
+    wiaId?: string;            // WIA institution registry ID
+    name: MultilingualText;
+    country: string;           // ISO 3166-1 alpha-2
+    city?: string;
+    type: InstitutionType;
+    status: InstitutionStatus;
+  };
+
+  // Credential
+  credential: {
+    type: CredentialType;
+    name: MultilingualText;
+    fieldOfStudy: string;      // ISCED-F 2013 code
+    level: number;             // ISCED level (0-8)
+  };
+
+  // Dates
+  startDate: string;           // ISO 8601
+  endDate?: string;            // null if incomplete
+  graduationDate?: string;
+
+  // Details
+  gpa?: {
+    value: number;
+    scale: number;             // e.g., 4.0, 10, 100
+    description?: string;      // "magna cum laude"
+  };
+
+  thesis?: {
+    title: MultilingualText;
+    abstract?: MultilingualText;
+    url?: string;              // If available online
+  };
+
+  // Verification
+  verification: RecordVerification;
+}
+
+type InstitutionType =
+  'university' | 'college' | 'vocational' |
+  'secondary' | 'primary' | 'professional';
+
+type InstitutionStatus =
+  'operational' | 'destroyed' | 'closed' |
+  'relocated' | 'unknown';
+
+type CredentialType =
+  'doctorate' | 'masters' | 'bachelors' |
+  'associate' | 'diploma' | 'certificate' |
+  'secondary' | 'primary';
+</pre>
+
+<h3>ISCED Field Codes (Examples)</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>Code</strong></td>
+        <td><strong>Field</strong></td>
+    </tr>
+    <tr>
+        <td>0911</td>
+        <td>Medicine</td>
+    </tr>
+    <tr>
+        <td>0713</td>
+        <td>Electrical Engineering</td>
+    </tr>
+    <tr>
+        <td>0114</td>
+        <td>Teacher Training</td>
+    </tr>
+    <tr>
+        <td>0421</td>
+        <td>Law</td>
+    </tr>
+    <tr>
+        <td>0611</td>
+        <td>Computer Science</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>4.5 CompetencyRecord Schema</h2>
+
+<p>Competency records capture verified skills:</p>
+
+<pre>
+interface CompetencyRecord {
+  recordId: string;            // UUID v4
+
+  // Classification
+  domain: string;              // ESCO occupation code
+  skillCategory: string;       // ESCO skill category
+  skillName: MultilingualText;
+
+  // Proficiency
+  proficiencyLevel: 1 | 2 | 3 | 4 | 5;  // EQF-aligned
+  proficiencyDescription?: MultilingualText;
+
+  // Assessment
+  assessment: {
+    type: AssessmentType;
+    date: string;              // ISO 8601
+    provider: {
+      id: string;
+      name: string;
+      accreditation?: string;
+    };
+    score?: {
+      value: number;
+      maximum: number;
+      percentile?: number;
+    };
+    duration?: number;         // Minutes
+    proctored: boolean;
+  };
+
+  // Verification
+  confidence: number;          // 0-100
+  verification: RecordVerification;
+}
+
+type AssessmentType =
+  'written_exam' | 'practical_exam' | 'portfolio_review' |
+  'interview' | 'simulation' | 'observation' | 'peer_review';
+</pre>
+
+<h3>ESCO Codes (Examples)</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>Code</strong></td>
+        <td><strong>Occupation</strong></td>
+    </tr>
+    <tr>
+        <td>2211</td>
+        <td>General Practitioners</td>
+    </tr>
+    <tr>
+        <td>2141</td>
+        <td>Industrial Engineers</td>
+    </tr>
+    <tr>
+        <td>2341</td>
+        <td>Primary School Teachers</td>
+    </tr>
+    <tr>
+        <td>2611</td>
+        <td>Lawyers</td>
+    </tr>
+    <tr>
+        <td>2512</td>
+        <td>Software Developers</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>4.6 LanguageAbility Schema</h2>
+
+<p>Language proficiency using CEFR framework:</p>
+
+<pre>
+interface LanguageAbility {
+  recordId: string;            // UUID v4
+
+  // Language
+  language: string;            // ISO 639-1 code
+  languageName: MultilingualText;
+
+  // Proficiency (CEFR)
+  overall: CEFRLevel;
+  reading?: CEFRLevel;
+  writing?: CEFRLevel;
+  listening?: CEFRLevel;
+  speaking?: CEFRLevel;
+
+  // Native/Heritage
+  isNative: boolean;
+  isHeritage?: boolean;
+
+  // Assessment
+  assessment?: {
+    testName: string;          // "TOEFL", "IELTS", "TestDaF"
+    date: string;
+    score: string;             // Test-specific format
+    expires?: string;
+  };
+
+  // Verification
+  verification: RecordVerification;
+}
+
+type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+</pre>
+
+<h3>CEFR Level Descriptions</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>Level</strong></td>
+        <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+        <td>A1</td>
+        <td>Beginner - Basic phrases</td>
+    </tr>
+    <tr>
+        <td>A2</td>
+        <td>Elementary - Simple communication</td>
+    </tr>
+    <tr>
+        <td>B1</td>
+        <td>Intermediate - Independent use</td>
+    </tr>
+    <tr>
+        <td>B2</td>
+        <td>Upper Intermediate - Complex topics</td>
+    </tr>
+    <tr>
+        <td>C1</td>
+        <td>Advanced - Fluent expression</td>
+    </tr>
+    <tr>
+        <td>C2</td>
+        <td>Mastery - Near-native proficiency</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>4.7 WorkExperience Schema</h2>
+
+<p>Employment history records:</p>
+
+<pre>
+interface WorkExperience {
+  recordId: string;            // UUID v4
+
+  // Employer
+  employer: {
+    wiaId?: string;            // WIA organization registry
+    name: MultilingualText;
+    industry: string;          // ISIC code
+    country: string;
+    city?: string;
+    status: 'operational' | 'closed' | 'destroyed' | 'unknown';
+  };
+
+  // Position
+  jobTitle: MultilingualText;
+  escoCode: string;            // ESCO occupation code
+  employmentType: EmploymentType;
+
+  // Dates
+  startDate: string;           // ISO 8601
+  endDate?: string;            // null if current
+
+  // Details
+  responsibilities: MultilingualText[];
+  achievements?: MultilingualText[];
+  supervisorName?: string;
+  teamSize?: number;
+
+  // Verification
+  verification: RecordVerification;
+}
+
+type EmploymentType =
+  'full_time' | 'part_time' | 'contract' |
+  'freelance' | 'internship' | 'volunteer';
+</pre>
+
+<hr>
+
+<h2>4.8 VerificationInfo Schema</h2>
+
+<p>Overall verification status and evidence:</p>
+
+<pre>
+interface VerificationInfo {
+  // Current Status
+  level: 1 | 2 | 3 | 4;
+  confidence: number;          // 0-100
+  lastVerified: string;        // ISO 8601
+
+  // Evidence Collection
+  evidence: Evidence[];
+
+  // History
+  history: VerificationEvent[];
+
+  // Flags
+  flags?: {
+    inconsistency?: string;
+    pendingReview?: boolean;
+    expedited?: boolean;
+  };
+}
+
+interface Evidence {
+  evidenceId: string;          // UUID v4
+  type: EvidenceType;
+  description: string;
+  source: string;
+  dateCollected: string;
+  weight: number;              // 0-100 contribution weight
+  hash?: string;               // SHA-256 of evidence file
+  url?: string;                // If publicly accessible
+}
+
+type EvidenceType =
+  'peer_attestation' | 'document_scan' | 'assessment_result' |
+  'digital_footprint' | 'institutional_record' | 'portfolio' |
+  'reference_letter' | 'media_coverage' | 'publication';
+
+interface VerificationEvent {
+  date: string;
+  type: string;
+  levelBefore: number;
+  levelAfter: number;
+  confidenceBefore: number;
+  confidenceAfter: number;
+  description: string;
+  verifierId?: string;
+}
+</pre>
+
+<hr>
+
+<h2>4.9 Digital Signature Schema</h2>
+
+<p>Cryptographic signatures for authenticity:</p>
+
+<pre>
+interface DigitalSignature {
+  signatureId: string;         // UUID v4
+
+  // Signer
+  signer: {
+    did: string;               // Signer's DID
+    type: SignerType;
+    name?: string;
+  };
+
+  // Signature
+  algorithm: SignatureAlgorithm;
+  signature: string;           // Base64 encoded
+  signedAt: string;            // ISO 8601
+
+  // Scope
+  scope: 'full' | 'partial';
+  coveredFields?: string[];    // If partial
+
+  // Chain
+  previousSignature?: string;  // For signature chain
+}
+
+type SignerType =
+  'holder' | 'peer' | 'assessor' | 'institution' |
+  'government' | 'wia_node';
+
+type SignatureAlgorithm =
+  'CRYSTALS-Dilithium3' |      // Post-quantum (preferred)
+  'Ed25519' |                  // Current standard
+  'ECDSA-P256';                // Legacy compatibility
+</pre>
+
+<hr>
+
+<h2>4.10 Binary Format (.wiaref)</h2>
+
+<p>For efficient storage and transmission:</p>
+
+<h3>File Structure</h3>
+
+<pre>
+.wiaref Binary Format:
+
+Header (32 bytes):
+  Offset 0-3:   Magic bytes "WIAR"
+  Offset 4-5:   Version (uint16)
+  Offset 6-7:   Flags (uint16)
+  Offset 8-15:  Credential ID (64-bit)
+  Offset 16-23: Timestamp (64-bit Unix)
+  Offset 24-27: Data length (uint32)
+  Offset 28-31: Reserved
+
+Data Section:
+  Compressed JSON (zstd)
+
+Signature Section:
+  Length (uint32)
+  Signature data
+
+Footer:
+  CRC32 checksum (4 bytes)
+</pre>
+
+<h3>Compression</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>Format</strong></td>
+        <td><strong>Typical JSON</strong></td>
+        <td><strong>.wiaref</strong></td>
+        <td><strong>Reduction</strong></td>
+    </tr>
+    <tr>
+        <td>Basic credential</td>
+        <td>15 KB</td>
+        <td>3 KB</td>
+        <td>80%</td>
+    </tr>
+    <tr>
+        <td>Full credential</td>
+        <td>50 KB</td>
+        <td>8 KB</td>
+        <td>84%</td>
+    </tr>
+    <tr>
+        <td>With evidence</td>
+        <td>200 KB</td>
+        <td>40 KB</td>
+        <td>80%</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>4.11 Validation Rules</h2>
+
+<p>All credentials must pass validation:</p>
+
+<h3>Required Validations</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <td><strong>Rule</strong></td>
+        <td><strong>Description</strong></td>
+    </tr>
+    <tr>
+        <td>Schema Compliance</td>
+        <td>Must validate against JSON Schema</td>
+    </tr>
+    <tr>
+        <td>Date Consistency</td>
+        <td>End dates after start dates</td>
+    </tr>
+    <tr>
+        <td>Age Validity</td>
+        <td>Education dates align with holder age</td>
+    </tr>
+    <tr>
+        <td>Code Validity</td>
+        <td>ISCED, ESCO, ISO codes must be valid</td>
+    </tr>
+    <tr>
+        <td>Signature Validity</td>
+        <td>All signatures must verify</td>
+    </tr>
+    <tr>
+        <td>Confidence Bounds</td>
+        <td>0-100, calculated correctly</td>
+    </tr>
+</table>
+
+<h3>Validation Response</h3>
+
+<pre>
+interface ValidationResult {
+  valid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+
+  schemaVersion: string;
+  validatedAt: string;
+}
+
+interface ValidationError {
+  code: string;
+  path: string;
+  message: string;
+  severity: 'error' | 'critical';
+}
+</pre>
+
+<hr>
+
+<h2>4.12 Chapter Summary</h2>
+
+<p>Key takeaways from this chapter:</p>
+
+<ul>
+    <li>[REF] JSON Schema defines all credential data structures</li>
+    <li>[REF] HolderIdentity supports multiple scripts and transliterations</li>
+    <li>[REF] Education records use ISCED classification</li>
+    <li>[REF] Competency records use ESCO occupation codes</li>
+    <li>[REF] Language abilities use CEFR framework</li>
+    <li>[REF] Binary format (.wiaref) provides 80%+ compression</li>
+    <li>[REF] Post-quantum signatures (CRYSTALS-Dilithium) supported</li>
+</ul>
+
+<hr>
+
+<p><a href="chapter-03.html">Previous: Standard Overview</a> | <a href="index.html">Table of Contents</a> | <a href="chapter-05.html">Next: Phase 2 - Algorithms</a></p>
+
+<hr>
+
+<p><strong>Copyright 2025 Smilestory Inc. / WIA</strong></p>
+<p>Released under MIT License</p>
+
+</body>
+</html>

@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Phase 2 - API Interface Design | WIA-LEGAL-001</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --legal-color: #7C3AED;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            padding: 60px;
+            border-radius: 16px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--legal-color);
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--legal-color);
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--legal-color);
+            margin: 40px 0 20px;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--legal-color);
+            margin: 30px 0 15px;
+        }
+
+        p {
+            margin: 15px 0;
+            text-align: justify;
+        }
+
+        .highlight {
+            background: var(--bg);
+            padding: 20px;
+            border-left: 4px solid var(--legal-color);
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 2px solid var(--border);
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            background: var(--legal-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: var(--legal-color-dark);
+            transform: translateY(-2px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg);
+            color: var(--legal-color);
+            font-weight: 600;
+        }
+
+        ul, ol {
+            margin: 15px 0 15px 30px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        .summary-box {
+            background: var(--bg);
+            padding: 30px;
+            border-radius: 12px;
+            margin: 40px 0;
+            border: 2px solid var(--legal-color);
+        }
+
+        .summary-box h3 {
+            margin-top: 0;
+        }
+
+        code {
+            background: var(--bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #a78bfa;
+        }
+
+        pre {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid var(--legal-color);
+        }
+
+        pre code {
+            padding: 0;
+            background: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chapter 5: Phase 2 - API Interface Design</h1>
+
+        <h2>5.1 Introduction to Digital Court APIs</h2>
+
+        <p>
+            Application Programming Interfaces (APIs) form the nervous system of modern digital court platforms. They enable
+            seamless integration between different systems, allow third-party developers to build innovative legal technology
+            solutions, and provide programmatic access to court services that traditionally required manual intervention.
+            Phase 2 of WIA-LEGAL-001 establishes comprehensive API standards that balance security, functionality, and ease
+            of use.
+        </p>
+
+        <p>
+            The API layer serves multiple stakeholders: attorneys filing documents through practice management software,
+            legal research platforms retrieving case information, government agencies accessing court records, and citizen
+            portals providing self-service capabilities. Each use case requires different levels of access, authentication
+            mechanisms, and data formats. The WIA-LEGAL-001 API framework accommodates this diversity while maintaining
+            consistent design principles.
+        </p>
+
+        <div class="highlight">
+            <strong>Design Philosophy:</strong> WIA-LEGAL-001 APIs follow RESTful principles for simplicity and widespread
+            adoption, while also providing GraphQL endpoints for complex queries requiring flexible data retrieval. This
+            dual-API approach ensures both ease of integration and advanced functionality for sophisticated applications.
+        </div>
+
+        <h2>5.2 REST API Architecture</h2>
+
+        <h3>5.2.1 Core Principles and Design Patterns</h3>
+
+        <p>
+            The WIA-LEGAL-001 REST API adheres to industry-standard design principles that make it intuitive for developers
+            already familiar with modern web APIs. These principles include:
+        </p>
+
+        <ul>
+            <li><strong>Resource-Based URLs:</strong> Every entity (case, document, hearing) is represented as a resource with a unique URL</li>
+            <li><strong>HTTP Method Semantics:</strong> Standard HTTP methods (GET, POST, PUT, PATCH, DELETE) correspond to CRUD operations</li>
+            <li><strong>Statelessness:</strong> Each request contains all necessary information; no session state is maintained on the server</li>
+            <li><strong>Hypermedia Controls (HATEOAS):</strong> Responses include links to related resources and available actions</li>
+            <li><strong>Content Negotiation:</strong> Clients can request data in different formats (JSON, XML) via Accept headers</li>
+            <li><strong>Versioning:</strong> API version is specified in the URL path to ensure backward compatibility</li>
+        </ul>
+
+        <h3>5.2.2 Core API Endpoints</h3>
+
+        <p>The WIA-LEGAL-001 REST API organizes endpoints into logical domains corresponding to court operations:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Methods</th>
+                    <th>Purpose</th>
+                    <th>Auth Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/api/v1/cases</code></td>
+                    <td>GET, POST</td>
+                    <td>List and create cases</td>
+                    <td>Attorney, Staff</td>
+                </tr>
+                <tr>
+                    <td><code>/api/v1/cases/{id}</code></td>
+                    <td>GET, PUT, PATCH</td>
+                    <td>Retrieve and update specific case</td>
+                    <td>Attorney, Judge</td>
+                </tr>
+                <tr>
+                    <td><code>/api/v1/cases/{id}/documents</code></td>
+                    <td>GET, POST</td>
+                    <td>Manage case documents</td>
+                    <td>Attorney, Staff</td>
+                </tr>
+                <tr>
+                    <td><code>/api/v1/documents/{id}</code></td>
+                    <td>GET, PUT, DELETE</td>
+                    <td>Document operations</td>
+                    <td>Attorney</td>
+                </tr>
+                <tr>
+                    <td><code>/api/v1/hearings</code></td>
+                    <td>GET, POST</td>
+                    <td>Schedule and list hearings</td>
+                    <td>Judge, Clerk</td>
+                </tr>
+                <tr>
+                    <td><code>/api/v1/hearings/{id}</code></td>
+                    <td>GET, PUT, DELETE</td>
+                    <td>Manage specific hearing</td>
+                    <td>Judge, Clerk</td>
+                </tr>
+                <tr>
+                    <td><code>/api/v1/evidence</code></td>
+                    <td>GET, POST</td>
+                    <td>Submit and retrieve evidence</td>
+                    <td>Attorney, Expert</td>
+                </tr>
+                <tr>
+                    <td><code>/api/v1/parties</code></td>
+                    <td>GET, POST</td>
+                    <td>Manage case parties</td>
+                    <td>Attorney, Staff</td>
+                </tr>
+                <tr>
+                    <td><code>/api/v1/judgments</code></td>
+                    <td>GET, POST</td>
+                    <td>Record and retrieve judgments</td>
+                    <td>Judge</td>
+                </tr>
+                <tr>
+                    <td><code>/api/v1/notifications</code></td>
+                    <td>GET, POST</td>
+                    <td>System notifications</td>
+                    <td>All Users</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>5.2.3 Request and Response Examples</h3>
+
+        <p><strong>Example: Creating a New Case</strong></p>
+
+        <pre><code>POST /api/v1/cases
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+
+{
+  "caseType": "CIVIL",
+  "jurisdiction": "SUPERIOR_COURT",
+  "county": "LOS_ANGELES",
+  "plaintiff": {
+    "type": "INDIVIDUAL",
+    "name": "Jane Smith",
+    "address": {
+      "street": "123 Main St",
+      "city": "Los Angeles",
+      "state": "CA",
+      "zipCode": "90001"
+    },
+    "contact": {
+      "email": "jane.smith@email.com",
+      "phone": "+1-555-0123"
+    }
+  },
+  "defendant": {
+    "type": "CORPORATION",
+    "name": "Acme Corporation",
+    "registrationNumber": "C1234567",
+    "address": {
+      "street": "456 Corporate Blvd",
+      "city": "Los Angeles",
+      "state": "CA",
+      "zipCode": "90002"
+    }
+  },
+  "causeOfAction": "BREACH_OF_CONTRACT",
+  "damagesRequested": {
+    "amount": 150000.00,
+    "currency": "USD",
+    "type": "COMPENSATORY"
+  },
+  "filingFee": {
+    "amount": 435.00,
+    "currency": "USD",
+    "paymentMethod": "CREDIT_CARD",
+    "transactionId": "txn_1234567890"
+  }
+}</code></pre>
+
+        <p><strong>Response:</strong></p>
+
+        <pre><code>HTTP/1.1 201 Created
+Content-Type: application/json
+Location: /api/v1/cases/2024-CV-12345
+
+{
+  "caseId": "2024-CV-12345",
+  "caseNumber": "24STCV12345",
+  "status": "FILED",
+  "filedDate": "2024-03-15T14:30:00Z",
+  "jurisdiction": "SUPERIOR_COURT",
+  "county": "LOS_ANGELES",
+  "assignedJudge": null,
+  "nextHearing": null,
+  "plaintiff": {
+    "partyId": "PTY-001",
+    "type": "INDIVIDUAL",
+    "name": "Jane Smith"
+  },
+  "defendant": {
+    "partyId": "PTY-002",
+    "type": "CORPORATION",
+    "name": "Acme Corporation"
+  },
+  "causeOfAction": "BREACH_OF_CONTRACT",
+  "damagesRequested": {
+    "amount": 150000.00,
+    "currency": "USD"
+  },
+  "_links": {
+    "self": { "href": "/api/v1/cases/2024-CV-12345" },
+    "documents": { "href": "/api/v1/cases/2024-CV-12345/documents" },
+    "parties": { "href": "/api/v1/cases/2024-CV-12345/parties" },
+    "timeline": { "href": "/api/v1/cases/2024-CV-12345/timeline" }
+  }
+}</code></pre>
+
+        <h3>5.2.4 Document Upload with Multipart Form Data</h3>
+
+        <p>Filing legal documents requires handling both metadata and binary file content:</p>
+
+        <pre><code>POST /api/v1/cases/2024-CV-12345/documents
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="metadata"
+Content-Type: application/json
+
+{
+  "documentType": "COMPLAINT",
+  "title": "Complaint for Breach of Contract",
+  "filedBy": "PTY-001",
+  "confidential": false,
+  "serviceRequired": true,
+  "serveOnParties": ["PTY-002"]
+}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="complaint.pdf"
+Content-Type: application/pdf
+
+%PDF-1.7
+[Binary PDF content]
+------WebKitFormBoundary7MA4YWxkTrZu0gW--</code></pre>
+
+        <h2>5.3 GraphQL API Design</h2>
+
+        <h3>5.3.1 Why GraphQL for Court Systems?</h3>
+
+        <p>
+            While REST APIs excel at simple CRUD operations, complex legal queries often require data from multiple related
+            resources. GraphQL solves the "over-fetching" and "under-fetching" problems by allowing clients to specify
+            exactly what data they need in a single request. This is particularly valuable for:
+        </p>
+
+        <ul>
+            <li>Legal research platforms querying cases with specific criteria</li>
+            <li>Dashboard applications displaying aggregate statistics</li>
+            <li>Mobile applications with limited bandwidth</li>
+            <li>Complex reporting tools requiring data from multiple endpoints</li>
+        </ul>
+
+        <h3>5.3.2 GraphQL Schema Definition</h3>
+
+        <pre><code>type Query {
+  case(caseId: ID!): Case
+  cases(
+    filter: CaseFilter
+    pagination: Pagination
+    sort: CaseSort
+  ): CaseConnection!
+
+  document(documentId: ID!): Document
+  hearing(hearingId: ID!): Hearing
+
+  searchCases(
+    query: String!
+    filters: SearchFilters
+  ): [Case!]!
+}
+
+type Case {
+  caseId: ID!
+  caseNumber: String!
+  caseType: CaseType!
+  status: CaseStatus!
+  filedDate: DateTime!
+  jurisdiction: Jurisdiction!
+
+  plaintiff: Party!
+  defendant: Party!
+  attorneys: [Attorney!]!
+
+  documents(
+    documentType: DocumentType
+    limit: Int
+  ): [Document!]!
+
+  hearings(upcoming: Boolean): [Hearing!]!
+  timeline: [CaseEvent!]!
+
+  judgments: [Judgment!]!
+  appeals: [Appeal!]!
+}
+
+type Document {
+  documentId: ID!
+  documentType: DocumentType!
+  title: String!
+  filedDate: DateTime!
+  filedBy: Party!
+
+  url: String!
+  size: Int!
+  mimeType: String!
+
+  confidential: Boolean!
+  sealed: Boolean!
+
+  signatures: [DigitalSignature!]!
+  blockchainHash: String
+}
+
+type Hearing {
+  hearingId: ID!
+  case: Case!
+  hearingType: HearingType!
+  scheduledDate: DateTime!
+  duration: Int!
+
+  location: Location
+  virtualMeetingUrl: String
+
+  participants: [HearingParticipant!]!
+  exhibits: [Evidence!]!
+
+  transcript: Document
+  recording: MediaFile
+}
+
+enum CaseType {
+  CIVIL
+  CRIMINAL
+  FAMILY
+  PROBATE
+  SMALL_CLAIMS
+  APPELLATE
+}
+
+enum CaseStatus {
+  FILED
+  PENDING
+  ACTIVE
+  SETTLED
+  DISMISSED
+  JUDGMENT_ENTERED
+  APPEALED
+  CLOSED
+}
+
+input CaseFilter {
+  caseTypes: [CaseType!]
+  statuses: [CaseStatus!]
+  filedAfter: DateTime
+  filedBefore: DateTime
+  jurisdiction: Jurisdiction
+  assignedJudge: ID
+}
+
+type Mutation {
+  createCase(input: CreateCaseInput!): Case!
+  updateCase(caseId: ID!, input: UpdateCaseInput!): Case!
+
+  uploadDocument(
+    caseId: ID!
+    input: DocumentInput!
+    file: Upload!
+  ): Document!
+
+  scheduleHearing(input: HearingInput!): Hearing!
+  submitEvidence(input: EvidenceInput!): Evidence!
+}</code></pre>
+
+        <h3>5.3.3 GraphQL Query Examples</h3>
+
+        <p><strong>Complex Case Query with Nested Data:</strong></p>
+
+        <pre><code>query GetCaseDetails($caseId: ID!) {
+  case(caseId: $caseId) {
+    caseNumber
+    caseType
+    status
+    filedDate
+
+    plaintiff {
+      name
+      type
+      attorneys {
+        name
+        barNumber
+        firmName
+      }
+    }
+
+    defendant {
+      name
+      type
+      attorneys {
+        name
+        barNumber
+      }
+    }
+
+    documents(limit: 10) {
+      documentType
+      title
+      filedDate
+      filedBy {
+        name
+      }
+      url
+    }
+
+    hearings(upcoming: true) {
+      hearingType
+      scheduledDate
+      location {
+        courtroom
+        building
+      }
+      virtualMeetingUrl
+    }
+
+    timeline {
+      eventType
+      eventDate
+      description
+      actor {
+        name
+      }
+    }
+  }
+}</code></pre>
+
+        <p><strong>Advanced Search Query:</strong></p>
+
+        <pre><code>query SearchRecentCivilCases {
+  cases(
+    filter: {
+      caseTypes: [CIVIL]
+      statuses: [ACTIVE, PENDING]
+      filedAfter: "2024-01-01T00:00:00Z"
+    }
+    pagination: {
+      limit: 50
+      offset: 0
+    }
+    sort: {
+      field: FILED_DATE
+      direction: DESC
+    }
+  ) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    edges {
+      node {
+        caseNumber
+        filedDate
+        plaintiff { name }
+        defendant { name }
+        status
+      }
+    }
+  }
+}</code></pre>
+
+        <h2>5.4 Authentication and Authorization</h2>
+
+        <h3>5.4.1 Multi-Layered Security Model</h3>
+
+        <p>
+            Court systems handle highly sensitive information requiring robust authentication and fine-grained authorization.
+            WIA-LEGAL-001 implements a multi-layered security model combining multiple industry-standard technologies:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Layer</th>
+                    <th>Technology</th>
+                    <th>Purpose</th>
+                    <th>Use Case</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>API Keys</td>
+                    <td>SHA-256 hashed keys</td>
+                    <td>System identification</td>
+                    <td>Server-to-server integration</td>
+                </tr>
+                <tr>
+                    <td>OAuth 2.0</td>
+                    <td>Authorization Code Flow</td>
+                    <td>Delegated access</td>
+                    <td>Third-party applications</td>
+                </tr>
+                <tr>
+                    <td>JWT</td>
+                    <td>RS256 signed tokens</td>
+                    <td>Stateless authentication</td>
+                    <td>Web and mobile clients</td>
+                </tr>
+                <tr>
+                    <td>SAML 2.0</td>
+                    <td>XML-based SSO</td>
+                    <td>Enterprise federation</td>
+                    <td>Government agency integration</td>
+                </tr>
+                <tr>
+                    <td>mTLS</td>
+                    <td>Client certificates</td>
+                    <td>Machine authentication</td>
+                    <td>High-security integrations</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>5.4.2 OAuth 2.0 Implementation</h3>
+
+        <p><strong>Authorization Code Flow for Attorney Portal:</strong></p>
+
+        <pre><code>// Step 1: Redirect user to authorization endpoint
+GET https://courts.wia.gov/oauth/authorize
+  ?response_type=code
+  &client_id=attorney_portal_12345
+  &redirect_uri=https://mylaw.com/callback
+  &scope=cases:read cases:write documents:upload
+  &state=xyz123
+
+// Step 2: User authenticates and grants permission
+
+// Step 3: Authorization server redirects back with code
+https://mylaw.com/callback
+  ?code=AUTH_CODE_XYZ
+  &state=xyz123
+
+// Step 4: Exchange code for access token
+POST https://courts.wia.gov/oauth/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code
+&code=AUTH_CODE_XYZ
+&redirect_uri=https://mylaw.com/callback
+&client_id=attorney_portal_12345
+&client_secret=SECRET_KEY
+
+// Step 5: Receive access token
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "REFRESH_TOKEN_ABC",
+  "scope": "cases:read cases:write documents:upload"
+}</code></pre>
+
+        <h3>5.4.3 JWT Token Structure</h3>
+
+        <p>WIA-LEGAL-001 JWT tokens contain essential claims for authorization decisions:</p>
+
+        <pre><code>{
+  "header": {
+    "alg": "RS256",
+    "typ": "JWT",
+    "kid": "court-key-2024-03"
+  },
+  "payload": {
+    "iss": "https://courts.wia.gov",
+    "sub": "user:attorney:12345",
+    "aud": "wia-legal-api",
+    "exp": 1710515700,
+    "iat": 1710512100,
+    "jti": "jwt-unique-id-789",
+
+    "user": {
+      "userId": "12345",
+      "userType": "ATTORNEY",
+      "name": "John Doe",
+      "email": "john.doe@lawfirm.com",
+      "barNumber": "CA-123456"
+    },
+
+    "permissions": [
+      "cases:read",
+      "cases:write",
+      "documents:upload",
+      "documents:read",
+      "hearings:schedule"
+    ],
+
+    "jurisdiction": {
+      "state": "CA",
+      "counties": ["LOS_ANGELES", "ORANGE"]
+    }
+  }
+}</code></pre>
+
+        <h3>5.4.4 Role-Based Access Control (RBAC)</h3>
+
+        <p>WIA-LEGAL-001 defines standard roles with associated permissions:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Role</th>
+                    <th>Permissions</th>
+                    <th>Scope</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Judge</td>
+                    <td>Full case access, scheduling, judgment entry</td>
+                    <td>Assigned cases only</td>
+                </tr>
+                <tr>
+                    <td>Attorney</td>
+                    <td>File documents, view own cases, schedule depositions</td>
+                    <td>Cases where attorney of record</td>
+                </tr>
+                <tr>
+                    <td>Court Clerk</td>
+                    <td>Case creation, document filing, scheduling</td>
+                    <td>Jurisdiction-wide</td>
+                </tr>
+                <tr>
+                    <td>Court Reporter</td>
+                    <td>Upload transcripts, access hearing recordings</td>
+                    <td>Assigned hearings only</td>
+                </tr>
+                <tr>
+                    <td>Public User</td>
+                    <td>Search public records, view public documents</td>
+                    <td>Non-sealed cases only</td>
+                </tr>
+                <tr>
+                    <td>System Admin</td>
+                    <td>User management, system configuration</td>
+                    <td>Court system-wide</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>5.5 WebSocket APIs for Real-Time Updates</h2>
+
+        <h3>5.5.1 Real-Time Event Streaming</h3>
+
+        <p>
+            Many court operations benefit from real-time notifications: case status changes, hearing schedule updates,
+            document filings, and judicial orders. WIA-LEGAL-001 provides WebSocket endpoints for bidirectional,
+            real-time communication:
+        </p>
+
+        <pre><code>// Establish WebSocket connection
+const ws = new WebSocket('wss://courts.wia.gov/api/v1/stream');
+
+// Authenticate
+ws.onopen = () => {
+  ws.send(JSON.stringify({
+    type: 'AUTH',
+    token: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...'
+  }));
+};
+
+// Subscribe to case updates
+ws.send(JSON.stringify({
+  type: 'SUBSCRIBE',
+  channel: 'case:2024-CV-12345',
+  events: [
+    'DOCUMENT_FILED',
+    'HEARING_SCHEDULED',
+    'STATUS_CHANGED',
+    'ORDER_ISSUED'
+  ]
+}));
+
+// Receive real-time updates
+ws.onmessage = (event) => {
+  const update = JSON.parse(event.data);
+
+  switch(update.type) {
+    case 'DOCUMENT_FILED':
+      console.log('New document:', update.data.document);
+      notifyUser(update.data);
+      break;
+
+    case 'HEARING_SCHEDULED':
+      console.log('Hearing scheduled:', update.data.hearing);
+      updateCalendar(update.data);
+      break;
+
+    case 'STATUS_CHANGED':
+      console.log('Case status:', update.data.newStatus);
+      refreshCaseView();
+      break;
+  }
+};</code></pre>
+
+        <h3>5.5.2 Virtual Hearing Signaling</h3>
+
+        <p>WebSocket connections also facilitate WebRTC signaling for virtual hearings:</p>
+
+        <pre><code>// WebRTC signaling through WebSocket
+ws.send(JSON.stringify({
+  type: 'WEBRTC_SIGNAL',
+  hearingId: 'HRG-2024-001',
+  signalType: 'OFFER',
+  payload: {
+    sdp: rtcPeerConnection.localDescription,
+    participantId: 'ATY-12345'
+  }
+}));</code></pre>
+
+        <h2>5.6 Rate Limiting and Quota Management</h2>
+
+        <h3>5.6.1 Rate Limiting Strategy</h3>
+
+        <p>
+            To ensure fair resource allocation and prevent abuse, WIA-LEGAL-001 implements tiered rate limiting based
+            on user type and API endpoint sensitivity:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>User Tier</th>
+                    <th>Requests/Minute</th>
+                    <th>Requests/Hour</th>
+                    <th>Requests/Day</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Public User</td>
+                    <td>10</td>
+                    <td>100</td>
+                    <td>1,000</td>
+                </tr>
+                <tr>
+                    <td>Registered Attorney</td>
+                    <td>60</td>
+                    <td>1,000</td>
+                    <td>10,000</td>
+                </tr>
+                <tr>
+                    <td>Court Staff</td>
+                    <td>120</td>
+                    <td>5,000</td>
+                    <td>50,000</td>
+                </tr>
+                <tr>
+                    <td>System Integration</td>
+                    <td>300</td>
+                    <td>10,000</td>
+                    <td>100,000</td>
+                </tr>
+                <tr>
+                    <td>Enterprise Partner</td>
+                    <td>1,000</td>
+                    <td>50,000</td>
+                    <td>500,000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>Rate limit headers are returned with every response:</p>
+
+        <pre><code>HTTP/1.1 200 OK
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 42
+X-RateLimit-Reset: 1710512160
+Retry-After: 45</code></pre>
+
+        <h2>5.7 API Versioning Strategies</h2>
+
+        <h3>5.7.1 URL Path Versioning</h3>
+
+        <p>
+            WIA-LEGAL-001 uses URL path versioning as the primary mechanism, ensuring backward compatibility as the
+            API evolves:
+        </p>
+
+        <pre><code>// Version 1 (current)
+GET /api/v1/cases/2024-CV-12345
+
+// Version 2 (future, with enhanced features)
+GET /api/v2/cases/2024-CV-12345
+
+// Beta features (opt-in)
+GET /api/beta/cases/2024-CV-12345/ai-summary</code></pre>
+
+        <h3>5.7.2 API Deprecation Policy</h3>
+
+        <ul>
+            <li>Minimum 12-month notice before deprecating any API version</li>
+            <li>Deprecation warnings in response headers</li>
+            <li>Detailed migration guides published</li>
+            <li>Parallel operation of old and new versions during transition</li>
+        </ul>
+
+        <h2>5.8 SDK Examples</h2>
+
+        <h3>5.8.1 TypeScript SDK</h3>
+
+        <pre><code>import { WIACourtClient } from '@wia/legal-sdk';
+
+const client = new WIACourtClient({
+  apiKey: process.env.WIA_API_KEY,
+  environment: 'production'
+});
+
+// Create a new case
+const newCase = await client.cases.create({
+  caseType: 'CIVIL',
+  jurisdiction: 'SUPERIOR_COURT',
+  county: 'LOS_ANGELES',
+  plaintiff: {
+    type: 'INDIVIDUAL',
+    name: 'Jane Smith',
+    address: { /* ... */ }
+  },
+  defendant: {
+    type: 'CORPORATION',
+    name: 'Acme Corporation',
+    registrationNumber: 'C1234567'
+  }
+});
+
+console.log('Case created:', newCase.caseNumber);
+
+// Upload a document
+const document = await client.documents.upload(newCase.caseId, {
+  documentType: 'COMPLAINT',
+  title: 'Complaint for Breach of Contract',
+  file: fs.createReadStream('./complaint.pdf'),
+  metadata: {
+    confidential: false,
+    serviceRequired: true
+  }
+});
+
+// Subscribe to case updates
+client.cases.subscribe(newCase.caseId, {
+  onDocumentFiled: (doc) => {
+    console.log('New document filed:', doc.title);
+  },
+  onHearingScheduled: (hearing) => {
+    console.log('Hearing scheduled:', hearing.scheduledDate);
+  }
+});</code></pre>
+
+        <h3>5.8.2 Python SDK</h3>
+
+        <pre><code>from wia_legal import CourtClient
+
+client = CourtClient(
+    api_key=os.environ['WIA_API_KEY'],
+    environment='production'
+)
+
+# Search for cases
+cases = client.cases.search(
+    query='breach of contract',
+    filters={
+        'case_types': ['CIVIL'],
+        'filed_after': '2024-01-01',
+        'jurisdiction': 'SUPERIOR_COURT'
+    },
+    limit=50
+)
+
+for case in cases:
+    print(f"{case.case_number}: {case.plaintiff.name} v. {case.defendant.name}")
+
+# Get case details with related data
+case = client.cases.get('2024-CV-12345', include=[
+    'documents',
+    'hearings',
+    'parties',
+    'timeline'
+])
+
+# File a motion
+motion = client.documents.create(
+    case_id=case.case_id,
+    document_type='MOTION',
+    title='Motion for Summary Judgment',
+    file_path='./motion.pdf',
+    metadata={
+        'hearing_requested': True,
+        'serve_on': [case.defendant.party_id]
+    }
+)</code></pre>
+
+        <h3>5.8.3 Java SDK</h3>
+
+        <pre><code>import com.wia.legal.CourtClient;
+import com.wia.legal.models.*;
+
+CourtClient client = new CourtClient.Builder()
+    .apiKey(System.getenv("WIA_API_KEY"))
+    .environment(Environment.PRODUCTION)
+    .build();
+
+// Create case with builder pattern
+Case newCase = client.cases().create(
+    CaseCreateRequest.builder()
+        .caseType(CaseType.CIVIL)
+        .jurisdiction(Jurisdiction.SUPERIOR_COURT)
+        .county("LOS_ANGELES")
+        .plaintiff(Party.individual()
+            .name("Jane Smith")
+            .address(Address.builder()
+                .street("123 Main St")
+                .city("Los Angeles")
+                .state("CA")
+                .zipCode("90001")
+                .build())
+            .build())
+        .defendant(Party.corporation()
+            .name("Acme Corporation")
+            .registrationNumber("C1234567")
+            .build())
+        .causeOfAction(CauseOfAction.BREACH_OF_CONTRACT)
+        .build()
+);
+
+System.out.println("Case created: " + newCase.getCaseNumber());
+
+// Async document upload
+CompletableFuture&lt;Document&gt; uploadFuture = client.documents()
+    .uploadAsync(
+        newCase.getCaseId(),
+        DocumentUploadRequest.builder()
+            .documentType(DocumentType.COMPLAINT)
+            .title("Complaint for Breach of Contract")
+            .file(new File("./complaint.pdf"))
+            .build()
+    );
+
+uploadFuture.thenAccept(doc -&gt;
+    System.out.println("Document uploaded: " + doc.getDocumentId())
+);</code></pre>
+
+        <div class="summary-box">
+            <h3>Chapter Summary</h3>
+            <p><strong>Key Takeaways:</strong></p>
+            <ul>
+                <li>WIA-LEGAL-001 provides both REST and GraphQL APIs for different use cases</li>
+                <li>Authentication uses OAuth 2.0, JWT, and API keys with role-based access control</li>
+                <li>WebSocket APIs enable real-time updates and virtual hearing signaling</li>
+                <li>Rate limiting ensures fair resource allocation across user tiers</li>
+                <li>URL path versioning maintains backward compatibility</li>
+                <li>Official SDKs available for TypeScript, Python, and Java</li>
+                <li>Comprehensive API documentation enables third-party integration</li>
+            </ul>
+        </div>
+
+        <div class="summary-box">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>What are the advantages of providing both REST and GraphQL APIs?</li>
+                <li>Explain the OAuth 2.0 Authorization Code Flow for attorney portal integration.</li>
+                <li>What information is included in a WIA-LEGAL-001 JWT token?</li>
+                <li>How do WebSocket APIs enhance the digital court experience?</li>
+                <li>Why is rate limiting important for court API systems?</li>
+                <li>Compare the permissions of different user roles in the RBAC model.</li>
+                <li>How does the SDK simplify API integration for developers?</li>
+            </ol>
+        </div>
+
+        <div class="summary-box">
+            <h3>Looking Ahead</h3>
+            <p>
+                In Chapter 6, we'll dive into Phase 3: Protocol and Security. We'll explore the Virtual Hearing Protocol
+                based on WebRTC, end-to-end encryption standards, digital signature infrastructure, and blockchain
+                integration for creating immutable court records. Security is paramount in legal systems, and you'll
+                learn how WIA-LEGAL-001 implements defense-in-depth strategies to protect sensitive information.
+            </p>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-04.html" class="nav-btn">← Previous Chapter</a>
+            <a href="chapter-06.html" class="nav-btn">Next Chapter →</a>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid var(--border); color: var(--legal-color);">
+            <p><strong>弘益人間 (Hongik Ingan) - Benefit All Humanity</strong></p>
+            <p style="color: var(--text-secondary); margin-top: 10px;">© 2025 WIA - World Certification Industry Association</p>
+        </div>
+    </div>
+</body>
+</html>

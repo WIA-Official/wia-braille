@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-SPACE-023: Space Medicine - Simulator</title>
+    <style>
+        :root {
+            --primary: #06B6D4;
+            --primary-dark: #0891B2;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .nav-home {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav-home:hover { color: var(--primary); }
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--primary); }
+        .breadcrumb .sep { color: var(--border); }
+        .breadcrumb .current { color: var(--primary); font-weight: 500; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--primary); }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .lang-switch { display: flex; gap: 10px; }
+        .lang-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .lang-btn:hover { border-color: var(--primary); }
+        .hero {
+            text-align: center;
+            padding: 40px 0;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+        }
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab:hover { color: var(--primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        pre {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            overflow-x: auto;
+            color: var(--text);
+        }
+        .output {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            min-height: 100px;
+        }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .metric {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary);
+        }
+        .metric-label { color: var(--text-muted); font-size: 0.9rem; }
+        .metric-value { font-size: 1.8rem; font-weight: bold; color: var(--primary); margin-top: 5px; }
+        #qrcode { display: flex; justify-content: center; margin: 20px 0; }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .status-normal { background: var(--secondary); color: white; }
+        .status-warning { background: var(--warning); color: white; }
+        .status-danger { background: var(--danger); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="top-nav">
+            <div class="nav-left">
+                <a href="../" class="nav-home">
+                    <span>🏠</span>
+                    <span>WIA-SPACE-023</span>
+                </a>
+                <div class="breadcrumb">
+                    <a href="/">Standards</a>
+                    <span class="sep">/</span>
+                    <a href="../">Space Medicine</a>
+                    <span class="sep">/</span>
+                    <span class="current">Simulator</span>
+                </div>
+            </div>
+            <div class="nav-links">
+                <a href="../spec/WIA-SPACE-023-v1.0.md">📄 Spec</a>
+                <a href="../api/typescript/">💻 API</a>
+                <a href="https://github.com/WIA-Official/wia-standards">GitHub</a>
+            </div>
+        </nav>
+
+        <header>
+            <div class="logo">🏥 Space Medicine Simulator</div>
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('ko')">한국어</button>
+            </div>
+        </header>
+
+        <div class="hero">
+            <h1 data-i18n="title">WIA-SPACE-023: Space Medicine Standard</h1>
+            <p data-i18n="subtitle">Medical care and health maintenance for human spaceflight</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab(0)">📊 <span data-i18n="tab1">Data Format</span></button>
+            <button class="tab" onclick="switchTab(1)">🔢 <span data-i18n="tab2">Algorithms</span></button>
+            <button class="tab" onclick="switchTab(2)">📡 <span data-i18n="tab3">Protocol</span></button>
+            <button class="tab" onclick="switchTab(3)">🔗 <span data-i18n="tab4">Integration</span></button>
+            <button class="tab" onclick="switchTab(4)">🧪 <span data-i18n="tab5">Test</span></button>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div class="tab-content active">
+            <div class="card">
+                <h3 data-i18n="health-data-schema">Health Monitoring Data Schema</h3>
+                <p data-i18n="health-data-desc">Standardized format for astronaut health monitoring data</p>
+                <pre id="schema-display">{
+  "crewMember": {
+    "id": "string",
+    "name": "string",
+    "mission": "string",
+    "role": "Commander | Pilot | Specialist | CMO"
+  },
+  "vitals": {
+    "heartRate": "number (bpm)",
+    "bloodPressure": {
+      "systolic": "number (mmHg)",
+      "diastolic": "number (mmHg)"
+    },
+    "temperature": "number (°C)",
+    "respiratoryRate": "number (breaths/min)",
+    "oxygenSaturation": "number (%)"
+  },
+  "radiation": {
+    "cumulative": "number (mSv)",
+    "daily": "number (mSv/day)",
+    "eyeLens": "number (mSv)",
+    "skin": "number (mSv)"
+  },
+  "exercise": {
+    "duration": "number (minutes)",
+    "type": "Resistive | Aerobic | Mixed",
+    "compliance": "number (%)"
+  },
+  "medical": {
+    "medications": ["string"],
+    "symptoms": ["string"],
+    "nextExam": "ISO8601 timestamp"
+  },
+  "timestamp": "ISO8601",
+  "status": "Normal | Warning | Alert"
+}</pre>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div class="tab-content">
+            <div class="card">
+                <h3 data-i18n="radiation-calculator">Radiation Dose Calculator</h3>
+                <div class="form-group">
+                    <label data-i18n="mission-duration">Mission Duration (days):</label>
+                    <input type="number" id="missionDays" value="180" min="1">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="location">Location:</label>
+                    <select id="location">
+                        <option value="LEO">LEO (ISS ~400km)</option>
+                        <option value="Lunar">Lunar Surface</option>
+                        <option value="Mars">Mars Transit</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="calculateRadiation()">Calculate Exposure</button>
+                <div class="output" id="radiation-output"></div>
+            </div>
+
+            <div class="card">
+                <h3 data-i18n="exercise-prescription">Exercise Prescription Calculator</h3>
+                <div class="form-group">
+                    <label data-i18n="crew-mass">Crew Member Mass (kg):</label>
+                    <input type="number" id="crewMass" value="75" min="40" max="120">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="mission-type">Mission Type:</label>
+                    <select id="missionType">
+                        <option value="short">Short (<30 days)</option>
+                        <option value="medium">Medium (30-180 days)</option>
+                        <option value="long">Long (>180 days)</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="calculateExercise()">Generate Prescription</button>
+                <div class="output" id="exercise-output"></div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div class="tab-content">
+            <div class="card">
+                <h3 data-i18n="health-monitoring-api">Health Monitoring API Test</h3>
+                <div class="form-group">
+                    <label data-i18n="crew-id">Crew Member ID:</label>
+                    <input type="text" id="crewId" value="CREW-001">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="heart-rate">Heart Rate (bpm):</label>
+                    <input type="number" id="heartRate" value="72" min="40" max="200">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="bp-systolic">Blood Pressure - Systolic (mmHg):</label>
+                    <input type="number" id="bpSystolic" value="120" min="70" max="200">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="bp-diastolic">Blood Pressure - Diastolic (mmHg):</label>
+                    <input type="number" id="bpDiastolic" value="80" min="40" max="130">
+                </div>
+                <button class="btn btn-primary" onclick="submitHealthData()">Submit Health Data</button>
+                <div class="output" id="api-output"></div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div class="tab-content">
+            <div class="card">
+                <h3 data-i18n="mission-health-scenario">Mission Health Management Scenario</h3>
+                <p data-i18n="scenario-desc">Simulate a 180-day ISS mission with health monitoring</p>
+                <button class="btn btn-primary" onclick="runScenario()">Run Scenario</button>
+                <div class="output" id="scenario-output"></div>
+            </div>
+
+            <div class="card">
+                <h3 data-i18n="crew-dashboard">Crew Health Dashboard</h3>
+                <div class="grid" id="crew-metrics">
+                    <div class="metric">
+                        <div class="metric-label">Mission Day</div>
+                        <div class="metric-value">90</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Crew Status</div>
+                        <div class="metric-value">4/4 <span class="status-badge status-normal">Normal</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Avg Radiation</div>
+                        <div class="metric-value">0.5 mSv/day</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Exercise Compliance</div>
+                        <div class="metric-value">94%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Test -->
+        <div class="tab-content">
+            <div class="card">
+                <h3 data-i18n="qr-validation">QR Code & Validation</h3>
+                <div id="qrcode"></div>
+                <button class="btn btn-primary" onclick="generateQR()">Generate QR Code</button>
+            </div>
+
+            <div class="card">
+                <h3 data-i18n="data-validation">Health Data Validation</h3>
+                <div class="form-group">
+                    <label data-i18n="json-input">JSON Health Data:</label>
+                    <textarea id="jsonInput" rows="10" placeholder='{"crewMember": {...}, "vitals": {...}}'></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="validateData()">Validate</button>
+                <div class="output" id="validation-output"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        const translations = {
+            en: {
+                title: "WIA-SPACE-023: Space Medicine Standard",
+                subtitle: "Medical care and health maintenance for human spaceflight",
+                tab1: "Data Format",
+                tab2: "Algorithms",
+                tab3: "Protocol",
+                tab4: "Integration",
+                tab5: "Test"
+            },
+            ko: {
+                title: "WIA-SPACE-023: 우주 의학 표준",
+                subtitle: "우주 비행을 위한 의료 관리 및 건강 유지",
+                tab1: "데이터 형식",
+                tab2: "알고리즘",
+                tab3: "프로토콜",
+                tab4: "통합",
+                tab5: "테스트"
+            }
+        };
+
+        let currentLang = 'en';
+
+        function setLang(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+        }
+
+        function switchTab(index) {
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab-content').forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+        }
+
+        function calculateRadiation() {
+            const days = parseInt(document.getElementById('missionDays').value);
+            const location = document.getElementById('location').value;
+
+            const doseRates = {
+                'LEO': 0.5,      // mSv/day
+                'Lunar': 0.7,    // mSv/day
+                'Mars': 1.8      // mSv/day (transit)
+            };
+
+            const dailyDose = doseRates[location];
+            const totalDose = dailyDose * days;
+            const eyeLens = totalDose * 0.8;
+            const skin = totalDose * 0.9;
+
+            const careerLimit = 1000; // mSv (simplified)
+            const percentLimit = (totalDose / careerLimit * 100).toFixed(1);
+
+            let status = 'Normal';
+            if (totalDose > 500) status = 'Warning';
+            if (totalDose > 800) status = 'Alert';
+
+            document.getElementById('radiation-output').innerHTML = `
+                <h4>Radiation Exposure Estimate</h4>
+                <p><strong>Mission Duration:</strong> ${days} days</p>
+                <p><strong>Location:</strong> ${location}</p>
+                <p><strong>Daily Dose Rate:</strong> ${dailyDose} mSv/day</p>
+                <p><strong>Total Exposure:</strong> ${totalDose.toFixed(1)} mSv</p>
+                <p><strong>Eye Lens Dose:</strong> ${eyeLens.toFixed(1)} mSv (limit: 1000 mSv career)</p>
+                <p><strong>Skin Dose:</strong> ${skin.toFixed(1)} mSv (limit: 1500 mSv/year)</p>
+                <p><strong>Career Limit:</strong> ${percentLimit}% of 1000 mSv</p>
+                <p><strong>Status:</strong> <span class="status-badge status-${status.toLowerCase()}">${status}</span></p>
+            `;
+        }
+
+        function calculateExercise() {
+            const mass = parseFloat(document.getElementById('crewMass').value);
+            const missionType = document.getElementById('missionType').value;
+
+            const prescriptions = {
+                'short': { aerobic: 60, resistive: 30, frequency: 5 },
+                'medium': { aerobic: 90, resistive: 45, frequency: 6 },
+                'long': { aerobic: 120, resistive: 60, frequency: 6 }
+            };
+
+            const rx = prescriptions[missionType];
+            const protein = (mass * 1.2).toFixed(1);
+            const calories = (mass * 35).toFixed(0);
+
+            document.getElementById('exercise-output').innerHTML = `
+                <h4>Exercise Prescription</h4>
+                <p><strong>Crew Mass:</strong> ${mass} kg</p>
+                <p><strong>Mission Type:</strong> ${missionType}</p>
+                <h5>Daily Exercise Protocol:</h5>
+                <ul>
+                    <li><strong>Aerobic:</strong> ${rx.aerobic} minutes (treadmill/cycle)</li>
+                    <li><strong>Resistive:</strong> ${rx.resistive} minutes (ARED or equivalent)</li>
+                    <li><strong>Frequency:</strong> ${rx.frequency} days per week</li>
+                    <li><strong>Total:</strong> ${rx.aerobic + rx.resistive} minutes/day</li>
+                </ul>
+                <h5>Nutritional Requirements:</h5>
+                <ul>
+                    <li><strong>Protein:</strong> ${protein} g/day (1.2 g/kg)</li>
+                    <li><strong>Calories:</strong> ${calories} kcal/day</li>
+                    <li><strong>Calcium:</strong> 1000-1500 mg/day</li>
+                    <li><strong>Vitamin D:</strong> 800-1000 IU/day</li>
+                </ul>
+            `;
+        }
+
+        function submitHealthData() {
+            const data = {
+                crewMember: {
+                    id: document.getElementById('crewId').value,
+                    timestamp: new Date().toISOString()
+                },
+                vitals: {
+                    heartRate: parseInt(document.getElementById('heartRate').value),
+                    bloodPressure: {
+                        systolic: parseInt(document.getElementById('bpSystolic').value),
+                        diastolic: parseInt(document.getElementById('bpDiastolic').value)
+                    }
+                }
+            };
+
+            // Simple validation
+            let status = 'Normal';
+            const warnings = [];
+
+            if (data.vitals.heartRate < 50 || data.vitals.heartRate > 100) {
+                warnings.push('Heart rate outside normal range');
+                status = 'Warning';
+            }
+            if (data.vitals.bloodPressure.systolic > 140 || data.vitals.bloodPressure.diastolic > 90) {
+                warnings.push('Blood pressure elevated');
+                status = 'Warning';
+            }
+
+            document.getElementById('api-output').innerHTML = `
+                <h4>API Response</h4>
+                <p><strong>Status:</strong> <span class="status-badge status-${status.toLowerCase()}">${status}</span></p>
+                <p><strong>Timestamp:</strong> ${data.crewMember.timestamp}</p>
+                ${warnings.length > 0 ? '<p><strong>Warnings:</strong></p><ul>' + warnings.map(w => '<li>' + w + '</li>').join('') + '</ul>' : ''}
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+
+        function runScenario() {
+            const crew = ['Commander', 'Pilot', 'Science Officer', 'Medical Officer'];
+            const days = 180;
+
+            document.getElementById('scenario-output').innerHTML = `
+                <h4>Mission Simulation: ISS 180-Day Mission</h4>
+                <p><strong>Crew Size:</strong> ${crew.length}</p>
+                <p><strong>Duration:</strong> ${days} days</p>
+                <h5>Health Monitoring Schedule:</h5>
+                <ul>
+                    <li>Daily vitals monitoring (automated)</li>
+                    <li>Weekly crew medical officer check</li>
+                    <li>Monthly flight surgeon consultation</li>
+                    <li>Quarterly comprehensive exam</li>
+                </ul>
+                <h5>Countermeasures:</h5>
+                <ul>
+                    <li>Exercise: 2 hours/day (ARED + treadmill)</li>
+                    <li>Nutrition: Optimized menu, supplements</li>
+                    <li>Radiation: Monitoring, shielded sleep quarters</li>
+                    <li>Psychological: Weekly counseling, family calls</li>
+                </ul>
+                <h5>Expected Outcomes:</h5>
+                <ul>
+                    <li>Total radiation: ~90 mSv (within limits)</li>
+                    <li>Bone density loss: <5% (with countermeasures)</li>
+                    <li>Muscle mass: Maintained within 10% of pre-flight</li>
+                    <li>Vision changes: Monitored (VIIP risk)</li>
+                </ul>
+            `;
+        }
+
+        function generateQR() {
+            const qrData = {
+                standard: "WIA-SPACE-023",
+                version: "1.0",
+                url: "https://github.com/WIA-Official/wia-standards/tree/main/space-medicine",
+                philosophy: "弘益人間 - Benefit All Humanity"
+            };
+
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById('qrcode'), {
+                text: JSON.stringify(qrData),
+                width: 256,
+                height: 256,
+                colorDark: '#06B6D4',
+                colorLight: '#0f172a'
+            });
+        }
+
+        function validateData() {
+            const input = document.getElementById('jsonInput').value;
+            try {
+                const data = JSON.parse(input);
+                const errors = [];
+
+                if (!data.crewMember) errors.push('Missing crewMember');
+                if (!data.vitals) errors.push('Missing vitals');
+                if (data.vitals && (!data.vitals.heartRate || data.vitals.heartRate < 0)) {
+                    errors.push('Invalid heart rate');
+                }
+
+                if (errors.length === 0) {
+                    document.getElementById('validation-output').innerHTML = `
+                        <p style="color: var(--secondary);">✓ Validation passed!</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    document.getElementById('validation-output').innerHTML = `
+                        <p style="color: var(--danger);">✗ Validation failed:</p>
+                        <ul>${errors.map(e => '<li>' + e + '</li>').join('')}</ul>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('validation-output').innerHTML = `
+                    <p style="color: var(--danger);">✗ Invalid JSON: ${e.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

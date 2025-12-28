@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Architecture & Data Models - WIA-FIN-019</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a; color: #e2e8f0; line-height: 1.8;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
+        h1 { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #22c55e, #10b981);
+             -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 2rem; }
+        h2 { color: #22c55e; font-size: 1.75rem; margin: 2rem 0 1rem; }
+        h3 { color: #10b981; font-size: 1.25rem; margin: 1.5rem 0 0.75rem; }
+        p, li { color: #cbd5e1; margin-bottom: 1rem; }
+        .code { background: rgba(15,23,42,0.8); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+        pre { color: #cbd5e1; font-family: 'Monaco', monospace; font-size: 0.875rem; }
+        .nav a { color: #22c55e; text-decoration: none; margin-right: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="index.html">← Contents</a>
+            <a href="chapter-01.html">← Previous</a>
+            <a href="chapter-03.html">Next →</a>
+        </div>
+
+        <h1>Chapter 2: Architecture & Data Models</h1>
+
+        <h2>2.1 System Architecture Overview</h2>
+        <p>The WIA-FIN-019 standard defines a four-layer architecture for modern insurtech platforms:</p>
+        
+        <h3>Layer 1: Data Layer</h3>
+        <p>Core data models for policies, claims, customers, and risk profiles. Supports both relational (PostgreSQL) and document (MongoDB) databases with blockchain integration for immutable records.</p>
+
+        <h3>Layer 2: Service Layer</h3>
+        <p>Microservices architecture with RESTful APIs for quote generation, underwriting, claims processing, and customer management. Each service is independently deployable and scalable.</p>
+
+        <h3>Layer 3: Integration Layer</h3>
+        <p>Connectors for legacy systems, IoT devices, third-party data providers, and regulatory systems. Message queues (Kafka, RabbitMQ) ensure reliable communication.</p>
+
+        <h3>Layer 4: Presentation Layer</h3>
+        <p>Mobile apps, web portals, chatbots, and voice interfaces provide multi-channel customer access with consistent experiences.</p>
+
+        <h2>2.2 Core Data Models</h2>
+
+        <h3>Policy Data Model</h3>
+        <div class="code"><pre>{
+  "policyId": "POL-2025-ABC123",
+  "type": "auto" | "life" | "health" | "property",
+  "holder": {
+    "customerId": "CUST-12345",
+    "name": "John Doe",
+    "dateOfBirth": "1988-05-15"
+  },
+  "coverage": {
+    "amount": 100000,
+    "currency": "USD",
+    "deductible": 500,
+    "limits": { ... }
+  },
+  "premium": {
+    "annual": 1200,
+    "paymentFrequency": "monthly",
+    "nextDue": "2025-02-01"
+  },
+  "term": {
+    "startDate": "2025-01-01",
+    "endDate": "2026-01-01",
+    "renewalType": "automatic"
+  },
+  "underwriting": {
+    "riskScore": 32,
+    "riskLevel": "low",
+    "factors": [...]
+  }
+}</pre></div>
+
+        <h3>Claims Data Model</h3>
+        <div class="code"><pre>{
+  "claimId": "CLM-2025-XYZ789",
+  "policyId": "POL-2025-ABC123",
+  "type": "accident" | "health" | "property",
+  "status": "filed" | "reviewing" | "approved" | "paid",
+  "incident": {
+    "date": "2025-12-20",
+    "location": "New York, NY",
+    "description": "Minor collision at intersection"
+  },
+  "amount": {
+    "claimed": 5000,
+    "approved": 4800,
+    "paid": 4800
+  },
+  "assessment": {
+    "fraudScore": 12.5,
+    "fraudRisk": "low",
+    "autoApproved": true,
+    "reviewRequired": false
+  },
+  "documents": [
+    { "type": "photo", "url": "..." },
+    { "type": "police_report", "url": "..." }
+  ]
+}</pre></div>
+
+        <h3>Customer Risk Profile</h3>
+        <div class="code"><pre>{
+  "customerId": "CUST-12345",
+  "riskProfile": {
+    "overall": "low",
+    "score": 28,
+    "factors": {
+      "age": { "value": 37, "impact": "positive" },
+      "claimHistory": { "count": 0, "impact": "positive" },
+      "creditScore": { "value": 780, "impact": "positive" },
+      "occupation": { "value": "software_engineer", "impact": "neutral" }
+    }
+  },
+  "behavioral": {
+    "drivingScore": 92,
+    "healthScore": 85,
+    "propertyMaintenance": "excellent"
+  },
+  "iot": {
+    "devices": ["telematics", "smart_home"],
+    "dataPoints": 15000,
+    "lastUpdate": "2025-12-25T10:00:00Z"
+  }
+}</pre></div>
+
+        <h2>2.3 API Architecture</h2>
+
+        <h3>RESTful API Endpoints</h3>
+        <div class="code"><pre>POST   /api/v1/quotes              - Generate insurance quote
+POST   /api/v1/policies            - Create new policy
+GET    /api/v1/policies/{id}       - Get policy details
+PUT    /api/v1/policies/{id}       - Update policy
+POST   /api/v1/claims              - File new claim
+GET    /api/v1/claims/{id}         - Get claim status
+POST   /api/v1/underwriting        - Request underwriting decision
+GET    /api/v1/customers/{id}/risk - Get customer risk profile</pre></div>
+
+        <h3>GraphQL Schema</h3>
+        <div class="code"><pre>type Query {
+  policy(id: ID!): Policy
+  customer(id: ID!): Customer
+  claims(policyId: ID!): [Claim]
+}
+
+type Mutation {
+  generateQuote(input: QuoteInput!): Quote
+  createPolicy(input: PolicyInput!): Policy
+  fileClaim(input: ClaimInput!): Claim
+}</pre></div>
+
+        <h2>2.4 Smart Contract Architecture</h2>
+
+        <h3>Parametric Insurance Contract</h3>
+        <div class="code"><pre>contract ParametricInsurance {
+  struct Policy {
+    address holder;
+    uint256 coverageAmount;
+    uint256 premium;
+    bytes32 triggerCondition;
+    bool active;
+  }
+
+  function executeClaim(uint256 policyId, bytes calldata oracleData) 
+    external {
+    // Verify oracle signature
+    // Check trigger condition
+    // Automated payout
+  }
+}</pre></div>
+
+        <h2>2.5 Security Architecture</h2>
+        <p>OAuth 2.0 authentication, AES-256 encryption for data at rest, TLS 1.3 for data in transit, role-based access control, and multi-factor authentication for sensitive operations.</p>
+
+        <div style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(34,197,94,0.2); text-align: center;">
+            <a href="chapter-01.html" style="color: #22c55e;">← Chapter 1</a> | 
+            <a href="index.html" style="color: #22c55e;">Contents</a> | 
+            <a href="chapter-03.html" style="color: #22c55e;">Chapter 3 →</a>
+        </div>
+    </div>
+</body>
+</html>

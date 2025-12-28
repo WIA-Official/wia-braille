@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 07: Ecosystem Integration | WIA-CHILD-002</title>
+    <style>
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #F59E0B; --text: #e2e8f0; --text-dim: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        header { border-bottom: 3px solid var(--primary); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.3rem; margin-top: 2rem; margin-bottom: 0.8rem; }
+        p, li { margin-bottom: 1.2rem; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: var(--surface); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: rgba(245, 158, 11, 0.1); }
+        code { background: var(--surface); padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--primary); }
+        pre { background: var(--surface); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1.5rem 0; border-left: 4px solid var(--primary); }
+        pre code { background: none; padding: 0; color: var(--text); }
+        .key-takeaways, .review-questions { background: var(--surface); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--primary); }
+        ul, ol { margin-left: 2rem; margin-bottom: 1.5rem; }
+        .navigation { display: flex; justify-content: space-between; margin: 3rem 0; padding: 1.5rem; background: var(--surface); border-radius: 8px; }
+        .nav-button { color: var(--primary); text-decoration: none; padding: 0.8rem 1.5rem; border: 2px solid var(--primary); border-radius: 6px; transition: all 0.3s; }
+        .nav-button:hover { background: var(--primary); color: white; }
+        .philosophy { text-align: center; margin: 3rem 0; padding: 2rem; background: var(--surface); border-radius: 8px; border: 2px solid var(--primary); }
+        footer { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chapter 07: Ecosystem Integration</h1>
+            <div style="color: var(--text-dim); font-size: 0.9rem;">WIA-CHILD-002 Age Verification Standard | Phase 3 - Integration</div>
+        </header>
+
+        <h2>Building a Unified Age Verification Ecosystem</h2>
+
+        <p>
+            Age verification cannot exist in isolation. The WIA-CHILD-002 standard achieves maximum effectiveness when
+            integrated with identity providers, government verification systems, educational institutions, parental consent
+            platforms, and cross-platform verification networks. This ecosystem approach prevents verification fatigue,
+            reduces friction for legitimate users, and creates a unified protection layer across the digital landscape.
+        </p>
+
+        <p>
+            Integration challenges include identity federation across heterogeneous systems, real-time verification at scale,
+            privacy-preserving credential sharing, regulatory compliance across jurisdictions, and interoperability between
+            competing platforms. WIA-CHILD-002 provides standardized protocols, APIs, and data formats that enable seamless
+            integration while maintaining strong privacy guarantees and compliance with GDPR, COPPA, and regional regulations.
+        </p>
+
+        <h2>Identity Provider Integration (OAuth, OpenID Connect)</h2>
+
+        <p>
+            Major identity providers (Google, Apple, Microsoft, Facebook) already verify billions of users. WIA-CHILD-002
+            enables platforms to leverage these trusted identity systems for age verification through standardized OAuth 2.0
+            and OpenID Connect flows, reducing verification friction while maintaining privacy through selective disclosure.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Identity Provider</th>
+                    <th>Age Claims Supported</th>
+                    <th>Verification Level</th>
+                    <th>Privacy Features</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Google Sign-In</td>
+                    <td>over_13, over_18, birth_year</td>
+                    <td>Account creation date + self-attestation</td>
+                    <td>Selective claim disclosure, no PII required</td>
+                </tr>
+                <tr>
+                    <td>Apple Sign-In</td>
+                    <td>over_13, over_18, exact_age</td>
+                    <td>Device-level + credit card verification</td>
+                    <td>Email relay, private relay, minimal data</td>
+                </tr>
+                <tr>
+                    <td>Microsoft Account</td>
+                    <td>child_account, teen_account, adult_account</td>
+                    <td>Family Safety integration</td>
+                    <td>Parent-linked accounts, consent management</td>
+                </tr>
+                <tr>
+                    <td>Facebook/Meta</td>
+                    <td>over_13, over_18, age_range</td>
+                    <td>Government ID verification (optional)</td>
+                    <td>Limited Login, age-range sharing only</td>
+                </tr>
+                <tr>
+                    <td>Sign-In with Ethereum</td>
+                    <td>over_18 (via proof-of-personhood)</td>
+                    <td>Decentralized identity + ZK proofs</td>
+                    <td>No centralized data storage</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>OpenID Connect Age Verification Flow</h3>
+
+        <pre><code>interface OIDCAgeProvider {
+  initiateAgeVerification(clientId: string, scopes: string[]): Promise<AuthorizationURL>;
+  exchangeCodeForToken(code: string, clientSecret: string): Promise<TokenResponse>;
+  getUserAgeClaims(accessToken: string): Promise<AgeClaims>;
+  refreshAgeStatus(refreshToken: string): Promise<AgeClaims>;
+}
+
+class OIDCIntegration {
+  async verifyAgeViaOIDC(provider: string, requiredAge: number): Promise<AgeVerificationResult> {
+    // Initiate OpenID Connect flow with age-specific scopes
+    const authUrl = await this.oidcProvider.authorize({
+      clientId: process.env.OIDC_CLIENT_ID,
+      redirectUri: 'https://myapp.com/auth/callback',
+      scope: 'openid age_verification over_13 over_18',
+      responseType: 'code',
+      state: this.generateSecureState(),
+      nonce: this.generateNonce()
+    });
+
+    // User authenticates with identity provider
+    // Redirect user to authUrl...
+
+    // Receive callback with authorization code
+    const tokenResponse = await this.oidcProvider.token({
+      code: authorizationCode,
+      clientId: process.env.OIDC_CLIENT_ID,
+      clientSecret: process.env.OIDC_CLIENT_SECRET,
+      redirectUri: 'https://myapp.com/auth/callback'
+    });
+
+    // Validate ID token and extract age claims
+    const idToken = this.validateJWT(tokenResponse.id_token);
+    const ageClaims = this.extractAgeClaims(idToken);
+
+    // Verify age meets requirements
+    const verification = {
+      verified: this.checkAgeRequirement(ageClaims, requiredAge),
+      provider: provider,
+      verifiedAt: new Date(),
+      claimsProvided: ageClaims,
+      confidenceLevel: this.assessConfidence(provider, ageClaims),
+      expiresAt: this.calculateExpiration(ageClaims)
+    };
+
+    // Store verification credential
+    await this.storeVerificationCredential({
+      userId: userId,
+      verification: verification,
+      refreshToken: tokenResponse.refresh_token  // For periodic re-verification
+    });
+
+    return verification;
+  }
+
+  extractAgeClaims(idToken: JWTPayload): AgeClaims {
+    // Standard OpenID Connect age claims
+    return {
+      birthdate: idToken.birthdate,              // ISO 8601 date
+      age: idToken.age,                          // Exact age
+      ageRange: idToken.age_range,               // E.g., "18-24"
+      over13: idToken['https://age.wia.org/over_13'],
+      over18: idToken['https://age.wia.org/over_18'],
+      verificationMethod: idToken.amr,           // Authentication method reference
+      verifiedAt: idToken.auth_time
+    };
+  }
+
+  async refreshAgeVerification(userId: string): Promise<void> {
+    // Periodically refresh age verification (e.g., on birthdays)
+    const credential = await this.getStoredCredential(userId);
+
+    if (this.needsRefresh(credential)) {
+      const newToken = await this.oidcProvider.refresh({
+        refreshToken: credential.refreshToken,
+        scope: 'openid age_verification'
+      });
+
+      const updatedClaims = this.extractAgeClaims(newToken.id_token);
+      await this.updateVerificationCredential(userId, updatedClaims);
+    }
+  }
+}
+</code></pre>
+
+        <h2>Government ID Verification Systems</h2>
+
+        <p>
+            Government-issued identity documents (passports, driver's licenses, national ID cards) provide the highest
+            assurance age verification. WIA-CHILD-002 integrates with government digital identity systems and third-party
+            ID verification services to enable document-based age verification with strong fraud detection.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Government System</th>
+                    <th>Countries</th>
+                    <th>Integration Method</th>
+                    <th>Age Verification Capability</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>EU Digital Identity Wallet</td>
+                    <td>27 EU member states</td>
+                    <td>eIDAS 2.0 protocol</td>
+                    <td>Age attestation without revealing birthdate</td>
+                </tr>
+                <tr>
+                    <td>UK Gov.UK Verify</td>
+                    <td>United Kingdom</td>
+                    <td>SAML 2.0 federation</td>
+                    <td>Age range verification (13+, 18+, etc.)</td>
+                </tr>
+                <tr>
+                    <td>India Aadhaar</td>
+                    <td>India</td>
+                    <td>eKYC API</td>
+                    <td>Year of birth verification</td>
+                </tr>
+                <tr>
+                    <td>Australia myGovID</td>
+                    <td>Australia</td>
+                    <td>OpenID Connect</td>
+                    <td>Document of birth verification</td>
+                </tr>
+                <tr>
+                    <td>Singapore SingPass</td>
+                    <td>Singapore</td>
+                    <td>NDI (National Digital Identity)</td>
+                    <td>Age verification + parental consent</td>
+                </tr>
+                <tr>
+                    <td>Estonia e-Residency</td>
+                    <td>Estonia</td>
+                    <td>X-Road infrastructure</td>
+                    <td>Cryptographic age proof</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Government Digital Identity Integration</h3>
+
+        <pre><code>interface GovernmentIDVerification {
+  initiateVerification(country: string, requiredAge: number): Promise<VerificationSession>;
+  verifyDocument(documentImage: Buffer, documentType: string): Promise<DocumentVerification>;
+  validateWithGovernmentDB(documentNumber: string, country: string): Promise<ValidationResult>;
+  extractAgeFromDocument(document: VerifiedDocument): AgeInformation;
+}
+
+class GovernmentIDIntegration {
+  async verifyAgeWithGovernmentID(
+    country: string,
+    documentType: 'passport' | 'drivers_license' | 'national_id'
+  ): Promise<AgeVerificationResult> {
+
+    // Country-specific government ID verification
+    const verificationService = this.getCountryService(country);
+
+    // Step 1: Document capture and validation
+    const documentImage = await this.captureDocumentImage();
+    const documentValidation = await this.validateDocument(documentImage, {
+      expectedDocumentType: documentType,
+      expectedCountry: country,
+      checkSecurity: true,      // Check holograms, watermarks, etc.
+      checkExpiration: true,
+      checkTampering: true
+    });
+
+    if (!documentValidation.valid) {
+      throw new Error('Invalid or tampered document');
+    }
+
+    // Step 2: Extract data from document using OCR + computer vision
+    const extractedData = await this.extractDocumentData(documentImage, {
+      fields: ['birthdate', 'document_number', 'full_name', 'issue_date', 'expiration_date'],
+      validateChecksum: true,
+      validateMRZ: documentType === 'passport'  // Machine Readable Zone
+    });
+
+    // Step 3: Validate with government database (if available)
+    if (verificationService.supportsRealTimeValidation) {
+      const governmentValidation = await verificationService.validateWithAuthority({
+        documentNumber: extractedData.document_number,
+        birthdate: extractedData.birthdate,
+        fullName: extractedData.full_name,
+        consent: true  // User consented to government DB check
+      });
+
+      if (!governmentValidation.confirmed) {
+        throw new Error('Document could not be validated with issuing authority');
+      }
+    }
+
+    // Step 4: Liveness detection to prevent photo attacks
+    const livenessCheck = await this.performLivenessDetection();
+
+    // Step 5: Face matching between document photo and live selfie
+    const faceMatch = await this.compareFaces(
+      extractedData.photo,
+      livenessCheck.selfie,
+      { threshold: 0.95 }
+    );
+
+    if (faceMatch.confidence < 0.95) {
+      throw new Error('Face match failed - document may not belong to user');
+    }
+
+    // Step 6: Calculate age from birthdate
+    const age = this.calculateAge(extractedData.birthdate);
+
+    // Step 7: Create verifiable credential
+    const credential = await this.createVerifiableCredential({
+      age: age,
+      ageRange: this.getAgeRange(age),
+      over13: age >= 13,
+      over18: age >= 18,
+      verificationMethod: 'government_id',
+      documentType: documentType,
+      issuingCountry: country,
+      verifiedAt: new Date(),
+      confidenceLevel: 'high',
+      expiresAt: this.calculateExpiration(extractedData.birthdate)
+    });
+
+    return credential;
+  }
+
+  async performLivenessDetection(): Promise<LivenessResult> {
+    // Active liveness: random challenge-response
+    const challenges = this.generateLivenessChallenges([
+      'blink_eyes',
+      'turn_head_left',
+      'turn_head_right',
+      'smile'
+    ]);
+
+    const responses = await this.captureUserResponses(challenges);
+
+    // AI-based liveness analysis
+    const livenessScore = await this.analyzeLiveness(responses, {
+      checkDepth: true,           // 3D depth analysis
+      checkMotion: true,           // Natural motion patterns
+      checkTexture: true,          // Skin texture analysis
+      checkReflection: true,       // Eye reflection analysis
+      detectScreens: true,         // Prevent screen recording attacks
+      detectMasks: true            // Prevent 3D mask attacks
+    });
+
+    if (livenessScore < 0.9) {
+      throw new Error('Liveness detection failed - possible spoof attempt');
+    }
+
+    return {
+      passed: true,
+      score: livenessScore,
+      selfie: responses.finalImage,
+      metadata: responses.metadata
+    };
+  }
+}
+</code></pre>
+
+        <h2>Educational Institution SSO Integration</h2>
+
+        <p>
+            Schools and universities maintain authoritative age information for students. WIA-CHILD-002 integrates with
+            educational Single Sign-On (SSO) systems like Clever, ClassLink, and Google Workspace for Education, enabling
+            verified age-appropriate access to educational platforms while respecting FERPA privacy requirements.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Education SSO Platform</th>
+                    <th>Market Reach</th>
+                    <th>Age Data Available</th>
+                    <th>Privacy Compliance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Clever SSO</td>
+                    <td>70% of US K-12 schools</td>
+                    <td>Grade level, birthdate, student status</td>
+                    <td>FERPA, COPPA compliant</td>
+                </tr>
+                <tr>
+                    <td>ClassLink OneClick</td>
+                    <td>18 million students globally</td>
+                    <td>Grade level, age range, enrollment status</td>
+                    <td>FERPA, Student Privacy Pledge</td>
+                </tr>
+                <tr>
+                    <td>Google Workspace for Education</td>
+                    <td>170 million users worldwide</td>
+                    <td>Student account type, age gate</td>
+                    <td>COPPA, GDPR, Student Privacy Pledge</td>
+                </tr>
+                <tr>
+                    <td>Microsoft 365 Education</td>
+                    <td>150 million users</td>
+                    <td>Student license type, birthdate (optional)</td>
+                    <td>FERPA, COPPA, GDPR</td>
+                </tr>
+                <tr>
+                    <td>Canvas LMS SSO</td>
+                    <td>30 million users (higher ed focus)</td>
+                    <td>Student enrollment, program year</td>
+                    <td>FERPA compliant</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Educational SSO Integration Implementation</h3>
+
+        <pre><code>interface EducationSSOProvider {
+  authenticateStudent(returnUrl: string): Promise<AuthenticationResult>;
+  getStudentProfile(accessToken: string): Promise<StudentProfile>;
+  verifyEnrollment(studentId: string, schoolId: string): Promise<boolean>;
+  getAgeAppropriateClaims(studentProfile: StudentProfile): AgeClaims;
+}
+
+class EducationSSOIntegration {
+  async verifyAgeViaSchoolSSO(provider: 'clever' | 'classlink' | 'google_edu'): Promise<AgeVerificationResult> {
+    // Initiate OAuth flow with educational SSO provider
+    const authResult = await this.initiateEduSSO(provider, {
+      scopes: ['student.profile', 'student.demographics', 'student.enrollment'],
+      returnUrl: 'https://myapp.com/auth/edu/callback'
+    });
+
+    // Receive student profile from school system
+    const studentProfile = await this.fetchStudentProfile(authResult.accessToken);
+
+    // Extract age-related information
+    const ageClaims = this.extractEducationalAgeClaims(studentProfile);
+
+    // Verify with school enrollment database
+    const enrollmentVerified = await this.verifyActiveEnrollment(
+      studentProfile.studentId,
+      studentProfile.schoolId
+    );
+
+    if (!enrollmentVerified) {
+      throw new Error('Student enrollment could not be verified');
+    }
+
+    // Create age verification credential
+    const credential = {
+      verified: true,
+      age: ageClaims.approximateAge,
+      gradeLevel: studentProfile.gradeLevel,
+      studentStatus: 'verified_enrolled',
+      verificationMethod: 'educational_sso',
+      provider: provider,
+      schoolId: studentProfile.schoolId,
+      verifiedAt: new Date(),
+      confidenceLevel: 'high',
+      expiresAt: this.calculateAcademicYearExpiration(studentProfile.academicYear)
+    };
+
+    return credential;
+  }
+
+  extractEducationalAgeClaims(profile: StudentProfile): AgeClaims {
+    // Grade level to age mapping (approximate)
+    const gradeToAge = {
+      'K': 5, '1': 6, '2': 7, '3': 8, '4': 9, '5': 10,
+      '6': 11, '7': 12, '8': 13, '9': 14, '10': 15,
+      '11': 16, '12': 17,
+      'college_freshman': 18,
+      'college_sophomore': 19,
+      'college_junior': 20,
+      'college_senior': 21
+    };
+
+    const approximateAge = gradeToAge[profile.gradeLevel] || null;
+
+    return {
+      approximateAge: approximateAge,
+      ageRange: this.getAgeRangeFromGrade(profile.gradeLevel),
+      over13: approximateAge >= 13,
+      over18: approximateAge >= 18,
+      gradeLevel: profile.gradeLevel,
+      educationLevel: profile.educationLevel,  // 'k12' or 'higher_ed'
+      verificationSource: 'school_enrollment_system'
+    };
+  }
+
+  async handleParentalConsentForMinors(
+    studentId: string,
+    ageClaims: AgeClaims
+  ): Promise<ConsentStatus> {
+    // For students under 13, COPPA requires parental consent
+    if (ageClaims.approximateAge < 13) {
+      // Notify parent through school system
+      const parentContact = await this.getParentContactViaSchool(studentId);
+
+      // Send consent request
+      const consentRequest = await this.sendParentalConsentRequest({
+        parentEmail: parentContact.email,
+        parentPhone: parentContact.phone,
+        studentName: studentId,  // Use anonymized ID
+        serviceName: 'Educational Platform Access',
+        dataCollected: ['learning_progress', 'assignment_submissions'],
+        consentMethod: 'verified_email_plus_credit_card'
+      });
+
+      return consentRequest;
+    }
+
+    return { required: false, status: 'not_applicable' };
+  }
+}
+</code></pre>
+
+        <h2>Parental Consent Management Platforms</h2>
+
+        <p>
+            For children under 13, COPPA mandates verifiable parental consent. WIA-CHILD-002 integrates with specialized
+            parental consent platforms that manage consent workflows, verification, and ongoing consent management across
+            multiple services.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Consent Platform</th>
+                    <th>Verification Methods</th>
+                    <th>Consent Scope</th>
+                    <th>Management Features</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Privo</td>
+                    <td>Credit card, ID verification, video chat</td>
+                    <td>Per-service, global consent</td>
+                    <td>Consent dashboard, multi-child management</td>
+                </tr>
+                <tr>
+                    <td>SuperAwesome (Epic Games)</td>
+                    <td>Email + SMS, knowledge-based auth</td>
+                    <td>Service-specific, time-limited</td>
+                    <td>Real-time consent revocation</td>
+                </tr>
+                <tr>
+                    <td>Yoti Age Scan</td>
+                    <td>Biometric age estimation + ID</td>
+                    <td>Age gate, parental approval</td>
+                    <td>Privacy-preserving verification</td>
+                </tr>
+                <tr>
+                    <td>Jumio Identity Verification</td>
+                    <td>Government ID + liveness, credit card</td>
+                    <td>Platform-wide consent</td>
+                    <td>Consent audit trail, compliance reports</td>
+                </tr>
+                <tr>
+                    <td>Microsoft Family Safety</td>
+                    <td>Microsoft account + payment method</td>
+                    <td>Cross-Microsoft services</td>
+                    <td>Screen time limits, content filters</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Parental Consent Integration</h3>
+
+        <pre><code>interface ParentalConsentProvider {
+  requestConsent(childAge: number, serviceName: string): Promise<ConsentRequest>;
+  verifyParent(parentInfo: ParentInfo): Promise<ParentVerification>;
+  checkConsentStatus(childId: string, serviceId: string): Promise<ConsentStatus>;
+  revokeConsent(childId: string, serviceId: string): Promise<void>;
+}
+
+class ParentalConsentIntegration {
+  async obtainVerifiableParentalConsent(
+    childId: string,
+    childAge: number,
+    serviceName: string
+  ): Promise<ConsentResult> {
+
+    // Check if parental consent is required (COPPA: under 13)
+    if (childAge >= 13) {
+      return { required: false, granted: true };
+    }
+
+    // Request parent contact information
+    const parentInfo = await this.requestParentContact(childId);
+
+    // Verify parent identity using multiple methods
+    const parentVerification = await this.verifyParentIdentity(parentInfo, {
+      methods: [
+        'credit_card_verification',      // Small charge + verification
+        'government_id_check',            // ID document verification
+        'knowledge_based_authentication',  // Credit bureau questions
+        'video_conference_verification'   // Live video call with agent
+      ],
+      requiredMethods: 2  // Require at least 2 methods for high assurance
+    });
+
+    if (!parentVerification.verified) {
+      throw new Error('Unable to verify parent identity');
+    }
+
+    // Present consent request to verified parent
+    const consentRequest = await this.presentConsentRequest(parentInfo, {
+      childAge: childAge,
+      serviceName: serviceName,
+      dataCollectionPractices: await this.getDataPractices(serviceName),
+      sharingPractices: await this.getSharingPractices(serviceName),
+      retentionPolicy: await this.getRetentionPolicy(serviceName),
+      rightsInformation: this.getParentRights()
+    });
+
+    // Wait for parent decision
+    const consentDecision = await this.waitForParentDecision(consentRequest.id, {
+      timeout: '72_hours',
+      reminderSchedule: ['24h', '48h', '60h']
+    });
+
+    if (consentDecision.granted) {
+      // Record consent with audit trail
+      await this.recordConsent({
+        childId: childId,
+        parentId: parentVerification.parentId,
+        serviceId: serviceName,
+        grantedAt: new Date(),
+        expiresAt: this.calculateConsentExpiration(childAge),  // Re-verify on birthday
+        verificationMethod: parentVerification.methods,
+        consentScope: consentRequest.scope,
+        withdrawalMethod: 'parent_dashboard_or_email'
+      });
+
+      // Provide parent with ongoing consent management
+      await this.provideConsentDashboard(parentVerification.parentId, {
+        features: [
+          'view_all_consents',
+          'revoke_consent',
+          'view_data_collected',
+          'request_data_deletion',
+          'set_time_limits',
+          'receive_usage_reports'
+        ]
+      });
+    }
+
+    return {
+      required: true,
+      granted: consentDecision.granted,
+      verifiedParent: true,
+      consentId: consentDecision.consentId
+    };
+  }
+
+  async verifyParentWithCreditCard(parentInfo: ParentInfo): Promise<boolean> {
+    // Small charge verification method (FTC approved for COPPA)
+    const chargeResult = await this.processMicroCharge({
+      amount: 0.50,  // $0.50 verification charge
+      cardNumber: parentInfo.creditCard,
+      description: 'Parental consent verification - will be refunded',
+      statementDescriptor: 'PARENTAL VERIFY'
+    });
+
+    if (!chargeResult.success) {
+      return false;
+    }
+
+    // Verify cardholder name matches parent name
+    const nameMatch = this.compareNames(
+      chargeResult.cardholderName,
+      parentInfo.fullName
+    );
+
+    // Refund the verification charge
+    await this.refundCharge(chargeResult.chargeId);
+
+    return nameMatch.score > 0.85;
+  }
+
+  async monitorConsentValidity(childId: string): Promise<void> {
+    // Periodically check if consent needs renewal (e.g., on birthdays)
+    const child = await this.getChildProfile(childId);
+    const consents = await this.getActiveConsents(childId);
+
+    for (const consent of consents) {
+      // Check if child has aged into new consent category
+      if (child.age === 13 && consent.grantedWhen < child.13thBirthday) {
+        // Transition from COPPA consent to teen self-consent
+        await this.transitionToTeenConsent(childId, consent);
+      }
+
+      // Check if consent has expired
+      if (consent.expiresAt < new Date()) {
+        await this.requestConsentRenewal(consent);
+      }
+    }
+  }
+}
+</code></pre>
+
+        <h2>Cross-Platform Age Verification Networks</h2>
+
+        <p>
+            Rather than verifying age separately for every platform, WIA-CHILD-002 enables cross-platform verification
+            networks where a user's age verification from one platform can be securely shared with others, reducing
+            friction while maintaining privacy through cryptographic credentials and selective disclosure.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Network Type</th>
+                    <th>Participants</th>
+                    <th>Technology</th>
+                    <th>Privacy Mechanism</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Industry Consortium</td>
+                    <td>Gaming platforms, social media, streaming</td>
+                    <td>Federated identity + JWT tokens</td>
+                    <td>Zero-knowledge age proofs</td>
+                </tr>
+                <tr>
+                    <td>Government-Backed Network</td>
+                    <td>EU member states, UK, Australia</td>
+                    <td>eIDAS 2.0, Digital Identity Wallets</td>
+                    <td>Selective attribute disclosure</td>
+                </tr>
+                <tr>
+                    <td>Blockchain-Based Verification</td>
+                    <td>Web3 platforms, DeFi, NFT marketplaces</td>
+                    <td>Verifiable credentials, DID</td>
+                    <td>Self-sovereign identity, ZK-SNARKs</td>
+                </tr>
+                <tr>
+                    <td>Payment Network Integration</td>
+                    <td>Visa, Mastercard, PayPal</td>
+                    <td>3D Secure 2.0, payment tokenization</td>
+                    <td>Age attestation via payment history</td>
+                </tr>
+                <tr>
+                    <td>Telecom Operator Network</td>
+                    <td>Mobile carriers (GSMA Mobile Connect)</td>
+                    <td>SIM-based authentication</td>
+                    <td>Carrier-verified age attributes</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Cross-Platform Credential Sharing</h3>
+
+        <pre><code>interface VerifiableCredential {
+  id: string;
+  issuer: string;                    // Who issued the credential
+  subject: string;                   // Who the credential is about (DID)
+  issuanceDate: Date;
+  expirationDate: Date;
+  credentialSubject: {
+    ageOver13: boolean;
+    ageOver18: boolean;
+    ageRange?: string;
+  };
+  proof: CryptographicProof;        // Digital signature
+}
+
+class CrossPlatformAgeNetwork {
+  async issueVerifiableAgeCredential(
+    userId: string,
+    ageVerificationResult: AgeVerificationResult
+  ): Promise<VerifiableCredential> {
+
+    // Create decentralized identifier for user
+    const userDID = await this.createOrGetUserDID(userId);
+
+    // Create verifiable credential conforming to W3C standard
+    const credential: VerifiableCredential = {
+      '@context': [
+        'https://www.w3.org/2018/credentials/v1',
+        'https://wia.org/credentials/age/v1'
+      ],
+      id: `urn:uuid:${this.generateUUID()}`,
+      type: ['VerifiableCredential', 'AgeVerificationCredential'],
+      issuer: 'did:wia:age-verification-authority',
+      issuanceDate: new Date().toISOString(),
+      expirationDate: this.calculateExpiration(ageVerificationResult),
+      credentialSubject: {
+        id: userDID,
+        ageOver13: ageVerificationResult.age >= 13,
+        ageOver18: ageVerificationResult.age >= 18,
+        ageOver21: ageVerificationResult.age >= 21,
+        verificationMethod: ageVerificationResult.method,
+        verificationLevel: ageVerificationResult.confidenceLevel
+      },
+      proof: await this.generateProof(credential)
+    };
+
+    // Store credential in user's digital wallet
+    await this.storeInUserWallet(userDID, credential);
+
+    return credential;
+  }
+
+  async verifyCredentialFromAnotherPlatform(
+    presentedCredential: VerifiableCredential
+  ): Promise<boolean> {
+
+    // Step 1: Verify cryptographic signature
+    const signatureValid = await this.verifyProof(
+      presentedCredential.proof,
+      presentedCredential.issuer
+    );
+
+    if (!signatureValid) {
+      throw new Error('Invalid credential signature');
+    }
+
+    // Step 2: Check if issuer is trusted
+    const issuerTrusted = await this.checkIssuerTrustRegistry(
+      presentedCredential.issuer
+    );
+
+    if (!issuerTrusted) {
+      throw new Error('Credential issuer not in trust registry');
+    }
+
+    // Step 3: Verify credential hasn't been revoked
+    const revoked = await this.checkRevocationStatus(presentedCredential.id);
+
+    if (revoked) {
+      throw new Error('Credential has been revoked');
+    }
+
+    // Step 4: Check expiration
+    if (new Date(presentedCredential.expirationDate) < new Date()) {
+      throw new Error('Credential has expired');
+    }
+
+    // Step 5: Verify user owns the credential (DID proof)
+    const ownershipVerified = await this.verifyDIDOwnership(
+      presentedCredential.credentialSubject.id
+    );
+
+    if (!ownershipVerified) {
+      throw new Error('User does not own this credential');
+    }
+
+    return true;
+  }
+
+  async shareAgeCredentialWithSelectiveDisclosure(
+    credential: VerifiableCredential,
+    targetPlatform: string,
+    disclosureLevel: 'minimal' | 'standard' | 'full'
+  ): Promise<PresentationProof> {
+
+    // Selective disclosure: only share what's necessary
+    let disclosedAttributes;
+
+    switch (disclosureLevel) {
+      case 'minimal':
+        // Only disclose over18 status, nothing else
+        disclosedAttributes = {
+          ageOver18: credential.credentialSubject.ageOver18
+        };
+        break;
+
+      case 'standard':
+        // Disclose age thresholds but not exact age
+        disclosedAttributes = {
+          ageOver13: credential.credentialSubject.ageOver13,
+          ageOver18: credential.credentialSubject.ageOver18,
+          ageOver21: credential.credentialSubject.ageOver21
+        };
+        break;
+
+      case 'full':
+        // Disclose all attributes
+        disclosedAttributes = credential.credentialSubject;
+        break;
+    }
+
+    // Create zero-knowledge proof that selected attributes are true
+    // without revealing the underlying credential or other attributes
+    const zkProof = await this.createZeroKnowledgeProof({
+      credential: credential,
+      disclosedAttributes: disclosedAttributes,
+      challenge: await this.getPlatformChallenge(targetPlatform)
+    });
+
+    return {
+      type: 'VerifiablePresentation',
+      verifiableCredential: credential,
+      proof: zkProof,
+      disclosedAttributes: disclosedAttributes,
+      holder: credential.credentialSubject.id
+    };
+  }
+}
+</code></pre>
+
+        <h2>Trust Registry and Federation Management</h2>
+
+        <p>
+            For cross-platform verification to work, platforms must trust each other's verification processes. WIA-CHILD-002
+            defines a trust registry system where verified age providers are certified and their credentials are recognized
+            across the ecosystem.
+        </p>
+
+        <h3>Trust Registry Implementation</h3>
+
+        <pre><code>interface TrustRegistry {
+  registerProvider(provider: AgeVerificationProvider): Promise<void>;
+  verifyProviderCredentials(providerId: string): Promise<boolean>;
+  getTrustedProviders(region?: string): Promise<AgeVerificationProvider[]>;
+  revokeProviderTrust(providerId: string, reason: string): Promise<void>;
+}
+
+class TrustRegistryManager {
+  async certifyAgeVerificationProvider(
+    provider: AgeVerificationProvider
+  ): Promise<Certification> {
+
+    // Audit provider's verification processes
+    const audit = await this.conductSecurityAudit(provider, {
+      checkIdentityVerification: true,
+      checkDataProtection: true,
+      checkPrivacyCompliance: true,
+      checkFraudPrevention: true,
+      checkAuditLogging: true
+    });
+
+    // Verify compliance with regional regulations
+    const complianceCheck = await this.verifyRegulatory Compliance(provider, {
+      gdpr: provider.operatesInEU,
+      coppa: provider.operatesInUS,
+      pipeda: provider.operatesInCanada,
+      appi: provider.operatesInJapan
+    });
+
+    // Verify technical security standards
+    const securityCheck = await this.verifySecurityStandards(provider, {
+      encryptionAtRest: 'AES-256',
+      encryptionInTransit: 'TLS 1.3',
+      authenticationMFA: true,
+      incidentResponse: true,
+      penetrationTesting: 'annual'
+    });
+
+    if (audit.passed && complianceCheck.compliant && securityCheck.certified) {
+      // Issue certification
+      const certification = {
+        providerId: provider.id,
+        certifiedAt: new Date(),
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),  // 1 year
+        certificationLevel: this.determineCertificationLevel(audit, complianceCheck),
+        trustedRegions: provider.operationalRegions,
+        publicKey: provider.publicKey  // For credential verification
+      };
+
+      // Register in distributed trust registry
+      await this.publishToTrustRegistry(certification);
+
+      return certification;
+    }
+
+    throw new Error('Provider failed certification requirements');
+  }
+}
+</code></pre>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>Identity provider integration (Google, Apple, Microsoft, Facebook) enables age verification through OAuth 2.0
+                and OpenID Connect with selective disclosure of age claims, reducing verification friction for billions of users.</li>
+
+                <li>Government digital identity systems (EU Digital Identity Wallet, UK Verify, Aadhaar) provide highest-assurance
+                age verification through official documents with privacy-preserving age attestation capabilities.</li>
+
+                <li>Educational SSO integration with Clever, ClassLink, and Google Workspace for Education leverages school enrollment
+                data for FERPA-compliant age verification based on grade level and student status.</li>
+
+                <li>Parental consent platforms (Privo, SuperAwesome, Yoti) manage COPPA-compliant verifiable parental consent for
+                children under 13 using credit card verification, ID checks, and knowledge-based authentication.</li>
+
+                <li>Cross-platform verification networks enable users to verify age once and share verifiable credentials across
+                multiple platforms using W3C standards, DIDs, and zero-knowledge proofs for selective disclosure.</li>
+
+                <li>Trust registries certify age verification providers through security audits, regulatory compliance checks, and
+                technical standards verification, enabling ecosystem-wide credential acceptance.</li>
+
+                <li>Privacy-preserving techniques including selective attribute disclosure, zero-knowledge proofs, and minimal data
+                sharing ensure age verification doesn't compromise user privacy or create tracking vulnerabilities.</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>Explain how OpenID Connect selective disclosure works for age verification. Why is it better to share
+                "over18: true" rather than "birthdate: 1995-03-15"?</li>
+
+                <li>Compare the verification assurance levels of OAuth identity providers versus government ID systems. When
+                would each be appropriate?</li>
+
+                <li>Educational SSO provides grade level rather than exact age. What are the privacy benefits and verification
+                limitations of this approach?</li>
+
+                <li>Walk through the multi-method parental identity verification process. Why does COPPA require strong parent
+                verification before collecting child data?</li>
+
+                <li>Describe how verifiable credentials work for cross-platform age verification. What role do DIDs, cryptographic
+                proofs, and trust registries play?</li>
+
+                <li>The trust registry certification process checks security, compliance, and technical standards. Why can't
+                platforms just trust any age verification provider?</li>
+
+                <li>Explain zero-knowledge proofs in the context of age verification. How can you prove you're over 18 without
+                revealing your birthdate?</li>
+
+                <li>Compare the different verification methods' trade-offs: convenience, privacy, cost, assurance level, and
+                regulatory acceptance. Which method would you recommend for different use cases (social media, gambling, healthcare)?</li>
+            </ol>
+        </div>
+
+        <div class="philosophy">
+            <h3>弘益人間 (Hongik Ingan)</h3>
+            <p><em>"Benefit All Humanity"</em></p>
+            <p style="margin-top: 1rem;">
+                The philosophy of 弘益人間 teaches us that true progress comes from cooperation, not isolation. Age verification
+                ecosystem integration embodies this principle by recognizing that interoperability benefits everyone—users verify
+                once instead of repeatedly, platforms share verification costs and expertise, and children receive consistent
+                protection across their digital lives.
+            </p>
+            <p style="margin-top: 1rem;">
+                By building bridges between identity providers, governments, schools, and platforms, we create a seamless
+                protection layer that serves all humanity. This collaborative approach reduces friction for legitimate users
+                while strengthening safeguards against those who would exploit children, demonstrating that universal benefit
+                arises from thoughtful integration rather than fragmented silos.
+            </p>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-06.html" class="nav-button">← Previous: Regulatory Compliance</a>
+            <a href="chapter-08.html" class="nav-button">Next: Future Outlook →</a>
+        </div>
+
+        <footer>
+            <p>© 2025 SmileStory Inc. / WIA</p>
+            <p style="margin-top: 0.5rem; color: var(--primary);">弘益人間 (Benefit All Humanity)</p>
+            <p style="margin-top: 0.5rem;">WIA-CHILD-002 Age Verification Standard v1.0</p>
+        </footer>
+    </div>
+</body>
+</html>

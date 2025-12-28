@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Recovery Strategies and Patterns | WIA-CORE-010</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: rgba(30, 41, 59, 0.4); padding: 3rem; border-radius: 15px; border: 2px solid #6B7280; }
+        .chapter-header { border-bottom: 3px solid #6B7280; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #6B7280; font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem; }
+        h1 { font-size: 2.5rem; color: #6B7280; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; color: #6B7280; margin: 2.5rem 0 1.5rem 0; border-left: 4px solid #6B7280; padding-left: 1rem; }
+        h3 { font-size: 1.5rem; color: #94a3b8; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; font-size: 1.1rem; }
+        .code-example { background: #0f172a; border: 2px solid #475569; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto; }
+        .code-example pre { color: #94a3b8; font-family: 'Courier New', monospace; font-size: 0.95rem; line-height: 1.6; }
+        ul, ol { margin: 1.5rem 0 1.5rem 2rem; color: #cbd5e1; }
+        li { margin: 0.75rem 0; line-height: 1.6; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #475569; }
+        .nav-button { padding: 1rem 2rem; background: linear-gradient(135deg, #6B7280 0%, #4b5563 100%); border: none; border-radius: 8px; color: white; text-decoration: none; font-weight: 600; transition: all 0.3s; }
+        .nav-button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(107, 114, 128, 0.4); }
+        strong { color: #6B7280; }
+        .strategy-card { background: rgba(59, 130, 246, 0.1); border: 2px solid #3b82f6; border-radius: 10px; padding: 2rem; margin: 2rem 0; }
+        .strategy-card h4 { color: #3b82f6; font-size: 1.3rem; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 4</div>
+            <h1>Recovery Strategies and Patterns</h1>
+        </div>
+
+        <h2>4.1 Introduction to Error Recovery</h2>
+
+        <p>The most powerful feature of WIA-CORE-010 is embedded recovery strategies. Every error includes explicit guidance on how to recover, transforming errors from dead-ends into actionable pathways.</p>
+
+        <p>Traditional error handling forces developers to figure out recovery logic for every error. Should we retry? How long should we wait? Should we use fallback data? Circuit break? WIA-CORE-010 standardizes these decisions.</p>
+
+        <h2>4.2 The Six Recovery Strategies</h2>
+
+        <div class="strategy-card">
+            <h4>1. RETRY_WITH_BACKOFF - Exponential Backoff Retry</h4>
+            <p style="color: #cbd5e1;"><strong>When to use:</strong> Temporary failures that are likely to resolve quickly (network timeouts, database connection issues, rate limits).</p>
+            <p style="color: #cbd5e1;"><strong>How it works:</strong> Retry the operation with exponentially increasing delays between attempts (1s, 2s, 4s, 8s, etc.). Include jitter to prevent thundering herd.</p>
+            <div class="code-example">
+                <pre>
+async function retryWithBackoff(operation, maxAttempts = 5) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (error.recovery !== 'RETRY_WITH_BACKOFF' || attempt === maxAttempts) {
+        throw error;
+      }
+
+      // Exponential backoff: 2^attempt * 1000ms + random jitter
+      const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+      console.log(`Retry ${attempt}/${maxAttempts} after ${delay}ms`);
+      await sleep(delay);
+    }
+  }
+}
+
+// Usage
+try {
+  const data = await retryWithBackoff(() => fetchFromAPI());
+} catch (error) {
+  // All retries exhausted
+  handleFinalFailure(error);
+}
+                </pre>
+            </div>
+            <p style="color: #cbd5e1;"><strong>Best practices:</strong></p>
+            <ul style="margin-left: 2rem; color: #cbd5e1;">
+                <li>Maximum 5-10 retry attempts</li>
+                <li>Cap maximum delay at 30-60 seconds</li>
+                <li>Add random jitter (10-20% of delay)</li>
+                <li>Log each retry attempt with correlation ID</li>
+                <li>Respect retry-after headers from APIs</li>
+            </ul>
+        </div>
+
+        <div class="strategy-card">
+            <h4>2. FALLBACK - Use Alternative Method</h4>
+            <p style="color: #cbd5e1;"><strong>When to use:</strong> Primary method failed but alternative exists (cached data, backup service, degraded functionality).</p>
+            <p style="color: #cbd5e1;"><strong>How it works:</strong> Attempt primary operation, if it fails, immediately switch to fallback without retry.</p>
+            <div class="code-example">
+                <pre>
+class UserService {
+  async getUser(userId) {
+    try {
+      // Try primary database
+      return await this.primaryDB.query('SELECT * FROM users WHERE id = ?', [userId]);
+    } catch (error) {
+      if (error.recovery === 'FALLBACK') {
+        console.log('Primary DB failed, using cache fallback');
+
+        // Fallback to cache
+        const cached = await this.cache.get(`user:${userId}`);
+        if (cached) {
+          return { ...cached, _source: 'cache', _stale: true };
+        }
+
+        // Fallback to read replica
+        try {
+          return await this.replicaDB.query('SELECT * FROM users WHERE id = ?', [userId]);
+        } catch (replicaError) {
+          // All fallbacks exhausted
+          throw error;
+        }
+      }
+      throw error;
+    }
+  }
+}
+                </pre>
+            </div>
+            <p style="color: #cbd5e1;"><strong>Fallback hierarchy:</strong></p>
+            <ol style="margin-left: 2rem; color: #cbd5e1;">
+                <li>In-memory cache (fastest)</li>
+                <li>Distributed cache (Redis, Memcached)</li>
+                <li>Read replica database</li>
+                <li>Backup service/region</li>
+                <li>Static fallback data</li>
+                <li>Degraded mode (limited functionality)</li>
+            </ol>
+        </div>
+
+        <div class="strategy-card">
+            <h4>3. CIRCUIT_BREAKER - Stop Requesting Failing Service</h4>
+            <p style="color: #cbd5e1;"><strong>When to use:</strong> Service is consistently failing, continued requests will make it worse. Prevent cascading failures.</p>
+            <p style="color: #cbd5e1;"><strong>How it works:</strong> After threshold of failures, "open" the circuit - stop sending requests. After timeout, try again ("half-open"). If successful, "close" circuit.</p>
+            <div class="code-example">
+                <pre>
+class CircuitBreaker {
+  constructor({ failureThreshold = 5, timeout = 60000, resetTimeout = 30000 }) {
+    this.failureCount = 0;
+    this.failureThreshold = failureThreshold;
+    this.timeout = timeout;
+    this.resetTimeout = resetTimeout;
+    this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
+    this.nextAttempt = Date.now();
+  }
+
+  async execute(operation) {
+    if (this.state === 'OPEN') {
+      if (Date.now() < this.nextAttempt) {
+        throw new WIAError({
+          code: 'WIA-CIRCUIT-BREAKER-001',
+          message: 'Circuit breaker is OPEN',
+          severity: 'WARNING',
+          recovery: 'FALLBACK'
+        });
+      }
+      this.state = 'HALF_OPEN';
+    }
+
+    try {
+      const result = await operation();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  onSuccess() {
+    this.failureCount = 0;
+    this.state = 'CLOSED';
+  }
+
+  onFailure() {
+    this.failureCount++;
+    if (this.failureCount >= this.failureThreshold) {
+      this.state = 'OPEN';
+      this.nextAttempt = Date.now() + this.timeout;
+      console.log(`Circuit breaker OPEN for ${this.timeout}ms`);
+    }
+  }
+}
+
+// Usage
+const breaker = new CircuitBreaker({ failureThreshold: 5, timeout: 60000 });
+
+async function callExternalAPI(data) {
+  try {
+    return await breaker.execute(() => api.call(data));
+  } catch (error) {
+    if (error.code === 'WIA-CIRCUIT-BREAKER-001') {
+      // Circuit is open, use fallback
+      return useCachedData();
+    }
+    throw error;
+  }
+}
+                </pre>
+            </div>
+        </div>
+
+        <div class="strategy-card">
+            <h4>4. GRACEFUL_DEGRADATION - Continue with Reduced Functionality</h4>
+            <p style="color: #cbd5e1;"><strong>When to use:</strong> Non-critical feature failed but core functionality can continue.</p>
+            <p style="color: #cbd5e1;"><strong>How it works:</strong> Disable failing feature, continue with core service. Inform users of degraded state.</p>
+            <div class="code-example">
+                <pre>
+class EcommerceService {
+  async checkout(cart, userId) {
+    const order = { items: cart, userId, features: {} };
+
+    // Core: Process payment (required)
+    try {
+      order.payment = await this.paymentService.process(cart.total);
+    } catch (error) {
+      // Payment is critical - cannot degrade
+      throw error;
+    }
+
+    // Enhancement: Apply recommendations (optional)
+    try {
+      order.features.recommendations = await this.recommendationService.get(userId);
+    } catch (error) {
+      if (error.recovery === 'GRACEFUL_DEGRADATION') {
+        console.warn('Recommendations unavailable, proceeding without them');
+        order.features.recommendations = [];
+        order._degraded = true;
+      }
+    }
+
+    // Enhancement: Send email confirmation (optional)
+    try {
+      await this.emailService.send(order);
+    } catch (error) {
+      if (error.recovery === 'GRACEFUL_DEGRADATION') {
+        console.warn('Email service down, queueing for later');
+        await this.queue.add('email', order);
+        order._emailQueued = true;
+      }
+    }
+
+    return order;
+  }
+}
+                </pre>
+            </div>
+            <p style="color: #cbd5e1;"><strong>Degradation levels:</strong></p>
+            <ul style="margin-left: 2rem; color: #cbd5e1;">
+                <li><strong>Level 1:</strong> Disable analytics and tracking</li>
+                <li><strong>Level 2:</strong> Disable recommendations and personalization</li>
+                <li><strong>Level 3:</strong> Disable images and media</li>
+                <li><strong>Level 4:</strong> Text-only mode</li>
+                <li><strong>Level 5:</strong> Core transaction processing only</li>
+            </ul>
+        </div>
+
+        <div class="strategy-card">
+            <h4>5. FAIL_FAST - Immediate Failure, No Recovery</h4>
+            <p style="color: #cbd5e1;"><strong>When to use:</strong> Error cannot be recovered (invalid input, authorization failure, logical error). Retrying will not help.</p>
+            <p style="color: #cbd5e1;"><strong>How it works:</strong> Immediately return error to caller. Do not retry, do not use fallback.</p>
+            <div class="code-example">
+                <pre>
+class AuthService {
+  async authenticate(username, password) {
+    // Validate input
+    if (!username || !password) {
+      throw new WIAError({
+        code: 'WIA-VALIDATE-INVALID-001',
+        message: 'Username and password required',
+        severity: 'ERROR',
+        recovery: 'FAIL_FAST' // Don't retry invalid input
+      });
+    }
+
+    // Check credentials
+    const user = await this.db.findUser(username);
+    if (!user || !await this.verifyPassword(password, user.passwordHash)) {
+      throw new WIAError({
+        code: 'WIA-AUTH-INVALID-001',
+        message: 'Invalid credentials',
+        severity: 'ERROR',
+        recovery: 'FAIL_FAST' // Don't retry bad credentials
+      });
+    }
+
+    return this.generateToken(user);
+  }
+}
+
+// Usage
+try {
+  const token = await auth.authenticate(username, password);
+} catch (error) {
+  if (error.recovery === 'FAIL_FAST') {
+    // Show error to user immediately, don't retry
+    return res.status(401).json({ error: error.message });
+  }
+}
+                </pre>
+            </div>
+        </div>
+
+        <div class="strategy-card">
+            <h4>6. MANUAL - Requires Human Intervention</h4>
+            <p style="color: #cbd5e1;"><strong>When to use:</strong> Automated recovery is not possible or not safe. Requires investigation and manual action.</p>
+            <p style="color: #cbd5e1;"><strong>How it works:</strong> Log error with full context, alert on-call engineer, create ticket, wait for manual resolution.</p>
+            <div class="code-example">
+                <pre>
+class DataIntegrityService {
+  async verifyChecksum(fileId) {
+    const file = await this.storage.get(fileId);
+    const computedChecksum = await this.computeChecksum(file.data);
+
+    if (computedChecksum !== file.expectedChecksum) {
+      // Data corruption detected - cannot auto-recover
+      const error = new WIAError({
+        code: 'WIA-STORAGE-CORRUPTION-001',
+        message: 'File checksum mismatch - possible corruption',
+        severity: 'CRITICAL',
+        recovery: 'MANUAL',
+        context: {
+          fileId,
+          expectedChecksum: file.expectedChecksum,
+          computedChecksum,
+          fileSize: file.data.length,
+          lastModified: file.lastModified
+        }
+      });
+
+      // Alert operations team
+      await this.alerting.page({
+        severity: 'CRITICAL',
+        title: 'Data corruption detected',
+        error,
+        runbook: 'https://wiki.company.com/data-corruption'
+      });
+
+      // Create ticket
+      await this.ticketing.create({
+        priority: 'P0',
+        title: `Data corruption: ${fileId}`,
+        description: error.toString(),
+        assignee: 'data-integrity-team'
+      });
+
+      throw error;
+    }
+  }
+}
+                </pre>
+            </div>
+        </div>
+
+        <h2>4.3 Combining Recovery Strategies</h2>
+
+        <p>Complex systems often combine multiple recovery strategies in sequence:</p>
+
+        <div class="code-example">
+            <pre>
+async function robustAPICall(operation, options = {}) {
+  const {
+    maxRetries = 3,
+    circuitBreaker,
+    fallback,
+    degradedMode
+  } = options;
+
+  try {
+    // Strategy 1: Circuit Breaker
+    if (circuitBreaker && circuitBreaker.isOpen()) {
+      throw new Error('Circuit breaker open');
+    }
+
+    // Strategy 2: Retry with backoff
+    return await retryWithBackoff(operation, maxRetries);
+
+  } catch (error) {
+    // Strategy 3: Fallback
+    if (fallback) {
+      console.log('Primary failed, using fallback');
+      try {
+        return await fallback();
+      } catch (fallbackError) {
+        // Fallback also failed
+      }
+    }
+
+    // Strategy 4: Graceful Degradation
+    if (degradedMode) {
+      console.log('Entering degraded mode');
+      return degradedMode.response;
+    }
+
+    // Strategy 5: Fail Fast
+    throw error;
+  }
+}
+
+// Usage
+const result = await robustAPICall(
+  () => api.fetchUserData(userId),
+  {
+    maxRetries: 3,
+    circuitBreaker: userServiceBreaker,
+    fallback: () => cache.get(`user:${userId}`),
+    degradedMode: {
+      response: { id: userId, name: 'Unknown User', _degraded: true }
+    }
+  }
+);
+            </pre>
+        </div>
+
+        <h2>4.4 Recovery Strategy Best Practices</h2>
+
+        <ol>
+            <li><strong>Match Strategy to Error Type:</strong> Network timeouts → RETRY. Invalid input → FAIL_FAST. Service down → CIRCUIT_BREAKER.</li>
+            <li><strong>Implement Timeouts:</strong> Every recovery strategy needs maximum time limit.</li>
+            <li><strong>Add Observability:</strong> Log every retry, fallback, and degradation with correlation IDs.</li>
+            <li><strong>Test Recovery Paths:</strong> Use chaos engineering to verify recovery strategies work under failure.</li>
+            <li><strong>Monitor Recovery Metrics:</strong> Track success rates for each recovery strategy.</li>
+            <li><strong>Document Runbooks:</strong> MANUAL errors need clear runbooks for on-call engineers.</li>
+            <li><strong>Avoid Infinite Loops:</strong> Cap retries, circuit breakers must eventually give up.</li>
+            <li><strong>Respect User Intent:</strong> Don't retry user-initiated cancellations.</li>
+        </ol>
+
+        <div class="nav-buttons">
+            <a href="03-severity-levels.html" class="nav-button">← Chapter 3</a>
+            <a href="05-error-propagation.html" class="nav-button">Chapter 5: Propagation →</a>
+        </div>
+    </div>
+</body>
+</html>

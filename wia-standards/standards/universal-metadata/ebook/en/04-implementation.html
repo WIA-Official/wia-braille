@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Implementation Guide | Universal Metadata</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 3rem; }
+        .chapter-header { border-bottom: 3px solid #6B7280; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #6B7280; font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem; }
+        h1 { font-size: 3rem; color: #ffffff; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; color: #9CA3AF; margin: 2.5rem 0 1.5rem 0; border-left: 5px solid #6B7280; padding-left: 1rem; }
+        h3 { font-size: 1.5rem; color: #6B7280; margin: 2rem 0 1rem 0; }
+        p { margin-bottom: 1.5rem; color: #cbd5e1; text-align: justify; }
+        .code-block { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 1.5rem; margin: 2rem 0; overflow-x: auto; }
+        pre { color: #94a3b8; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; }
+        .highlight-box { background: rgba(107, 114, 128, 0.1); border-left: 5px solid #6B7280; padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1.5rem 0 1.5rem 2rem; color: #cbd5e1; }
+        li { margin-bottom: 0.8rem; }
+        .navigation { display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+        .nav-link { padding: 1rem 2rem; background: linear-gradient(135deg, #6B7280, #4B5563); color: #ffffff; text-decoration: none; border-radius: 10px; transition: all 0.3s ease; font-weight: 600; }
+        .nav-link:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(107, 114, 128, 0.3); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 4</div>
+            <h1>Implementation Guide</h1>
+        </div>
+
+        <p>
+            This chapter provides practical, step-by-step guidance for implementing Universal Metadata
+            in your applications. We'll cover the TypeScript SDK, REST API, CLI tools, and complete
+            working examples you can adapt for your needs.
+        </p>
+
+        <h2>4.1 Getting Started with the TypeScript SDK</h2>
+
+        <h3>Installation</h3>
+
+        <p>
+            The official Universal Metadata SDK is available via npm:
+        </p>
+
+        <div class="code-block">
+            <pre>npm install @wia/universal-metadata
+
+# Or with yarn
+yarn add @wia/universal-metadata
+
+# Or with pnpm
+pnpm add @wia/universal-metadata</pre>
+        </div>
+
+        <h3>Basic Usage</h3>
+
+        <p>
+            Import and create your first metadata record:
+        </p>
+
+        <div class="code-block">
+            <pre>import { MetadataBuilder, UniversalMetadata } from '@wia/universal-metadata';
+
+// Create metadata using the builder pattern
+const metadata = new MetadataBuilder()
+  .setId('https://example.org/resources/doc-12345')
+  .setTitle('Introduction to Machine Learning')
+  .setDescription('A comprehensive guide covering fundamental concepts...')
+  .setLanguage('en')
+  .setDomain('education')
+  .setContentType('document')
+  .addKeyword('machine learning')
+  .addKeyword('artificial intelligence')
+  .addKeyword('tutorial')
+  .setCreator('Dr. Jane Smith')
+  .setQualityMetrics({
+    completeness: 0.95,
+    accuracy: 0.98,
+    consistency: 0.96,
+    timeliness: 1.0
+  })
+  .build();
+
+console.log(metadata.toJSON());</pre>
+        </div>
+
+        <h3>Validation</h3>
+
+        <p>
+            Validate metadata against the standard:
+        </p>
+
+        <div class="code-block">
+            <pre>import { MetadataValidator } from '@wia/universal-metadata';
+
+const validator = new MetadataValidator();
+const result = validator.validate(metadata);
+
+if (result.isValid) {
+  console.log('✓ Metadata is valid');
+} else {
+  console.error('✗ Validation errors:', result.errors);
+  console.warn('⚠ Warnings:', result.warnings);
+}
+
+// Example validation result
+{
+  isValid: true,
+  errors: [],
+  warnings: [
+    'Recommended field "license" is missing',
+    'Description could be more detailed (current: 150 chars, recommended: 200+)'
+  ],
+  score: 0.95
+}</pre>
+        </div>
+
+        <h2>4.2 Working with Multilingual Metadata</h2>
+
+        <p>
+            Universal Metadata provides first-class support for multilingual content:
+        </p>
+
+        <div class="code-block">
+            <pre>import { MultilingualMetadata } from '@wia/universal-metadata';
+
+const metadata = new MetadataBuilder()
+  .setId('doc-12345')
+  .setLanguage('en')
+  .setTitle('Quantum Computing Basics')
+
+  // Add translations
+  .addTitleTranslation('ko', '양자 컴퓨팅 기초')
+  .addTitleTranslation('ja', '量子コンピューティングの基礎')
+  .addTitleTranslation('zh', '量子计算基础')
+  .addTitleTranslation('es', 'Fundamentos de Computación Cuántica')
+
+  .setDescription('An introduction to quantum computing principles...')
+  .addDescriptionTranslation('ko', '양자 컴퓨팅 원리에 대한 소개...')
+  .addDescriptionTranslation('ja', '量子コンピューティングの原理の紹介...')
+
+  .build();
+
+// Get metadata in specific language
+const koreanMetadata = metadata.getTranslation('ko');
+console.log(koreanMetadata.title); // "양자 컴퓨팅 기초"
+
+// Get all available languages
+const languages = metadata.getAvailableLanguages();
+console.log(languages); // ['en', 'ko', 'ja', 'zh', 'es']</pre>
+        </div>
+
+        <h2>4.3 Quality Metrics Calculation</h2>
+
+        <p>
+            Automatically calculate and update quality metrics:
+        </p>
+
+        <div class="code-block">
+            <pre>import { QualityAnalyzer } from '@wia/universal-metadata';
+
+const analyzer = new QualityAnalyzer({
+  // Customize quality calculation
+  weights: {
+    requiredFields: 0.5,
+    recommendedFields: 0.3,
+    extensionFields: 0.2
+  }
+});
+
+// Analyze metadata quality
+const analysis = analyzer.analyze(metadata);
+
+console.log(analysis);
+// {
+//   completeness: 0.92,
+//   accuracy: 0.95,
+//   consistency: 0.98,
+//   timeliness: 1.0,
+//   overall: 0.96,
+//   details: {
+//     missingRequired: [],
+//     missingRecommended: ['license', 'version'],
+//     inconsistencies: [],
+//     ageInDays: 0
+//   },
+//   recommendations: [
+//     'Add license information to improve completeness',
+//     'Consider adding version number for better tracking'
+//   ]
+// }
+
+// Update metadata with calculated metrics
+metadata.setQualityMetrics(analysis);</pre>
+        </div>
+
+        <h2>4.4 Search and Discovery Implementation</h2>
+
+        <p>
+            Implement search functionality using the SDK:
+        </p>
+
+        <div class="code-block">
+            <pre>import { MetadataSearch, SearchQuery } from '@wia/universal-metadata';
+
+// Initialize search engine (connects to Elasticsearch or other backend)
+const search = new MetadataSearch({
+  host: 'localhost:9200',
+  index: 'universal-metadata'
+});
+
+// Index metadata
+await search.index(metadata);
+
+// Build search query
+const query = new SearchQuery()
+  .setFullText('machine learning')
+  .setDomain('education')
+  .setLanguage('en')
+  .setMinQuality(0.8)
+  .setDateRange({
+    field: 'created',
+    from: '2024-01-01',
+    to: '2025-12-31'
+  })
+  .setFacets(['domain', 'contentType', 'language'])
+  .setPageSize(20)
+  .setPage(1);
+
+// Execute search
+const results = await search.query(query);
+
+console.log(results);
+// {
+//   total: 150,
+//   page: 1,
+//   pageSize: 20,
+//   results: [
+//     { id: '...', title: '...', score: 0.95, ... },
+//     ...
+//   ],
+//   facets: {
+//     domain: {
+//       'education': 80,
+//       'technology': 45,
+//       'research': 25
+//     },
+//     contentType: {
+//       'document': 100,
+//       'video': 30,
+//       'dataset': 20
+//     }
+//   },
+//   aggregations: {
+//     avgQuality: 0.89,
+//     totalKeywords: 450
+//   }
+// }</pre>
+        </div>
+
+        <h2>4.5 Transformation and Export</h2>
+
+        <p>
+            Transform Universal Metadata to other standards:
+        </p>
+
+        <div class="code-block">
+            <pre>import { MetadataTransformer } from '@wia/universal-metadata';
+
+const transformer = new MetadataTransformer();
+
+// Export to Dublin Core
+const dublinCore = transformer.toDublinCore(metadata);
+console.log(dublinCore);
+// {
+//   'dc:title': 'Introduction to Machine Learning',
+//   'dc:creator': 'Dr. Jane Smith',
+//   'dc:language': 'en',
+//   'dc:subject': ['machine learning', 'artificial intelligence'],
+//   ...
+// }
+
+// Export to Schema.org
+const schemaOrg = transformer.toSchemaOrg(metadata);
+console.log(schemaOrg);
+// {
+//   '@context': 'https://schema.org',
+//   '@type': 'CreativeWork',
+//   'name': 'Introduction to Machine Learning',
+//   'author': {'@type': 'Person', 'name': 'Dr. Jane Smith'},
+//   'inLanguage': 'en',
+//   ...
+// }
+
+// Export to XML
+const xml = transformer.toXML(metadata);
+console.log(xml);
+// <?xml version="1.0" encoding="UTF-8"?>
+// <metadata standard="WIA-CORE-008">
+//   <title>Introduction to Machine Learning</title>
+//   ...
+// </metadata>
+
+// Export to RDF/Turtle
+const rdf = transformer.toRDF(metadata);
+console.log(rdf);
+// @prefix wia: <http://wia.org/core/008#> .
+// @prefix dc: <http://purl.org/dc/elements/1.1/> .
+// ...</pre>
+        </div>
+
+        <h2>4.6 REST API Implementation</h2>
+
+        <p>
+            Build a REST API for metadata operations:
+        </p>
+
+        <div class="code-block">
+            <pre>import express from 'express';
+import { MetadataService } from '@wia/universal-metadata';
+
+const app = express();
+app.use(express.json());
+
+const metadataService = new MetadataService({
+  database: 'postgresql://...',
+  search: 'http://localhost:9200'
+});
+
+// Create metadata
+app.post('/api/metadata', async (req, res) => {
+  try {
+    const metadata = await metadataService.create(req.body);
+    res.status(201).json(metadata);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get metadata by ID
+app.get('/api/metadata/:id', async (req, res) => {
+  const metadata = await metadataService.findById(req.params.id);
+  if (!metadata) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  res.json(metadata);
+});
+
+// Update metadata
+app.put('/api/metadata/:id', async (req, res) => {
+  const metadata = await metadataService.update(
+    req.params.id,
+    req.body
+  );
+  res.json(metadata);
+});
+
+// Delete metadata
+app.delete('/api/metadata/:id', async (req, res) => {
+  await metadataService.delete(req.params.id);
+  res.status(204).send();
+});
+
+// Search metadata
+app.get('/api/metadata', async (req, res) => {
+  const query = {
+    text: req.query.q,
+    domain: req.query.domain,
+    language: req.query.language,
+    minQuality: parseFloat(req.query.minQuality || '0'),
+    page: parseInt(req.query.page || '1'),
+    pageSize: parseInt(req.query.pageSize || '20')
+  };
+
+  const results = await metadataService.search(query);
+  res.json(results);
+});
+
+app.listen(3000, () => {
+  console.log('Metadata API running on port 3000');
+});</pre>
+        </div>
+
+        <h2>4.7 CLI Tools Usage</h2>
+
+        <p>
+            Use command-line tools for metadata operations:
+        </p>
+
+        <div class="code-block">
+            <pre># Create metadata from JSON file
+wia-metadata create --file metadata.json
+
+# Validate metadata
+wia-metadata validate --file metadata.json
+
+# Search metadata
+wia-metadata search --query "machine learning" --domain education
+
+# Export to different format
+wia-metadata export --id doc-12345 --format dublincore
+
+# Calculate quality metrics
+wia-metadata quality --file metadata.json
+
+# Bulk import from CSV
+wia-metadata import --file metadata.csv --format csv
+
+# Generate metadata template
+wia-metadata template --domain healthcare --output template.json</pre>
+        </div>
+
+        <h2>4.8 Complete Example: Building a Metadata Management System</h2>
+
+        <p>
+            Here's a complete example building a simple metadata management system:
+        </p>
+
+        <div class="code-block">
+            <pre>import {
+  MetadataBuilder,
+  MetadataService,
+  MetadataValidator,
+  QualityAnalyzer,
+  MetadataSearch
+} from '@wia/universal-metadata';
+
+class MetadataManager {
+  private service: MetadataService;
+  private validator: MetadataValidator;
+  private analyzer: QualityAnalyzer;
+  private search: MetadataSearch;
+
+  constructor(config) {
+    this.service = new MetadataService(config);
+    this.validator = new MetadataValidator();
+    this.analyzer = new QualityAnalyzer();
+    this.search = new MetadataSearch(config.search);
+  }
+
+  async createMetadata(data) {
+    // Build metadata
+    const builder = new MetadataBuilder();
+    Object.entries(data).forEach(([key, value]) => {
+      builder.set(key, value);
+    });
+
+    const metadata = builder.build();
+
+    // Validate
+    const validation = this.validator.validate(metadata);
+    if (!validation.isValid) {
+      throw new Error('Validation failed: ' + validation.errors.join(', '));
+    }
+
+    // Calculate quality
+    const quality = this.analyzer.analyze(metadata);
+    metadata.setQualityMetrics(quality);
+
+    // Save to database
+    await this.service.create(metadata);
+
+    // Index for search
+    await this.search.index(metadata);
+
+    return metadata;
+  }
+
+  async updateMetadata(id, updates) {
+    // Get existing metadata
+    const metadata = await this.service.findById(id);
+    if (!metadata) {
+      throw new Error('Metadata not found');
+    }
+
+    // Apply updates
+    Object.entries(updates).forEach(([key, value]) => {
+      metadata.set(key, value);
+    });
+
+    // Update modification timestamp
+    metadata.setModified(new Date());
+
+    // Recalculate quality
+    const quality = this.analyzer.analyze(metadata);
+    metadata.setQualityMetrics(quality);
+
+    // Save changes
+    await this.service.update(id, metadata);
+
+    // Reindex
+    await this.search.update(metadata);
+
+    return metadata;
+  }
+
+  async searchMetadata(query) {
+    return await this.search.query(query);
+  }
+
+  async deleteMetadata(id) {
+    await this.service.delete(id);
+    await this.search.delete(id);
+  }
+
+  async exportMetadata(id, format) {
+    const metadata = await this.service.findById(id);
+    const transformer = new MetadataTransformer();
+
+    switch (format) {
+      case 'dublincore':
+        return transformer.toDublinCore(metadata);
+      case 'schema.org':
+        return transformer.toSchemaOrg(metadata);
+      case 'xml':
+        return transformer.toXML(metadata);
+      default:
+        return metadata.toJSON();
+    }
+  }
+}
+
+// Usage
+const manager = new MetadataManager({
+  database: process.env.DATABASE_URL,
+  search: { host: process.env.ELASTICSEARCH_URL }
+});
+
+// Create metadata
+const metadata = await manager.createMetadata({
+  title: 'Research Paper: Climate Change Impact',
+  description: 'A comprehensive study on climate change...',
+  domain: 'research',
+  language: 'en',
+  keywords: ['climate change', 'environment', 'research']
+});
+
+// Search
+const results = await manager.searchMetadata({
+  text: 'climate',
+  domain: 'research'
+});
+
+// Export
+const dublinCore = await manager.exportMetadata(
+  metadata.id,
+  'dublincore'
+);</pre>
+        </div>
+
+        <h2>4.9 Best Practices</h2>
+
+        <p>
+            Follow these best practices for robust implementations:
+        </p>
+
+        <ul>
+            <li><strong>Always validate:</strong> Validate metadata before saving to catch errors early</li>
+            <li><strong>Calculate quality:</strong> Run quality analysis to maintain high standards</li>
+            <li><strong>Version control:</strong> Track changes and maintain version history</li>
+            <li><strong>Index consistently:</strong> Keep search indices in sync with primary storage</li>
+            <li><strong>Cache strategically:</strong> Cache frequently accessed metadata</li>
+            <li><strong>Handle errors gracefully:</strong> Provide clear error messages and recovery paths</li>
+            <li><strong>Log operations:</strong> Maintain audit logs for compliance and debugging</li>
+            <li><strong>Test thoroughly:</strong> Write tests for validation, quality, and transformations</li>
+        </ul>
+
+        <h2>Conclusion</h2>
+
+        <p>
+            This implementation guide provides the foundation for building Universal Metadata systems.
+            The TypeScript SDK, REST API patterns, and complete examples give you everything needed
+            to start implementing today. In the next chapter, we'll explore quality metrics in depth,
+            learning how to measure, monitor, and improve metadata quality over time.
+        </p>
+
+        <div class="navigation">
+            <a href="03-architecture.html" class="nav-link">← Chapter 3</a>
+            <a href="05-quality.html" class="nav-link">Chapter 5 →</a>
+        </div>
+    </div>
+</body>
+</html>

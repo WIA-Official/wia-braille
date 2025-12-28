@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA Seabed Resource Simulator - 🌊 Deep Ocean Mining & Management</title>
+    <style>
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --primary-light: #34D399;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #2d3b52;
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10B981;
+            --info: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Top Navigation */
+        .top-nav {
+            background: var(--bg-card);
+            border-bottom: 2px solid var(--border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--primary-light);
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .lang-toggle {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .lang-toggle:hover {
+            border-color: var(--primary);
+            background: var(--bg-hover);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 3rem 2rem;
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary-light);
+            background: var(--bg-hover);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .metric:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Controls */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-group label {
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: var(--bg);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--primary-light);
+            transform: scale(1.2);
+        }
+
+        .control-group select,
+        .control-group input[type="text"],
+        .control-group input[type="number"] {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .control-value {
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            background: var(--bg-hover);
+        }
+
+        /* Output Display */
+        .output {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.8;
+        }
+
+        .output-line {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .output-line:last-child {
+            border-bottom: none;
+        }
+
+        /* Status Indicators */
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .status-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .status-info {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--info);
+            border: 1px solid var(--info);
+        }
+
+        /* Map Display */
+        .map-display {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0.5rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .map-cell {
+            aspect-ratio: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .map-cell:hover {
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .map-cell.resource-high {
+            background: rgba(16, 185, 129, 0.3);
+            border-color: var(--success);
+        }
+
+        .map-cell.resource-medium {
+            background: rgba(245, 158, 11, 0.3);
+            border-color: var(--warning);
+        }
+
+        .map-cell.resource-low {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: var(--info);
+        }
+
+        /* Equipment List */
+        .equipment-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .equipment-item {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 1.5rem;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .equipment-item:hover {
+            border-color: var(--primary);
+        }
+
+        .equipment-icon {
+            font-size: 2rem;
+        }
+
+        .equipment-info h4 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .equipment-stats {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .equipment-stat {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--bg-card);
+            border-top: 2px solid var(--border);
+            padding: 3rem 2rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .philosophy {
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        .philosophy-sub {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .footer-links a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-light);
+        }
+
+        .copyright {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .tab-btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .equipment-item {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .map-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                🌐 WIA Standards
+            </a>
+            <div class="breadcrumb">
+                <a href="/">Home</a>
+                <span>/</span>
+                <a href="/standards">Standards</a>
+                <span>/</span>
+                <span>🌊 Seabed Resource</span>
+            </div>
+            <div class="nav-actions">
+                <button class="lang-toggle" onclick="toggleLanguage()">
+                    <span data-en="한국어" data-ko="English">한국어</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>
+                <span>🌊</span>
+                <span data-en="Seabed Resource Simulator" data-ko="해저 자원 시뮬레이터">Seabed Resource Simulator</span>
+            </h1>
+            <p data-en="Advanced simulation platform for deep ocean mining operations, resource mapping, and environmental impact assessment"
+               data-ko="심해 채굴 작업, 자원 매핑 및 환경 영향 평가를 위한 고급 시뮬레이션 플랫폼">
+                Advanced simulation platform for deep ocean mining operations, resource mapping, and environmental impact assessment
+            </p>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('mining')" data-en="⛏️ Mining Operations" data-ko="⛏️ 채굴 운영">⛏️ Mining Operations</button>
+            <button class="tab-btn" onclick="switchTab('mapping')" data-en="🗺️ Resource Mapping" data-ko="🗺️ 자원 지도">🗺️ Resource Mapping</button>
+            <button class="tab-btn" onclick="switchTab('environment')" data-en="🌿 Environmental Impact" data-ko="🌿 환경 영향">🌿 Environmental Impact</button>
+            <button class="tab-btn" onclick="switchTab('equipment')" data-en="🔧 Equipment Status" data-ko="🔧 장비 상태">🔧 Equipment Status</button>
+            <button class="tab-btn" onclick="switchTab('regulations')" data-en="📋 Regulations" data-ko="📋 규정">📋 Regulations</button>
+        </div>
+
+        <!-- Mining Operations Tab -->
+        <div id="mining" class="tab-content active">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span>⛏️</span>
+                        <span data-en="Deep Sea Mining Operations" data-ko="심해 채굴 작업">Deep Sea Mining Operations</span>
+                    </h2>
+                    <span class="status status-active" data-en="ACTIVE" data-ko="활성">ACTIVE</span>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="metric-value" id="mining-depth">4250</div>
+                        <div class="metric-label" data-en="Depth (m)" data-ko="깊이 (m)">Depth (m)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="mining-rate">145</div>
+                        <div class="metric-label" data-en="Mining Rate (t/h)" data-ko="채굴 속도 (t/h)">Mining Rate (t/h)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="mining-efficiency">87%</div>
+                        <div class="metric-label" data-en="Efficiency" data-ko="효율성">Efficiency</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="mining-yield">12.4</div>
+                        <div class="metric-label" data-en="Yield (kg/m³)" data-ko="수율 (kg/m³)">Yield (kg/m³)</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label data-en="Mining Depth (m)" data-ko="채굴 깊이 (m)">Mining Depth (m)</label>
+                        <input type="range" min="1000" max="6000" value="4250" step="50"
+                               oninput="updateValue('mining-depth', this.value)">
+                        <span class="control-value" id="depth-value">4250 m</span>
+                    </div>
+                    <div class="control-group">
+                        <label data-en="Extraction Rate (%)" data-ko="추출 속도 (%)">Extraction Rate (%)</label>
+                        <input type="range" min="0" max="100" value="75"
+                               oninput="updateValue('extraction-rate', this.value)">
+                        <span class="control-value" id="extraction-value">75%</span>
+                    </div>
+                    <div class="control-group">
+                        <label data-en="Resource Type" data-ko="자원 유형">Resource Type</label>
+                        <select id="resource-type" onchange="updateMiningSimulation()">
+                            <option value="polymetallic" data-en="Polymetallic Nodules" data-ko="다금속 단괴">Polymetallic Nodules</option>
+                            <option value="sulfides" data-en="Seafloor Massive Sulfides" data-ko="해저 황화물">Seafloor Massive Sulfides</option>
+                            <option value="crusts" data-en="Cobalt-rich Crusts" data-ko="코발트 크러스트">Cobalt-rich Crusts</option>
+                            <option value="hydrates" data-en="Gas Hydrates" data-ko="가스 하이드레이트">Gas Hydrates</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label data-en="Mining Method" data-ko="채굴 방법">Mining Method</label>
+                        <select id="mining-method">
+                            <option value="hydraulic" data-en="Hydraulic Suction" data-ko="유압 흡입">Hydraulic Suction</option>
+                            <option value="mechanical" data-en="Mechanical Collection" data-ko="기계적 수집">Mechanical Collection</option>
+                            <option value="combined" data-en="Combined System" data-ko="복합 시스템">Combined System</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="runMiningSimulation()">
+                    <span data-en="🚀 Start Mining Simulation" data-ko="🚀 채굴 시뮬레이션 시작">🚀 Start Mining Simulation</span>
+                </button>
+
+                <div class="output" id="mining-output" style="margin-top: 1.5rem;">
+                    <div class="output-line" data-en="[SYSTEM] Mining simulator initialized..." data-ko="[시스템] 채굴 시뮬레이터 초기화됨...">[SYSTEM] Mining simulator initialized...</div>
+                    <div class="output-line" data-en="[INFO] Ready to start operations" data-ko="[정보] 작업 시작 준비 완료">[INFO] Ready to start operations</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resource Mapping Tab -->
+        <div id="mapping" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span>🗺️</span>
+                        <span data-en="Seabed Resource Mapping" data-ko="해저 자원 매핑">Seabed Resource Mapping</span>
+                    </h2>
+                    <span class="status status-info" data-en="SCANNING" data-ko="스캔 중">SCANNING</span>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="metric-value">64</div>
+                        <div class="metric-label" data-en="Areas Mapped" data-ko="매핑된 영역">Areas Mapped</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">2.4M</div>
+                        <div class="metric-label" data-en="Coverage (km²)" data-ko="커버리지 (km²)">Coverage (km²)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">18</div>
+                        <div class="metric-label" data-en="High-Value Sites" data-ko="고가치 지역">High-Value Sites</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">95%</div>
+                        <div class="metric-label" data-en="Accuracy" data-ko="정확도">Accuracy</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label data-en="Scan Resolution" data-ko="스캔 해상도">Scan Resolution</label>
+                        <select id="scan-resolution">
+                            <option value="low" data-en="Low (50m)" data-ko="낮음 (50m)">Low (50m)</option>
+                            <option value="medium" selected data-en="Medium (10m)" data-ko="중간 (10m)">Medium (10m)</option>
+                            <option value="high" data-en="High (1m)" data-ko="높음 (1m)">High (1m)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label data-en="Mapping Technology" data-ko="매핑 기술">Mapping Technology</label>
+                        <select id="mapping-tech">
+                            <option value="sonar" data-en="Multibeam Sonar" data-ko="다중빔 소나">Multibeam Sonar</option>
+                            <option value="lidar" data-en="Underwater LiDAR" data-ko="수중 라이다">Underwater LiDAR</option>
+                            <option value="seismic" data-en="Seismic Survey" data-ko="지진파 조사">Seismic Survey</option>
+                            <option value="magnetic" data-en="Magnetic Survey" data-ko="자기 조사">Magnetic Survey</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label data-en="Survey Area (km²)" data-ko="조사 영역 (km²)">Survey Area (km²)</label>
+                        <input type="range" min="100" max="10000" value="2400" step="100"
+                               oninput="updateValue('survey-area', this.value)">
+                        <span class="control-value" id="survey-value">2400 km²</span>
+                    </div>
+                </div>
+
+                <div class="map-display">
+                    <div class="map-grid" id="resource-map">
+                        <!-- Generated by JavaScript -->
+                    </div>
+                </div>
+
+                <button class="btn" onclick="generateResourceMap()">
+                    <span data-en="🔄 Regenerate Map" data-ko="🔄 지도 재생성">🔄 Regenerate Map</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Environmental Impact Tab -->
+        <div id="environment" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span>🌿</span>
+                        <span data-en="Environmental Impact Assessment" data-ko="환경 영향 평가">Environmental Impact Assessment</span>
+                    </h2>
+                    <span class="status status-warning" data-en="MONITORING" data-ko="모니터링">MONITORING</span>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="metric-value">3.2</div>
+                        <div class="metric-label" data-en="Turbidity (NTU)" data-ko="탁도 (NTU)">Turbidity (NTU)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">68</div>
+                        <div class="metric-label" data-en="Biodiversity Index" data-ko="생물다양성 지수">Biodiversity Index</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">1.8km²</div>
+                        <div class="metric-label" data-en="Impact Zone" data-ko="영향 지역">Impact Zone</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">42%</div>
+                        <div class="metric-label" data-en="Recovery Rate" data-ko="회복률">Recovery Rate</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label data-en="Sediment Dispersion (km)" data-ko="퇴적물 확산 (km)">Sediment Dispersion (km)</label>
+                        <input type="range" min="0" max="10" value="1.8" step="0.1"
+                               oninput="updateValue('sediment-dispersion', this.value)">
+                        <span class="control-value" id="sediment-value">1.8 km</span>
+                    </div>
+                    <div class="control-group">
+                        <label data-en="Noise Level (dB)" data-ko="소음 수준 (dB)">Noise Level (dB)</label>
+                        <input type="range" min="100" max="180" value="145"
+                               oninput="updateValue('noise-level', this.value)">
+                        <span class="control-value" id="noise-value">145 dB</span>
+                    </div>
+                    <div class="control-group">
+                        <label data-en="Monitoring Period" data-ko="모니터링 기간">Monitoring Period</label>
+                        <select id="monitoring-period">
+                            <option value="daily" data-en="Daily" data-ko="일일">Daily</option>
+                            <option value="weekly" data-en="Weekly" data-ko="주간">Weekly</option>
+                            <option value="monthly" data-en="Monthly" data-ko="월간">Monthly</option>
+                            <option value="yearly" data-en="Yearly" data-ko="연간">Yearly</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label data-en="Assessment Type" data-ko="평가 유형">Assessment Type</label>
+                        <select id="assessment-type">
+                            <option value="baseline" data-en="Baseline Study" data-ko="기준선 연구">Baseline Study</option>
+                            <option value="impact" data-en="Impact Analysis" data-ko="영향 분석">Impact Analysis</option>
+                            <option value="recovery" data-en="Recovery Monitoring" data-ko="회복 모니터링">Recovery Monitoring</option>
+                            <option value="cumulative" data-en="Cumulative Assessment" data-ko="누적 평가">Cumulative Assessment</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="runEnvironmentalAssessment()">
+                    <span data-en="📊 Run Assessment" data-ko="📊 평가 실행">📊 Run Assessment</span>
+                </button>
+
+                <div class="output" id="environment-output" style="margin-top: 1.5rem;">
+                    <div class="output-line" data-en="[SYSTEM] Environmental monitoring system online" data-ko="[시스템] 환경 모니터링 시스템 온라인">[SYSTEM] Environmental monitoring system online</div>
+                    <div class="output-line" data-en="[INFO] Baseline parameters within acceptable range" data-ko="[정보] 허용 범위 내 기준선 매개변수">[INFO] Baseline parameters within acceptable range</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equipment Status Tab -->
+        <div id="equipment" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span>🔧</span>
+                        <span data-en="Mining Equipment Status" data-ko="채굴 장비 상태">Mining Equipment Status</span>
+                    </h2>
+                    <span class="status status-active" data-en="OPERATIONAL" data-ko="운영 중">OPERATIONAL</span>
+                </div>
+
+                <div class="equipment-list">
+                    <div class="equipment-item">
+                        <div class="equipment-icon">🤖</div>
+                        <div class="equipment-info">
+                            <h4 data-en="Seafloor Mining Robot #1" data-ko="해저 채굴 로봇 #1">Seafloor Mining Robot #1</h4>
+                            <div class="equipment-stats">
+                                <span class="equipment-stat" data-en="Status: Active" data-ko="상태: 활성">Status: <span class="status status-active">Active</span></span>
+                                <span class="equipment-stat" data-en="Depth: 4,250m" data-ko="깊이: 4,250m">Depth: 4,250m</span>
+                                <span class="equipment-stat" data-en="Battery: 78%" data-ko="배터리: 78%">Battery: 78%</span>
+                                <span class="equipment-stat" data-en="Efficiency: 92%" data-ko="효율성: 92%">Efficiency: 92%</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" data-en="Details" data-ko="세부정보">Details</button>
+                    </div>
+
+                    <div class="equipment-item">
+                        <div class="equipment-icon">🚢</div>
+                        <div class="equipment-info">
+                            <h4 data-en="Support Vessel Alpha" data-ko="지원 선박 알파">Support Vessel Alpha</h4>
+                            <div class="equipment-stats">
+                                <span class="equipment-stat" data-en="Status: Active" data-ko="상태: 활성">Status: <span class="status status-active">Active</span></span>
+                                <span class="equipment-stat" data-en="Position: On Site" data-ko="위치: 현장">Position: On Site</span>
+                                <span class="equipment-stat" data-en="Fuel: 65%" data-ko="연료: 65%">Fuel: 65%</span>
+                                <span class="equipment-stat" data-en="Crew: 24/30" data-ko="승무원: 24/30">Crew: 24/30</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" data-en="Details" data-ko="세부정보">Details</button>
+                    </div>
+
+                    <div class="equipment-item">
+                        <div class="equipment-icon">📡</div>
+                        <div class="equipment-info">
+                            <h4 data-en="Sonar Mapping System" data-ko="소나 매핑 시스템">Sonar Mapping System</h4>
+                            <div class="equipment-stats">
+                                <span class="equipment-stat" data-en="Status: Scanning" data-ko="상태: 스캔 중">Status: <span class="status status-info">Scanning</span></span>
+                                <span class="equipment-stat" data-en="Coverage: 85%" data-ko="커버리지: 85%">Coverage: 85%</span>
+                                <span class="equipment-stat" data-en="Resolution: 1m" data-ko="해상도: 1m">Resolution: 1m</span>
+                                <span class="equipment-stat" data-en="Data Rate: 2.4 TB/day" data-ko="데이터 속도: 2.4 TB/일">Data Rate: 2.4 TB/day</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" data-en="Details" data-ko="세부정보">Details</button>
+                    </div>
+
+                    <div class="equipment-item">
+                        <div class="equipment-icon">⚡</div>
+                        <div class="equipment-info">
+                            <h4 data-en="Hydraulic Pump System" data-ko="유압 펌프 시스템">Hydraulic Pump System</h4>
+                            <div class="equipment-stats">
+                                <span class="equipment-stat" data-en="Status: Warning" data-ko="상태: 경고">Status: <span class="status status-warning">Warning</span></span>
+                                <span class="equipment-stat" data-en="Pressure: 3,200 PSI" data-ko="압력: 3,200 PSI">Pressure: 3,200 PSI</span>
+                                <span class="equipment-stat" data-en="Temp: 82°C" data-ko="온도: 82°C">Temp: 82°C</span>
+                                <span class="equipment-stat" data-en="Maintenance: Due" data-ko="유지보수: 필요">Maintenance: Due</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" data-en="Details" data-ko="세부정보">Details</button>
+                    </div>
+
+                    <div class="equipment-item">
+                        <div class="equipment-icon">🌊</div>
+                        <div class="equipment-info">
+                            <h4 data-en="Riser Pipe Network" data-ko="라이저 파이프 네트워크">Riser Pipe Network</h4>
+                            <div class="equipment-stats">
+                                <span class="equipment-stat" data-en="Status: Active" data-ko="상태: 활성">Status: <span class="status status-active">Active</span></span>
+                                <span class="equipment-stat" data-en="Flow Rate: 145 t/h" data-ko="유량: 145 t/h">Flow Rate: 145 t/h</span>
+                                <span class="equipment-stat" data-en="Length: 4.5 km" data-ko="길이: 4.5 km">Length: 4.5 km</span>
+                                <span class="equipment-stat" data-en="Integrity: 98%" data-ko="무결성: 98%">Integrity: 98%</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" data-en="Details" data-ko="세부정보">Details</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regulations Tab -->
+        <div id="regulations" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span>📋</span>
+                        <span data-en="International Regulations & Compliance" data-ko="국제 규정 및 규정 준수">International Regulations & Compliance</span>
+                    </h2>
+                    <span class="status status-active" data-en="COMPLIANT" data-ko="준수">COMPLIANT</span>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="metric-value">12</div>
+                        <div class="metric-label" data-en="Active Permits" data-ko="활성 허가">Active Permits</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">98%</div>
+                        <div class="metric-label" data-en="Compliance Score" data-ko="준수 점수">Compliance Score</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">8</div>
+                        <div class="metric-label" data-en="Certifications" data-ko="인증">Certifications</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">24</div>
+                        <div class="metric-label" data-en="Inspections Passed" data-ko="통과된 검사">Inspections Passed</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label data-en="Regulatory Framework" data-ko="규제 프레임워크">Regulatory Framework</label>
+                        <select id="regulatory-framework">
+                            <option value="isa" data-en="ISA (International Seabed Authority)" data-ko="ISA (국제 해저 기구)">ISA (International Seabed Authority)</option>
+                            <option value="unclos" data-en="UNCLOS (UN Convention)" data-ko="UNCLOS (UN 협약)">UNCLOS (UN Convention)</option>
+                            <option value="national" data-en="National Regulations" data-ko="국내 규정">National Regulations</option>
+                            <option value="iso" data-en="ISO Standards" data-ko="ISO 표준">ISO Standards</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label data-en="Permit Type" data-ko="허가 유형">Permit Type</label>
+                        <select id="permit-type">
+                            <option value="exploration" data-en="Exploration" data-ko="탐사">Exploration</option>
+                            <option value="extraction" data-en="Extraction" data-ko="채굴">Extraction</option>
+                            <option value="environmental" data-en="Environmental" data-ko="환경">Environmental</option>
+                            <option value="research" data-en="Research" data-ko="연구">Research</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label data-en="Compliance Check" data-ko="준수 확인">Compliance Check</label>
+                        <select id="compliance-check">
+                            <option value="all" data-en="All Requirements" data-ko="모든 요구사항">All Requirements</option>
+                            <option value="environmental" data-en="Environmental Only" data-ko="환경만">Environmental Only</option>
+                            <option value="safety" data-en="Safety Only" data-ko="안전만">Safety Only</option>
+                            <option value="technical" data-en="Technical Only" data-ko="기술만">Technical Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="runComplianceCheck()">
+                    <span data-en="✅ Run Compliance Check" data-ko="✅ 준수 확인 실행">✅ Run Compliance Check</span>
+                </button>
+
+                <div class="output" id="regulations-output" style="margin-top: 1.5rem;">
+                    <div class="output-line" data-en="[SYSTEM] Regulatory compliance system initialized" data-ko="[시스템] 규제 준수 시스템 초기화됨">[SYSTEM] Regulatory compliance system initialized</div>
+                    <div class="output-line" data-en="[INFO] All permits current and valid" data-ko="[정보] 모든 허가 현재 및 유효">[INFO] All permits current and valid</div>
+                    <div class="output-line" data-en="[INFO] Environmental standards met" data-ko="[정보] 환경 표준 충족">[INFO] Environmental standards met</div>
+                    <div class="output-line" data-en="[INFO] Safety protocols compliant" data-ko="[정보] 안전 프로토콜 준수">[INFO] Safety protocols compliant</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="philosophy">弘益人間 (홍익인간)</div>
+            <div class="philosophy-sub" data-en="Benefit All Humanity" data-ko="널리 인간을 이롭게 하라">Benefit All Humanity</div>
+            <div class="footer-links">
+                <a href="https://github.com/WIA-Official/wia-standards" data-en="Documentation" data-ko="문서">Documentation</a>
+                <a href="https://github.com/WIA-Official/wia-standards" data-en="GitHub" data-ko="깃허브">GitHub</a>
+                <a href="https://github.com/WIA-Official/wia-standards" data-en="API Reference" data-ko="API 참조">API Reference</a>
+                <a href="https://github.com/WIA-Official/wia-standards" data-en="Community" data-ko="커뮤니티">Community</a>
+            </div>
+            <div class="copyright">© 2025 SmileStory Inc. / WIA · All rights reserved</div>
+        </div>
+    </footer>
+
+    <script>
+        // Language Toggle
+        let currentLang = 'en';
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'ko' : 'en';
+            const elements = document.querySelectorAll('[data-en][data-ko]');
+            elements.forEach(el => {
+                el.textContent = el.getAttribute('data-' + currentLang);
+            });
+
+            // Update select options
+            const selects = document.querySelectorAll('select option[data-en][data-ko]');
+            selects.forEach(option => {
+                option.textContent = option.getAttribute('data-' + currentLang);
+            });
+        }
+
+        // Tab Switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+
+        // Update Values
+        function updateValue(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (elementId === 'mining-depth' || elementId.includes('depth')) {
+                element.textContent = value;
+                document.getElementById('depth-value').textContent = value + ' m';
+            } else if (elementId === 'extraction-rate') {
+                document.getElementById('extraction-value').textContent = value + '%';
+            } else if (elementId === 'survey-area') {
+                document.getElementById('survey-value').textContent = value + ' km²';
+            } else if (elementId === 'sediment-dispersion') {
+                document.getElementById('sediment-value').textContent = value + ' km';
+            } else if (elementId === 'noise-level') {
+                document.getElementById('noise-value').textContent = value + ' dB';
+            }
+        }
+
+        // Mining Simulation
+        function runMiningSimulation() {
+            const output = document.getElementById('mining-output');
+            const depth = document.getElementById('mining-depth').textContent;
+            const resourceType = document.getElementById('resource-type').value;
+            const method = document.getElementById('mining-method').value;
+
+            const messages = [
+                `[SYSTEM] Initializing mining operation at ${depth}m depth...`,
+                `[INFO] Resource type: ${resourceType}`,
+                `[INFO] Mining method: ${method}`,
+                `[PROGRESS] Deploying mining equipment...`,
+                `[PROGRESS] Establishing seafloor contact...`,
+                `[SUCCESS] Mining operation started successfully`,
+                `[DATA] Current mining rate: 145 t/h`,
+                `[DATA] Efficiency: 87%`,
+                `[DATA] Estimated yield: 12.4 kg/m³`,
+                `[MONITOR] All systems nominal`,
+            ];
+
+            output.innerHTML = '';
+            messages.forEach((msg, index) => {
+                setTimeout(() => {
+                    const line = document.createElement('div');
+                    line.className = 'output-line';
+                    line.textContent = msg;
+                    output.appendChild(line);
+                    output.scrollTop = output.scrollHeight;
+                }, index * 500);
+            });
+        }
+
+        // Generate Resource Map
+        function generateResourceMap() {
+            const mapGrid = document.getElementById('resource-map');
+            mapGrid.innerHTML = '';
+
+            const resources = ['resource-high', 'resource-medium', 'resource-low', ''];
+            for (let i = 0; i < 64; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'map-cell ' + resources[Math.floor(Math.random() * resources.length)];
+                cell.title = `Cell ${i + 1}`;
+
+                // Add resource indicator
+                if (cell.classList.contains('resource-high')) {
+                    cell.textContent = '⭐';
+                } else if (cell.classList.contains('resource-medium')) {
+                    cell.textContent = '💎';
+                } else if (cell.classList.contains('resource-low')) {
+                    cell.textContent = '🔹';
+                }
+
+                mapGrid.appendChild(cell);
+            }
+        }
+
+        // Environmental Assessment
+        function runEnvironmentalAssessment() {
+            const output = document.getElementById('environment-output');
+            const assessmentType = document.getElementById('assessment-type').value;
+            const period = document.getElementById('monitoring-period').value;
+
+            const messages = [
+                `[SYSTEM] Starting environmental assessment...`,
+                `[INFO] Assessment type: ${assessmentType}`,
+                `[INFO] Monitoring period: ${period}`,
+                `[PROGRESS] Collecting baseline data...`,
+                `[PROGRESS] Analyzing turbidity levels...`,
+                `[DATA] Turbidity: 3.2 NTU (Normal)`,
+                `[PROGRESS] Surveying biodiversity...`,
+                `[DATA] Biodiversity index: 68 (Stable)`,
+                `[PROGRESS] Measuring impact zone...`,
+                `[DATA] Impact zone: 1.8 km² (Within limits)`,
+                `[ANALYSIS] Recovery rate: 42% (Improving)`,
+                `[SUCCESS] Assessment completed`,
+                `[RESULT] Environmental impact within acceptable parameters`,
+            ];
+
+            output.innerHTML = '';
+            messages.forEach((msg, index) => {
+                setTimeout(() => {
+                    const line = document.createElement('div');
+                    line.className = 'output-line';
+                    line.textContent = msg;
+                    output.appendChild(line);
+                    output.scrollTop = output.scrollHeight;
+                }, index * 400);
+            });
+        }
+
+        // Compliance Check
+        function runComplianceCheck() {
+            const output = document.getElementById('regulations-output');
+            const framework = document.getElementById('regulatory-framework').value;
+            const permitType = document.getElementById('permit-type').value;
+
+            const messages = [
+                `[SYSTEM] Initiating compliance verification...`,
+                `[INFO] Framework: ${framework}`,
+                `[INFO] Permit type: ${permitType}`,
+                `[CHECK] Verifying exploration permits... ✓`,
+                `[CHECK] Verifying extraction permits... ✓`,
+                `[CHECK] Verifying environmental permits... ✓`,
+                `[CHECK] Checking ISA regulations... ✓`,
+                `[CHECK] Checking UNCLOS compliance... ✓`,
+                `[CHECK] Validating safety protocols... ✓`,
+                `[CHECK] Reviewing environmental standards... ✓`,
+                `[CHECK] Inspecting technical specifications... ✓`,
+                `[SUCCESS] All compliance checks passed`,
+                `[RESULT] Compliance score: 98%`,
+                `[INFO] Next inspection due in 45 days`,
+            ];
+
+            output.innerHTML = '';
+            messages.forEach((msg, index) => {
+                setTimeout(() => {
+                    const line = document.createElement('div');
+                    line.className = 'output-line';
+                    line.textContent = msg;
+                    output.appendChild(line);
+                    output.scrollTop = output.scrollHeight;
+                }, index * 350);
+            });
+        }
+
+        // Update Mining Simulation based on resource type
+        function updateMiningSimulation() {
+            const resourceType = document.getElementById('resource-type').value;
+            const yields = {
+                'polymetallic': '12.4',
+                'sulfides': '18.7',
+                'crusts': '8.3',
+                'hydrates': '21.5'
+            };
+
+            const rates = {
+                'polymetallic': '145',
+                'sulfides': '98',
+                'crusts': '112',
+                'hydrates': '156'
+            };
+
+            document.getElementById('mining-yield').textContent = yields[resourceType];
+            document.getElementById('mining-rate').textContent = rates[resourceType];
+        }
+
+        // Initialize map on page load
+        window.addEventListener('load', () => {
+            generateResourceMap();
+
+            // Simulate real-time updates
+            setInterval(() => {
+                // Update random metrics
+                const metrics = ['mining-rate', 'mining-efficiency'];
+                metrics.forEach(metric => {
+                    const element = document.getElementById(metric);
+                    if (element && metric === 'mining-rate') {
+                        const currentValue = parseInt(element.textContent);
+                        const newValue = currentValue + Math.floor(Math.random() * 10) - 5;
+                        element.textContent = Math.max(100, Math.min(200, newValue));
+                    } else if (element && metric === 'mining-efficiency') {
+                        const currentValue = parseInt(element.textContent);
+                        const newValue = currentValue + Math.floor(Math.random() * 4) - 2;
+                        element.textContent = Math.max(70, Math.min(100, newValue)) + '%';
+                    }
+                });
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

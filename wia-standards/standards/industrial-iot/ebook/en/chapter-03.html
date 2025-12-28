@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: OPC-UA Protocol Deep Dive - WIA-IND-027</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #8B5CF6;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--surface); padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
+        h1 { color: var(--primary); font-size: 2.5em; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; }
+        h2 { color: var(--primary); font-size: 1.8em; margin-top: 40px; margin-bottom: 20px; }
+        h3 { color: var(--primary); font-size: 1.4em; margin-top: 30px; margin-bottom: 15px; }
+        p { margin-bottom: 15px; color: var(--text-dim); }
+        .highlight { background: rgba(139, 92, 246, 0.2); padding: 20px; border-left: 4px solid var(--primary); margin: 20px 0; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 25px 0; background: var(--bg); }
+        th, td { padding: 15px; text-align: left; border: 1px solid var(--border); }
+        th { background: var(--primary); color: var(--text); font-weight: 600; }
+        tr:hover { background: rgba(139, 92, 246, 0.1); }
+        code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-family: 'Courier New', monospace; color: var(--primary); }
+        pre { background: var(--bg); padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; border: 1px solid var(--border); }
+        pre code { padding: 0; background: transparent; }
+        .key-takeaways { background: rgba(139, 92, 246, 0.1); padding: 25px; border-radius: 8px; margin: 30px 0; }
+        .key-takeaways h3 { margin-top: 0; }
+        .key-takeaways ul { margin-left: 20px; }
+        .key-takeaways li { margin: 10px 0; color: var(--text-dim); }
+        .review-questions { background: var(--bg); padding: 25px; border-radius: 8px; margin: 30px 0; border: 2px solid var(--primary); }
+        .review-questions h3 { margin-top: 0; }
+        .review-questions ol { margin-left: 20px; }
+        .review-questions li { margin: 15px 0; color: var(--text-dim); }
+        .navigation { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 2px solid var(--border); }
+        .nav-button { background: var(--primary); color: var(--text); padding: 12px 24px; text-decoration: none; border-radius: 6px; transition: background 0.3s; }
+        .nav-button:hover { background: #7C3AED; }
+        .diagram { background: var(--bg); padding: 20px; border-radius: 8px; margin: 20px 0; font-family: monospace; overflow-x: auto; border: 1px solid var(--border); }
+        ul { margin-left: 20px; margin-bottom: 15px; }
+        li { margin: 8px 0; color: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chapter 3: OPC-UA Protocol Deep Dive</h1>
+        <div class="highlight">
+            <strong>WIA-IND-027 Standard</strong><br>
+            Mastering OPC Unified Architecture for secure, scalable industrial communication
+        </div>
+
+        <h2>3.1 OPC-UA Fundamentals</h2>
+        <p>OPC Unified Architecture (OPC-UA) is the modern standard for industrial communication, developed by the OPC Foundation. Unlike its predecessor OPC Classic (based on Microsoft DCOM), OPC-UA is platform-independent, secure by design, and scales from embedded devices to enterprise cloud platforms.</p>
+
+        <h3>3.1.1 OPC-UA Architecture Models</h3>
+        <table>
+            <thead>
+                <tr><th>Model</th><th>Description</th><th>Use Cases</th><th>Latency</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Client/Server</td><td>Request/response pattern, session-based</td><td>SCADA systems, HMI, data collection</td><td>10-50ms</td></tr>
+                <tr><td>Pub/Sub (Part 14)</td><td>Broker-based, connectionless, multicast</td><td>High-performance sensor networks, edge analytics</td><td>1-10ms</td></tr>
+                <tr><td>Historical Access (HA)</td><td>Time-series data retrieval</td><td>Trending, reporting, analysis</td><td>100-1000ms</td></tr>
+                <tr><td>Alarms & Conditions (AC)</td><td>Event notification and acknowledgement</td><td>Alarm management, operator interfaces</td><td>50-200ms</td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.1.2 Information Model (Address Space)</h3>
+        <p>OPC-UA uses an object-oriented information model where every data point, method, and event is represented as a node in an address space. Nodes are identified by NodeIds and connected via references.</p>
+
+        <div class="diagram">
+<pre>[Server Root]
+  └─ [Objects] (ObjectsFolder)
+       ├─ [DeviceSet] (FolderType)
+       │    ├─ [Machine_001] (ObjectType: CNCMachineType)
+       │    │    ├─ [Temperature] (Variable, Double, CurrentRead)
+       │    │    ├─ [Pressure] (Variable, Double, CurrentRead)
+       │    │    ├─ [SpindleSpeed] (Variable, Int32, CurrentRead)
+       │    │    ├─ [Status] (Variable, StatusEnum, CurrentRead)
+       │    │    ├─ [Alarm] (ObjectType: AlarmConditionType)
+       │    │    └─ [StartMachine] (Method, Input: none, Output: StatusCode)
+       │    │
+       │    └─ [Robot_001] (ObjectType: RobotType)
+       │         ├─ [Position] (Variable, Vector3D, CurrentRead)
+       │         ├─ [JointAngles] (Variable, Double[], CurrentRead)
+       │         └─ [ExecuteProgram] (Method, Input: ProgramName, Output: Result)
+       │
+       └─ [Views] (ViewsFolder)
+            └─ [ProductionLineView] (Custom view of selected machines)</pre>
+        </div>
+
+        <h3>3.1.3 NodeId Formats</h3>
+        <p>NodeIds uniquely identify nodes across the OPC-UA ecosystem:</p>
+
+        <pre><code>// Numeric NodeId (most efficient)
+ns=2;i=1001              // Namespace 2, numeric identifier 1001
+
+// String NodeId (human-readable)
+ns=2;s=Machine_001.Temperature
+
+// GUID NodeId (globally unique)
+ns=2;g=09087e75-8e5e-499b-954f-f2a9603db28a
+
+// Opaque (ByteString) NodeId
+ns=2;b=M/RbKBsRVkePCePcx24oRA==</code></pre>
+
+        <h2>3.2 OPC-UA Services</h2>
+
+        <h3>3.2.1 Read Service</h3>
+        <p>Synchronous data retrieval from one or more nodes:</p>
+
+        <pre><code>// Python OPC-UA Client - Read Multiple Values
+from opcua import Client
+import time
+
+client = Client("opc.tcp://plc.factory.com:4840")
+
+try:
+    client.connect()
+    print("Connected to OPC-UA Server")
+
+    # Get nodes
+    temp_node = client.get_node("ns=2;s=Machine_001.Temperature")
+    pressure_node = client.get_node("ns=2;s=Machine_001.Pressure")
+    status_node = client.get_node("ns=2;s=Machine_001.Status")
+
+    # Read values
+    temp = temp_node.get_value()
+    pressure = pressure_node.get_value()
+    status = status_node.get_value()
+
+    # Read with timestamp and quality
+    temp_data = temp_node.get_data_value()
+    print(f"Temperature: {temp_data.Value.Value}°C")
+    print(f"Timestamp: {temp_data.SourceTimestamp}")
+    print(f"Quality: {temp_data.StatusCode}")
+
+    # Batch read for efficiency
+    nodes_to_read = [temp_node, pressure_node, status_node]
+    values = client.get_values(nodes_to_read)
+    print(f"Batch read: Temp={values[0]}, Pressure={values[1]}, Status={values[2]}")
+
+finally:
+    client.disconnect()</code></pre>
+
+        <h3>3.2.2 Write Service</h3>
+        <p>Modify variable values with access control and validation:</p>
+
+        <pre><code>// C# OPC-UA Client - Write with Error Handling
+using Opc.Ua;
+using Opc.Ua.Client;
+
+var endpoint = "opc.tcp://plc.factory.com:4840";
+var session = Session.Create(...);
+
+try {
+    // Write single value
+    var setpointNode = new NodeId("Machine_001.Setpoint", 2);
+    var value = new DataValue(new Variant(75.0));
+
+    StatusCode status = session.Write(
+        null,  // requestHeader
+        new WriteValueCollection {
+            new WriteValue {
+                NodeId = setpointNode,
+                AttributeId = Attributes.Value,
+                Value = value
+            }
+        },
+        out var results,
+        out var diagnosticInfos
+    );
+
+    if (StatusCode.IsGood(results[0])) {
+        Console.WriteLine("Setpoint updated successfully");
+    } else {
+        Console.WriteLine($"Write failed: {results[0]}");
+    }
+
+    // Write multiple values atomically
+    var writes = new WriteValueCollection {
+        new WriteValue {
+            NodeId = new NodeId("Machine_001.Mode", 2),
+            AttributeId = Attributes.Value,
+            Value = new DataValue(new Variant("AUTO"))
+        },
+        new WriteValue {
+            NodeId = new NodeId("Machine_001.Speed", 2),
+            AttributeId = Attributes.Value,
+            Value = new DataValue(new Variant(1500))
+        }
+    };
+
+    session.Write(null, writes, out results, out diagnosticInfos);
+
+} finally {
+    session.Close();
+}</code></pre>
+
+        <h3>3.2.3 Subscription Service</h3>
+        <p>Efficient data-change notifications with configurable sampling and publishing intervals:</p>
+
+        <pre><code>// JavaScript OPC-UA Client - Subscription with Deadband
+const opcua = require("node-opcua");
+
+const client = opcua.OPCUAClient.create({
+    endpointMustExist: false,
+});
+
+const endpointUrl = "opc.tcp://plc.factory.com:4840";
+
+async function main() {
+    await client.connect(endpointUrl);
+    console.log("Connected");
+
+    const session = await client.createSession();
+    console.log("Session created");
+
+    // Create subscription
+    const subscription = opcua.ClientSubscription.create(session, {
+        requestedPublishingInterval: 1000,  // 1 second
+        requestedLifetimeCount: 100,
+        requestedMaxKeepAliveCount: 10,
+        maxNotificationsPerPublish: 100,
+        publishingEnabled: true,
+        priority: 10
+    });
+
+    subscription.on("started", () => {
+        console.log("Subscription started - ID:", subscription.subscriptionId);
+    });
+
+    // Monitor temperature with deadband
+    const tempMonitor = opcua.ClientMonitoredItem.create(
+        subscription,
+        {
+            nodeId: "ns=2;s=Machine_001.Temperature",
+            attributeId: opcua.AttributeIds.Value
+        },
+        {
+            samplingInterval: 100,  // Sample every 100ms
+            discardOldest: true,
+            queueSize: 10,
+            filter: new opcua.DataChangeFilter({
+                trigger: opcua.DataChangeTrigger.StatusValue,
+                deadbandType: opcua.DeadbandType.Absolute,
+                deadbandValue: 0.5  // ±0.5°C deadband
+            })
+        },
+        opcua.TimestampsToReturn.Both
+    );
+
+    tempMonitor.on("changed", (dataValue) => {
+        console.log(`Temperature changed: ${dataValue.value.value}°C at ${dataValue.sourceTimestamp}`);
+
+        if (dataValue.value.value > 80) {
+            console.log("WARNING: High temperature!");
+        }
+    });
+
+    // Keep subscription alive
+    await new Promise(resolve => setTimeout(resolve, 60000)); // Run for 1 minute
+
+    await subscription.terminate();
+    await session.close();
+    await client.disconnect();
+}
+
+main().catch(console.error);</code></pre>
+
+        <h3>3.2.4 Method Call Service</h3>
+        <p>Execute server-side functions for complex operations:</p>
+
+        <pre><code>// Python OPC-UA - Method Call
+from opcua import Client, ua
+
+client = Client("opc.tcp://plc.factory.com:4840")
+client.connect()
+
+# Get object and method nodes
+machine = client.get_node("ns=2;s=Machine_001")
+start_method = machine.get_child("StartMachine")
+
+# Call method with input arguments
+input_args = [
+    ua.Variant(value="AUTO", varianttype=ua.VariantType.String),  # Mode
+    ua.Variant(value=1500, varianttype=ua.VariantType.Int32)       # Speed RPM
+]
+
+result = machine.call_method(start_method, *input_args)
+print(f"StartMachine returned: {result}")
+
+# Advanced: Call with output parameters
+execute_program = machine.get_child("ExecuteProgram")
+program_name = ua.Variant("PROG_001", ua.VariantType.String)
+
+output = machine.call_method(execute_program, program_name)
+success = output[0]  # First output parameter
+error_code = output[1]  # Second output parameter
+print(f"Program execution: Success={success}, Error={error_code}")
+
+client.disconnect()</code></pre>
+
+        <h2>3.3 OPC-UA Security</h2>
+
+        <h3>3.3.1 Security Modes and Policies</h3>
+        <table>
+            <thead>
+                <tr><th>Security Mode</th><th>Security Policy</th><th>Encryption</th><th>Use Case</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>None</td><td>None</td><td>No encryption</td><td>Testing only, never production</td></tr>
+                <tr><td>Sign</td><td>Basic256Sha256</td><td>Message signing only</td><td>Integrity verification, trusted network</td></tr>
+                <tr><td>SignAndEncrypt</td><td>Basic256Sha256</td><td>AES-256 + SHA-256</td><td>Standard production</td></tr>
+                <tr><td>SignAndEncrypt</td><td>Aes256Sha256RsaPss</td><td>AES-256 + RSA-PSS</td><td>High security, recommended</td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.3.2 Certificate-Based Authentication</h3>
+        <p>OPC-UA uses X.509 certificates for server and client authentication:</p>
+
+        <pre><code>// Generate self-signed certificate (OpenSSL)
+// Server certificate
+openssl req -x509 -newkey rsa:4096 -keyout server_key.pem \
+  -out server_cert.pem -days 365 -nodes \
+  -subj "/CN=plc.factory.com/O=Factory Inc/C=US" \
+  -addext "subjectAltName=URI:urn:factory:plc:001,DNS:plc.factory.com"
+
+// Client certificate
+openssl req -x509 -newkey rsa:4096 -keyout client_key.pem \
+  -out client_cert.pem -days 365 -nodes \
+  -subj "/CN=scada-client/O=Factory Inc/C=US" \
+  -addext "subjectAltName=URI:urn:factory:scada:client"
+
+// Convert to DER format (required by some implementations)
+openssl x509 -in server_cert.pem -outform DER -out server_cert.der
+openssl rsa -in server_key.pem -outform DER -out server_key.der</code></pre>
+
+        <pre><code>// Python Secure OPC-UA Connection
+from opcua import Client
+from opcua.crypto import security_policies
+
+client = Client("opc.tcp://plc.factory.com:4840")
+
+# Configure security
+client.set_security(
+    security_policies.SecurityPolicyBasic256Sha256,
+    certificate_path="client_cert.der",
+    private_key_path="client_key.pem",
+    server_certificate_path="server_cert.der"
+)
+
+client.connect()
+
+# Authenticate with username/password
+client.set_user("operator")
+client.set_password("SecurePassword123!")
+
+session = client.create_session("operator", "SecurePassword123!")
+print("Secure connection established")
+
+client.disconnect()</code></pre>
+
+        <h3>3.3.3 User Authentication Types</h3>
+        <table>
+            <thead>
+                <tr><th>Type</th><th>Security Level</th><th>Implementation</th><th>Use Case</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Anonymous</td><td>Low</td><td>No credentials</td><td>Read-only public data</td></tr>
+                <tr><td>Username/Password</td><td>Medium</td><td>Encrypted over secure channel</td><td>Standard operator access</td></tr>
+                <tr><td>X.509 Certificate</td><td>High</td><td>Client cert verification</td><td>Machine-to-machine, automation</td></tr>
+                <tr><td>Issued Token (JWT)</td><td>High</td><td>OAuth2/OIDC integration</td><td>Enterprise SSO, cloud integration</td></tr>
+            </tbody>
+        </table>
+
+        <h2>3.4 OPC-UA Pub/Sub (Part 14)</h2>
+        <p>OPC-UA Pub/Sub enables connectionless, broker-based communication for high-performance applications:</p>
+
+        <div class="diagram">
+<pre>┌──────────────┐                 ┌──────────────┐
+│  Publisher   │────────────────→│   Broker     │
+│  (PLC)       │   MQTT/AMQP     │   (MQTT)     │
+└──────────────┘                 └──────────────┘
+                                        ↓
+                                        ↓  Topic: factory/line-A/data
+                                        ↓
+                 ┌──────────────────────┴─────────────────────┐
+                 ↓                      ↓                      ↓
+          ┌──────────────┐       ┌──────────────┐      ┌──────────────┐
+          │ Subscriber 1 │       │ Subscriber 2 │      │ Subscriber 3 │
+          │  (SCADA)     │       │  (Analytics) │      │  (Historian) │
+          └──────────────┘       └──────────────┘      └──────────────┘</pre>
+        </div>
+
+        <h3>3.4.1 Pub/Sub Configuration</h3>
+        <pre><code>// OPC-UA Pub/Sub Configuration (JSON)
+{
+  "publisherId": "urn:factory:plc:001",
+  "writerGroupId": 1,
+  "dataSetWriterId": 1,
+  "publishingInterval": 100,  // milliseconds
+  "transportProtocol": "MQTT",
+  "brokerUrl": "mqtt://broker.factory.com:1883",
+  "topic": "factory/line-A/machine-001",
+
+  "dataSetFields": [
+    {
+      "fieldName": "Temperature",
+      "nodeId": "ns=2;s=Machine_001.Temperature",
+      "dataType": "Double"
+    },
+    {
+      "fieldName": "Pressure",
+      "nodeId": "ns=2;s=Machine_001.Pressure",
+      "dataType": "Double"
+    },
+    {
+      "fieldName": "Status",
+      "nodeId": "ns=2;s=Machine_001.Status",
+      "dataType": "String"
+    }
+  ],
+
+  "messageSettings": {
+    "dataSetMessageContentMask": [
+      "Timestamp",
+      "Status",
+      "DataSetWriterId"
+    ],
+    "networkMessageContentMask": [
+      "PublisherId",
+      "WriterGroupId",
+      "PayloadHeader"
+    ]
+  }
+}</code></pre>
+
+        <h2>3.5 OPC-UA Performance Optimization</h2>
+
+        <h3>3.5.1 Subscription Tuning</h3>
+        <table>
+            <thead>
+                <tr><th>Parameter</th><th>Recommended Value</th><th>Impact</th><th>Tradeoff</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Publishing Interval</td><td>100-1000ms</td><td>Network bandwidth, CPU load</td><td>Lower = more updates, higher load</td></tr>
+                <tr><td>Sampling Interval</td><td>50-500ms</td><td>Server CPU, data freshness</td><td>Lower = more accurate, higher server load</td></tr>
+                <tr><td>Queue Size</td><td>10-100</td><td>Memory, data loss during network issues</td><td>Higher = more buffering, more memory</td></tr>
+                <tr><td>Max Notifications</td><td>100-1000</td><td>Message size, latency</td><td>Higher = batch efficiency, larger packets</td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.5.2 Batch Operations</h3>
+        <pre><code>// Efficient batch read (100 nodes)
+const nodes = [];
+for (let i = 1; i <= 100; i++) {
+    nodes.push(client.get_node(`ns=2;s=Sensor_${i}.Value`));
+}
+
+// Inefficient: 100 individual reads (100 round-trips)
+for (const node of nodes) {
+    const value = await node.get_value();
+    console.log(value);
+}
+
+// Efficient: Single batch read (1 round-trip)
+const values = await client.get_values(nodes);
+console.log(values);  // All 100 values in one call
+
+// Performance improvement: ~100x faster</code></pre>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li><strong>Unified Architecture:</strong> OPC-UA provides platform-independent, secure communication from embedded devices to enterprise systems</li>
+                <li><strong>Information Model:</strong> Object-oriented address space with NodeIds, types, and references enables rich semantic data modeling</li>
+                <li><strong>Security by Design:</strong> AES-256 encryption, X.509 certificates, and multiple authentication methods (anonymous, username, certificate, token)</li>
+                <li><strong>Services:</strong> Read (10-50ms), Write (validation), Subscribe (deadband filtering), Method Call (server-side functions), Historical Access</li>
+                <li><strong>Pub/Sub (Part 14):</strong> Broker-based, connectionless communication for high-performance (1-10ms) multicast scenarios</li>
+                <li><strong>Performance:</strong> Batch operations, subscription tuning (publishing interval, sampling rate, queue size) optimize network and CPU usage</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li><strong>Architecture Comparison:</strong> Compare OPC-UA Client/Server (10-50ms) vs Pub/Sub (1-10ms). When would you choose each? Provide three scenarios.</li>
+                <li><strong>NodeId Design:</strong> Design an address space for a packaging line with 3 machines, each with 5 sensors. Use appropriate NodeId formats and namespace organization.</li>
+                <li><strong>Security Configuration:</strong> A factory requires secure OPC-UA. Compare Basic256Sha256 vs Aes256Sha256RsaPss. Which provides better security and why?</li>
+                <li><strong>Subscription Optimization:</strong> 50 sensors publish at 10Hz (10 times/sec). Configure Publishing Interval, Sampling Interval, and deadband filter to reduce bandwidth by 80%.</li>
+                <li><strong>Performance Analysis:</strong> Calculate round-trip time for: (a) 100 individual reads @ 20ms each, (b) 1 batch read @ 25ms. What's the time savings?</li>
+                <li><strong>Method Call Design:</strong> Design an OPC-UA method "ChangeProduction" with input parameters (ProductID, Quantity, DueDate) and output (EstimatedDuration, MaterialsNeeded).</li>
+                <li><strong>Certificate Management:</strong> Explain the X.509 certificate validation process in OPC-UA. What happens if server certificate expires during operation?</li>
+                <li><strong>Pub/Sub Use Case:</strong> 200 machines publish status every 100ms to 10 subscribers (SCADA, MES, Analytics). Why is Pub/Sub better than 200 Client/Server subscriptions?</li>
+            </ol>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter-02.html" class="nav-button">← Previous Chapter</a>
+            <a href="chapter-04.html" class="nav-button">Next Chapter: MQTT & Modbus →</a>
+        </div>
+    </div>
+</body>
+</html>

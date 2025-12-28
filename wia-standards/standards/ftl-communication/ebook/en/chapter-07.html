@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 7: Integration and Deployment - WIA-QUA-016</title>
+    <style>
+        :root { --primary: #8B5CF6; --primary-dark: #7C3AED; --primary-light: #A78BFA; --background: #0F172A; --surface: #1E293B; --surface-light: #334155; --text: #F1F5F9; --text-secondary: #CBD5E1; --border: #475569; --success: #10B981; --warning: #F59E0B; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: var(--text); background: var(--background); padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 3px solid var(--primary); }
+        h2 { color: var(--primary-light); font-size: 2rem; margin-top: 3rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--surface-light); }
+        h3 { color: var(--text); font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem; }
+        p { margin-bottom: 1rem; color: var(--text-secondary); }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: var(--surface); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: var(--surface-light); }
+        .code-block { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; font-family: 'Courier New', monospace; color: var(--primary-light); }
+        .summary { background: linear-gradient(135deg, var(--surface) 0%, var(--surface-light) 100%); padding: 2rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--success); }
+        .summary h3 { color: var(--success); margin-top: 0; }
+        .review { background: var(--surface); padding: 2rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid var(--warning); }
+        .review h3 { color: var(--warning); margin-top: 0; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: white; text-decoration: none; border-radius: 6px; transition: background 0.3s; }
+        .btn:hover { background: var(--primary-dark); }
+        ul, ol { margin-left: 1.5rem; color: var(--text-secondary); }
+        li { margin: 0.5rem 0; }
+    </style>
+</head>
+<body>
+    <h1>Chapter 7: Integration and Deployment</h1>
+
+    <h2>7.1 System Integration Architecture</h2>
+    
+    <p>Integrating FTL communication systems with existing infrastructure requires careful planning to bridge conventional networks, quantum systems, and FTL transceivers while maintaining causality protection and security.</p>
+
+    <h3>7.1.1 Integration Layers</h3>
+
+    <div class="code-block">
+FTL Integration Architecture:
+
+┌─────────────────────────────────────────────┐
+│ Application Layer                           │
+│ - Mission control systems                   │
+│ - Scientific data pipelines                 │
+│ - Real-time collaboration tools             │
+└─────────────────────────────────────────────┘
+                    ↕
+┌─────────────────────────────────────────────┐
+│ FTL Gateway Layer                           │
+│ - Protocol translation (TCP/IP ↔ FTLTP)    │
+│ - Causality firewall                        │
+│ - Timeline management                       │
+└─────────────────────────────────────────────┘
+                    ↕
+┌─────────────────────────────────────────────┐
+│ Hybrid Network Layer                        │
+│ - Conventional networks (Earth-local)       │
+│ - FTL backbone (interstellar)               │
+│ - Routing decision logic                    │
+└─────────────────────────────────────────────┘
+                    ↕
+┌─────────────────────────────────────────────┐
+│ Physical Infrastructure                     │
+│ - FTL transceivers                          │
+│ - Conventional fiber/satellite              │
+│ - Quantum repeaters                         │
+└─────────────────────────────────────────────┘
+    </div>
+
+    <h3>7.1.2 Gateway Implementation</h3>
+
+    <div class="code-block">
+// FTL Gateway bridging conventional and FTL networks
+class FTLGateway {
+    private ftlInterface: FTLTransmitter;
+    private conventionalInterface: TCPSocket;
+    private causalityFirewall: CausalityFirewall;
+    
+    async routeMessage(message: Buffer, dest: Destination): Promise<void> {
+        // Determine routing decision
+        const decision = this.makeRoutingDecision(dest);
+        
+        if (decision.useFTL) {
+            await this.sendViaFTL(message, dest);
+        } else {
+            await this.sendViaConventional(message, dest);
+        }
+    }
+    
+    private makeRoutingDecision(dest: Destination): RoutingDecision {
+        const distance = this.calculateDistance(this.location, dest.coordinates);
+        const urgency = dest.priority;
+        const ftlAvailable = this.ftlInterface.isAvailable();
+        
+        // Use FTL if:
+        // 1. Distance > 1 AU (conventional delay significant)
+        // 2. High urgency
+        // 3. FTL system available
+        const useFTL = (distance > 1.5e11 || urgency === Priority.CRITICAL) && ftlAvailable;
+        
+        return {
+            useFTL,
+            reason: useFTL ? "Distance/urgency justify FTL" : "Conventional adequate",
+            estimatedLatency: useFTL ? 0 : distance / SPEED_OF_LIGHT
+        };
+    }
+    
+    private async sendViaFTL(message: Buffer, dest: Destination): Promise<void> {
+        // Wrap in FTLTP packet
+        const ftlPacket = this.wrapFTLTP(message, dest);
+        
+        // Causality check
+        const causalityCheck = await this.causalityFirewall.check(ftlPacket);
+        if (!causalityCheck.safe) {
+            throw new CausalityViolationError(causalityCheck.reason);
+        }
+        
+        // Transmit via FTL
+        await this.ftlInterface.send(ftlPacket);
+    }
+    
+    private async sendViaConventional(message: Buffer, dest: Destination): Promise<void> {
+        // Standard TCP/IP transmission
+        await this.conventionalInterface.send(message);
+    }
+}
+    </div>
+
+    <h2>7.2 Deployment Scenarios</h2>
+
+    <h3>7.2.1 Deployment Phases</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Phase</th>
+                <th>Scope</th>
+                <th>Infrastructure</th>
+                <th>Timeline</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Phase 1: Laboratory</td>
+                <td>Controlled experiments</td>
+                <td>Single FTL transceiver pair, isolated testbed</td>
+                <td>Year 0-2</td>
+            </tr>
+            <tr>
+                <td>Phase 2: Earth-Moon</td>
+                <td>Cislunar space</td>
+                <td>Earth station + Lunar station, 384,400 km</td>
+                <td>Year 3-5</td>
+            </tr>
+            <tr>
+                <td>Phase 3: Inner Solar System</td>
+                <td>Earth-Mars-Venus</td>
+                <td>3-5 planetary stations, mesh network</td>
+                <td>Year 6-10</td>
+            </tr>
+            <tr>
+                <td>Phase 4: Outer Solar System</td>
+                <td>To Kuiper Belt</td>
+                <td>10+ stations, hierarchical routing</td>
+                <td>Year 11-20</td>
+            </tr>
+            <tr>
+                <td>Phase 5: Interstellar</td>
+                <td>Nearest stars</td>
+                <td>Proxima Centauri link (4.2 ly)</td>
+                <td>Year 21+</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>7.2.2 Infrastructure Requirements per Phase</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Resource</th>
+                <th>Phase 1</th>
+                <th>Phase 2</th>
+                <th>Phase 3</th>
+                <th>Phase 5</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Exotic Matter (kg)</td>
+                <td>1</td>
+                <td>10</td>
+                <td>100</td>
+                <td>10,000</td>
+            </tr>
+            <tr>
+                <td>Power (MW)</td>
+                <td>0.1</td>
+                <td>1</td>
+                <td>50</td>
+                <td>1,000</td>
+            </tr>
+            <tr>
+                <td>Transceivers</td>
+                <td>2</td>
+                <td>2</td>
+                <td>5</td>
+                <td>20+</td>
+            </tr>
+            <tr>
+                <td>Bandwidth (Gbps)</td>
+                <td>0.001</td>
+                <td>0.1</td>
+                <td>10</td>
+                <td>100</td>
+            </tr>
+            <tr>
+                <td>Staff</td>
+                <td>20</td>
+                <td>50</td>
+                <td>200</td>
+                <td>1,000+</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>7.3 Interoperability and Standards Compliance</h2>
+
+    <h3>7.3.1 WIA-QUA-016 Compliance Testing</h3>
+
+    <div class="code-block">
+// Compliance test suite for WIA-QUA-016
+class ComplianceTest {
+    async runFullSuite(implementation: FTLTransmitter): Promise<ComplianceReport> {
+        const tests = [
+            this.testMessageFormat(),
+            this.testCausalityProtection(),
+            this.testErrorCorrection(),
+            this.testSecurityProtocols(),
+            this.testInteroperability(),
+            this.testSafety()
+        ];
+        
+        const results = await Promise.all(tests.map(t => t(implementation)));
+        
+        return {
+            overallPass: results.every(r => r.passed),
+            testResults: results,
+            complianceLevel: this.calculateComplianceLevel(results),
+            certificationRecommendation: this.makeCertificationRecommendation(results)
+        };
+    }
+    
+    private async testCausalityProtection(impl: FTLTransmitter): Promise<TestResult> {
+        // Test 1: Verify CTC detection
+        const paradoxMessage = this.createCTCMessage();
+        try {
+            await impl.send(paradoxMessage);
+            return { passed: false, reason: "Failed to detect CTC" };
+        } catch (e) {
+            if (e instanceof CausalityViolationError) {
+                return { passed: true, reason: "CTC correctly rejected" };
+            }
+            return { passed: false, reason: "Wrong exception type" };
+        }
+    }
+    
+    private async testInteroperability(impl: FTLTransmitter): Promise<TestResult> {
+        // Test with reference implementation
+        const referenceImpl = new ReferenceFTLTransmitter();
+        
+        // Send message from impl to reference
+        const message = Buffer.from("Interoperability test");
+        await impl.send(message);
+        
+        const received = await referenceImpl.receive();
+        
+        if (received.equals(message)) {
+            return { passed: true, reason: "Successful interoperability" };
+        } else {
+            return { passed: false, reason: "Message corruption or incompatibility" };
+        }
+    }
+    
+    private calculateComplianceLevel(results: TestResult[]): ComplianceLevel {
+        const passRate = results.filter(r => r.passed).length / results.length;
+        
+        if (passRate === 1.0) return ComplianceLevel.GOLD;
+        if (passRate >= 0.95) return ComplianceLevel.SILVER;
+        if (passRate >= 0.80) return ComplianceLevel.BRONZE;
+        return ComplianceLevel.NONE;
+    }
+}
+
+enum ComplianceLevel {
+    NONE = "Not Compliant",
+    BRONZE = "Bronze (80-94% pass)",
+    SILVER = "Silver (95-99% pass)",
+    GOLD = "Gold (100% pass)"
+}
+    </div>
+
+    <h2>7.4 Monitoring and Operations</h2>
+
+    <h3>7.4.1 System Monitoring Dashboard</h3>
+
+    <div class="code-block">
+// Real-time FTL system monitoring
+class FTLMonitoring {
+    private metrics: MetricsCollector;
+    private alerts: AlertSystem;
+    
+    async monitorSystem(): Promise<void> {
+        setInterval(async () => {
+            const status = await this.collectMetrics();
+            await this.checkThresholds(status);
+            await this.updateDashboard(status);
+        }, 1000); // Check every second
+    }
+    
+    private async collectMetrics(): Promise<SystemStatus> {
+        return {
+            // Physical metrics
+            exoticMatterReserve: await this.metrics.get('exotic_matter_kg'),
+            powerConsumption: await this.metrics.get('power_consumption_mw'),
+            metricStability: await this.metrics.get('metric_stability_index'),
+            
+            // Performance metrics
+            throughput: await this.metrics.get('throughput_bps'),
+            latency: await this.metrics.get('latency_ns'), // Should be near zero!
+            errorRate: await this.metrics.get('bit_error_rate'),
+            
+            // Causality metrics
+            ctcDetections: await this.metrics.get('ctc_detections_per_hour'),
+            timelineConsistency: await this.metrics.get('timeline_consistency_score'),
+            causalityViolations: await this.metrics.get('causality_violations_prevented'),
+            
+            // Security metrics
+            authFailures: await this.metrics.get('auth_failures_per_hour'),
+            intrusionAttempts: await this.metrics.get('intrusion_attempts'),
+            encryptionErrors: await this.metrics.get('encryption_errors')
+        };
+    }
+    
+    private async checkThresholds(status: SystemStatus): Promise<void> {
+        // Critical alerts
+        if (status.exoticMatterReserve < 0.1) {
+            await this.alerts.critical("Exotic matter reserve critically low!");
+        }
+        
+        if (status.ctcDetections > 0) {
+            await this.alerts.critical(`CTC detected! Count: ${status.ctcDetections}`);
+        }
+        
+        if (status.metricStability < 0.8) {
+            await this.alerts.warning("Metric stability degraded - warp bubble unstable");
+        }
+        
+        // Performance alerts
+        if (status.errorRate > 1e-6) {
+            await this.alerts.warning(`High BER: ${status.errorRate}`);
+        }
+        
+        // Security alerts
+        if (status.intrusionAttempts > 10) {
+            await this.alerts.warning(`High intrusion attempts: ${status.intrusionAttempts}`);
+        }
+    }
+}
+    </div>
+
+    <h2>7.5 Operational Best Practices</h2>
+
+    <h3>7.5.1 Standard Operating Procedures</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Procedure</th>
+                <th>Frequency</th>
+                <th>Responsibility</th>
+                <th>Critical Steps</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Exotic Matter Refueling</td>
+                <td>Weekly</td>
+                <td>Energy Systems Team</td>
+                <td>Shutdown → Purge → Refill → Verification → Restart</td>
+            </tr>
+            <tr>
+                <td>Causality Firewall Update</td>
+                <td>Daily</td>
+                <td>Security Team</td>
+                <td>Download rules → Test → Deploy → Monitor</td>
+            </tr>
+            <tr>
+                <td>Metric Calibration</td>
+                <td>Monthly</td>
+                <td>Physics Team</td>
+                <td>Baseline → Adjustment → Verification → Document</td>
+            </tr>
+            <tr>
+                <td>Timeline Consistency Check</td>
+                <td>Hourly</td>
+                <td>Automated + Ops</td>
+                <td>Graph scan → Detect cycles → Alert if found</td>
+            </tr>
+            <tr>
+                <td>Backup System Test</td>
+                <td>Quarterly</td>
+                <td>All Teams</td>
+                <td>Failover → Validate → Failback → Document</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>7.5.2 Incident Response Plan</h3>
+
+    <div class="code-block">
+Incident Response Procedures:
+
+SEVERITY 1 - CRITICAL (CTC Detection, Vacuum Instability)
+├─ Immediate Actions (< 1 minute):
+│  ├─ Emergency shutdown of FTL transceiver
+│  ├─ Activate causality containment
+│  ├─ Alert all personnel
+│  └─ Notify regulatory authorities
+├─ Short-term Actions (< 1 hour):
+│  ├─ Analyze causal graph for CTC source
+│  ├─ Determine timeline impact
+│  ├─ Implement corrective measures
+│  └─ Document incident
+└─ Long-term Actions (< 24 hours):
+   ├─ Root cause analysis
+   ├─ Update firewall rules
+   ├─ Retrain staff
+   └─ Submit incident report to WIA
+
+SEVERITY 2 - HIGH (Security Breach, Major Performance Degradation)
+├─ Immediate Actions (< 5 minutes):
+│  ├─ Isolate affected systems
+│  ├─ Enable backup communication path
+│  └─ Begin investigation
+├─ Short-term Actions (< 4 hours):
+│  ├─ Identify root cause
+│  ├─ Apply fixes
+│  └─ Validate resolution
+└─ Long-term Actions (< 1 week):
+   ├─ Comprehensive security audit
+   ├─ Update procedures
+   └─ Staff training
+
+SEVERITY 3 - MEDIUM (Minor Anomalies)
+├─ Log and monitor
+├─ Investigate during business hours
+└─ Fix in next maintenance window
+    </div>
+
+    <div class="summary">
+        <h3>Key Takeaways</h3>
+        <ul>
+            <li><strong>Layered integration architecture bridges networks:</strong> FTL gateways translate between TCP/IP and FTLTP protocols while enforcing causality checks and routing decisions based on distance, urgency, and system availability.</li>
+            <li><strong>Phased deployment manages risk and complexity:</strong> Start with laboratory experiments, expand to Earth-Moon, then inner solar system, outer solar system, and finally interstellar links, scaling infrastructure at each phase.</li>
+            <li><strong>Resource requirements scale dramatically:</strong> Exotic matter needs grow from 1 kg (lab) to 10,000 kg (interstellar), power from 0.1 MW to 1,000 MW, requiring careful capacity planning and technology advancement.</li>
+            <li><strong>Compliance testing ensures interoperability:</strong> WIA-QUA-016 certification requires passing message format, causality protection, error correction, security, interoperability, and safety tests at 80% (Bronze), 95% (Silver), or 100% (Gold) levels.</li>
+            <li><strong>Continuous monitoring prevents catastrophic failures:</strong> Track exotic matter reserves, metric stability, CTC detections, error rates, timeline consistency, and security events with automated threshold alerting for critical conditions.</li>
+            <li><strong>Incident response prioritizes causality protection:</strong> Severity 1 incidents (CTC detection, vacuum instability) trigger immediate shutdown and containment within 1 minute, with regulatory notification and comprehensive analysis.</li>
+        </ul>
+    </div>
+
+    <div class="review">
+        <h3>Review Questions</h3>
+        <ol>
+            <li><strong>Design a routing algorithm</strong> for an FTL gateway that decides when to use FTL vs conventional communication. What factors should influence the decision?</li>
+            <li><strong>Calculate the exotic matter requirements</strong> for Phase 3 deployment (inner solar system with 5 stations). If each link needs 20 kg, how much total exotic matter is required?</li>
+            <li><strong>Explain why interoperability testing is critical.</strong> What problems could arise if different vendors' FTL systems couldn't communicate?</li>
+            <li><strong>Design a monitoring dashboard</strong> for an FTL communication system. What are the top 5 metrics that must be displayed prominently? Why?</li>
+            <li><strong>Describe the incident response</strong> for a CTC detection event. What are the first three actions within the first minute?</li>
+            <li><strong>Why does the compliance test</strong> attempt to send a paradox-creating message? What should a compliant system do?</li>
+            <li><strong>Estimate the bandwidth requirements</strong> for Phase 5 interstellar deployment supporting 1 million users. Assume 10 Mbps average per user.</li>
+        </ol>
+    </div>
+
+    <div class="nav-buttons">
+        <a href="chapter-06.html" class="btn">← Previous: Security</a>
+        <a href="chapter-08.html" class="btn">Next: Future Prospects →</a>
+    </div>
+
+</body>
+</html>

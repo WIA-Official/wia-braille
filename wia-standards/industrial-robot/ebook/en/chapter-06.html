@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: Communication Protocols - WIA-ROB-003</title>
+</head>
+<body>
+
+<p><a href="index.html">🏭 WIA-ROB-003 Industrial Robot Standard Ebook</a> | Chapter 6 of 8</p>
+
+<hr>
+
+<h1>📡 Chapter 6: Communication Protocols</h1>
+
+<blockquote>
+<p><strong>"In Industry 4.0, robots don't work in isolation. Communication is the lifeblood of smart manufacturing."</strong></p>
+<p>Modern industrial robots must seamlessly integrate with factory automation systems through standardized communication protocols.</p>
+</blockquote>
+
+<hr>
+
+<h2>6.1 Industrial Ethernet Protocols</h2>
+
+<p>Industrial Ethernet has become the dominant communication technology for robot systems, offering high speed, flexibility, and integration with enterprise IT networks.</p>
+
+<h3>6.1.1 EtherNet/IP (Ethernet Industrial Protocol)</h3>
+
+<p><strong>Overview:</strong> Developed by Rockwell Automation and ODVA, EtherNet/IP uses standard Ethernet hardware with the Common Industrial Protocol (CIP) application layer.</p>
+
+<p><strong>Key Features:</strong></p>
+<ul>
+    <li><strong>Speed:</strong> 10/100/1000 Mbps</li>
+    <li><strong>Topology:</strong> Star, line, ring</li>
+    <li><strong>Protocol:</strong> TCP/IP and UDP/IP</li>
+    <li><strong>Cycle Time:</strong> Typical 1-10 ms</li>
+    <li><strong>Message Types:</strong>
+        <ul>
+            <li>Implicit messaging: Real-time I/O data</li>
+            <li>Explicit messaging: Configuration and diagnostics</li>
+        </ul>
+    </li>
+</ul>
+
+<p><strong>Robot Control Data Exchange:</strong></p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Data Type</th>
+            <th>Update Rate</th>
+            <th>Size</th>
+            <th>Priority</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Joint positions (command)</td>
+            <td>1-8 ms</td>
+            <td>48 bytes (6 joints × 8 bytes)</td>
+            <td>High</td>
+        </tr>
+        <tr>
+            <td>Joint positions (feedback)</td>
+            <td>1-8 ms</td>
+            <td>48 bytes</td>
+            <td>High</td>
+        </tr>
+        <tr>
+            <td>Digital I/O</td>
+            <td>1-10 ms</td>
+            <td>4-16 bytes</td>
+            <td>High</td>
+        </tr>
+        <tr>
+            <td>Safety status</td>
+            <td>10-50 ms</td>
+            <td>8-32 bytes</td>
+            <td>Critical</td>
+        </tr>
+        <tr>
+            <td>Diagnostics</td>
+            <td>100-1000 ms</td>
+            <td>Variable</td>
+            <td>Low</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>6.1.2 PROFINET (Process Field Network)</h3>
+
+<p><strong>Overview:</strong> Developed by Siemens and Profibus & Profinet International (PI), PROFINET is widely used in European automation.</p>
+
+<p><strong>Performance Classes:</strong></p>
+<ul>
+    <li><strong>PROFINET RT (Real-Time):</strong> Cycle time 10-100 ms, uses standard Ethernet switches</li>
+    <li><strong>PROFINET IRT (Isochronous Real-Time):</strong> Cycle time <1 ms, requires special switches, deterministic</li>
+</ul>
+
+<p><strong>PROFIsafe:</strong> Safety protocol extension for fail-safe communication</p>
+<ul>
+    <li>Black channel principle (safety data over standard network)</li>
+    <li>Safety Integrity Level: SIL 3, PL e</li>
+    <li>Used for safety I/O, emergency stops, safe motion functions</li>
+</ul>
+
+<h3>6.1.3 EtherCAT (Ethernet for Control Automation Technology)</h3>
+
+<p><strong>Overview:</strong> Developed by Beckhoff, EtherCAT offers exceptional performance for motion control.</p>
+
+<p><strong>Unique Architecture:</strong></p>
+<ul>
+    <li><strong>Processing on the fly:</strong> Each node extracts/inserts its data while frame passes through</li>
+    <li><strong>Cycle time:</strong> <100 μs for 1000 I/O, <1 ms for 100 axes</li>
+    <li><strong>Jitter:</strong> <1 μs</li>
+    <li><strong>Topology:</strong> Line (daisy chain), tree, star with branches</li>
+</ul>
+
+<p><strong>Robot Multi-Axis Synchronization:</strong></p>
+
+<p>EtherCAT enables precise synchronization of multiple robots and external axes:</p>
+
+<pre>
+Distributed Clock (DC) Synchronization:
+  - Accuracy: < 1 μs across network
+  - All devices synchronized to master clock
+  - Critical for coordinated motion (e.g., dual-robot handling)
+
+Example: Coordinated Dual-Robot Lifting
+  Robot A and Robot B lift opposite ends of a 3-meter steel beam
+  Synchronization requirement: ±50 μm position error
+  EtherCAT cycle time: 250 μs
+  Result: Smooth coordinated motion without mechanical stress
+</pre>
+
+<h3>6.1.4 Modbus TCP</h3>
+
+<p><strong>Overview:</strong> Simple, widely supported protocol for basic robot integration.</p>
+
+<p><strong>Characteristics:</strong></p>
+<ul>
+    <li>Client-server architecture</li>
+    <li>Function codes for reading/writing registers</li>
+    <li>Not real-time (no guaranteed latency)</li>
+    <li>Typical for higher-level control (start/stop, mode changes)</li>
+</ul>
+
+<p><strong>WIA-ROB-003 Modbus Register Map (Example):</strong></p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Address</th>
+            <th>Data Type</th>
+            <th>Description</th>
+            <th>Access</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>0-5</td>
+            <td>INT32</td>
+            <td>Joint positions (0.001 degree resolution)</td>
+            <td>Read</td>
+        </tr>
+        <tr>
+            <td>10-15</td>
+            <td>INT32</td>
+            <td>Joint velocities (0.01 degree/s)</td>
+            <td>Read</td>
+        </tr>
+        <tr>
+            <td>20-25</td>
+            <td>INT16</td>
+            <td>Joint currents (0.01 A)</td>
+            <td>Read</td>
+        </tr>
+        <tr>
+            <td>100</td>
+            <td>UINT16</td>
+            <td>Robot status (bit field)</td>
+            <td>Read</td>
+        </tr>
+        <tr>
+            <td>101</td>
+            <td>UINT16</td>
+            <td>Control mode (0=idle, 1=auto, 2=manual)</td>
+            <td>Read/Write</td>
+        </tr>
+        <tr>
+            <td>102</td>
+            <td>UINT16</td>
+            <td>Speed override (0-200%)</td>
+            <td>Read/Write</td>
+        </tr>
+        <tr>
+            <td>200-231</td>
+            <td>UINT16</td>
+            <td>Digital inputs (32 bits)</td>
+            <td>Read</td>
+        </tr>
+        <tr>
+            <td>232-263</td>
+            <td>UINT16</td>
+            <td>Digital outputs (32 bits)</td>
+            <td>Read/Write</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>6.2 OPC UA (OPC Unified Architecture)</h2>
+
+<p><strong>OPC UA</strong> is the modern standard for industrial communication, providing platform-independent, secure, and scalable data exchange.</p>
+
+<h3>6.2.1 Architecture</h3>
+
+<p><strong>Core Features:</strong></p>
+<ul>
+    <li><strong>Platform Independent:</strong> Works on Windows, Linux, embedded systems</li>
+    <li><strong>Service-Oriented:</strong> Client-server and publish-subscribe patterns</li>
+    <li><strong>Security Built-in:</strong> Authentication, encryption, signing</li>
+    <li><strong>Information Modeling:</strong> Object-oriented data representation</li>
+    <li><strong>Scalability:</strong> From field devices to enterprise systems</li>
+</ul>
+
+<p><strong>OPC UA for Robotics (Companion Specification):</strong></p>
+
+<p>The OPC Foundation has developed a standardized information model for robots:</p>
+
+<pre>
+OPC UA Robotics Companion Specification (released 2020):
+
+Object Model Hierarchy:
+  - RobotDevice
+    - Axes (Array of AxisInformation)
+    - MotionDevices
+    - SafetyStates
+    - PowerTrains
+    - Controllers
+    - TaskControls
+
+Methods:
+  - MoveToPosition(targetPosition, speed)
+  - MoveLinear(targetPosition, speed)
+  - MoveJoint(jointAngles, speed)
+  - StartProgram(programName)
+  - StopMotion(stopType)
+  - GetActualPosition() returns CartesianPosition
+  - GetJointPositions() returns JointArray
+
+Events:
+  - MotionCompleted
+  - SafetyViolation
+  - ErrorOccurred
+  - ProgamFinished
+</pre>
+
+<h3>6.2.2 WIA-ROB-003 OPC UA Implementation</h3>
+
+<p><strong>Node Structure:</strong></p>
+
+<pre>
+Root
+  └── WIA_Robots
+      └── Robot_001
+          ├── Identification
+          │   ├── Manufacturer: "WIA-Compatible Robot Maker"
+          │   ├── Model: "WIA-ROB-6DOF-2500"
+          │   ├── SerialNumber: "WR2025-12345"
+          │   └── FirmwareVersion: "v2.1.3"
+          ├── Status
+          │   ├── OperationalMode: "AUTOMATIC"
+          │   ├── MotionStatus: "MOVING"
+          │   ├── SafetyStatus: "NORMAL"
+          │   ├── ErrorStatus: 0
+          │   └── CycleCount: 125847
+          ├── Axes
+          │   ├── Axis_1
+          │   │   ├── ActualPosition: 45.234 deg
+          │   │   ├── CommandPosition: 45.250 deg
+          │   │   ├── Velocity: 12.5 deg/s
+          │   │   ├── Torque: 15.2 Nm
+          │   │   └── Temperature: 38.5 °C
+          │   ├── Axis_2 ... Axis_6
+          ├── TCP (Tool Center Point)
+          │   ├── Position
+          │   │   ├── X: 1250.5 mm
+          │   │   ├── Y: -425.2 mm
+          │   │   ├── Z: 980.3 mm
+          │   │   ├── Rx: 0.0 deg
+          │   │   ├── Ry: 90.0 deg
+          │   │   └── Rz: 45.0 deg
+          │   └── Force
+          │       ├── Fx: 2.3 N
+          │       ├── Fy: 1.5 N
+          │       ├── Fz: 12.8 N
+          │       ├── Tx: 0.5 Nm
+          │       ├── Ty: 0.3 Nm
+          │       └── Tz: 0.1 Nm
+          ├── Programs
+          │   ├── CurrentProgram: "PickAndPlace_v2"
+          │   ├── ProgramStatus: "RUNNING"
+          │   ├── Line: 42
+          │   └── AvailablePrograms: [...]
+          └── Methods
+              ├── StartProgram(programName)
+              ├── StopMotion()
+              ├── ResetError()
+              ├── MoveToHome()
+              └── SetSpeedOverride(percentage)
+</pre>
+
+<hr>
+
+<h2>6.3 Integration with MES/ERP Systems</h2>
+
+<p>Robots must exchange data with Manufacturing Execution Systems (MES) and Enterprise Resource Planning (ERP) systems for Industry 4.0 integration.</p>
+
+<h3>6.3.1 MQTT (Message Queuing Telemetry Transport)</h3>
+
+<p><strong>Characteristics:</strong></p>
+<ul>
+    <li>Lightweight publish-subscribe protocol</li>
+    <li>Ideal for IoT and edge devices</li>
+    <li>Quality of Service levels: 0 (at most once), 1 (at least once), 2 (exactly once)</li>
+    <li>Support for unreliable networks</li>
+</ul>
+
+<p><strong>Robot Data Topics (Example):</strong></p>
+
+<pre>
+Topic Structure:
+  factory/{cell_id}/robot/{robot_id}/{data_type}
+
+Examples:
+  factory/cell_01/robot/robot_001/status
+  factory/cell_01/robot/robot_001/position
+  factory/cell_01/robot/robot_001/cycle_count
+  factory/cell_01/robot/robot_001/error
+  factory/cell_01/robot/robot_001/program_complete
+
+Message Payload (JSON):
+{
+  "timestamp": "2025-01-15T18:30:25.123Z",
+  "robot_id": "robot_001",
+  "status": "RUNNING",
+  "program": "PickAndPlace_v2",
+  "cycle_count": 1258,
+  "speed_override": 100,
+  "tcp_position": [1250.5, -425.2, 980.3, 0.0, 90.0, 45.0],
+  "joint_positions": [45.23, -30.15, 62.48, 5.12, 88.75, 45.00]
+}
+</pre>
+
+<h3>6.3.2 REST APIs</h3>
+
+<p><strong>WIA-ROB-003 RESTful API Endpoints:</strong></p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Endpoint</th>
+            <th>Method</th>
+            <th>Description</th>
+            <th>Request Body</th>
+            <th>Response</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>/api/v1/robots</td>
+            <td>GET</td>
+            <td>List all robots</td>
+            <td>-</td>
+            <td>Array of robot objects</td>
+        </tr>
+        <tr>
+            <td>/api/v1/robots/{id}</td>
+            <td>GET</td>
+            <td>Get robot details</td>
+            <td>-</td>
+            <td>Robot object</td>
+        </tr>
+        <tr>
+            <td>/api/v1/robots/{id}/status</td>
+            <td>GET</td>
+            <td>Get current status</td>
+            <td>-</td>
+            <td>Status object</td>
+        </tr>
+        <tr>
+            <td>/api/v1/robots/{id}/position</td>
+            <td>GET</td>
+            <td>Get TCP position</td>
+            <td>-</td>
+            <td>Position object</td>
+        </tr>
+        <tr>
+            <td>/api/v1/robots/{id}/move</td>
+            <td>POST</td>
+            <td>Command motion</td>
+            <td>Motion parameters (JSON)</td>
+            <td>Acceptance confirmation</td>
+        </tr>
+        <tr>
+            <td>/api/v1/robots/{id}/programs</td>
+            <td>GET</td>
+            <td>List programs</td>
+            <td>-</td>
+            <td>Array of program names</td>
+        </tr>
+        <tr>
+            <td>/api/v1/robots/{id}/programs/{name}/start</td>
+            <td>POST</td>
+            <td>Start program</td>
+            <td>Parameters (optional)</td>
+            <td>Start confirmation</td>
+        </tr>
+        <tr>
+            <td>/api/v1/robots/{id}/stop</td>
+            <td>POST</td>
+            <td>Stop motion</td>
+            <td>Stop type (enum)</td>
+            <td>Stop confirmation</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>6.3.3 Database Integration</h3>
+
+<p><strong>Traceability and Data Logging:</strong></p>
+
+<p>Industrial robots generate vast amounts of data that must be stored for quality assurance, predictive maintenance, and regulatory compliance.</p>
+
+<p><strong>Typical Data Stored:</strong></p>
+<ul>
+    <li><strong>Production Data:</strong> Cycle times, part counts, program executed, quality results</li>
+    <li><strong>Position Data:</strong> Actual vs. commanded positions (sampled periodically)</li>
+    <li><strong>Force Data:</strong> Contact forces during assembly operations</li>
+    <li><strong>Error Logs:</strong> All errors, warnings, e-stops with timestamps</li>
+    <li><strong>Maintenance Data:</strong> Joint runtime hours, lubrication cycles, part replacements</li>
+    <li><strong>Energy Consumption:</strong> Power usage per cycle, per program, cumulative</li>
+</ul>
+
+<p><strong>Database Options:</strong></p>
+<ul>
+    <li><strong>Time-Series Databases:</strong> InfluxDB, TimescaleDB - optimized for high-frequency sensor data</li>
+    <li><strong>Relational Databases:</strong> PostgreSQL, MySQL - for structured production data</li>
+    <li><strong>NoSQL Databases:</strong> MongoDB, Cassandra - for flexible schema and high throughput</li>
+    <li><strong>Industrial Historians:</strong> OSIsoft PI, GE Proficy - specialized for industrial data</li>
+</ul>
+
+<hr>
+
+<h2>6.4 Safety Communication</h2>
+
+<h3>6.4.1 Safety Fieldbus Protocols</h3>
+
+<p><strong>Fail-Safe Communication Requirements:</strong></p>
+<ul>
+    <li>Certified to IEC 61508 (SIL 2/3) or ISO 13849 (PLd/PLe)</li>
+    <li>Error detection through CRC, sequence numbers, timestamps</li>
+    <li>Black channel principle: safety data over standard network</li>
+    <li>Diagnostic coverage >90%</li>
+</ul>
+
+<p><strong>Safety Protocols:</strong></p>
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Protocol</th>
+            <th>Base Network</th>
+            <th>Safety Level</th>
+            <th>Cycle Time</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>PROFIsafe</td>
+            <td>PROFINET</td>
+            <td>SIL 3, PLe</td>
+            <td>1-10 ms</td>
+        </tr>
+        <tr>
+            <td>CIP Safety</td>
+            <td>EtherNet/IP</td>
+            <td>SIL 3, PLe</td>
+            <td>1-10 ms</td>
+        </tr>
+        <tr>
+            <td>FSoE (Fail-Safe over EtherCAT)</td>
+            <td>EtherCAT</td>
+            <td>SIL 3, PLe</td>
+            <td><1 ms</td>
+        </tr>
+        <tr>
+            <td>openSAFETY</td>
+            <td>Any (Powerlink, EtherNet/IP, Modbus TCP)</td>
+            <td>SIL 3, PLe</td>
+            <td>1-10 ms</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>6.4.2 Safety I/O and Interlocks</h3>
+
+<p><strong>Safety Input Signals (to Robot Controller):</strong></p>
+<ul>
+    <li>Emergency stop buttons (hardwired + networked)</li>
+    <li>Safety gate/door interlocks</li>
+    <li>Light curtain interruptions</li>
+    <li>Laser scanner zone violations</li>
+    <li>Enabling device status (teach pendant)</li>
+</ul>
+
+<p><strong>Safety Output Signals (from Robot Controller):</strong></p>
+<ul>
+    <li>Safe Torque Off (STO) status</li>
+    <li>Speed/position within limits confirmation</li>
+    <li>Operating mode indication</li>
+    <li>Error/fault status</li>
+</ul>
+
+<hr>
+
+<h2>6.5 Summary</h2>
+
+<p>This chapter covered communication protocols for industrial robots:</p>
+
+<ul>
+    <li>Industrial Ethernet: EtherNet/IP, PROFINET, EtherCAT, Modbus TCP</li>
+    <li>OPC UA: Standardized robotics companion specification</li>
+    <li>MES/ERP Integration: MQTT, REST APIs, database connectivity</li>
+    <li>Safety Communication: PROFIsafe, CIP Safety, FSoE</li>
+    <li>WIA-ROB-003 defines standard data formats for all protocols</li>
+</ul>
+
+<p><strong>Key Takeaways:</strong></p>
+<ul>
+    <li>Protocol choice depends on performance requirements and existing infrastructure</li>
+    <li>Real-time control requires deterministic protocols (PROFINET IRT, EtherCAT)</li>
+    <li>OPC UA enables seamless integration across factory floors and enterprise systems</li>
+    <li>Safety communication must be certified and tested rigorously</li>
+</ul>
+
+<p>Next chapter: Applications and use cases across industries.</p>
+
+<hr>
+
+<p><strong>Previous:</strong> <a href="chapter-05.html">← Chapter 5: Sensors and Perception</a></p>
+<p><strong>Next:</strong> <a href="chapter-07.html">Chapter 7: Applications and Use Cases →</a></p>
+
+<hr>
+
+<footer>
+    <p><strong>弘益人間 (Hongik Ingan)</strong> · Benefit All Humanity</p>
+    <p>WIA - World Certification Industry Association</p>
+    <p>© 2025 MIT License</p>
+</footer>
+
+</body>
+</html>

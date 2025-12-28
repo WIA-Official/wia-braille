@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Real-time Alerts and Threat Detection | WIA-CHILD-004</title>
+    <style>
+        :root{--bg:#0f172a;--surface:#1e293b;--primary:#F59E0B;--primary-dark:#ea580c;--text:#f1f5f9;--text-dim:#94a3b8;--border:#334155;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--code-bg:#1e1e1e}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);line-height:1.8;padding:2rem}
+        .container{max-width:1000px;margin:0 auto}
+        header{background:var(--surface);padding:2rem;border-radius:12px;margin-bottom:2rem;border-left:5px solid var(--primary)}
+        h1{color:var(--primary);font-size:2.5rem;margin-bottom:0.5rem}
+        .chapter-meta{color:var(--text-dim);font-size:0.9rem}
+        nav{background:var(--surface);padding:1rem;border-radius:8px;margin-bottom:2rem;display:flex;justify-content:space-between;align-items:center}
+        nav a{color:var(--primary);text-decoration:none;padding:0.5rem 1rem;border-radius:6px;transition:all 0.3s}
+        nav a:hover{background:var(--primary);color:var(--bg)}
+        h2{color:var(--primary);font-size:2rem;margin:2rem 0 1rem 0;padding-bottom:0.5rem;border-bottom:2px solid var(--border)}
+        h3{color:var(--primary);font-size:1.5rem;margin:1.5rem 0 1rem 0}
+        p{margin-bottom:1rem;line-height:1.8}
+        .info-box{background:var(--surface);padding:1.5rem;border-radius:8px;margin:1.5rem 0;border-left:4px solid var(--primary)}
+        .warning-box{background:rgba(245,158,11,0.1);border-left-color:var(--warning)}
+        .danger-box{background:rgba(239,68,68,0.1);border-left-color:var(--danger)}
+        table{width:100%;border-collapse:collapse;margin:1.5rem 0;background:var(--surface);border-radius:8px;overflow:hidden}
+        th{background:var(--primary);color:var(--bg);padding:1rem;text-align:left;font-weight:600}
+        td{padding:1rem;border-bottom:1px solid var(--border)}
+        tr:last-child td{border-bottom:none}
+        tr:hover{background:rgba(249,115,22,0.05)}
+        pre{background:var(--code-bg);padding:1.5rem;border-radius:8px;overflow-x:auto;margin:1.5rem 0;border-left:4px solid var(--primary)}
+        code{font-family:'Courier New',monospace;font-size:0.9rem;color:#e2e8f0}
+        .key-takeaways,.review-questions{background:var(--surface);padding:2rem;border-radius:12px;margin:2rem 0}
+        .key-takeaways h3,.review-questions h3{color:var(--primary);margin-top:0}
+        ul,ol{margin-left:2rem;margin-bottom:1rem}
+        li{margin-bottom:0.5rem}
+        .philosophy{background:linear-gradient(135deg,rgba(249,115,22,0.2),rgba(234,88,12,0.1));padding:2rem;border-radius:12px;text-align:center;margin:3rem 0;border:2px solid var(--primary)}
+        .philosophy h2{border:none;margin:0 0 1rem 0;font-size:2rem}
+        footer{margin-top:3rem;padding-top:2rem;border-top:2px solid var(--border);text-align:center;color:var(--text-dim}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chapter 5: Real-time Alerts and Threat Detection</h1>
+            <div class="chapter-meta">WIA-CHILD-004: Parental Control Systems | Estimated Reading Time: 28 minutes</div>
+        </header>
+
+        <nav>
+            <a href="chapter-04.html">← Previous Chapter</a>
+            <a href="index.html">Index</a>
+            <a href="chapter-06.html">Next Chapter →</a>
+        </nav>
+
+        <section>
+            <h2>5.1 Risk Scoring and Severity Classification</h2>
+            <p>
+                Effective alert systems must distinguish between minor concerns and serious threats, ensuring parents are notified of genuine dangers without being overwhelmed by false alarms. This requires sophisticated risk scoring that considers context, child's age, behavior patterns, and threat severity. The WIA-CHILD-004 standard defines a multi-dimensional risk assessment framework that enables intelligent alerting.
+            </p>
+
+            <h3>Threat Severity Levels</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Level</th>
+                        <th>Description</th>
+                        <th>Examples</th>
+                        <th>Response Time</th>
+                        <th>Notification Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>CRITICAL</strong></td>
+                        <td>Immediate danger requiring urgent intervention</td>
+                        <td>Grooming, exploitation, self-harm, meetup plans with strangers</td>
+                        <td>Instant</td>
+                        <td>Push + SMS + Phone call</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HIGH</strong></td>
+                        <td>Serious concern requiring prompt attention</td>
+                        <td>Cyberbullying, substance discussion, adult content access</td>
+                        <td>Within 15 minutes</td>
+                        <td>Push notification</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MEDIUM</strong></td>
+                        <td>Concerning behavior warranting awareness</td>
+                        <td>Excessive screen time, age-inappropriate content</td>
+                        <td>Within 1 hour</td>
+                        <td>In-app notification</td>
+                    </tr>
+                    <tr>
+                        <td><strong>LOW</strong></td>
+                        <td>Minor violation or informational</td>
+                        <td>Blocked site attempt, time limit reached</td>
+                        <td>Next daily report</td>
+                        <td>Daily summary email</td>
+                    </tr>
+                    <tr>
+                        <td><strong>INFO</strong></td>
+                        <td>Normal activity log for review</td>
+                        <td>App usage, website visits within limits</td>
+                        <td>Weekly report</td>
+                        <td>Weekly summary only</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <pre><code>// Multi-dimensional risk scoring
+interface RiskAssessment {
+  overallScore: number; // 0-100
+  severity: 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  confidence: number; // 0-1
+  dimensions: {
+    contentRisk: number; // 0-100
+    behavioralRisk: number;
+    contextualRisk: number;
+    timelinessRisk: number;
+    reputationalRisk: number;
+  };
+  factors: RiskFactor[];
+  recommendedActions: Action[];
+}
+
+class ThreatDetectionEngine {
+  async assessRisk(
+    event: SecurityEvent,
+    childId: string
+  ): Promise<RiskAssessment> {
+    const profile = await this.getChildProfile(childId);
+    const history = await this.getBehaviorHistory(childId);
+    const context = await this.getCurrentContext(childId);
+
+    // Calculate individual risk dimensions
+    const contentRisk = await this.assessContentRisk(event);
+    const behavioralRisk = await this.assessBehavioralRisk(event, history);
+    const contextualRisk = await this.assessContextualRisk(event, context);
+    const timelinessRisk = await this.assessTimelinessRisk(event);
+    const reputationalRisk = await this.assessReputationalRisk(event);
+
+    // Combine dimensions with weighted scoring
+    const weights = {
+      content: 0.30,
+      behavioral: 0.25,
+      contextual: 0.20,
+      timeliness: 0.15,
+      reputational: 0.10
+    };
+
+    const overallScore = 
+      contentRisk * weights.content +
+      behavioralRisk * weights.behavioral +
+      contextualRisk * weights.contextual +
+      timelinessRisk * weights.timeliness +
+      reputationalRisk * weights.reputational;
+
+    // Determine severity classification
+    const severity = this.classifySeverity(overallScore, event.type);
+
+    // Calculate confidence based on signal strength
+    const confidence = this.calculateConfidence(
+      contentRisk,
+      behavioralRisk,
+      contextualRisk
+    );
+
+    // Identify specific risk factors
+    const factors = this.identifyRiskFactors(
+      event,
+      profile,
+      history,
+      context
+    );
+
+    // Generate recommended actions
+    const recommendedActions = this.generateActions(
+      severity,
+      factors,
+      profile
+    );
+
+    return {
+      overallScore,
+      severity,
+      confidence,
+      dimensions: {
+        contentRisk,
+        behavioralRisk,
+        contextualRisk,
+        timelinessRisk,
+        reputationalRisk
+      },
+      factors,
+      recommendedActions
+    };
+  }
+
+  private assessContentRisk(event: SecurityEvent): number {
+    let risk = 0;
+
+    // Check for explicit threat indicators
+    if (event.indicators?.groomingSignals) risk += 80;
+    if (event.indicators?.selfHarmLanguage) risk += 90;
+    if (event.indicators?.violenceThreat) risk += 85;
+    if (event.indicators?.sexualContent) risk += 70;
+    if (event.indicators?.drugReference) risk += 60;
+    if (event.indicators?.hateSpeech) risk += 75;
+
+    // Check content categories
+    if (event.category === 'ADULT_CONTENT') risk += 65;
+    if (event.category === 'VIOLENCE') risk += 60;
+    if (event.category === 'GAMBLING') risk += 50;
+
+    return Math.min(100, risk);
+  }
+
+  private async assessBehavioralRisk(
+    event: SecurityEvent,
+    history: BehaviorHistory
+  ): Promise<number> {
+    let risk = 0;
+
+    // Pattern matching
+    if (history.repeatedViolations(event.type)) risk += 30;
+    if (history.escalatingBehavior(event.type)) risk += 40;
+    if (history.secretiveBehavior) risk += 35;
+
+    // Deviation from normal
+    const normalBehavior = history.getBaselinePattern();
+    const deviation = this.calculateDeviation(event, normalBehavior);
+    risk += deviation * 50;
+
+    // Time patterns
+    if (this.isUnusualTime(event.timestamp, history)) risk += 25;
+
+    // Recent context
+    if (history.recentStressors.length > 0) risk += 20;
+    if (history.recentConflicts.length > 0) risk += 15;
+
+    return Math.min(100, risk);
+  }
+
+  private async assessContextualRisk(
+    event: SecurityEvent,
+    context: CurrentContext
+  ): Promise<number> {
+    let risk = 0;
+
+    // Who is involved?
+    if (event.participants?.includes('UNKNOWN_ADULT')) risk += 60;
+    if (event.participants?.includes('BLOCKED_CONTACT')) risk += 70;
+
+    // Where is the child?
+    if (context.location === 'UNKNOWN') risk += 30;
+    if (context.location === 'UNUSUAL') risk += 25;
+
+    // What else is happening?
+    if (context.simultaneousApps?.includes('VPN')) risk += 40;
+    if (context.deviceMode === 'INCOGNITO') risk += 35;
+    if (context.screenRecordingActive) risk += 45;
+
+    // Social context
+    if (context.isolatedFromFamily) risk += 20;
+    if (context.lateNight && context.location !== 'HOME') risk += 50;
+
+    return Math.min(100, risk);
+  }
+
+  private classifySeverity(score: number, eventType: string): Severity {
+    // Critical events bypass scoring
+    if (eventType === 'GROOMING_DETECTED') return 'CRITICAL';
+    if (eventType === 'SELF_HARM_THREAT') return 'CRITICAL';
+    if (eventType === 'MEETUP_PLANNED') return 'CRITICAL';
+
+    // Score-based classification
+    if (score >= 80) return 'CRITICAL';
+    if (score >= 60) return 'HIGH';
+    if (score >= 40) return 'MEDIUM';
+    if (score >= 20) return 'LOW';
+    return 'INFO';
+  }
+}</code></pre>
+
+            <div class="info-box danger-box">
+                <h3>The Alert Fatigue Problem</h3>
+                <p>
+                    Research shows that parents who receive too many alerts—especially false positives—begin ignoring them, including genuinely critical alerts. The WIA-CHILD-004 standard addresses this through intelligent alert suppression, batching low-priority alerts, and using machine learning to reduce false positives below 5%. Critical alerts are never suppressed, but low and medium severity alerts are intelligently grouped and timed to avoid overwhelming parents.
+                </p>
+            </div>
+        </section>
+
+        <section>
+            <h2>5.2 Multi-Channel Notification System</h2>
+            <p>
+                Different threat levels require different notification channels to ensure timely awareness without causing unnecessary disruption. The system must reach parents reliably while respecting their availability and preferences.
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Channel</th>
+                        <th>Use Case</th>
+                        <th>Latency</th>
+                        <th>Interruption Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Phone Call</strong></td>
+                        <td>Critical threats only, parent unreachable by other means</td>
+                        <td>&lt;30 seconds</td>
+                        <td>Maximum</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SMS</strong></td>
+                        <td>Critical/High threats, instant notification needed</td>
+                        <td>&lt;10 seconds</td>
+                        <td>High</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Push Notification</strong></td>
+                        <td>High/Medium threats, urgent but not emergency</td>
+                        <td>&lt;5 seconds</td>
+                        <td>Medium</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Email</strong></td>
+                        <td>Daily summaries, weekly reports, detailed information</td>
+                        <td>Minutes to hours</td>
+                        <td>Low</td>
+                    </tr>
+                    <tr>
+                        <td><strong>In-App Notification</strong></td>
+                        <td>Low priority, informational updates</td>
+                        <td>Next app open</td>
+                        <td>Very low</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dashboard Badge</strong></td>
+                        <td>Passive indicator for non-urgent items</td>
+                        <td>Next login</td>
+                        <td>None</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <pre><code>// Intelligent multi-channel alert delivery
+class AlertDeliverySystem {
+  async sendAlert(
+    parentId: string,
+    alert: Alert
+  ): Promise<DeliveryResult> {
+    const preferences = await this.getPreferences(parentId);
+    const availability = await this.checkAvailability(parentId);
+
+    // Determine delivery strategy based on severity
+    const strategy = this.selectStrategy(
+      alert.severity,
+      preferences,
+      availability
+    );
+
+    // Execute delivery across channels
+    const results = await this.executeStrategy(
+      parentId,
+      alert,
+      strategy
+    );
+
+    // Track delivery for reliability
+    await this.trackDelivery(alert.id, results);
+
+    // Escalate if not acknowledged
+    if (alert.severity === 'CRITICAL') {
+      await this.scheduleEscalation(alert, results);
+    }
+
+    return results;
+  }
+
+  private selectStrategy(
+    severity: Severity,
+    preferences: UserPreferences,
+    availability: AvailabilityStatus
+  ): DeliveryStrategy {
+    switch (severity) {
+      case 'CRITICAL':
+        return {
+          channels: ['PUSH', 'SMS', 'PHONE_CALL'],
+          retries: 3,
+          escalation: {
+            enabled: true,
+            timeoutMinutes: 5,
+            secondaryContacts: true
+          },
+          requireAcknowledgment: true,
+          persistent: true
+        };
+
+      case 'HIGH':
+        return {
+          channels: availability.doNotDisturb 
+            ? ['PUSH'] 
+            : ['PUSH', 'SMS'],
+          retries: 2,
+          escalation: {
+            enabled: true,
+            timeoutMinutes: 30,
+            secondaryContacts: false
+          },
+          requireAcknowledgment: true,
+          persistent: true
+        };
+
+      case 'MEDIUM':
+        return {
+          channels: ['PUSH'],
+          retries: 1,
+          escalation: { enabled: false },
+          requireAcknowledgment: false,
+          persistent: false
+        };
+
+      case 'LOW':
+        // Batch with other low-priority alerts
+        return {
+          channels: ['DAILY_SUMMARY'],
+          batching: {
+            enabled: true,
+            maxWaitHours: 24
+          },
+          retries: 0
+        };
+
+      default:
+        return {
+          channels: ['WEEKLY_SUMMARY'],
+          batching: { enabled: true, maxWaitHours: 168 }
+        };
+    }
+  }
+
+  private async executeStrategy(
+    parentId: string,
+    alert: Alert,
+    strategy: DeliveryStrategy
+  ): Promise<ChannelResults> {
+    const results: ChannelResults = {};
+
+    for (const channel of strategy.channels) {
+      try {
+        const result = await this.sendViaChannel(
+          parentId,
+          alert,
+          channel,
+          strategy
+        );
+        results[channel] = result;
+
+        // If successful and acknowledgment not required, we're done
+        if (result.delivered && !strategy.requireAcknowledgment) {
+          break;
+        }
+
+        // If acknowledgment required, wait for it
+        if (strategy.requireAcknowledgment) {
+          const ack = await this.waitForAcknowledgment(
+            alert.id,
+            result.messageId,
+            5 * 60 * 1000 // 5 minutes
+          );
+
+          if (ack.received) {
+            results.acknowledged = true;
+            break;
+          }
+        }
+      } catch (error) {
+        results[channel] = {
+          delivered: false,
+          error: error.message
+        };
+      }
+    }
+
+    return results;
+  }
+
+  private async sendViaChannel(
+    parentId: string,
+    alert: Alert,
+    channel: NotificationChannel,
+    strategy: DeliveryStrategy
+  ): Promise<ChannelResult> {
+    switch (channel) {
+      case 'PUSH':
+        return await this.sendPushNotification(parentId, {
+          title: this.formatTitle(alert),
+          body: this.formatBody(alert),
+          data: { alertId: alert.id },
+          priority: alert.severity === 'CRITICAL' ? 'high' : 'normal',
+          sound: this.selectSound(alert.severity),
+          badge: true,
+          actions: this.generateActions(alert)
+        });
+
+      case 'SMS':
+        return await this.sendSMS(parentId, {
+          message: this.formatSMS(alert),
+          urgency: alert.severity === 'CRITICAL' ? 'flash' : 'normal'
+        });
+
+      case 'PHONE_CALL':
+        return await this.makePhoneCall(parentId, {
+          message: this.formatVoiceMessage(alert),
+          requireKeypress: true, // Press 1 to acknowledge
+          retries: 3
+        });
+
+      case 'EMAIL':
+        return await this.sendEmail(parentId, {
+          subject: this.formatEmailSubject(alert),
+          body: this.formatEmailBody(alert),
+          html: this.formatEmailHTML(alert),
+          priority: alert.severity === 'CRITICAL' ? 'high' : 'normal'
+        });
+
+      case 'DAILY_SUMMARY':
+        // Add to batch for next summary
+        return await this.addToDailySummary(parentId, alert);
+
+      case 'WEEKLY_SUMMARY':
+        // Add to batch for next weekly report
+        return await this.addToWeeklySummary(parentId, alert);
+    }
+  }
+
+  // Escalation for critical unacknowledged alerts
+  private async scheduleEscalation(
+    alert: Alert,
+    initialResults: ChannelResults
+  ): Promise<void> {
+    if (initialResults.acknowledged) return;
+
+    // Wait for acknowledgment timeout
+    await this.delay(5 * 60 * 1000); // 5 minutes
+
+    // Check if acknowledged in meantime
+    const ack = await this.checkAcknowledgment(alert.id);
+    if (ack) return;
+
+    // Escalate: try secondary contact
+    const secondaryContacts = await this.getSecondaryContacts(alert.parentId);
+    for (const contact of secondaryContacts) {
+      await this.sendAlert(contact.id, {
+        ...alert,
+        escalated: true,
+        escalationReason: 'Primary contact unreachable'
+      });
+    }
+
+    // If still no response after 15 minutes, consider emergency services
+    if (alert.type === 'IMMINENT_DANGER') {
+      await this.delay(10 * 60 * 1000); // Additional 10 minutes
+
+      const stillUnacknowledged = !(await this.checkAcknowledgment(alert.id));
+      if (stillUnacknowledged) {
+        await this.considerEmergencyServices(alert);
+      }
+    }
+  }
+}</code></pre>
+        </section>
+
+        <section>
+            <h2>5.3 Intelligent Alert Suppression and Batching</h2>
+            <p>
+                To prevent alert fatigue, the system must intelligently suppress or batch low-priority alerts while ensuring critical alerts always get through immediately. This requires understanding parent preferences, context, and alert patterns.
+            </p>
+
+            <pre><code>// Smart alert suppression and batching
+class AlertOptimizer {
+  async processAlert(alert: Alert): Promise<ProcessingDecision> {
+    // Critical alerts never suppressed or batched
+    if (alert.severity === 'CRITICAL') {
+      return { action: 'SEND_IMMEDIATELY', alert };
+    }
+
+    const history = await this.getRecentAlerts(alert.parentId, '24h');
+    const patterns = this.analyzePatterns(history, alert);
+
+    // Check for duplicate/similar alerts
+    if (patterns.isDuplicate) {
+      return {
+        action: 'SUPPRESS',
+        reason: 'Duplicate of recent alert',
+        referenceAlert: patterns.duplicateOf
+      };
+    }
+
+    // Check for alert storms (many similar alerts)
+    if (patterns.isStorm) {
+      return {
+        action: 'BATCH_SUMMARIZE',
+        reason: 'Multiple similar events',
+        batchWith: patterns.relatedAlerts,
+        summary: this.generateSummary(patterns.relatedAlerts)
+      };
+    }
+
+    // Check parent context
+    const parentContext = await this.getParentContext(alert.parentId);
+
+    // Respect Do Not Disturb
+    if (parentContext.doNotDisturb && alert.severity !== 'HIGH') {
+      return {
+        action: 'DEFER',
+        reason: 'Do Not Disturb active',
+        deferUntil: parentContext.doNotDisturbEnds
+      };
+    }
+
+    // Respect quiet hours for low/medium alerts
+    if (this.isQuietHours(parentContext) && alert.severity === 'LOW') {
+      return {
+        action: 'BATCH',
+        reason: 'Quiet hours',
+        batchType: 'NEXT_SUMMARY'
+      };
+    }
+
+    // Check if parent is actively using app
+    if (parentContext.activeInApp) {
+      return {
+        action: 'SEND_IN_APP',
+        reason: 'Parent currently in app'
+      };
+    }
+
+    // Default: send based on severity strategy
+    return { action: 'SEND_NORMAL', alert };
+  }
+
+  private analyzePatterns(
+    history: Alert[],
+    newAlert: Alert
+  ): AlertPatterns {
+    const similar = history.filter(a => 
+      this.areSimilar(a, newAlert)
+    );
+
+    const isDuplicate = similar.some(a =>
+      this.isDuplicate(a, newAlert)
+    );
+
+    const isStorm = similar.length > 5; // More than 5 similar alerts
+
+    return {
+      isDuplicate,
+      duplicateOf: isDuplicate ? similar[0].id : null,
+      isStorm,
+      relatedAlerts: similar,
+      frequency: similar.length / 24 // per hour
+    };
+  }
+
+  // Generate consolidated summary for alert batches
+  private generateSummary(alerts: Alert[]): AlertSummary {
+    const byType = this.groupBy(alerts, 'type');
+    const byChild = this.groupBy(alerts, 'childId');
+
+    return {
+      count: alerts.length,
+      timeRange: {
+        start: Math.min(...alerts.map(a => a.timestamp)),
+        end: Math.max(...alerts.map(a => a.timestamp))
+      },
+      breakdown: {
+        byType: Object.entries(byType).map(([type, alerts]) => ({
+          type,
+          count: alerts.length,
+          examples: alerts.slice(0, 3)
+        })),
+        byChild: Object.entries(byChild).map(([childId, alerts]) => ({
+          childId,
+          childName: this.getChildName(childId),
+          count: alerts.length,
+          mostSerious: this.findMostSerious(alerts)
+        }))
+      },
+      message: this.formatSummaryMessage(alerts)
+    };
+  }
+
+  private formatSummaryMessage(alerts: Alert[]): string {
+    const types = [...new Set(alerts.map(a => a.type))];
+
+    if (types.length === 1) {
+      return `${alerts.length} ${types[0]} alerts in the last hour`;
+    }
+
+    return `${alerts.length} alerts: ${types.slice(0, 3).join(', ')}${
+      types.length > 3 ? ` and ${types.length - 3} more types` : ''
+    }`;
+  }
+}</code></pre>
+        </section>
+
+        <section>
+            <h2>5.4 Emergency Response Protocols</h2>
+            <p>
+                For the most serious threats—imminent danger, self-harm, exploitation—the system must have emergency response protocols that go beyond simply notifying parents. This may include contacting emergency services, law enforcement, or crisis hotlines with appropriate safeguards and human oversight.
+            </p>
+
+            <div class="info-box warning-box">
+                <h3>Legal and Ethical Considerations</h3>
+                <p>
+                    Automated contact with emergency services is a serious step with legal implications. WIA-CHILD-004 requires human review before contacting authorities, except in cases of explicitly stated self-harm intent or confirmed exploitation. Systems must log all emergency escalations, provide opt-out mechanisms, and comply with local regulations on mandatory reporting.
+                </p>
+            </div>
+
+            <pre><code>// Emergency response system
+class EmergencyResponseSystem {
+  async handleEmergency(
+    alert: Alert,
+    context: EmergencyContext
+  ): Promise<EmergencyResponse> {
+    // Log all emergency handling
+    await this.auditLog.record({
+      event: 'EMERGENCY_TRIGGERED',
+      alert: alert.id,
+      context,
+      timestamp: new Date()
+    });
+
+    // Immediate parent notification (all channels)
+    await this.notifyParentEmergency(alert);
+
+    // Assess if emergency services needed
+    const assessment = await this.assessEmergencyLevel(alert, context);
+
+    if (assessment.requiresEmergencyServices) {
+      // Human review required before contacting authorities
+      if (assessment.requiresHumanReview) {
+        await this.escalateToHumanReviewer(alert, context, assessment);
+      } else {
+        // Immediate emergencies (explicit self-harm, etc.)
+        await this.contactEmergencyServices(alert, context);
+      }
+    }
+
+    // Provide immediate resources
+    await this.offerResources(alert, context);
+
+    // Track outcome
+    return await this.trackEmergencyOutcome(alert);
+  }
+
+  private async assessEmergencyLevel(
+    alert: Alert,
+    context: EmergencyContext
+  ): Promise<EmergencyAssessment> {
+    return {
+      requiresEmergencyServices: (
+        alert.indicators?.explicitSelfHarmIntent ||
+        alert.indicators?.confirmmedExploitation ||
+        alert.indicators?.imminentPhysicalDanger
+      ),
+      requiresHumanReview: !(
+        alert.indicators?.explicitSelfHarmIntent
+      ),
+      suggestedActions: this.determineSuggestedActions(alert),
+      urgencyLevel: this.calculateUrgency(alert, context),
+      confidenceLevel: alert.confidence
+    };
+  }
+
+  private async offerResources(
+    alert: Alert,
+    context: EmergencyContext
+  ): Promise<void> {
+    const resources = this.selectRelevantResources(alert.type);
+
+    // Send to parent
+    await this.sendResources(context.parentId, resources);
+
+    // If appropriate, send directly to child
+    if (alert.type === 'SELF_HARM' || alert.type === 'MENTAL_HEALTH') {
+      await this.sendResourcesTo Child(context.childId, {
+        crisisHotline: '988', // National crisis hotline
+        textLine: 'Text HOME to 741741',
+        resources: resources.filter(r => r.childAppropriate)
+      });
+    }
+  }
+}</code></pre>
+        </section>
+
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li><strong>Multi-Dimensional Risk Scoring:</strong> Effective threat detection combines content analysis, behavioral patterns, contextual factors, and timing to calculate comprehensive risk scores that minimize false positives.</li>
+                <li><strong>Severity-Based Channels:</strong> Critical alerts use phone calls and SMS for immediate notification, while low-priority items are batched into daily/weekly summaries to prevent alert fatigue.</li>
+                <li><strong>Alert Fatigue Prevention:</strong> Systems must suppress duplicate alerts, batch similar events, and respect Do Not Disturb settings for non-critical alerts to maintain parent engagement with notifications.</li>
+                <li><strong>Escalation Protocols:</strong> Unacknowledged critical alerts trigger escalation to secondary contacts and, in extreme cases, consideration of emergency services with appropriate safeguards.</li>
+                <li><strong>Context Awareness:</strong> Alert delivery considers parent availability, current activity, quiet hours, and preferences to optimize timing and channel selection for maximum effectiveness.</li>
+                <li><strong>Emergency Response:</strong> The most serious threats (self-harm, exploitation, imminent danger) trigger emergency protocols including immediate multi-channel notification and crisis resources.</li>
+                <li><strong>Human Review Requirement:</strong> Automated emergency service contact requires human review except for explicit self-harm statements, ensuring appropriate judgment before involving authorities.</li>
+            </ul>
+        </div>
+
+        <div class="review-questions">
+            <h3>Review Questions</h3>
+            <ol>
+                <li>Explain the five severity levels (Critical, High, Medium, Low, Info) and how each should be handled differently in terms of notification timing and channels.</li>
+                <li>What is "alert fatigue" and why is it dangerous for parental control systems? What strategies does WIA-CHILD-004 recommend to prevent it?</li>
+                <li>Describe the multi-dimensional risk scoring system. How do content risk, behavioral risk, and contextual risk combine to determine overall threat severity?</li>
+                <li>When should an alert trigger phone call notification versus push notification versus batched summary? What factors determine channel selection?</li>
+                <li>Explain the escalation protocol for critical unacknowledged alerts. What happens if a parent doesn't respond within 5 minutes? Within 15 minutes?</li>
+                <li>How should systems handle alert storms (many similar alerts in short time)? Why is batching and summarizing important?</li>
+                <li>What are the legal and ethical considerations for automated contact with emergency services? When is human review required?</li>
+                <li>How should context (parent in app, Do Not Disturb mode, quiet hours) affect alert delivery strategy for different severity levels?</li>
+            </ol>
+        </div>
+
+        <div class="philosophy">
+            <h2>弘益人間 · Benefit All Humanity</h2>
+            <p>
+                Real-time threat detection embodies 弘益人間 by providing parents with timely awareness of dangers while respecting their time and attention through intelligent filtering. The goal is not to overwhelm with information but to alert with precision—ensuring critical threats are never missed while routine activity doesn't create constant distraction. By implementing sophisticated risk scoring, context-aware delivery, and appropriate escalation protocols, we help parents focus their protective energy where it's most needed. Effective alerting protects children while preserving parents' ability to trust the system, creating a sustainable safety net that works over the long term.
+            </p>
+        </div>
+
+        <nav>
+            <a href="chapter-04.html">← Previous Chapter</a>
+            <a href="index.html">Index</a>
+            <a href="chapter-06.html">Next Chapter →</a>
+        </nav>
+
+        <footer>
+            <p>© 2025 SmileStory Inc. / WIA · World Certification Industry Association</p>
+            <p>WIA-CHILD-004: Parental Control Systems | Chapter 5 of 8</p>
+        </footer>
+    </div>
+</body>
+</html>

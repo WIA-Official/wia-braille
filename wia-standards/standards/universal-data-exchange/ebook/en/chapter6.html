@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: Real-Time Streaming and Pipelines - WIA-CORE-003</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 3rem; border-radius: 15px; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #6B7280; text-decoration: none; padding: 0.75rem 1.5rem; background: #0f172a; border-radius: 8px; }
+        .back-link:hover { background: #334155; }
+        .chapter-header { border-bottom: 3px solid #6B7280; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #6B7280; font-size: 1.2rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        h1 { font-size: 2.5rem; color: #e2e8f0; margin-top: 0.5rem; line-height: 1.3; }
+        h2 { color: #6B7280; margin: 2.5rem 0 1.5rem; font-size: 1.8rem; }
+        h3 { color: #94a3b8; margin: 2rem 0 1rem; font-size: 1.4rem; }
+        p { margin-bottom: 1.5rem; font-size: 1.1rem; }
+        .highlight-box { background: #0f172a; padding: 2rem; border-radius: 10px; border-left: 4px solid #6B7280; margin: 2rem 0; }
+        .code-block { background: #0f172a; padding: 1.5rem; border-radius: 8px; font-family: 'Monaco', monospace; overflow-x: auto; margin: 1.5rem 0; font-size: 0.95rem; }
+        ul, ol { margin: 1.5rem 0 1.5rem 2rem; }
+        li { margin-bottom: 0.75rem; font-size: 1.05rem; }
+        .navigation { display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav-button { padding: 1rem 2rem; background: #6B7280; color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s; }
+        .nav-button:hover { background: #4B5563; transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Table of Contents</a>
+        <div class="chapter-header">
+            <div class="chapter-number">Chapter 6</div>
+            <h1>Real-Time Streaming and Pipelines</h1>
+        </div>
+
+        <p>Batch processing has its place, but modern applications increasingly demand real-time data processing. User analytics need to update dashboards immediately, fraud detection must flag suspicious transactions instantly, and IoT systems process millions of sensor readings per second. This chapter explores how WIA-CORE-003 enables real-time data transformation and streaming pipelines that operate at internet scale.</p>
+
+        <h2>Streaming Fundamentals</h2>
+
+        <p>Streaming systems process unbounded data—continuous flows that have no predetermined end. Unlike batch jobs that process a fixed dataset and terminate, streaming jobs run indefinitely, processing events as they arrive. This paradigm shift requires different architectural patterns and mindsets.</p>
+
+        <h3>Key Streaming Concepts</h3>
+
+        <ul>
+            <li><strong>Event Time vs Processing Time:</strong> When the event occurred vs when the system processes it. Critical for handling out-of-order events and late arrivals.</li>
+            <li><strong>Windowing:</strong> Grouping infinite streams into finite chunks (tumbling windows, sliding windows, session windows) for aggregation and analysis.</li>
+            <li><strong>Watermarks:</strong> Signals indicating that no events with timestamps earlier than the watermark will arrive, enabling timely window closure.</li>
+            <li><strong>Backpressure:</strong> Mechanism for slow consumers to signal upstream producers to reduce rate, preventing system overload.</li>
+            <li><strong>Exactly-Once Semantics:</strong> Guarantee that each event is processed exactly one time, despite failures and retries.</li>
+        </ul>
+
+        <h2>Streaming Transformation Architecture</h2>
+
+        <div class="code-block">
+// Streaming Pipeline Definition
+
+stream_pipeline RealTimeAnalytics {
+    // Ingest from Kafka in JSON format
+    source {
+        kafka_stream(
+            topic: "user_events",
+            format: JSON,
+            schema: UserEvent@1.0,
+            consumer_group: "analytics_pipeline"
+        )
+    }
+
+    // Transform to internal representation
+    transform {
+        parse {
+            format: JSON,
+            schema: UserEvent@1.0,
+            error_handling: DeadLetter("events.parse_errors")
+        }
+
+        validate {
+            schema: UserEvent@1.0,
+            business_rules: EventValidationRules
+        }
+
+        enrich {
+            user_profile: async_lookup("redis://users/{user_id}"),
+            geolocation: geo_ip_lookup(source_ip),
+            device_info: parse_user_agent(user_agent)
+        }
+
+        map {
+            source_schema: UserEvent@1.0,
+            target_schema: EnrichedEvent@2.0,
+            mapping: UserEventEnrichmentMapping
+        }
+    }
+
+    // Window and aggregate
+    window {
+        type: TumblingWindow(duration: 5.minutes)
+        key_by: user_id
+        aggregate {
+            event_count: count(),
+            unique_pages: count_distinct(page_url),
+            total_duration: sum(session_duration),
+            last_activity: max(timestamp)
+        }
+    }
+
+    // Output to multiple sinks in different formats
+    sinks {
+        // Real-time dashboard (WebSocket, JSON)
+        websocket_sink(
+            endpoint: "wss://dashboard.example.com/events",
+            format: JSON,
+            schema: AggregatedMetrics@1.0
+        )
+
+        // Data warehouse (Parquet to S3)
+        s3_sink(
+            bucket: "analytics-datalake",
+            prefix: "events/date={date}/",
+            format: Parquet,
+            schema: EnrichedEvent@2.0,
+            partition_by: date,
+            flush_interval: 1.minute
+        )
+
+        // Elasticsearch for search (JSON)
+        elasticsearch_sink(
+            index: "user_events",
+            format: JSON,
+            schema: EnrichedEvent@2.0,
+            batch_size: 1000
+        )
+    }
+
+    // Performance and reliability settings
+    config {
+        parallelism: 16,
+        checkpoint_interval: 30.seconds,
+        state_backend: RocksDB,
+        exactly_once: true
+    }
+}
+        </div>
+
+        <h2>Format-Aware Streaming</h2>
+
+        <p>Different streaming platforms have different native formats. Kafka often uses Avro with a schema registry. AWS Kinesis typically uses JSON. Google Pub/Sub supports both. WIA-CORE-003's streaming layer abstracts these differences, allowing transparent format conversion in stream processing.</p>
+
+        <div class="code-block">
+// Multi-Format Stream Processing
+
+// Producer publishes JSON to Kafka
+producer.send(
+    topic: "orders",
+    key: order_id,
+    value: order_data,
+    format: JSON,
+    schema: Order@2.0
+)
+
+// Consumer A reads as Avro (automatic conversion)
+stream_a = kafka.consume(
+    topic: "orders",
+    format: Avro,  // Convert JSON → Avro automatically
+    schema: Order@2.0
+)
+
+// Consumer B reads as Protobuf (automatic conversion)
+stream_b = kafka.consume(
+    topic: "orders",
+    format: Protobuf,  // Convert JSON → Protobuf automatically
+    schema: Order@2.0
+)
+
+// Both consumers get the same data, different serialization
+stream_a.for_each(|order| process_avro(order))
+stream_b.for_each(|order| process_protobuf(order))
+        </div>
+
+        <h2>Stateful Stream Processing</h2>
+
+        <p>Many stream processing operations require maintaining state: aggregating metrics, joining streams, detecting patterns over time. WIA-CORE-003 provides stateful operators with automatic checkpointing and recovery.</p>
+
+        <h3>Aggregation with State</h3>
+
+        <div class="code-block">
+// Stateful Aggregation Example
+
+stream
+    .key_by(|event| event.user_id)
+    .window(TumblingWindow::of(Minutes(5)))
+    .aggregate(|key, events| {
+        // State is maintained per key (user_id)
+        // Automatically checkpointed for fault tolerance
+        AggregatedMetrics {
+            user_id: key,
+            total_events: events.count(),
+            total_revenue: events
+                .filter(|e| e.event_type == "purchase")
+                .map(|e| e.amount)
+                .sum(),
+            unique_products: events
+                .map(|e| e.product_id)
+                .collect::<HashSet<_>>()
+                .len()
+        }
+    })
+    .output_to(metrics_sink)
+        </div>
+
+        <h3>Stream Joins</h3>
+
+        <p>Joining two streams requires buffering events from both sides until matches are found. WIA-CORE-003 handles time-based joins with configurable windows and late event handling.</p>
+
+        <div class="code-block">
+// Join Two Streams
+
+// Stream 1: User clicks (JSON)
+let clicks_stream = kafka.consume(
+    topic: "clicks",
+    format: JSON,
+    schema: ClickEvent@1.0
+);
+
+// Stream 2: Ad impressions (Protobuf)
+let impressions_stream = kafka.consume(
+    topic: "impressions",
+    format: Protobuf,
+    schema: ImpressionEvent@1.0
+);
+
+// Join streams within 10-minute window
+let joined = clicks_stream
+    .join(impressions_stream)
+    .where(|click| click.ad_id)
+    .equal_to(|impression| impression.ad_id)
+    .window(TimeWindow::of(Minutes(10)))
+    .apply(|click, impression| {
+        // Combine data from both events
+        ClickAttribution {
+            ad_id: click.ad_id,
+            user_id: click.user_id,
+            impression_timestamp: impression.timestamp,
+            click_timestamp: click.timestamp,
+            time_to_click: click.timestamp - impression.timestamp
+        }
+    });
+
+// Output attribution data in Avro format
+joined.output_to(
+    kafka_sink(
+        topic: "attributions",
+        format: Avro,
+        schema: ClickAttribution@1.0
+    )
+);
+        </div>
+
+        <h2>Exactly-Once Processing</h2>
+
+        <p>In distributed systems, failures are inevitable. Exactly-once processing guarantees that despite failures, retries, and reprocessing, each event affects the system's state exactly one time. This is crucial for financial transactions, billing, and any scenario where duplicates or data loss are unacceptable.</p>
+
+        <div class="code-block">
+// Exactly-Once Configuration
+
+pipeline.configure_exactly_once(
+    // Checkpoint state periodically
+    checkpoint_interval: Duration::seconds(30),
+
+    // Use transactional sinks
+    sinks: vec![
+        TransactionalKafkaSink {
+            topic: "processed_events",
+            transactional_id: "pipeline-001",
+            enable_idempotence: true
+        },
+        TransactionalDatabaseSink {
+            connection: postgres_pool,
+            table: "events",
+            dedup_key: "event_id"  // Detect duplicates
+        }
+    ],
+
+    // Configure state backend for recovery
+    state_backend: RocksDBStateBackend {
+        checkpoint_path: "s3://checkpoints/pipeline-001/",
+        incremental_checkpoints: true
+    }
+)
+        </div>
+
+        <h2>Performance Optimization</h2>
+
+        <h3>Parallelization Strategies</h3>
+
+        <p>Stream processing frameworks distribute work across multiple parallel instances. WIA-CORE-003 optimizes parallelism based on message keys, ensuring related events are processed by the same instance to maintain consistency.</p>
+
+        <div class="code-block">
+// Parallelism Configuration
+
+pipeline
+    .set_parallelism(32)  // 32 parallel operators
+    .key_by(|event| event.user_id)  // Partition by user_id
+    .rebalance()  // Redistribute evenly across instances
+    .transform(expensive_transformation)
+    .set_parallelism(64)  // Increase parallelism for expensive step
+        </div>
+
+        <h3>Format-Specific Optimizations</h3>
+
+        <ul>
+            <li><strong>Avro:</strong> Uses object container files with block compression for efficient streaming</li>
+            <li><strong>Protobuf:</strong> Leverages wire-format efficiency and optional field skipping</li>
+            <li><strong>Parquet:</strong> Columnar format ideal for analytics sinks, with predicate pushdown</li>
+            <li><strong>JSON:</strong> Optimized parsers with streaming SAX-style parsing for large documents</li>
+        </ul>
+
+        <h2>Monitoring and Debugging</h2>
+
+        <p>Streaming pipelines are always-on systems that must be monitored continuously. WIA-CORE-003 provides comprehensive observability.</p>
+
+        <h3>Key Streaming Metrics</h3>
+
+        <ul>
+            <li><strong>Throughput:</strong> Events processed per second (input rate, output rate)</li>
+            <li><strong>Latency:</strong> Time from event generation to processing (p50, p95, p99, p999)</li>
+            <li><strong>Backlog:</strong> Number of unprocessed events (lag behind real-time)</li>
+            <li><strong>Error Rate:</strong> Percentage of events that fail processing</li>
+            <li><strong>Checkpoint Duration:</strong> Time to save state (affects recovery time)</li>
+            <li><strong>State Size:</strong> Memory used by operator state</li>
+            <li><strong>Watermark Lag:</strong> How far behind real-time the watermark is</li>
+        </ul>
+
+        <div class="code-block">
+// Metrics Export
+
+pipeline.enable_metrics(
+    MetricsConfig {
+        // Export to Prometheus
+        prometheus_exporter: PrometheusExporter {
+            port: 9090,
+            path: "/metrics"
+        },
+
+        // Custom metrics
+        custom_metrics: vec![
+            Counter::new("events_processed_total"),
+            Histogram::new("transformation_duration_ms"),
+            Gauge::new("current_backlog_size"),
+            Counter::new("format_conversion_errors")
+        ],
+
+        // Detailed logging
+        sample_rate: 0.01,  // Log 1% of events for debugging
+        log_transformations: true
+    }
+)
+        </div>
+
+        <h2>Backpressure Handling</h2>
+
+        <p>When downstream systems can't keep up with upstream data rates, backpressure mechanisms prevent system overload by slowing down producers.</p>
+
+        <div class="code-block">
+// Backpressure Configuration
+
+pipeline.configure_backpressure(
+    // Buffer up to 10000 events
+    buffer_size: 10_000,
+
+    // Strategy when buffer fills
+    overflow_strategy: OverflowStrategy::Block,
+    // Alternatives: DropOldest, DropNewest, Fail
+
+    // Slow down source if lag exceeds threshold
+    dynamic_rate_limiting: DynamicRateLimiter {
+        max_lag: 100_000,
+        min_rate: 100,  // Events per second
+        max_rate: 100_000
+    }
+)
+        </div>
+
+        <div class="highlight-box">
+            <h3>Streaming Best Practices</h3>
+            <ul>
+                <li>Design for event-time processing: use watermarks and handle late events</li>
+                <li>Keep state size bounded: use TTL and compaction strategies</li>
+                <li>Checkpoint frequently enough for acceptable recovery time</li>
+                <li>Monitor lag continuously: rising lag indicates capacity issues</li>
+                <li>Test failure scenarios: verify exactly-once semantics under failures</li>
+                <li>Use schemas for all events: enables validation and evolution</li>
+                <li>Set appropriate parallelism: balance resource usage and latency</li>
+                <li>Implement dead letter queues: capture unparseable events for investigation</li>
+            </ul>
+        </div>
+
+        <p>Real-time streaming enables responsive applications that react to events as they happen. With WIA-CORE-003's format-agnostic streaming layer, you can build pipelines that transform data across formats while maintaining the low latency and high throughput required for modern applications. In the next chapter, we'll explore how AI enhances data exchange through automatic schema inference and intelligent mapping generation.</p>
+
+        <div class="navigation">
+            <a href="chapter5.html" class="nav-button">← Previous Chapter</a>
+            <a href="chapter7.html" class="nav-button">Next Chapter →</a>
+        </div>
+    </div>
+</body>
+</html>

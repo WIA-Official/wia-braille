@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-SOC-003 E-Government - Interactive Simulator</title>
+    <style>
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --secondary: #3B82F6;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .lang-select {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .lang-select:hover { border-color: var(--primary); }
+        .lang-select:focus { outline: none; border-color: var(--primary); }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 40px 0;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, var(--primary), #34D399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 12px 24px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .tab:hover { border-color: var(--primary); }
+
+        /* Panel */
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid var(--border);
+        }
+        .panel.active { display: block; }
+        .panel h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Status Display */
+        .status-display {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .status-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .status-item {
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .status-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .status-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 5px;
+            color: var(--primary);
+        }
+
+        /* ID Card Display */
+        .id-card {
+            background: linear-gradient(135deg, #059669, #10B981);
+            border-radius: 16px;
+            padding: 30px;
+            color: white;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
+        }
+        .id-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .id-card-title {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .id-card-body {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+        .id-photo {
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+        .id-info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .id-field {
+            display: flex;
+            justify-content: space-between;
+        }
+        .id-field-label {
+            opacity: 0.9;
+            font-size: 0.85rem;
+        }
+        .id-field-value {
+            font-weight: bold;
+        }
+
+        /* Service Cards */
+        .service-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .service-card {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .service-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        .service-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .service-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .service-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .data-table th {
+            background: var(--bg);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        /* Logs */
+        .log-container {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .log-time {
+            color: var(--text-muted);
+        }
+        .log-info { color: var(--secondary); }
+        .log-warn { color: var(--warning); }
+        .log-error { color: var(--danger); }
+        .log-success { color: var(--primary); }
+
+        /* Footer */
+        footer {
+            margin-top: 50px;
+            padding: 30px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.8rem; }
+            header { flex-direction: column; }
+            .id-card-body { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🏛️ WIA-SOC-003 E-Government</div>
+            <select class="lang-select" id="languageSelect" onchange="changeLanguage()">
+                <option value="en">🇬🇧 English</option>
+                <option value="ko">🇰🇷 한국어 (Korean)</option>
+                <option value="zh">🇨🇳 中文 (Chinese)</option>
+                <option value="ja">🇯🇵 日本語 (Japanese)</option>
+                <option value="es">🇪🇸 Español (Spanish)</option>
+                <option value="fr">🇫🇷 Français (French)</option>
+                <option value="de">🇩🇪 Deutsch (German)</option>
+                <option value="it">🇮🇹 Italiano (Italian)</option>
+                <option value="pt">🇵🇹 Português (Portuguese)</option>
+                <option value="ru">🇷🇺 Русский (Russian)</option>
+                <option value="ar">🇸🇦 العربية (Arabic)</option>
+                <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
+                <option value="bn">🇧🇩 বাংলা (Bengali)</option>
+                <option value="id">🇮🇩 Bahasa Indonesia</option>
+                <option value="tr">🇹🇷 Türkçe (Turkish)</option>
+                <option value="vi">🇻🇳 Tiếng Việt (Vietnamese)</option>
+                <option value="th">🇹🇭 ไทย (Thai)</option>
+                <option value="pl">🇵🇱 Polski (Polish)</option>
+                <option value="uk">🇺🇦 Українська (Ukrainian)</option>
+                <option value="nl">🇳🇱 Nederlands (Dutch)</option>
+                <option value="sv">🇸🇪 Svenska (Swedish)</option>
+                <option value="da">🇩🇰 Dansk (Danish)</option>
+                <option value="no">🇳🇴 Norsk (Norwegian)</option>
+                <option value="fi">🇫🇮 Suomi (Finnish)</option>
+                <option value="cs">🇨🇿 Čeština (Czech)</option>
+                <option value="ro">🇷🇴 Română (Romanian)</option>
+                <option value="hu">🇭🇺 Magyar (Hungarian)</option>
+                <option value="el">🇬🇷 Ελληνικά (Greek)</option>
+                <option value="he">🇮🇱 עברית (Hebrew)</option>
+                <option value="fa">🇮🇷 فارسی (Persian)</option>
+                <option value="ur">🇵🇰 اردو (Urdu)</option>
+                <option value="ta">🇮🇳 தமிழ் (Tamil)</option>
+                <option value="te">🇮🇳 తెలుగు (Telugu)</option>
+                <option value="mr">🇮🇳 मराठी (Marathi)</option>
+                <option value="gu">🇮🇳 ગુજરાતી (Gujarati)</option>
+                <option value="kn">🇮🇳 ಕನ್ನಡ (Kannada)</option>
+                <option value="ml">🇮🇳 മലയാളം (Malayalam)</option>
+                <option value="pa">🇮🇳 ਪੰਜਾਬੀ (Punjabi)</option>
+                <option value="sw">🇰🇪 Kiswahili (Swahili)</option>
+                <option value="am">🇪🇹 አማርኛ (Amharic)</option>
+                <option value="yo">🇳🇬 Yorùbá (Yoruba)</option>
+                <option value="ig">🇳🇬 Igbo</option>
+                <option value="ha">🇳🇬 Hausa</option>
+                <option value="my">🇲🇲 မြန်မာ (Burmese)</option>
+                <option value="km">🇰🇭 ខ្មែរ (Khmer)</option>
+                <option value="lo">🇱🇦 ລາວ (Lao)</option>
+                <option value="ne">🇳🇵 नेपाली (Nepali)</option>
+                <option value="si">🇱🇰 සිංහල (Sinhala)</option>
+                <option value="ms">🇲🇾 Bahasa Melayu (Malay)</option>
+                <option value="tl">🇵🇭 Tagalog</option>
+                <option value="af">🇿🇦 Afrikaans</option>
+                <option value="zu">🇿🇦 isiZulu (Zulu)</option>
+                <option value="xh">🇿🇦 isiXhosa (Xhosa)</option>
+                <option value="sr">🇷🇸 Српски (Serbian)</option>
+                <option value="hr">🇭🇷 Hrvatski (Croatian)</option>
+                <option value="bg">🇧🇬 Български (Bulgarian)</option>
+                <option value="sk">🇸🇰 Slovenčina (Slovak)</option>
+                <option value="sl">🇸🇮 Slovenščina (Slovenian)</option>
+                <option value="lt">🇱🇹 Lietuvių (Lithuanian)</option>
+                <option value="lv">🇱🇻 Latviešu (Latvian)</option>
+                <option value="et">🇪🇪 Eesti (Estonian)</option>
+                <option value="sq">🇦🇱 Shqip (Albanian)</option>
+                <option value="mk">🇲🇰 Македонски (Macedonian)</option>
+                <option value="bs">🇧🇦 Bosanski (Bosnian)</option>
+                <option value="is">🇮🇸 Íslenska (Icelandic)</option>
+                <option value="mt">🇲🇹 Malti (Maltese)</option>
+                <option value="ga">🇮🇪 Gaeilge (Irish)</option>
+                <option value="cy">🏴󠁧󠁢󠁷󠁬󠁳󠁿 Cymraeg (Welsh)</option>
+                <option value="eu">🏴 Euskara (Basque)</option>
+                <option value="ca">🏴 Català (Catalan)</option>
+                <option value="gl">🏴 Galego (Galician)</option>
+                <option value="ka">🇬🇪 ქართული (Georgian)</option>
+                <option value="hy">🇦🇲 Հայերեն (Armenian)</option>
+                <option value="az">🇦🇿 Azərbaycan (Azerbaijani)</option>
+                <option value="kk">🇰🇿 Қазақ (Kazakh)</option>
+                <option value="uz">🇺🇿 Oʻzbek (Uzbek)</option>
+                <option value="mn">🇲🇳 Монгол (Mongolian)</option>
+                <option value="ps">🇦🇫 پښتو (Pashto)</option>
+                <option value="ku">🏴 Kurdî (Kurdish)</option>
+                <option value="sd">🇵🇰 سنڌي (Sindhi)</option>
+                <option value="ug">🇨🇳 ئۇيغۇر (Uyghur)</option>
+                <option value="bo">🇨🇳 བོད་ (Tibetan)</option>
+                <option value="dz">🇧🇹 རྫོང་ཁ (Dzongkha)</option>
+                <option value="jv">🇮🇩 Basa Jawa (Javanese)</option>
+                <option value="su">🇮🇩 Basa Sunda (Sundanese)</option>
+                <option value="mg">🇲🇬 Malagasy</option>
+                <option value="ny">🇲🇼 Chichewa</option>
+                <option value="sn">🇿🇼 chiShona (Shona)</option>
+                <option value="st">🇱🇸 Sesotho (Sotho)</option>
+                <option value="so">🇸🇴 Soomaali (Somali)</option>
+                <option value="rw">🇷🇼 Kinyarwanda</option>
+                <option value="lg">🇺🇬 Luganda</option>
+                <option value="wo">🇸🇳 Wolof</option>
+                <option value="ff">🇸🇳 Fulfulde (Fula)</option>
+                <option value="ti">🇪🇷 ትግርኛ (Tigrinya)</option>
+                <option value="om">🇪🇹 Oromoo (Oromo)</option>
+                <option value="gd">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Gàidhlig (Scottish Gaelic)</option>
+                <option value="lb">🇱🇺 Lëtzebuergesch (Luxembourgish)</option>
+                <option value="fy">🇳🇱 Frysk (Frisian)</option>
+            </select>
+        </header>
+
+        <section class="hero">
+            <h1 data-lang="title">E-Government Simulator</h1>
+            <p data-lang="subtitle">Interactive demo of WIA-SOC-003 standard</p>
+        </section>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showPanel('services')" data-lang="tab-services">Citizen Services</button>
+            <button class="tab" onclick="showPanel('identity')" data-lang="tab-identity">Identity Verification</button>
+            <button class="tab" onclick="showPanel('request')" data-lang="tab-request">Service Request</button>
+            <button class="tab" onclick="showPanel('analytics')" data-lang="tab-analytics">Analytics</button>
+            <button class="tab" onclick="showPanel('logs')" data-lang="tab-logs">System Logs</button>
+        </div>
+
+        <!-- Services Panel -->
+        <div id="services" class="panel active">
+            <h2 data-lang="services-title">Available Citizen Services</h2>
+
+            <div class="status-display">
+                <div class="status-icon">🏛️</div>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label" data-lang="status-users">Active Users</div>
+                        <div class="status-value" id="activeUsers">24,567</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label" data-lang="status-services">Services</div>
+                        <div class="status-value" id="serviceCount">142</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label" data-lang="status-uptime">Uptime</div>
+                        <div class="status-value" id="uptime">99.97%</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label" data-lang="status-satisfaction">Satisfaction</div>
+                        <div class="status-value" id="satisfaction">4.8/5.0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-cards">
+                <div class="service-card" onclick="selectService('tax')">
+                    <div class="service-icon">💰</div>
+                    <div class="service-title" data-lang="service-tax">Tax Filing</div>
+                    <div class="service-desc" data-lang="service-tax-desc">File and track tax returns</div>
+                </div>
+                <div class="service-card" onclick="selectService('health')">
+                    <div class="service-icon">🏥</div>
+                    <div class="service-title" data-lang="service-health">Healthcare</div>
+                    <div class="service-desc" data-lang="service-health-desc">Medical records and appointments</div>
+                </div>
+                <div class="service-card" onclick="selectService('license')">
+                    <div class="service-icon">🚗</div>
+                    <div class="service-title" data-lang="service-license">Driver's License</div>
+                    <div class="service-desc" data-lang="service-license-desc">Renew or apply for license</div>
+                </div>
+                <div class="service-card" onclick="selectService('business')">
+                    <div class="service-icon">🏢</div>
+                    <div class="service-title" data-lang="service-business">Business Registration</div>
+                    <div class="service-desc" data-lang="service-business-desc">Start a new business</div>
+                </div>
+                <div class="service-card" onclick="selectService('voting')">
+                    <div class="service-icon">🗳️</div>
+                    <div class="service-title" data-lang="service-voting">Voter Registration</div>
+                    <div class="service-desc" data-lang="service-voting-desc">Register and vote online</div>
+                </div>
+                <div class="service-card" onclick="selectService('property')">
+                    <div class="service-icon">🏠</div>
+                    <div class="service-title" data-lang="service-property">Property Records</div>
+                    <div class="service-desc" data-lang="service-property-desc">View and manage properties</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Identity Panel -->
+        <div id="identity" class="panel">
+            <h2 data-lang="identity-title">Digital Identity Verification</h2>
+
+            <div class="id-card">
+                <div class="id-card-header">
+                    <div class="id-card-title" data-lang="id-card-title">Digital Citizen ID</div>
+                    <div>🔐</div>
+                </div>
+                <div class="id-card-body">
+                    <div class="id-photo">👤</div>
+                    <div class="id-info">
+                        <div class="id-field">
+                            <span class="id-field-label" data-lang="id-name">Name:</span>
+                            <span class="id-field-value">Kim MinJun</span>
+                        </div>
+                        <div class="id-field">
+                            <span class="id-field-label" data-lang="id-number">ID Number:</span>
+                            <span class="id-field-value">123456-7890123</span>
+                        </div>
+                        <div class="id-field">
+                            <span class="id-field-label" data-lang="id-dob">Date of Birth:</span>
+                            <span class="id-field-value">1990-05-15</span>
+                        </div>
+                        <div class="id-field">
+                            <span class="id-field-label" data-lang="id-issued">Issued:</span>
+                            <span class="id-field-value">2020-01-01</span>
+                        </div>
+                        <div class="id-field">
+                            <span class="id-field-label" data-lang="id-expires">Expires:</span>
+                            <span class="id-field-value">2030-12-31</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label data-lang="form-verify-method">Verification Method</label>
+                    <select id="verifyMethod">
+                        <option value="biometric" data-lang="verify-biometric">Biometric (Face/Fingerprint)</option>
+                        <option value="otp" data-lang="verify-otp">One-Time Password (SMS)</option>
+                        <option value="token" data-lang="verify-token">Security Token</option>
+                        <option value="certificate" data-lang="verify-cert">Digital Certificate</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-lang="form-security-level">Security Level</label>
+                    <select id="securityLevel">
+                        <option value="low">Low (Single Factor)</option>
+                        <option value="medium" selected>Medium (Two Factor)</option>
+                        <option value="high">High (Multi Factor)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="verifyIdentity()" data-lang="btn-verify">🔐 Verify Identity</button>
+                <button class="btn btn-secondary" onclick="updateID()" data-lang="btn-update-id">📝 Update Information</button>
+            </div>
+        </div>
+
+        <!-- Request Panel -->
+        <div id="request" class="panel">
+            <h2 data-lang="request-title">Service Request Form</h2>
+
+            <div class="form-group">
+                <label data-lang="form-service-type">Service Type</label>
+                <select id="serviceType">
+                    <option value="tax" data-lang="opt-tax">Tax Filing</option>
+                    <option value="health" data-lang="opt-health">Healthcare</option>
+                    <option value="license" data-lang="opt-license">Driver's License</option>
+                    <option value="business" data-lang="opt-business">Business Registration</option>
+                    <option value="voting" data-lang="opt-voting">Voter Registration</option>
+                    <option value="property" data-lang="opt-property">Property Records</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-lang="form-priority">Priority</label>
+                    <select id="priority">
+                        <option value="normal" data-lang="priority-normal">Normal</option>
+                        <option value="urgent" data-lang="priority-urgent">Urgent</option>
+                        <option value="critical" data-lang="priority-critical">Critical</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-lang="form-preferred-date">Preferred Date</label>
+                    <input type="date" id="preferredDate">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-lang="form-description">Description</label>
+                <textarea id="requestDesc" rows="4" placeholder="Enter detailed description..."></textarea>
+            </div>
+
+            <button class="btn btn-primary" onclick="submitRequest()" data-lang="btn-submit">📤 Submit Request</button>
+
+            <table class="data-table" style="margin-top: 30px;">
+                <thead>
+                    <tr>
+                        <th data-lang="th-request-id">Request ID</th>
+                        <th data-lang="th-service">Service</th>
+                        <th data-lang="th-date">Date</th>
+                        <th data-lang="th-status">Status</th>
+                        <th data-lang="th-action">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="requestBody">
+                    <tr>
+                        <td>REQ-2025-001</td>
+                        <td>Tax Filing</td>
+                        <td>2025-12-20</td>
+                        <td><span style="color: var(--primary);">✅ Completed</span></td>
+                        <td><button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;">View</button></td>
+                    </tr>
+                    <tr>
+                        <td>REQ-2025-002</td>
+                        <td>Healthcare</td>
+                        <td>2025-12-22</td>
+                        <td><span style="color: var(--warning);">⏳ In Progress</span></td>
+                        <td><button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;">View</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Analytics Panel -->
+        <div id="analytics" class="panel">
+            <h2 data-lang="analytics-title">Government Analytics Dashboard</h2>
+
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-label" data-lang="stat-total-citizens">Total Citizens</div>
+                    <div class="status-value">5.2M</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label" data-lang="stat-digital-adoption">Digital Adoption</div>
+                    <div class="status-value">87%</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label" data-lang="stat-transactions">Monthly Transactions</div>
+                    <div class="status-value">892K</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label" data-lang="stat-avg-time">Avg Response Time</div>
+                    <div class="status-value">2.3 days</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label" data-lang="stat-cost-savings">Cost Savings</div>
+                    <div class="status-value">$45M/yr</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label" data-lang="stat-security">Security Score</div>
+                    <div class="status-value">98/100</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3 style="color: var(--text); margin-bottom: 15px;" data-lang="top-services-title">Top Services (This Month)</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th data-lang="th-rank">Rank</th>
+                            <th data-lang="th-service-name">Service</th>
+                            <th data-lang="th-requests">Requests</th>
+                            <th data-lang="th-satisfaction-rate">Satisfaction</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>💰 Tax Filing</td>
+                            <td>142,567</td>
+                            <td>4.9/5.0</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>🏥 Healthcare</td>
+                            <td>98,234</td>
+                            <td>4.8/5.0</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>🚗 Driver's License</td>
+                            <td>76,891</td>
+                            <td>4.7/5.0</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>🏢 Business Registration</td>
+                            <td>45,123</td>
+                            <td>4.6/5.0</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>🗳️ Voter Registration</td>
+                            <td>34,567</td>
+                            <td>4.9/5.0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Logs Panel -->
+        <div id="logs" class="panel">
+            <h2 data-lang="logs-title">System Activity Logs</h2>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry log-info">
+                    <span class="log-time">[2025-12-26 14:32:15]</span>
+                    <span class="log-info">[INFO]</span> System initialized successfully
+                </div>
+                <div class="log-entry log-success">
+                    <span class="log-time">[2025-12-26 14:35:20]</span>
+                    <span class="log-success">[SUCCESS]</span> User authentication: kim.minjun@example.com
+                </div>
+                <div class="log-entry log-info">
+                    <span class="log-time">[2025-12-26 14:35:45]</span>
+                    <span class="log-info">[INFO]</span> Service request submitted: REQ-2025-003
+                </div>
+                <div class="log-entry log-warn">
+                    <span class="log-time">[2025-12-26 14:40:12]</span>
+                    <span class="log-warn">[WARN]</span> High traffic detected - scaling resources
+                </div>
+                <div class="log-entry log-info">
+                    <span class="log-time">[2025-12-26 14:41:00]</span>
+                    <span class="log-info">[INFO]</span> Auto-scaling completed: +5 instances
+                </div>
+                <div class="log-entry log-success">
+                    <span class="log-time">[2025-12-26 14:45:30]</span>
+                    <span class="log-success">[SUCCESS]</span> Document verification completed: DOC-8765
+                </div>
+                <div class="log-entry log-info">
+                    <span class="log-time">[2025-12-26 14:50:15]</span>
+                    <span class="log-info">[INFO]</span> Backup initiated: daily-backup-20251226
+                </div>
+                <div class="log-entry log-success">
+                    <span class="log-time">[2025-12-26 15:00:00]</span>
+                    <span class="log-success">[SUCCESS]</span> Backup completed: 2.3GB data archived
+                </div>
+                <div class="log-entry log-info">
+                    <span class="log-time">[2025-12-26 15:05:22]</span>
+                    <span class="log-info">[INFO]</span> Security audit passed: All systems compliant
+                </div>
+                <div class="log-entry log-success">
+                    <span class="log-time">[2025-12-26 15:10:45]</span>
+                    <span class="log-success">[SUCCESS]</span> Tax return processed: TAX-2025-4567
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="clearLogs()" style="margin-top: 15px;" data-lang="btn-clear-logs">🗑️ Clear Logs</button>
+        </div>
+
+        <footer>
+            <p>WIA - World Certification Industry Association</p>
+            <p data-lang="footer-philosophy">Philosophy: 弘益人間 (Hongik Ingan) - Benefit All Humanity</p>
+            <p style="margin-top: 10px;">
+                <a href="https://github.com/WIA-Official/wia-standards" target="_blank">GitHub</a> |
+                <a href="https://wiastandards.com" target="_blank">WIA Standards</a> |
+                <a href="../README.md">Documentation</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                title: "E-Government Simulator",
+                subtitle: "Interactive demo of WIA-SOC-003 standard",
+                "tab-services": "Citizen Services",
+                "tab-identity": "Identity Verification",
+                "tab-request": "Service Request",
+                "tab-analytics": "Analytics",
+                "tab-logs": "System Logs",
+                "services-title": "Available Citizen Services",
+                "status-users": "Active Users",
+                "status-services": "Services",
+                "status-uptime": "Uptime",
+                "status-satisfaction": "Satisfaction",
+                "service-tax": "Tax Filing",
+                "service-tax-desc": "File and track tax returns",
+                "service-health": "Healthcare",
+                "service-health-desc": "Medical records and appointments",
+                "service-license": "Driver's License",
+                "service-license-desc": "Renew or apply for license",
+                "service-business": "Business Registration",
+                "service-business-desc": "Start a new business",
+                "service-voting": "Voter Registration",
+                "service-voting-desc": "Register and vote online",
+                "service-property": "Property Records",
+                "service-property-desc": "View and manage properties",
+                "identity-title": "Digital Identity Verification",
+                "id-card-title": "Digital Citizen ID",
+                "id-name": "Name:",
+                "id-number": "ID Number:",
+                "id-dob": "Date of Birth:",
+                "id-issued": "Issued:",
+                "id-expires": "Expires:",
+                "form-verify-method": "Verification Method",
+                "verify-biometric": "Biometric (Face/Fingerprint)",
+                "verify-otp": "One-Time Password (SMS)",
+                "verify-token": "Security Token",
+                "verify-cert": "Digital Certificate",
+                "form-security-level": "Security Level",
+                "btn-verify": "🔐 Verify Identity",
+                "btn-update-id": "📝 Update Information",
+                "request-title": "Service Request Form",
+                "form-service-type": "Service Type",
+                "opt-tax": "Tax Filing",
+                "opt-health": "Healthcare",
+                "opt-license": "Driver's License",
+                "opt-business": "Business Registration",
+                "opt-voting": "Voter Registration",
+                "opt-property": "Property Records",
+                "form-priority": "Priority",
+                "priority-normal": "Normal",
+                "priority-urgent": "Urgent",
+                "priority-critical": "Critical",
+                "form-preferred-date": "Preferred Date",
+                "form-description": "Description",
+                "btn-submit": "📤 Submit Request",
+                "th-request-id": "Request ID",
+                "th-service": "Service",
+                "th-date": "Date",
+                "th-status": "Status",
+                "th-action": "Action",
+                "analytics-title": "Government Analytics Dashboard",
+                "stat-total-citizens": "Total Citizens",
+                "stat-digital-adoption": "Digital Adoption",
+                "stat-transactions": "Monthly Transactions",
+                "stat-avg-time": "Avg Response Time",
+                "stat-cost-savings": "Cost Savings",
+                "stat-security": "Security Score",
+                "top-services-title": "Top Services (This Month)",
+                "th-rank": "Rank",
+                "th-service-name": "Service",
+                "th-requests": "Requests",
+                "th-satisfaction-rate": "Satisfaction",
+                "logs-title": "System Activity Logs",
+                "btn-clear-logs": "🗑️ Clear Logs",
+                "footer-philosophy": "Philosophy: 弘益人間 (Hongik Ingan) - Benefit All Humanity"
+            },
+            ko: {
+                title: "전자정부 시뮬레이터",
+                subtitle: "WIA-SOC-003 표준 인터랙티브 데모",
+                "tab-services": "시민 서비스",
+                "tab-identity": "신원 인증",
+                "tab-request": "서비스 요청",
+                "tab-analytics": "분석",
+                "tab-logs": "시스템 로그",
+                "services-title": "이용 가능한 시민 서비스",
+                "status-users": "활성 사용자",
+                "status-services": "서비스",
+                "status-uptime": "가동률",
+                "status-satisfaction": "만족도",
+                "service-tax": "세금 신고",
+                "service-tax-desc": "세금 신고 및 조회",
+                "service-health": "보건의료",
+                "service-health-desc": "의료 기록 및 예약",
+                "service-license": "운전면허",
+                "service-license-desc": "면허 갱신 및 신청",
+                "service-business": "사업자 등록",
+                "service-business-desc": "새 사업 시작",
+                "service-voting": "유권자 등록",
+                "service-voting-desc": "온라인 등록 및 투표",
+                "service-property": "부동산 기록",
+                "service-property-desc": "부동산 조회 및 관리",
+                "identity-title": "디지털 신원 인증",
+                "id-card-title": "디지털 시민증",
+                "id-name": "이름:",
+                "id-number": "주민번호:",
+                "id-dob": "생년월일:",
+                "id-issued": "발급일:",
+                "id-expires": "만료일:",
+                "form-verify-method": "인증 방법",
+                "verify-biometric": "생체 인증 (얼굴/지문)",
+                "verify-otp": "일회용 비밀번호 (SMS)",
+                "verify-token": "보안 토큰",
+                "verify-cert": "디지털 인증서",
+                "form-security-level": "보안 수준",
+                "btn-verify": "🔐 신원 인증",
+                "btn-update-id": "📝 정보 업데이트",
+                "request-title": "서비스 요청 양식",
+                "form-service-type": "서비스 유형",
+                "opt-tax": "세금 신고",
+                "opt-health": "보건의료",
+                "opt-license": "운전면허",
+                "opt-business": "사업자 등록",
+                "opt-voting": "유권자 등록",
+                "opt-property": "부동산 기록",
+                "form-priority": "우선순위",
+                "priority-normal": "보통",
+                "priority-urgent": "긴급",
+                "priority-critical": "긴급",
+                "form-preferred-date": "희망 날짜",
+                "form-description": "설명",
+                "btn-submit": "📤 요청 제출",
+                "th-request-id": "요청 ID",
+                "th-service": "서비스",
+                "th-date": "날짜",
+                "th-status": "상태",
+                "th-action": "동작",
+                "analytics-title": "정부 분석 대시보드",
+                "stat-total-citizens": "총 시민",
+                "stat-digital-adoption": "디지털 채택률",
+                "stat-transactions": "월간 거래",
+                "stat-avg-time": "평균 응답 시간",
+                "stat-cost-savings": "비용 절감",
+                "stat-security": "보안 점수",
+                "top-services-title": "인기 서비스 (이번 달)",
+                "th-rank": "순위",
+                "th-service-name": "서비스",
+                "th-requests": "요청",
+                "th-satisfaction-rate": "만족도",
+                "logs-title": "시스템 활동 로그",
+                "btn-clear-logs": "🗑️ 로그 지우기",
+                "footer-philosophy": "철학: 弘益人間 (홍익인간) - 널리 인간을 이롭게 하라"
+            }
+        };
+
+        function changeLanguage() {
+            const lang = document.getElementById('languageSelect').value;
+            const t = translations[lang] || translations.en;
+
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                const key = el.getAttribute('data-lang');
+                if (t[key]) {
+                    if (el.tagName === 'OPTION') {
+                        el.textContent = t[key];
+                    } else if (el.tagName === 'BUTTON' || el.tagName === 'LABEL' ||
+                               el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'H3' ||
+                               el.tagName === 'P' || el.tagName === 'TH' ||
+                               el.classList.contains('status-label') ||
+                               el.classList.contains('service-title') ||
+                               el.classList.contains('service-desc')) {
+                        el.textContent = t[key];
+                    }
+                }
+            });
+        }
+
+        function showPanel(panelId) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(panelId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function selectService(service) {
+            alert('Selected service: ' + service);
+        }
+
+        function verifyIdentity() {
+            alert('Identity verification initiated!');
+        }
+
+        function updateID() {
+            alert('ID information update requested!');
+        }
+
+        function submitRequest() {
+            alert('Service request submitted successfully!');
+        }
+
+        function clearLogs() {
+            document.getElementById('logContainer').innerHTML = '<div class="log-entry log-info"><span class="log-time">[' + new Date().toISOString().replace('T', ' ').substr(0, 19) + ']</span> <span class="log-info">[INFO]</span> Logs cleared</div>';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            changeLanguage();
+        });
+    </script>
+</body>
+</html>

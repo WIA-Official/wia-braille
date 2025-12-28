@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제5장: Phase 2: 구현 | WIA-NEXT_GEN_D</title>
+    <style>
+        :root { --bg: #0f172a; --bg-secondary: #1e293b; --bg-tertiary: #334155; --primary: #8B5CF6; --text: #f1f5f9; --text-secondary: #cbd5e1; --border: #475569; --success: #10b981; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--bg-secondary); padding: 3rem; border-radius: 10px; }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        h3 { color: var(--primary); font-size: 1.4rem; margin: 2rem 0 1rem; }
+        .chapter-number { color: var(--text-secondary); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
+        p { margin: 1rem 0; text-align: justify; }
+        .highlight-box { background: var(--bg-tertiary); border-left: 4px solid var(--primary); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 1.5rem; margin: 2rem 0; border-radius: 5px; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-tertiary); color: var(--primary); font-weight: bold; }
+        tr:hover { background: var(--bg-tertiary); }
+        .nav-buttons { display: flex; justify-content: space-between; margin: 3rem 0; padding-top: 2rem; border-top: 1px solid var(--border); }
+        .btn { padding: 0.75rem 1.5rem; background: var(--primary); color: var(--bg); text-decoration: none; border-radius: 5px; transition: all 0.3s ease; }
+        .btn:hover { background: var(--success); transform: translateY(-2px); }
+        code { background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', monospace; color: var(--success); }
+        pre { background: var(--bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1.5rem 0; border: 1px solid var(--border); }
+        pre code { background: transparent; padding: 0; }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+        .stat-card { background: var(--bg); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid var(--primary); }
+        .stat-number { font-size: 2rem; color: var(--primary); font-weight: bold; }
+        .stat-label { color: var(--text-secondary); margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="chapter-number">제5장</p>
+        <h1>🔧 Phase 2: 구현</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-top: 1rem;">
+            차세대 데이터 저장소 기술의 실제 구현 방법론과 WIA-NEXT_GEN_D 표준 기반 배포 전략을 학습합니다.
+        </p>
+
+        <h2>DNA 저장소 구현</h2>
+        <p>
+            DNA 데이터 저장소 시스템의 구현은 생물학적 합성과 디지털 기술의 융합을 필요로 합니다. 구현 과정은 인코딩 파이프라인 구축, DNA 합성 시스템 통합, 시퀀싱 인프라 배포, 그리고 데이터 검색 워크플로우 자동화의 네 가지 핵심 단계로 구성됩니다.
+        </p>
+
+        <h3>DNA 인코딩 파이프라인</h3>
+        <p>
+            바이너리 데이터를 DNA 염기 서열(A, T, G, C)로 변환하는 인코딩 시스템은 오류 정정 코드와 함께 구현되어야 합니다. 일반적으로 Reed-Solomon 코드 또는 LDPC(Low-Density Parity-Check) 코드가 사용되며, 이는 합성 및 시퀀싱 과정에서 발생하는 오류를 복구할 수 있게 합니다.
+        </p>
+
+        <pre><code>// DNA 인코딩 시스템 구현 예시
+class DNAEncoder {
+    private readonly baseMapping = {
+        '00': 'A', '01': 'T', '10': 'G', '11': 'C'
+    };
+
+    encode(binaryData: Uint8Array): string {
+        let dnaSequence = '';
+        for (const byte of binaryData) {
+            for (let i = 6; i >= 0; i -= 2) {
+                const bits = (byte >> i) & 0b11;
+                dnaSequence += this.baseMapping[bits.toString(2).padStart(2, '0')];
+            }
+        }
+        return this.addErrorCorrection(dnaSequence);
+    }
+
+    private addErrorCorrection(sequence: string): string {
+        // Reed-Solomon 오류 정정 코드 추가
+        return ReedSolomon.encode(sequence, { redundancy: 0.3 });
+    }
+}</code></pre>
+
+        <table>
+            <thead>
+                <tr><th>인코딩 방식</th><th>밀도 (bits/nt)</th><th>오류율</th><th>용도</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>단순 2-bit 매핑</td><td>2.0</td><td>10^-2</td><td>프로토타입</td></tr>
+                <tr><td>Fountain Code</td><td>1.8</td><td>10^-4</td><td>장기 보관</td></tr>
+                <tr><td>Goldman Encoding</td><td>1.58</td><td>10^-6</td><td>고신뢰성</td></tr>
+                <tr><td>HEDGES</td><td>1.98</td><td>10^-9</td><td>엔터프라이즈</td></tr>
+            </tbody>
+        </table>
+
+        <h2>홀로그래픽 저장소 구현</h2>
+        <p>
+            홀로그래픽 데이터 저장소 시스템은 레이저 광학 시스템, 공간 광 변조기(SLM), 그리고 감광성 미디어의 정밀한 통합을 필요로 합니다. 구현 시 광학 경로의 안정성, 환경 제어, 그리고 데이터 페이지 관리가 핵심 고려사항입니다.
+        </p>
+
+        <h3>광학 시스템 구성</h3>
+        <div class="info-box">
+            <p><strong>홀로그래픽 기록 시스템 구성요소:</strong></p>
+            <ul>
+                <li><strong>레이저 광원:</strong> 532nm 녹색 레이저 (출력 500mW~2W)</li>
+                <li><strong>빔 스플리터:</strong> 참조광과 물체광 분리</li>
+                <li><strong>SLM (공간 광 변조기):</strong> 1920×1080 픽셀, 8μm 피치</li>
+                <li><strong>기록 미디어:</strong> 포토폴리머 또는 LiNbO3 결정</li>
+                <li><strong>CMOS 센서:</strong> 고속 데이터 읽기용 (1Gbps+)</li>
+            </ul>
+        </div>
+
+        <table>
+            <thead>
+                <tr><th>구성요소</th><th>사양</th><th>공급업체</th><th>예상 비용</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>녹색 레이저</td><td>532nm, 1W</td><td>Coherent, Spectra</td><td>$5,000~$15,000</td></tr>
+                <tr><td>SLM</td><td>4K, 60Hz</td><td>Hamamatsu, Holoeye</td><td>$20,000~$50,000</td></tr>
+                <tr><td>포토폴리머</td><td>1mm 두께</td><td>Covestro, DuPont</td><td>$100/디스크</td></tr>
+                <tr><td>정밀 스테이지</td><td>10nm 분해능</td><td>Newport, Thorlabs</td><td>$10,000~$30,000</td></tr>
+            </tbody>
+        </table>
+
+        <h2>양자 저장소 구현</h2>
+        <p>
+            양자 메모리 시스템의 구현은 극저온 환경 구축, 큐비트 제어 시스템, 양자 오류 정정 프로토콜의 세 가지 핵심 영역을 포함합니다. 현재 가장 성숙한 플랫폼은 초전도 큐비트와 이온 트랩 시스템입니다.
+        </p>
+
+        <h3>극저온 인프라</h3>
+        <p>
+            초전도 큐비트 기반 시스템은 10~20mK의 극저온 환경을 필요로 합니다. 희석 냉동기(Dilution Refrigerator)는 다단계 냉각을 통해 이러한 온도를 달성하며, 각 단계에서 적절한 열 차폐와 배선 관리가 필수적입니다.
+        </p>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-number">15mK</div>
+                <div class="stat-label">동작 온도</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1000+</div>
+                <div class="stat-label">큐비트 수</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">99.9%</div>
+                <div class="stat-label">게이트 충실도</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">100μs</div>
+                <div class="stat-label">결맞음 시간</div>
+            </div>
+        </div>
+
+        <h2>통합 구현 아키텍처</h2>
+        <p>
+            WIA-NEXT_GEN_D 표준을 준수하는 차세대 저장소 시스템은 계층화된 아키텍처를 통해 다양한 저장 기술을 통합합니다. 이 아키텍처는 데이터 접근 패턴에 따라 적절한 저장 계층으로 자동 배치하는 지능형 티어링을 지원합니다.
+        </p>
+
+        <pre><code>// 하이브리드 저장소 관리 시스템
+interface StorageTier {
+    type: 'flash' | 'holographic' | 'dna' | 'quantum';
+    capacity: number;      // 테라바이트
+    latency: number;       // 밀리초
+    durability: number;    // 년
+    costPerTB: number;     // USD
+}
+
+class HybridStorageManager {
+    private tiers: StorageTier[] = [
+        { type: 'flash', capacity: 100, latency: 0.1, durability: 5, costPerTB: 100 },
+        { type: 'holographic', capacity: 1000, latency: 100, durability: 50, costPerTB: 10 },
+        { type: 'dna', capacity: 100000, latency: 3600000, durability: 1000, costPerTB: 1 }
+    ];
+
+    selectTier(accessFrequency: string, retentionYears: number): StorageTier {
+        if (accessFrequency === 'hot') return this.tiers[0];
+        if (retentionYears > 100) return this.tiers[2];
+        return this.tiers[1];
+    }
+}</code></pre>
+
+        <h2>보안 구현</h2>
+        <p>
+            차세대 저장소 시스템의 보안 구현은 전송 중 암호화, 저장 시 암호화, 접근 제어, 그리고 감사 로깅의 네 가지 계층으로 구성됩니다. DNA 저장소의 경우 물리적 보안도 중요한 고려사항입니다.
+        </p>
+
+        <div class="highlight-box">
+            <h3>보안 구현 체크리스트</h3>
+            <ul>
+                <li>AES-256-GCM 암호화 적용</li>
+                <li>HSM(Hardware Security Module) 통합</li>
+                <li>다중 인증(MFA) 구현</li>
+                <li>역할 기반 접근 제어(RBAC)</li>
+                <li>실시간 위협 탐지</li>
+                <li>정기적 보안 감사</li>
+            </ul>
+        </div>
+
+        <h2>성능 최적화</h2>
+        <p>
+            구현된 시스템의 성능 최적화는 캐싱 전략, 병렬 처리, 압축 알고리즘 선택에 따라 크게 달라집니다. WIA-NEXT_GEN_D 표준은 각 저장 기술에 대한 최적화 가이드라인을 제공합니다.
+        </p>
+
+        <table>
+            <thead>
+                <tr><th>최적화 영역</th><th>기법</th><th>예상 개선</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>읽기 캐싱</td><td>Redis 클러스터</td><td>100x 지연시간 감소</td></tr>
+                <tr><td>쓰기 버퍼링</td><td>비동기 배치 처리</td><td>10x 처리량 증가</td></tr>
+                <tr><td>데이터 압축</td><td>LZ4 + 중복제거</td><td>60% 용량 절감</td></tr>
+                <tr><td>병렬 처리</td><td>MapReduce 파이프라인</td><td>8x 속도 향상</td></tr>
+            </tbody>
+        </table>
+
+        <h2>모니터링 및 운영</h2>
+        <p>
+            운영 환경에서의 안정적인 서비스 제공을 위해 종합적인 모니터링 시스템이 필수적입니다. 시스템 상태, 성능 메트릭, 오류 로그, 용량 추세를 실시간으로 추적하고 임계값 기반 알림을 구성해야 합니다.
+        </p>
+
+        <div class="info-box">
+            <h3>핵심 모니터링 메트릭</h3>
+            <ul>
+                <li><strong>가용성:</strong> 99.99% 이상 유지</li>
+                <li><strong>지연시간:</strong> P99 기준 SLA 준수</li>
+                <li><strong>오류율:</strong> 0.01% 미만 유지</li>
+                <li><strong>용량 사용률:</strong> 80% 도달 시 알림</li>
+                <li><strong>복제 지연:</strong> 5분 이내 동기화</li>
+            </ul>
+        </div>
+
+        <h2>배포 자동화</h2>
+        <p>
+            차세대 저장소 시스템의 효과적인 배포를 위해서는 Infrastructure as Code(IaC)와 CI/CD 파이프라인의 통합이 필수적입니다. Terraform, Kubernetes, Ansible을 조합하여 반복 가능하고 일관된 배포 환경을 구축합니다.
+        </p>
+
+        <pre><code># Terraform을 이용한 DNA 저장소 인프라 프로비저닝
+resource "aws_lambda_function" "dna_encoder" {
+    function_name = "dna-storage-encoder"
+    runtime       = "python3.11"
+    handler       = "encoder.handler"
+    memory_size   = 4096
+    timeout       = 900
+
+    environment {
+        variables = {
+            SYNTHESIS_QUEUE = aws_sqs_queue.synthesis.url
+            INDEX_TABLE     = aws_dynamodb_table.dna_index.name
+        }
+    }
+}
+
+resource "aws_step_functions_state_machine" "dna_pipeline" {
+    name     = "dna-storage-pipeline"
+    role_arn = aws_iam_role.sfn_role.arn
+    definition = jsonencode({
+        StartAt = "EncodeData"
+        States = {
+            EncodeData = {
+                Type     = "Task"
+                Resource = aws_lambda_function.dna_encoder.arn
+                Next     = "QueueSynthesis"
+            }
+            QueueSynthesis = {
+                Type     = "Task"
+                Resource = "arn:aws:states:::sqs:sendMessage"
+                End      = true
+            }
+        }
+    })
+}</code></pre>
+
+        <h3>CI/CD 파이프라인 구성</h3>
+        <div class="info-box">
+            <p><strong>GitOps 기반 배포 워크플로우:</strong></p>
+            <ul>
+                <li><strong>코드 커밋:</strong> GitHub/GitLab에 변경사항 푸시</li>
+                <li><strong>자동 테스트:</strong> 단위 테스트, 통합 테스트 실행</li>
+                <li><strong>보안 스캔:</strong> SAST/DAST, 종속성 취약점 검사</li>
+                <li><strong>스테이징 배포:</strong> 카나리 배포로 점진적 롤아웃</li>
+                <li><strong>프로덕션 승격:</strong> 메트릭 기반 자동 승격 또는 수동 승인</li>
+            </ul>
+        </div>
+
+        <h2>재해 복구 전략</h2>
+        <p>
+            차세대 저장소 시스템의 고가용성을 보장하기 위해서는 체계적인 재해 복구(DR) 전략이 필요합니다. DNA 저장소의 물리적 복제, 홀로그래픽 미디어의 지리적 분산, 메타데이터의 다중 지역 복제가 핵심 요소입니다.
+        </p>
+
+        <table>
+            <thead>
+                <tr><th>DR 전략</th><th>RTO</th><th>RPO</th><th>비용</th><th>적용 시나리오</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Cold Standby</td><td>24시간+</td><td>24시간</td><td>낮음</td><td>DNA 아카이브</td></tr>
+                <tr><td>Warm Standby</td><td>1-4시간</td><td>1시간</td><td>중간</td><td>홀로그래픽 중요 데이터</td></tr>
+                <tr><td>Hot Standby</td><td>< 15분</td><td>< 5분</td><td>높음</td><td>플래시 핫 데이터</td></tr>
+                <tr><td>Multi-Active</td><td>0</td><td>0</td><td>매우 높음</td><td>미션 크리티컬</td></tr>
+            </tbody>
+        </table>
+
+        <h2>요약</h2>
+        <p>
+            이 장에서는 DNA 저장소, 홀로그래픽 저장소, 양자 저장소의 실제 구현 방법론을 살펴보았습니다. 각 기술의 인프라 요구사항, 소프트웨어 아키텍처, 보안 고려사항, 배포 자동화, 재해 복구 전략, 그리고 운영 모범 사례를 다루었습니다.
+        </p>
+        <p>
+            WIA-NEXT_GEN_D 표준을 기반으로 한 구현은 상호운용성과 장기적인 기술 진화를 보장합니다. 다음 장에서는 이러한 시스템들의 통합 전략과 기존 인프라와의 연동 방법을 다룹니다.
+        </p>
+
+        <div class="highlight-box">
+            <h3>핵심 요점</h3>
+            <ol>
+                <li>DNA 저장소는 인코딩, 합성, 시퀀싱의 통합 파이프라인이 필요</li>
+                <li>홀로그래픽 시스템은 정밀 광학 정렬과 환경 제어가 핵심</li>
+                <li>양자 메모리는 극저온 인프라와 오류 정정이 필수</li>
+                <li>하이브리드 아키텍처로 각 기술의 장점 활용</li>
+                <li>계층화된 보안과 종합 모니터링으로 운영 안정성 확보</li>
+            </ol>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="chapter-04.html" class="btn">← 이전</a>
+            <a href="index.html" class="btn">📚 목차</a>
+            <a href="chapter-06.html" class="btn">다음 →</a>
+        </div>
+    </div>
+</body>
+</html>

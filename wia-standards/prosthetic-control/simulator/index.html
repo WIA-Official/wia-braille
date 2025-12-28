@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA Prosthetic Control - Interactive Simulator</title>
+    <style>
+        :root {
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        /* Top Navigation */
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .nav-home {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav-home:hover { color: var(--primary); }
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--primary); }
+        .breadcrumb .sep { color: var(--border); }
+        .breadcrumb .current { color: var(--primary); font-weight: 500; }
+        .lang-switch { display: flex; gap: 5px; }
+        .lang-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lang-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Hero */
+        .hero { text-align: center; padding: 30px 0; }
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .tab {
+            padding: 12px 24px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .tab.active { background: var(--primary); border-color: var(--primary); }
+        .tab:hover { border-color: var(--primary); }
+
+        /* Panel */
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid var(--border);
+        }
+        .panel.active { display: block; }
+        .panel h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+            font-size: 1.8rem;
+        }
+        .panel h3 {
+            margin: 20px 0 10px;
+            color: var(--text);
+            font-size: 1.3rem;
+        }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary { background: var(--secondary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        /* Output Box */
+        .output-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .output-box.success { border-color: var(--secondary); }
+        .output-box.error { border-color: var(--danger); }
+
+        /* EMG Signal Visualization */
+        .emg-channels {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .emg-channel {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .emg-channel-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .emg-signal {
+            height: 80px;
+            background: #000;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        .emg-line {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        .signal-value {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        /* Prosthetic Arm Visualization */
+        .prosthetic-viz {
+            background: linear-gradient(135deg, #1a1a2e, #0f172a);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .arm-display {
+            font-size: 120px;
+            margin: 20px 0;
+            transition: transform 0.3s;
+        }
+        .arm-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* Control Panel */
+        .control-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .control-item {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .control-label {
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        .slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .slider-value {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 1.2rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Info Cards */
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .info-card {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .info-card h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        .info-card ul {
+            margin-left: 20px;
+            color: var(--text-muted);
+        }
+        .info-card li {
+            margin: 5px 0;
+        }
+
+        /* Code Block */
+        code {
+            background: var(--bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: var(--secondary);
+        }
+        pre {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: var(--bg);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        tr:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 50px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        footer .philosophy {
+            color: #ffd700;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.8rem; }
+            .tabs { justify-content: flex-start; overflow-x: auto; }
+            .breadcrumb { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <div class="nav-left">
+                <a href="https://wiastandards.com" class="nav-home" target="_blank">🤟 WIA Standards</a>
+                <div class="breadcrumb">
+                    <a href="https://wiastandards.com" target="_blank">Home</a>
+                    <span class="sep">›</span>
+                    <a href="../">Prosthetic Control</a>
+                    <span class="sep">›</span>
+                    <span class="current">Simulator</span>
+                </div>
+            </div>
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('ko')">KO</button>
+            </div>
+        </div>
+
+        <!-- Hero -->
+        <div class="hero">
+            <h1 data-en="🦾 Prosthetic Control Simulator" data-ko="🦾 의수/의족 제어 시뮬레이터">🦾 Prosthetic Control Simulator</h1>
+            <p data-en="Interactive myoelectric prosthetic control testing environment" data-ko="대화형 근전 의수/의족 제어 테스트 환경">Interactive myoelectric prosthetic control testing environment</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('dataFormat')" data-en="1. Data Format" data-ko="1. 데이터 형식">1. Data Format</button>
+            <button class="tab" onclick="showTab('algorithms')" data-en="2. Algorithms" data-ko="2. 알고리즘">2. Algorithms</button>
+            <button class="tab" onclick="showTab('protocol')" data-en="3. Protocol" data-ko="3. 프로토콜">3. Protocol</button>
+            <button class="tab" onclick="showTab('integration')" data-en="4. Integration" data-ko="4. 통합">4. Integration</button>
+            <button class="tab" onclick="showTab('test')" data-en="5. Test" data-ko="5. 테스트">5. Test</button>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div id="dataFormat" class="panel active">
+            <h2 data-en="EMG Signal Data Format" data-ko="EMG 신호 데이터 형식">EMG Signal Data Format</h2>
+
+            <h3 data-en="Live EMG Channels" data-ko="실시간 EMG 채널">Live EMG Channels</h3>
+            <div class="emg-channels">
+                <div class="emg-channel">
+                    <div class="emg-channel-header">
+                        <span>Channel 1 (Flexor)</span>
+                        <span id="ch1-status">●</span>
+                    </div>
+                    <div class="emg-signal"><canvas id="emg1" width="280" height="80"></canvas></div>
+                    <div class="signal-value" id="ch1-value">0 μV</div>
+                </div>
+                <div class="emg-channel">
+                    <div class="emg-channel-header">
+                        <span>Channel 2 (Extensor)</span>
+                        <span id="ch2-status">●</span>
+                    </div>
+                    <div class="emg-signal"><canvas id="emg2" width="280" height="80"></canvas></div>
+                    <div class="signal-value" id="ch2-value">0 μV</div>
+                </div>
+                <div class="emg-channel">
+                    <div class="emg-channel-header">
+                        <span>Channel 3 (Pronator)</span>
+                        <span id="ch3-status">●</span>
+                    </div>
+                    <div class="emg-signal"><canvas id="emg3" width="280" height="80"></canvas></div>
+                    <div class="signal-value" id="ch3-value">0 μV</div>
+                </div>
+                <div class="emg-channel">
+                    <div class="emg-channel-header">
+                        <span>Channel 4 (Supinator)</span>
+                        <span id="ch4-status">●</span>
+                    </div>
+                    <div class="emg-signal"><canvas id="emg4" width="280" height="80"></canvas></div>
+                    <div class="signal-value" id="ch4-value">0 μV</div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="startEMG()" data-en="▶ Start Recording" data-ko="▶ 기록 시작">▶ Start Recording</button>
+                <button class="btn btn-danger" onclick="stopEMG()" data-en="⏹ Stop" data-ko="⏹ 정지">⏹ Stop</button>
+                <button class="btn btn-outline" onclick="resetEMG()" data-en="🔄 Reset" data-ko="🔄 리셋">🔄 Reset</button>
+            </div>
+
+            <h3 data-en="JSON Data Structure" data-ko="JSON 데이터 구조">JSON Data Structure</h3>
+            <pre><code>{
+  "version": "1.0.0",
+  "timestamp": 1735142400000,
+  "device": {
+    "id": "PROS-2024-001",
+    "type": "myoelectric",
+    "channels": 8
+  },
+  "emg": {
+    "channels": [
+      { "id": 1, "muscle": "flexor", "value": 245.6, "unit": "μV" },
+      { "id": 2, "muscle": "extensor", "value": 189.3, "unit": "μV" },
+      { "id": 3, "muscle": "pronator", "value": 312.8, "unit": "μV" },
+      { "id": 4, "muscle": "supinator", "value": 156.2, "unit": "μV" }
+    ],
+    "sampleRate": 1000,
+    "resolution": 16
+  },
+  "control": {
+    "mode": "proportional",
+    "threshold": 150,
+    "gain": 1.2
+  }
+}</code></pre>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div id="algorithms" class="panel">
+            <h2 data-en="Control Algorithms" data-ko="제어 알고리즘">Control Algorithms</h2>
+
+            <h3 data-en="Algorithm Selection" data-ko="알고리즘 선택">Algorithm Selection</h3>
+            <div class="form-group">
+                <label data-en="Control Algorithm:" data-ko="제어 알고리즘:">Control Algorithm:</label>
+                <select id="algorithm" onchange="updateAlgorithm()">
+                    <option value="threshold">Threshold-based Control</option>
+                    <option value="proportional">Proportional Myoelectric Control</option>
+                    <option value="pattern">Pattern Recognition (ML)</option>
+                    <option value="neural">Neural Network Control</option>
+                    <option value="adaptive">Adaptive Learning</option>
+                </select>
+            </div>
+
+            <div class="prosthetic-viz">
+                <div class="arm-display" id="armViz">🦾</div>
+                <div class="arm-stats">
+                    <div class="stat-card">
+                        <div class="stat-label" data-en="Grip Force" data-ko="그립 힘">Grip Force</div>
+                        <div class="stat-value" id="gripForce">0 N</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label" data-en="Position" data-ko="위치">Position</div>
+                        <div class="stat-value" id="position">0°</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label" data-en="Response" data-ko="응답">Response</div>
+                        <div class="stat-value" id="response">0 ms</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label" data-en="Accuracy" data-ko="정확도">Accuracy</div>
+                        <div class="stat-value" id="accuracy">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-cards">
+                <div class="info-card">
+                    <h4>Threshold Control</h4>
+                    <ul>
+                        <li>Simple on/off activation</li>
+                        <li>Low computational cost</li>
+                        <li>Fast response time (&lt;50ms)</li>
+                        <li>Best for binary grips</li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h4>Proportional Control</h4>
+                    <ul>
+                        <li>Continuous force modulation</li>
+                        <li>Natural user experience</li>
+                        <li>Response time ~100ms</li>
+                        <li>Requires calibration</li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h4>Pattern Recognition</h4>
+                    <ul>
+                        <li>Multi-DOF control</li>
+                        <li>Machine learning based</li>
+                        <li>High accuracy (95%+)</li>
+                        <li>Adaptive to user</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="testAlgorithm()" data-en="▶ Test Algorithm" data-ko="▶ 알고리즘 테스트">▶ Test Algorithm</button>
+                <button class="btn btn-secondary" onclick="calibrateSystem()" data-en="⚙️ Calibrate" data-ko="⚙️ 교정">⚙️ Calibrate</button>
+            </div>
+
+            <div id="algorithmOutput" class="output-box"></div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div id="protocol" class="panel">
+            <h2 data-en="Communication Protocol" data-ko="통신 프로토콜">Communication Protocol</h2>
+
+            <h3 data-en="Protocol Configuration" data-ko="프로토콜 설정">Protocol Configuration</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-en="Transport:" data-ko="전송:">Transport:</label>
+                    <select id="transport">
+                        <option value="bluetooth">Bluetooth LE</option>
+                        <option value="usb">USB Serial</option>
+                        <option value="wifi">Wi-Fi</option>
+                        <option value="can">CAN Bus</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-en="Baud Rate:" data-ko="전송 속도:">Baud Rate:</label>
+                    <select id="baudRate">
+                        <option value="9600">9600</option>
+                        <option value="115200" selected>115200</option>
+                        <option value="230400">230400</option>
+                        <option value="460800">460800</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-en="Encoding:" data-ko="인코딩:">Encoding:</label>
+                    <select id="encoding">
+                        <option value="json">JSON</option>
+                        <option value="binary">Binary</option>
+                        <option value="protobuf">Protocol Buffers</option>
+                    </select>
+                </div>
+            </div>
+
+            <h3 data-en="Protocol Testing" data-ko="프로토콜 테스트">Protocol Testing</h3>
+            <div class="form-group">
+                <label data-en="Command:" data-ko="명령:">Command:</label>
+                <select id="commandType" onchange="updateCommandTemplate()">
+                    <option value="status">Get Status</option>
+                    <option value="control">Send Control Signal</option>
+                    <option value="calibrate">Calibrate Device</option>
+                    <option value="config">Update Configuration</option>
+                    <option value="feedback">Request Sensory Feedback</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label data-en="Payload:" data-ko="페이로드:">Payload:</label>
+                <textarea id="protocolPayload" rows="10">{"command": "status", "device_id": "PROS-2024-001"}</textarea>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="sendProtocol()" data-en="📤 Send Command" data-ko="📤 명령 전송">📤 Send Command</button>
+                <button class="btn btn-outline" onclick="clearProtocol()" data-en="🗑️ Clear" data-ko="🗑️ 지우기">🗑️ Clear</button>
+            </div>
+
+            <div id="protocolOutput" class="output-box"></div>
+
+            <h3 data-en="Protocol Specification" data-ko="프로토콜 사양">Protocol Specification</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Command</th>
+                        <th>Opcode</th>
+                        <th>Payload Size</th>
+                        <th>Response Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>GET_STATUS</td>
+                        <td>0x01</td>
+                        <td>4 bytes</td>
+                        <td>&lt;10ms</td>
+                    </tr>
+                    <tr>
+                        <td>SET_CONTROL</td>
+                        <td>0x02</td>
+                        <td>16 bytes</td>
+                        <td>&lt;5ms</td>
+                    </tr>
+                    <tr>
+                        <td>CALIBRATE</td>
+                        <td>0x03</td>
+                        <td>32 bytes</td>
+                        <td>&lt;50ms</td>
+                    </tr>
+                    <tr>
+                        <td>GET_FEEDBACK</td>
+                        <td>0x04</td>
+                        <td>8 bytes</td>
+                        <td>&lt;15ms</td>
+                    </tr>
+                    <tr>
+                        <td>UPDATE_CONFIG</td>
+                        <td>0x05</td>
+                        <td>64 bytes</td>
+                        <td>&lt;30ms</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div id="integration" class="panel">
+            <h2 data-en="System Integration" data-ko="시스템 통합">System Integration</h2>
+
+            <h3 data-en="Integration Components" data-ko="통합 구성 요소">Integration Components</h3>
+            <div class="info-cards">
+                <div class="info-card">
+                    <h4>🧠 Neural Interface</h4>
+                    <ul>
+                        <li>Targeted muscle reinnervation (TMR)</li>
+                        <li>Peripheral nerve interface (PNI)</li>
+                        <li>Direct cortical interface</li>
+                        <li>8-16 channel EMG array</li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h4>🤖 Prosthetic Device</h4>
+                    <ul>
+                        <li>Multi-DOF hand/arm</li>
+                        <li>22 degrees of freedom</li>
+                        <li>Individual finger control</li>
+                        <li>Wrist rotation/flexion</li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h4>👆 Sensory Feedback</h4>
+                    <ul>
+                        <li>Haptic vibration motors</li>
+                        <li>Transcutaneous electrical stimulation</li>
+                        <li>Force and pressure sensing</li>
+                        <li>Temperature feedback</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 data-en="SDK Integration Example" data-ko="SDK 통합 예제">SDK Integration Example</h3>
+            <div class="form-group">
+                <label data-en="Programming Language:" data-ko="프로그래밍 언어:">Programming Language:</label>
+                <select id="sdkLang" onchange="updateSDKExample()">
+                    <option value="typescript">TypeScript</option>
+                    <option value="python">Python</option>
+                    <option value="cpp">C++</option>
+                    <option value="rust">Rust</option>
+                </select>
+            </div>
+
+            <pre id="sdkCode"><code>import { ProstheticControl } from '@wia/prosthetic-control';
+
+// Initialize prosthetic controller
+const controller = new ProstheticControl({
+  deviceId: 'PROS-2024-001',
+  channels: 8,
+  sampleRate: 1000
+});
+
+// Connect to device
+await controller.connect();
+
+// Start EMG monitoring
+controller.on('emg', (data) => {
+  console.log('EMG Signal:', data.channels);
+
+  // Process signals with pattern recognition
+  const gesture = controller.recognizePattern(data);
+
+  // Send control command
+  controller.setPosition(gesture.position);
+  controller.setForce(gesture.force);
+});
+
+// Enable sensory feedback
+controller.enableFeedback({
+  haptic: true,
+  temperature: true,
+  pressure: true
+});
+
+// Calibrate system
+await controller.calibrate({
+  duration: 30000, // 30 seconds
+  gestures: ['rest', 'fist', 'open', 'pinch']
+});</code></pre>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="testIntegration()" data-en="▶ Test Integration" data-ko="▶ 통합 테스트">▶ Test Integration</button>
+                <button class="btn btn-secondary" onclick="downloadSDK()" data-en="📥 Download SDK" data-ko="📥 SDK 다운로드">📥 Download SDK</button>
+            </div>
+
+            <div id="integrationOutput" class="output-box"></div>
+        </div>
+
+        <!-- Tab 5: Test -->
+        <div id="test" class="panel">
+            <h2 data-en="Real-Time Testing" data-ko="실시간 테스트">Real-Time Testing</h2>
+
+            <h3 data-en="Control Panel" data-ko="제어 패널">Control Panel</h3>
+            <div class="control-panel">
+                <div class="control-item">
+                    <div class="control-label" data-en="Thumb" data-ko="엄지">Thumb</div>
+                    <input type="range" class="slider" min="0" max="100" value="0" id="thumbSlider" oninput="updateFinger('thumb', this.value)">
+                    <div class="slider-value" id="thumbValue">0%</div>
+                </div>
+                <div class="control-item">
+                    <div class="control-label" data-en="Index Finger" data-ko="검지">Index Finger</div>
+                    <input type="range" class="slider" min="0" max="100" value="0" id="indexSlider" oninput="updateFinger('index', this.value)">
+                    <div class="slider-value" id="indexValue">0%</div>
+                </div>
+                <div class="control-item">
+                    <div class="control-label" data-en="Middle Finger" data-ko="중지">Middle Finger</div>
+                    <input type="range" class="slider" min="0" max="100" value="0" id="middleSlider" oninput="updateFinger('middle', this.value)">
+                    <div class="slider-value" id="middleValue">0%</div>
+                </div>
+                <div class="control-item">
+                    <div class="control-label" data-en="Wrist Rotation" data-ko="손목 회전">Wrist Rotation</div>
+                    <input type="range" class="slider" min="-90" max="90" value="0" id="wristSlider" oninput="updateFinger('wrist', this.value)">
+                    <div class="slider-value" id="wristValue">0°</div>
+                </div>
+            </div>
+
+            <h3 data-en="Preset Gestures" data-ko="사전 설정 제스처">Preset Gestures</h3>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="performGesture('open')" data-en="✋ Open Hand" data-ko="✋ 손 펴기">✋ Open Hand</button>
+                <button class="btn btn-primary" onclick="performGesture('fist')" data-en="✊ Fist" data-ko="✊ 주먹">✊ Fist</button>
+                <button class="btn btn-primary" onclick="performGesture('pinch')" data-en="🤏 Pinch" data-ko="🤏 집기">🤏 Pinch</button>
+                <button class="btn btn-primary" onclick="performGesture('point')" data-en="👆 Point" data-ko="👆 가리키기">👆 Point</button>
+                <button class="btn btn-primary" onclick="performGesture('thumbsup')" data-en="👍 Thumbs Up" data-ko="👍 좋아요">👍 Thumbs Up</button>
+            </div>
+
+            <div class="prosthetic-viz">
+                <div class="arm-display" id="testArmViz">🖐️</div>
+                <div class="arm-stats">
+                    <div class="stat-card">
+                        <div class="stat-label" data-en="Active DOF" data-ko="활성 자유도">Active DOF</div>
+                        <div class="stat-value" id="activeDOF">0/22</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label" data-en="Power" data-ko="전력">Power</div>
+                        <div class="stat-value" id="powerUsage">0 W</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label" data-en="Battery" data-ko="배터리">Battery</div>
+                        <div class="stat-value" id="battery">100%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label" data-en="Latency" data-ko="대기 시간">Latency</div>
+                        <div class="stat-value" id="latency">0 ms</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 data-en="Performance Metrics" data-ko="성능 메트릭">Performance Metrics</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Current</th>
+                        <th>Target</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Response Time</td>
+                        <td id="metricResponse">0 ms</td>
+                        <td>&lt;100 ms</td>
+                        <td id="statusResponse">⏳</td>
+                    </tr>
+                    <tr>
+                        <td>Accuracy</td>
+                        <td id="metricAccuracy">0%</td>
+                        <td>&gt;95%</td>
+                        <td id="statusAccuracy">⏳</td>
+                    </tr>
+                    <tr>
+                        <td>Success Rate</td>
+                        <td id="metricSuccess">0%</td>
+                        <td>&gt;90%</td>
+                        <td id="statusSuccess">⏳</td>
+                    </tr>
+                    <tr>
+                        <td>Power Efficiency</td>
+                        <td id="metricPower">0 W/hr</td>
+                        <td>&lt;5 W/hr</td>
+                        <td id="statusPower">⏳</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="runDiagnostics()" data-en="🔬 Run Diagnostics" data-ko="🔬 진단 실행">🔬 Run Diagnostics</button>
+                <button class="btn btn-outline" onclick="exportResults()" data-en="💾 Export Results" data-ko="💾 결과 내보내기">💾 Export Results</button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p class="philosophy">弘益人間 · Benefit All Humanity</p>
+            <p>WIA Prosthetic Control Standard v1.0.0</p>
+            <p>© 2025 WIA - MIT License</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+        let emgInterval = null;
+        let emgData = [[], [], [], []];
+
+        function setLang(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute('data-' + lang);
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // EMG Functions
+        function startEMG() {
+            if (emgInterval) return;
+            emgInterval = setInterval(() => {
+                for (let i = 1; i <= 4; i++) {
+                    const value = Math.random() * 400 + 50;
+                    document.getElementById(`ch${i}-value`).textContent = `${value.toFixed(1)} μV`;
+                    updateEMGCanvas(i, value);
+                }
+            }, 50);
+        }
+
+        function stopEMG() {
+            if (emgInterval) {
+                clearInterval(emgInterval);
+                emgInterval = null;
+            }
+        }
+
+        function resetEMG() {
+            stopEMG();
+            emgData = [[], [], [], []];
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`ch${i}-value`).textContent = '0 μV';
+                const canvas = document.getElementById(`emg${i}`);
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function updateEMGCanvas(channel, value) {
+            const canvas = document.getElementById(`emg${channel}`);
+            const ctx = canvas.getContext('2d');
+            const index = channel - 1;
+
+            emgData[index].push(value);
+            if (emgData[index].length > 50) emgData[index].shift();
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#3B82F6';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            emgData[index].forEach((val, i) => {
+                const x = (i / 50) * canvas.width;
+                const y = canvas.height - (val / 500) * canvas.height;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+
+            ctx.stroke();
+        }
+
+        // Algorithm Functions
+        function updateAlgorithm() {
+            const algo = document.getElementById('algorithm').value;
+            document.getElementById('algorithmOutput').textContent =
+                `Selected algorithm: ${algo}\nInitializing control system...\nCalibration required.`;
+        }
+
+        function testAlgorithm() {
+            document.getElementById('gripForce').textContent = (Math.random() * 50 + 10).toFixed(1) + ' N';
+            document.getElementById('position').textContent = (Math.random() * 180).toFixed(0) + '°';
+            document.getElementById('response').textContent = (Math.random() * 50 + 50).toFixed(0) + ' ms';
+            document.getElementById('accuracy').textContent = (Math.random() * 10 + 90).toFixed(1) + '%';
+
+            document.getElementById('algorithmOutput').textContent =
+                `Testing algorithm...\n✅ EMG signal detected\n✅ Pattern recognized\n✅ Control signal sent\n✅ Feedback received\n\nTest completed successfully!`;
+        }
+
+        function calibrateSystem() {
+            document.getElementById('algorithmOutput').textContent =
+                `Starting calibration...\n[1/4] Rest position... ✅\n[2/4] Maximum contraction... ✅\n[3/4] Gesture recognition... ✅\n[4/4] Threshold optimization... ✅\n\nCalibration complete!`;
+        }
+
+        // Protocol Functions
+        function updateCommandTemplate() {
+            const cmd = document.getElementById('commandType').value;
+            const templates = {
+                status: '{"command": "status", "device_id": "PROS-2024-001"}',
+                control: '{"command": "control", "device_id": "PROS-2024-001", "position": 45, "force": 25}',
+                calibrate: '{"command": "calibrate", "device_id": "PROS-2024-001", "duration": 30000}',
+                config: '{"command": "config", "device_id": "PROS-2024-001", "settings": {"gain": 1.2, "threshold": 150}}',
+                feedback: '{"command": "feedback", "device_id": "PROS-2024-001", "sensors": ["force", "temperature"]}'
+            };
+            document.getElementById('protocolPayload').value = templates[cmd];
+        }
+
+        function sendProtocol() {
+            const payload = document.getElementById('protocolPayload').value;
+            const transport = document.getElementById('transport').value;
+            const output = document.getElementById('protocolOutput');
+
+            output.className = 'output-box success';
+            output.textContent = `📤 Sending via ${transport}...\n\nRequest:\n${payload}\n\n✅ Response (85ms):\n{"status": "ok", "timestamp": ${Date.now()}, "data": {"battery": 87, "temperature": 23, "active": true}}`;
+        }
+
+        function clearProtocol() {
+            document.getElementById('protocolOutput').textContent = '';
+            document.getElementById('protocolOutput').className = 'output-box';
+        }
+
+        // Integration Functions
+        function updateSDKExample() {
+            const lang = document.getElementById('sdkLang').value;
+            const examples = {
+                typescript: `import { ProstheticControl } from '@wia/prosthetic-control';
+
+const controller = new ProstheticControl({
+  deviceId: 'PROS-2024-001',
+  channels: 8,
+  sampleRate: 1000
+});
+
+await controller.connect();
+controller.on('emg', (data) => {
+  const gesture = controller.recognizePattern(data);
+  controller.setPosition(gesture.position);
+});`,
+                python: `from wia_prosthetic import ProstheticControl
+
+controller = ProstheticControl(
+    device_id='PROS-2024-001',
+    channels=8,
+    sample_rate=1000
+)
+
+controller.connect()
+@controller.on_emg
+def handle_emg(data):
+    gesture = controller.recognize_pattern(data)
+    controller.set_position(gesture.position)`,
+                cpp: `#include <wia/prosthetic_control.h>
+
+WIA::ProstheticControl controller("PROS-2024-001", 8, 1000);
+controller.connect();
+
+controller.onEMG([](const EMGData& data) {
+    auto gesture = controller.recognizePattern(data);
+    controller.setPosition(gesture.position);
+});`,
+                rust: `use wia_prosthetic::ProstheticControl;
+
+let controller = ProstheticControl::new("PROS-2024-001", 8, 1000);
+controller.connect().await?;
+
+controller.on_emg(|data| {
+    let gesture = controller.recognize_pattern(&data);
+    controller.set_position(gesture.position);
+});`
+            };
+            document.getElementById('sdkCode').innerHTML = `<code>${examples[lang]}</code>`;
+        }
+
+        function testIntegration() {
+            document.getElementById('integrationOutput').className = 'output-box success';
+            document.getElementById('integrationOutput').textContent =
+                `🔌 Connecting to device...\n✅ Device connected: PROS-2024-001\n✅ EMG channels initialized: 8/8\n✅ Sensory feedback enabled\n✅ Control algorithm loaded\n\n🎯 Integration test: PASSED`;
+        }
+
+        function downloadSDK() {
+            alert('SDK download would start here. Visit github.com/WIA-Official/wia-standards');
+        }
+
+        // Test Functions
+        function updateFinger(finger, value) {
+            document.getElementById(`${finger}Value`).textContent = finger === 'wrist' ? `${value}°` : `${value}%`;
+
+            const dof = Math.floor(Math.random() * 10 + 5);
+            document.getElementById('activeDOF').textContent = `${dof}/22`;
+            document.getElementById('powerUsage').textContent = (parseFloat(value) / 20).toFixed(1) + ' W';
+            document.getElementById('latency').textContent = Math.floor(Math.random() * 30 + 70) + ' ms';
+        }
+
+        function performGesture(gesture) {
+            const emojis = {
+                open: '🖐️',
+                fist: '✊',
+                pinch: '🤏',
+                point: '☝️',
+                thumbsup: '👍'
+            };
+            document.getElementById('testArmViz').textContent = emojis[gesture];
+
+            document.getElementById('activeDOF').textContent = '15/22';
+            document.getElementById('powerUsage').textContent = '2.3 W';
+            document.getElementById('latency').textContent = '85 ms';
+
+            setTimeout(() => {
+                document.getElementById('battery').textContent = (Math.random() * 5 + 95).toFixed(0) + '%';
+            }, 500);
+        }
+
+        function runDiagnostics() {
+            document.getElementById('metricResponse').textContent = '78 ms';
+            document.getElementById('statusResponse').textContent = '✅';
+
+            document.getElementById('metricAccuracy').textContent = '97.2%';
+            document.getElementById('statusAccuracy').textContent = '✅';
+
+            document.getElementById('metricSuccess').textContent = '94.8%';
+            document.getElementById('statusSuccess').textContent = '✅';
+
+            document.getElementById('metricPower').textContent = '3.2 W/hr';
+            document.getElementById('statusPower').textContent = '✅';
+        }
+
+        function exportResults() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                metrics: {
+                    response_time: '78ms',
+                    accuracy: '97.2%',
+                    success_rate: '94.8%',
+                    power_efficiency: '3.2W/hr'
+                }
+            };
+            console.log('Exporting results:', data);
+            alert('Results exported to console');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setLang('en');
+            updateCommandTemplate();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: TLS Handshake Optimization - WIA TLS-Lite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #e0e0e0; line-height: 1.8; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: rgba(236, 72, 153, 0.1); border-bottom: 3px solid #EC4899; padding: 30px 0; margin-bottom: 40px; }
+        h1 { color: #EC4899; font-size: 2.5em; margin-bottom: 10px; text-shadow: 0 0 20px rgba(236, 72, 153, 0.5); }
+        h2 { color: #EC4899; font-size: 2em; margin: 40px 0 20px 0; border-left: 5px solid #EC4899; padding-left: 15px; }
+        h3 { color: #EC4899; font-size: 1.5em; margin: 30px 0 15px 0; }
+        .breadcrumb { color: #808080; margin-bottom: 20px; }
+        .breadcrumb a { color: #EC4899; text-decoration: none; }
+        .content-section { background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 30px; margin-bottom: 30px; border: 1px solid rgba(236, 72, 153, 0.2); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(0, 0, 0, 0.3); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(236, 72, 153, 0.2); }
+        th { background: rgba(236, 72, 153, 0.3); color: #EC4899; font-weight: bold; }
+        tr:hover { background: rgba(236, 72, 153, 0.1); }
+        code { background: rgba(0, 0, 0, 0.5); padding: 2px 6px; border-radius: 4px; color: #EC4899; font-family: 'Courier New', monospace; }
+        pre { background: rgba(0, 0, 0, 0.5); border-left: 4px solid #EC4899; padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; }
+        pre code { background: none; padding: 0; color: #e0e0e0; }
+        .api-endpoint { background: rgba(236, 72, 153, 0.1); border-left: 4px solid #EC4899; padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .api-endpoint .method { display: inline-block; background: #EC4899; color: #fff; padding: 5px 15px; border-radius: 5px; font-weight: bold; margin-right: 10px; }
+        .certification-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin: 20px 0; }
+        .cert-item { background: rgba(236, 72, 153, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(236, 72, 153, 0.3); }
+        .cert-item h4 { color: #EC4899; margin-bottom: 8px; }
+        .navigation { display: flex; justify-content: space-between; margin: 40px 0; gap: 20px; }
+        .nav-button { background: rgba(236, 72, 153, 0.2); color: #EC4899; padding: 15px 30px; border-radius: 8px; text-decoration: none; border: 2px solid #EC4899; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-button:hover { background: #EC4899; color: #fff; transform: translateY(-2px); }
+        footer { text-align: center; padding: 30px 0; margin-top: 60px; border-top: 2px solid rgba(236, 72, 153, 0.3); color: #808080; }
+        footer .korean-text { color: #EC4899; font-size: 1.3em; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="breadcrumb"><a href="index.html">Home</a> / Chapter 6</div>
+            <h1>Chapter 6: TLS Handshake Optimization</h1>
+        </header>
+
+        <div class="content-section">
+            <h2>Reducing Handshake Latency</h2>
+            <p>The TLS handshake is critical for establishing secure connections, but traditional handshakes can be too slow and resource-intensive for IoT devices. TLS-Lite implements several optimization techniques including 0-RTT resumption, abbreviated handshakes, and pre-shared key modes that dramatically reduce connection establishment time.</p>
+            <p>This chapter explores handshake optimization strategies, session resumption mechanisms, early data transmission, and techniques for minimizing computational overhead during connection establishment.</p>
+        </div>
+
+        <div class="content-section">
+            <h2>Handshake Performance Analysis</h2>
+            <h3>Table 1: Handshake Mode Comparison</h3>
+            <table>
+                <thead>
+                    <tr><th>Handshake Mode</th><th>Round Trips</th><th>Cryptographic Ops</th><th>Bandwidth</th><th>Use Case</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Full ECDHE</td><td>2-RTT</td><td>ECDH + Sig Verify</td><td>~2KB</td><td>Initial connection</td></tr>
+                    <tr><td>PSK Full</td><td>1-RTT</td><td>HKDF only</td><td>~512B</td><td>Known peers</td></tr>
+                    <tr><td>Session Resumption</td><td>1-RTT</td><td>HKDF only</td><td>~384B</td><td>Reconnection</td></tr>
+                    <tr><td>0-RTT Early Data</td><td>0-RTT</td><td>HKDF only</td><td>~256B + data</td><td>Repeat connections</td></tr>
+                    <tr><td>TLS-Lite Optimized</td><td>1-RTT</td><td>Minimal</td><td>~192B</td><td>IoT devices</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Table 2: Handshake Optimization Techniques</h3>
+            <table>
+                <thead>
+                    <tr><th>Technique</th><th>Latency Reduction</th><th>Security Impact</th><th>Complexity</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Session Tickets</td><td>50%</td><td>None</td><td>Low</td></tr>
+                    <tr><td>PSK Mode</td><td>60%</td><td>No forward secrecy</td><td>Very Low</td></tr>
+                    <tr><td>0-RTT Data</td><td>100%</td><td>No replay protection</td><td>Medium</td></tr>
+                    <tr><td>Cached Info Extension</td><td>40%</td><td>None</td><td>Low</td></tr>
+                    <tr><td>Abbreviated Handshake</td><td>45%</td><td>None</td><td>Low</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="content-section">
+            <h2>Handshake Optimization Implementation</h2>
+
+            <h3>Code Example 1: Session Ticket Mechanism</h3>
+            <pre><code>/**
+ * TLS 1.3 session ticket for resumption
+ * Encrypted state allows stateless server resumption
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+
+#define SESSION_TICKET_SIZE 128
+#define TICKET_KEY_SIZE 32
+#define TICKET_LIFETIME 86400  // 24 hours
+
+typedef struct {
+    uint32_t timestamp;
+    uint16_t cipher_suite;
+    uint8_t resumption_master_secret[32];
+    uint8_t client_identity[32];
+    uint32_t max_early_data;
+    uint8_t alpn_protocol;
+} session_ticket_plaintext_t;
+
+typedef struct {
+    uint8_t key_name[16];
+    uint8_t iv[12];
+    uint8_t encrypted_state[96];
+    uint8_t tag[16];
+} session_ticket_t;
+
+static uint8_t g_ticket_key[TICKET_KEY_SIZE];
+static uint8_t g_ticket_key_name[16];
+
+/**
+ * Initialize ticket key
+ */
+void session_ticket_init(void) {
+    csprng_generate(g_ticket_key, TICKET_KEY_SIZE);
+    csprng_generate(g_ticket_key_name, 16);
+}
+
+/**
+ * Create session ticket
+ */
+int session_ticket_create(const session_ticket_plaintext_t *state,
+                          session_ticket_t *ticket) {
+    // Copy key name
+    memcpy(ticket->key_name, g_ticket_key_name, 16);
+
+    // Generate random IV
+    csprng_generate(ticket->iv, 12);
+
+    // Serialize plaintext state
+    uint8_t plaintext[sizeof(session_ticket_plaintext_t)];
+    size_t plaintext_len = serialize_ticket_state(state, plaintext);
+
+    // Encrypt with AES-128-GCM
+    uint8_t ad[16];
+    memcpy(ad, ticket->key_name, 16);
+
+    int result = aes128_gcm_encrypt(
+        g_ticket_key,
+        ticket->iv, 12,
+        plaintext, plaintext_len,
+        ad, 16,
+        ticket->encrypted_state,
+        ticket->tag
+    );
+
+    return result;
+}
+
+/**
+ * Decrypt and validate session ticket
+ */
+int session_ticket_decrypt(const session_ticket_t *ticket,
+                          session_ticket_plaintext_t *state) {
+    // Verify key name
+    if (memcmp(ticket->key_name, g_ticket_key_name, 16) != 0) {
+        return -1;  // Unknown key
+    }
+
+    // Decrypt with AES-128-GCM
+    uint8_t plaintext[96];
+    uint8_t ad[16];
+    memcpy(ad, ticket->key_name, 16);
+
+    int result = aes128_gcm_decrypt(
+        g_ticket_key,
+        ticket->iv, 12,
+        ticket->encrypted_state, sizeof(ticket->encrypted_state),
+        ad, 16,
+        ticket->tag,
+        plaintext
+    );
+
+    if (result != 0) {
+        return -2;  // Decryption failed
+    }
+
+    // Deserialize state
+    deserialize_ticket_state(plaintext, state);
+
+    // Check expiration
+    uint32_t current_time = get_current_time();
+    if (current_time - state->timestamp > TICKET_LIFETIME) {
+        return -3;  // Ticket expired
+    }
+
+    return 0;
+}
+</code></pre>
+
+            <h3>Code Example 2: PSK Handshake</h3>
+            <pre><code>/**
+ * TLS 1.3 PSK (Pre-Shared Key) handshake
+ * 1-RTT connection establishment with known peers
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+
+#define PSK_MAX_IDENTITY_LEN 64
+#define PSK_MAX_KEYS 8
+
+typedef struct {
+    uint8_t identity[PSK_MAX_IDENTITY_LEN];
+    size_t identity_len;
+    uint8_t psk[32];
+    uint32_t timestamp;
+    uint16_t cipher_suite;
+} psk_entry_t;
+
+static psk_entry_t g_psk_store[PSK_MAX_KEYS];
+static size_t g_psk_count = 0;
+
+/**
+ * Add PSK to store
+ */
+int psk_store_add(const uint8_t *identity, size_t identity_len,
+                  const uint8_t *psk, uint16_t cipher_suite) {
+    if (g_psk_count >= PSK_MAX_KEYS) {
+        return -1;
+    }
+
+    if (identity_len > PSK_MAX_IDENTITY_LEN) {
+        return -2;
+    }
+
+    psk_entry_t *entry = &g_psk_store[g_psk_count];
+    memcpy(entry->identity, identity, identity_len);
+    entry->identity_len = identity_len;
+    memcpy(entry->psk, psk, 32);
+    entry->cipher_suite = cipher_suite;
+    entry->timestamp = get_current_time();
+
+    g_psk_count++;
+    return 0;
+}
+
+/**
+ * Lookup PSK by identity
+ */
+const psk_entry_t* psk_store_lookup(const uint8_t *identity,
+                                    size_t identity_len) {
+    for (size_t i = 0; i < g_psk_count; i++) {
+        if (g_psk_store[i].identity_len == identity_len &&
+            memcmp(g_psk_store[i].identity, identity, identity_len) == 0) {
+            return &g_psk_store[i];
+        }
+    }
+    return NULL;
+}
+
+/**
+ * Create PSK ClientHello extension
+ */
+int psk_create_client_extension(const psk_entry_t *psk,
+                                uint8_t *extension_data,
+                                size_t *extension_len) {
+    size_t pos = 0;
+
+    // Extension type: pre_shared_key (41)
+    extension_data[pos++] = 0x00;
+    extension_data[pos++] = 0x29;
+
+    // Extension length (filled later)
+    size_t ext_len_pos = pos;
+    pos += 2;
+
+    // PSK identities
+    uint16_t identities_len = 2 + psk->identity_len + 4;  // len + identity + obfuscated_ticket_age
+    extension_data[pos++] = (identities_len >> 8) & 0xFF;
+    extension_data[pos++] = identities_len & 0xFF;
+
+    // Identity length
+    extension_data[pos++] = (psk->identity_len >> 8) & 0xFF;
+    extension_data[pos++] = psk->identity_len & 0xFF;
+
+    // Identity
+    memcpy(extension_data + pos, psk->identity, psk->identity_len);
+    pos += psk->identity_len;
+
+    // Obfuscated ticket age (0 for external PSK)
+    extension_data[pos++] = 0;
+    extension_data[pos++] = 0;
+    extension_data[pos++] = 0;
+    extension_data[pos++] = 0;
+
+    // PSK binders (computed after transcript hash)
+    uint16_t binders_len = 1 + 32;  // len + binder
+    extension_data[pos++] = (binders_len >> 8) & 0xFF;
+    extension_data[pos++] = binders_len & 0xFF;
+
+    // Binder length
+    extension_data[pos++] = 32;
+
+    // Placeholder for binder (filled after computing binder)
+    size_t binder_pos = pos;
+    memset(extension_data + pos, 0, 32);
+    pos += 32;
+
+    // Fill in extension length
+    uint16_t ext_len = pos - ext_len_pos - 2;
+    extension_data[ext_len_pos] = (ext_len >> 8) & 0xFF;
+    extension_data[ext_len_pos + 1] = ext_len & 0xFF;
+
+    *extension_len = pos;
+    return binder_pos;  // Return position to fill binder
+}
+
+/**
+ * Compute PSK binder
+ */
+int psk_compute_binder(const psk_entry_t *psk,
+                      const uint8_t *transcript_hash,
+                      uint8_t *binder) {
+    // Early secret = HKDF-Extract(0, PSK)
+    uint8_t early_secret[32];
+    uint8_t zeros[32] = {0};
+    hkdf_extract(early_secret, zeros, 32, psk->psk, 32);
+
+    // Binder key = Derive-Secret(early_secret, "ext binder" | "res binder", "")
+    uint8_t binder_key[32];
+    const char *label = "ext binder";
+    derive_secret(binder_key, early_secret, label, strlen(label), NULL, 0);
+
+    // Finished key = HKDF-Expand-Label(binder_key, "finished", "", 32)
+    uint8_t finished_key[32];
+    hkdf_expand_label(finished_key, 32, binder_key, "finished", 8, NULL, 0);
+
+    // Binder = HMAC(finished_key, transcript_hash)
+    hmac_sha256(binder, finished_key, 32, transcript_hash, 32);
+
+    return 0;
+}
+</code></pre>
+
+            <h3>Code Example 3: 0-RTT Early Data</h3>
+            <pre><code>/**
+ * TLS 1.3 0-RTT early data transmission
+ * Send application data in first flight
+ */
+
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+
+#define MAX_EARLY_DATA 16384
+
+typedef struct {
+    uint8_t resumption_master_secret[32];
+    uint16_t cipher_suite;
+    uint32_t max_early_data_size;
+    uint8_t alpn_protocol;
+    bool early_data_enabled;
+} resumption_context_t;
+
+/**
+ * Derive early data keys
+ */
+int derive_early_data_keys(const resumption_context_t *ctx,
+                           const uint8_t *client_random,
+                           uint8_t *early_traffic_secret) {
+    // Early secret = HKDF-Extract(0, resumption_master_secret)
+    uint8_t early_secret[32];
+    uint8_t zeros[32] = {0};
+    hkdf_extract(early_secret, zeros, 32,
+                ctx->resumption_master_secret, 32);
+
+    // Derive client early traffic secret
+    uint8_t transcript_hash[32];
+    compute_transcript_hash_clienthello(client_random, transcript_hash);
+
+    derive_secret(early_traffic_secret, early_secret,
+                 "c e traffic", 11, transcript_hash, 32);
+
+    return 0;
+}
+
+/**
+ * Send 0-RTT early data
+ */
+int send_early_data(resumption_context_t *ctx,
+                   const uint8_t *application_data,
+                   size_t data_len) {
+    if (!ctx->early_data_enabled) {
+        return -1;
+    }
+
+    if (data_len > ctx->max_early_data_size) {
+        return -2;  // Exceeds limit
+    }
+
+    // Derive early data keys
+    uint8_t client_random[32];
+    csprng_generate(client_random, 32);
+
+    uint8_t early_traffic_secret[32];
+    derive_early_data_keys(ctx, client_random, early_traffic_secret);
+
+    // Derive encryption key and IV
+    uint8_t write_key[16];
+    uint8_t write_iv[12];
+    hkdf_expand_label(write_key, 16, early_traffic_secret, "key", 3, NULL, 0);
+    hkdf_expand_label(write_iv, 12, early_traffic_secret, "iv", 2, NULL, 0);
+
+    // Encrypt early data
+    uint8_t encrypted[MAX_EARLY_DATA + 16];
+    size_t encrypted_len;
+
+    int result = encrypt_tls_record(
+        RECORD_APPLICATION,
+        application_data, data_len,
+        write_key, write_iv,
+        0,  // sequence number
+        encrypted, &encrypted_len
+    );
+
+    if (result == 0) {
+        // Send encrypted early data
+        network_send(encrypted, encrypted_len);
+    }
+
+    return result;
+}
+
+/**
+ * Accept or reject early data
+ */
+int accept_early_data(resumption_context_t *ctx,
+                     const uint8_t *encrypted_data,
+                     size_t encrypted_len,
+                     uint8_t *plaintext,
+                     size_t *plaintext_len) {
+    // Server decides whether to accept early data
+    if (!ctx->early_data_enabled) {
+        return -1;  // Early data not enabled
+    }
+
+    // Derive same early traffic secret
+    uint8_t early_traffic_secret[32];
+    // ... derive from resumption context ...
+
+    // Decrypt early data
+    uint8_t read_key[16];
+    uint8_t read_iv[12];
+    hkdf_expand_label(read_key, 16, early_traffic_secret, "key", 3, NULL, 0);
+    hkdf_expand_label(read_iv, 12, early_traffic_secret, "iv", 2, NULL, 0);
+
+    int result = decrypt_tls_record(
+        encrypted_data, encrypted_len,
+        read_key, read_iv,
+        0,  // sequence number
+        plaintext, plaintext_len
+    );
+
+    return result;
+}
+</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>Handshake Optimization APIs</h2>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/handshake/full</code><p>Perform full TLS handshake with ECDHE</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/handshake/psk</code><p>Perform PSK-based handshake</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/handshake/resume</code><p>Resume session using session ticket</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/handshake/0rtt</code><p>Send 0-RTT early data</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/ticket/create</code><p>Create session ticket for resumption</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/ticket/decrypt</code><p>Decrypt and validate session ticket</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/psk/add</code><p>Add pre-shared key to store</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/psk/list</code><p>List configured PSK identities</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/handshake/metrics</code><p>Get handshake performance metrics</p></div>
+            <div class="api-endpoint"><span class="method">PUT</span><code>/api/v1/handshake/optimize</code><p>Configure handshake optimization settings</p></div>
+            <div class="api-endpoint"><span class="method">GET</span><code>/api/v1/earlydata/limit</code><p>Get maximum early data size</p></div>
+            <div class="api-endpoint"><span class="method">POST</span><code>/api/v1/handshake/benchmark</code><p>Run handshake performance benchmark</p></div>
+        </div>
+
+        <div class="content-section">
+            <h2>Handshake Configuration Schema</h2>
+            <pre><code>{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Handshake Optimization Configuration",
+  "type": "object",
+  "properties": {
+    "session_resumption": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "ticket_lifetime_seconds": { "type": "integer", "default": 86400 },
+        "max_tickets": { "type": "integer", "default": 4 }
+      }
+    },
+    "psk_mode": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "max_psk_entries": { "type": "integer", "default": 8 }
+      }
+    },
+    "early_data": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "max_size_bytes": { "type": "integer", "default": 16384 }
+      }
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div class="content-section">
+            <h2>Handshake Optimization Certification</h2>
+            <div class="certification-list">
+                <div class="cert-item"><h4>HS-OPT-001: Session Tickets</h4><p>Session ticket creation and resumption</p></div>
+                <div class="cert-item"><h4>HS-OPT-002: PSK Mode</h4><p>Pre-shared key handshake support</p></div>
+                <div class="cert-item"><h4>HS-OPT-003: 0-RTT Data</h4><p>Zero round-trip early data transmission</p></div>
+                <div class="cert-item"><h4>HS-OPT-004: Ticket Encryption</h4><p>Secure ticket encryption and decryption</p></div>
+                <div class="cert-item"><h4>HS-OPT-005: PSK Binder</h4><p>Correct PSK binder computation</p></div>
+                <div class="cert-item"><h4>HS-OPT-006: Key Derivation</h4><p>Proper key schedule for optimized modes</p></div>
+                <div class="cert-item"><h4>HS-OPT-007: Ticket Validation</h4><p>Session ticket validation and expiry</p></div>
+                <div class="cert-item"><h4>HS-OPT-008: PSK Store</h4><p>Secure PSK storage and lookup</p></div>
+                <div class="cert-item"><h4>HS-OPT-009: Early Data Limits</h4><p>Enforcement of early data size limits</p></div>
+                <div class="cert-item"><h4>HS-OPT-010: Replay Protection</h4><p>0-RTT replay mitigation strategies</p></div>
+                <div class="cert-item"><h4>HS-OPT-011: Downgrade Protection</h4><p>Protection against handshake downgrade</p></div>
+                <div class="cert-item"><h4>HS-OPT-012: ALPN Consistency</h4><p>ALPN protocol consistency in resumption</p></div>
+                <div class="cert-item"><h4>HS-OPT-013: Cipher Suite Matching</h4><p>Cipher suite compatibility in resumption</p></div>
+                <div class="cert-item"><h4>HS-OPT-014: Performance Metrics</h4><p>Measurable handshake latency reduction</p></div>
+                <div class="cert-item"><h4>HS-OPT-015: State Management</h4><p>Efficient management of resumption state</p></div>
+                <div class="cert-item"><h4>HS-OPT-016: Ticket Rotation</h4><p>Ticket encryption key rotation</p></div>
+                <div class="cert-item"><h4>HS-OPT-017: PSK Identity Privacy</h4><p>Protection of PSK identity information</p></div>
+                <div class="cert-item"><h4>HS-OPT-018: Error Handling</h4><p>Graceful fallback on resumption failure</p></div>
+                <div class="cert-item"><h4>HS-OPT-019: Memory Efficiency</h4><p>Minimal memory overhead for optimization</p></div>
+                <div class="cert-item"><h4>HS-OPT-020: Interoperability</h4><p>Compatible with standard TLS 1.3 implementations</p></div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="chapter5.html" class="nav-button">← DTLS for IoT</a>
+            <a href="chapter7.html" class="nav-button">Next: Session Management →</a>
+        </div>
+
+        <footer>
+            <div class="korean-text">弘益人間</div>
+            <p>Benefit All Mankind</p>
+            <p>&copy; 2025 WIA (Wireless IoT Alliance). All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

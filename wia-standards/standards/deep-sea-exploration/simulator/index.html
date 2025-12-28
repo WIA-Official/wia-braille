@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Sea Exploration Simulator - WIA Standard</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #06B6D4;
+            --primary-dark: #0891b2;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Monaco', 'Courier New', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--bg-card);
+            padding: 20px;
+            border-bottom: 2px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .lang-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .lang-selector select {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: inherit;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-weight: 600;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: var(--bg);
+        }
+
+        .content {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--bg-card);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 25px;
+        }
+
+        .card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .code-block {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+        }
+
+        .input-group textarea {
+            min-height: 100px;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .output {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            min-height: 200px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-success { background: var(--success); }
+        .status-warning { background: var(--warning); }
+        .status-error { background: var(--error); }
+
+        .vehicle-display {
+            background: linear-gradient(180deg, #001a33 0%, #003366 100%);
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+            min-height: 300px;
+        }
+
+        .vehicle-emoji {
+            font-size: 80px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .depth-meter {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .depth-bar {
+            flex: 1;
+            height: 30px;
+            background: var(--bg);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .depth-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table th,
+        table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        table th {
+            background: var(--bg);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        table tr:hover {
+            background: var(--bg);
+        }
+
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .sensor-card {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .sensor-value {
+            font-size: 2rem;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+
+        .sensor-label {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>🌊 Deep Sea Exploration Simulator</h1>
+        <div class="lang-selector">
+            <label for="language">Language:</label>
+            <select id="language" onchange="changeLanguage()">
+                <option value="en">English</option>
+                <option value="ko">한국어 (Korean)</option>
+                <option value="es">Español (Spanish)</option>
+                <option value="fr">Français (French)</option>
+                <option value="de">Deutsch (German)</option>
+                <option value="ja">日本語 (Japanese)</option>
+                <option value="zh">中文 (Chinese)</option>
+                <option value="pt">Português (Portuguese)</option>
+                <option value="ru">Русский (Russian)</option>
+                <option value="ar">العربية (Arabic)</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+                <option value="it">Italiano (Italian)</option>
+                <option value="nl">Nederlands (Dutch)</option>
+                <option value="pl">Polski (Polish)</option>
+                <option value="tr">Türkçe (Turkish)</option>
+                <option value="vi">Tiếng Việt (Vietnamese)</option>
+                <option value="th">ไทย (Thai)</option>
+                <option value="id">Bahasa Indonesia</option>
+                <option value="ms">Bahasa Melayu (Malay)</option>
+                <option value="sv">Svenska (Swedish)</option>
+                <option value="no">Norsk (Norwegian)</option>
+                <option value="da">Dansk (Danish)</option>
+                <option value="fi">Suomi (Finnish)</option>
+                <option value="cs">Čeština (Czech)</option>
+                <option value="hu">Magyar (Hungarian)</option>
+                <option value="ro">Română (Romanian)</option>
+                <option value="bg">Български (Bulgarian)</option>
+                <option value="el">Ελληνικά (Greek)</option>
+                <option value="he">עברית (Hebrew)</option>
+                <option value="fa">فارسی (Persian)</option>
+                <option value="ur">اردو (Urdu)</option>
+                <option value="bn">বাংলা (Bengali)</option>
+                <option value="ta">தமிழ் (Tamil)</option>
+                <option value="te">తెలుగు (Telugu)</option>
+                <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                <option value="ml">മലയാളം (Malayalam)</option>
+                <option value="mr">मराठी (Marathi)</option>
+                <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                <option value="gu">ગુજરાતી (Gujarati)</option>
+                <option value="sw">Kiswahili (Swahili)</option>
+                <option value="zu">isiZulu (Zulu)</option>
+                <option value="af">Afrikaans</option>
+                <option value="am">አማርኛ (Amharic)</option>
+                <option value="km">ខ្មែរ (Khmer)</option>
+                <option value="lo">ລາວ (Lao)</option>
+                <option value="my">မြန်မာဘာသာ (Burmese)</option>
+                <option value="ne">नेपाली (Nepali)</option>
+                <option value="si">සිංහල (Sinhala)</option>
+                <option value="ka">ქართული (Georgian)</option>
+                <option value="hy">Հայերեն (Armenian)</option>
+                <option value="az">Azərbaycan (Azerbaijani)</option>
+                <option value="kk">Қазақ (Kazakh)</option>
+                <option value="uz">O'zbek (Uzbek)</option>
+                <option value="mn">Монгол (Mongolian)</option>
+                <option value="bo">བོད་སྐད (Tibetan)</option>
+                <option value="ug">ئۇيغۇرچە (Uyghur)</option>
+                <option value="ps">پښتو (Pashto)</option>
+                <option value="tg">Тоҷикӣ (Tajik)</option>
+                <option value="tk">Türkmen (Turkmen)</option>
+                <option value="ky">Кыргызча (Kyrgyz)</option>
+                <option value="sq">Shqip (Albanian)</option>
+                <option value="mk">Македонски (Macedonian)</option>
+                <option value="sr">Српски (Serbian)</option>
+                <option value="hr">Hrvatski (Croatian)</option>
+                <option value="bs">Bosanski (Bosnian)</option>
+                <option value="sl">Slovenščina (Slovenian)</option>
+                <option value="sk">Slovenčina (Slovak)</option>
+                <option value="lt">Lietuvių (Lithuanian)</option>
+                <option value="lv">Latviešu (Latvian)</option>
+                <option value="et">Eesti (Estonian)</option>
+                <option value="mt">Malti (Maltese)</option>
+                <option value="is">Íslenska (Icelandic)</option>
+                <option value="ga">Gaeilge (Irish)</option>
+                <option value="cy">Cymraeg (Welsh)</option>
+                <option value="gd">Gàidhlig (Scottish Gaelic)</option>
+                <option value="eu">Euskara (Basque)</option>
+                <option value="ca">Català (Catalan)</option>
+                <option value="gl">Galego (Galician)</option>
+                <option value="oc">Occitan</option>
+                <option value="br">Brezhoneg (Breton)</option>
+                <option value="fo">Føroyskt (Faroese)</option>
+                <option value="lb">Lëtzebuergesch (Luxembourgish)</option>
+                <option value="rm">Rumantsch (Romansh)</option>
+                <option value="fy">Frysk (Frisian)</option>
+                <option value="yi">ייִדיש (Yiddish)</option>
+                <option value="la">Latina (Latin)</option>
+                <option value="eo">Esperanto</option>
+                <option value="jv">Basa Jawa (Javanese)</option>
+                <option value="su">Basa Sunda (Sundanese)</option>
+                <option value="mg">Malagasy</option>
+                <option value="ny">Chichewa</option>
+                <option value="sn">chiShona (Shona)</option>
+                <option value="st">Sesotho (Southern Sotho)</option>
+                <option value="xh">isiXhosa (Xhosa)</option>
+                <option value="yo">Yorùbá (Yoruba)</option>
+                <option value="ig">Igbo</option>
+                <option value="ha">Hausa</option>
+                <option value="so">Soomaali (Somali)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('data-format')">📊 Data Format</button>
+        <button class="tab" onclick="showTab('algorithms')">🧮 Algorithms</button>
+        <button class="tab" onclick="showTab('protocol')">📡 Protocol</button>
+        <button class="tab" onclick="showTab('integration')">🔗 Integration</button>
+        <button class="tab" onclick="showTab('test')">🧪 Test</button>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        <!-- Tab 1: Data Format -->
+        <div id="data-format" class="tab-content active">
+            <div class="card">
+                <h3>Oceanographic Data Format Generator</h3>
+                <p style="color: var(--text-dim); margin-bottom: 20px;">
+                    Generate standardized deep sea exploration data packets compatible with the WIA standard.
+                </p>
+
+                <div class="grid-2">
+                    <div class="input-group">
+                        <label>Vehicle Type</label>
+                        <select id="vehicle-type">
+                            <option value="ROV">ROV (Remotely Operated Vehicle)</option>
+                            <option value="AUV">AUV (Autonomous Underwater Vehicle)</option>
+                            <option value="Submersible">Manned Submersible</option>
+                            <option value="Glider">Underwater Glider</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Mission Type</label>
+                        <select id="mission-type">
+                            <option value="bathymetric">Bathymetric Mapping</option>
+                            <option value="sampling">Sample Collection</option>
+                            <option value="survey">Biological Survey</option>
+                            <option value="hydrothermal">Hydrothermal Vent Study</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Depth (meters)</label>
+                        <input type="number" id="depth" value="3500" min="0" max="11000">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Temperature (°C)</label>
+                        <input type="number" id="temperature" value="2.5" step="0.1">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Pressure (bar)</label>
+                        <input type="number" id="pressure" value="350" min="0">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Salinity (PSU)</label>
+                        <input type="number" id="salinity" value="35" step="0.1">
+                    </div>
+                </div>
+
+                <button class="btn" onclick="generateDataFormat()">Generate Data Packet</button>
+
+                <div class="output" id="data-output">Click "Generate Data Packet" to create a standardized oceanographic data format...</div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div id="algorithms" class="tab-content">
+            <div class="card">
+                <h3>Path Planning Algorithm</h3>
+                <p style="color: var(--text-dim); margin-bottom: 20px;">
+                    Calculate optimal exploration paths for deep sea vehicles using obstacle avoidance and energy efficiency algorithms.
+                </p>
+
+                <div class="vehicle-display">
+                    <div class="vehicle-emoji">🤖</div>
+                    <div style="color: var(--text); margin-top: 20px;">
+                        <div>Current Depth: <span id="current-depth">0m</span></div>
+                        <div>Energy: <span id="energy-level">100%</span></div>
+                        <div>Status: <span id="vehicle-status">Ready</span></div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Target Depth (meters)</label>
+                    <input type="range" id="target-depth" min="0" max="11000" value="0" oninput="updateDepthDisplay()">
+                    <div style="color: var(--primary); font-size: 1.2rem; text-align: center; margin-top: 10px;">
+                        <span id="target-depth-value">0</span> meters
+                    </div>
+                </div>
+
+                <div class="depth-meter">
+                    <div class="depth-bar">
+                        <div class="depth-fill" id="depth-fill" style="width: 0%">0%</div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <button class="btn" onclick="simulateDescent()">Simulate Descent</button>
+                    <button class="btn btn-secondary" onclick="resetVehicle()">Reset Vehicle</button>
+                </div>
+
+                <div class="output" id="algorithm-output">Configure target depth and click "Simulate Descent"...</div>
+            </div>
+
+            <div class="card">
+                <h3>Acoustic Communication Algorithm</h3>
+                <p style="color: var(--text-dim);">
+                    Simulate underwater acoustic data transmission with error correction.
+                </p>
+
+                <div class="input-group">
+                    <label>Message to Transmit</label>
+                    <textarea id="acoustic-message" placeholder="Enter message to send via acoustic modem...">Sample location acquired. Temperature: 2.5°C, Pressure: 350 bar</textarea>
+                </div>
+
+                <div class="input-group">
+                    <label>Distance (km)</label>
+                    <input type="range" id="acoustic-distance" min="0.1" max="10" step="0.1" value="1" oninput="updateAcousticDistance()">
+                    <div style="color: var(--primary); text-align: center;">
+                        <span id="acoustic-distance-value">1.0</span> km
+                    </div>
+                </div>
+
+                <button class="btn" onclick="simulateAcousticTransmission()">Transmit Message</button>
+
+                <div class="output" id="acoustic-output">Configure message and distance...</div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div id="protocol" class="tab-content">
+            <div class="card">
+                <h3>WIA Deep Sea Protocol Specification</h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Layer</th>
+                            <th>Protocol</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Physical</td>
+                            <td>Acoustic Modem</td>
+                            <td>Underwater sound wave transmission (8-16 kHz)</td>
+                            <td><span class="status-indicator status-success"></span>Active</td>
+                        </tr>
+                        <tr>
+                            <td>Data Link</td>
+                            <td>WIA-DSE-DL</td>
+                            <td>Error correction & flow control for lossy channels</td>
+                            <td><span class="status-indicator status-success"></span>Active</td>
+                        </tr>
+                        <tr>
+                            <td>Network</td>
+                            <td>WIA-DSE-NET</td>
+                            <td>Routing between vehicles and surface stations</td>
+                            <td><span class="status-indicator status-success"></span>Active</td>
+                        </tr>
+                        <tr>
+                            <td>Transport</td>
+                            <td>WIA-DSE-TP</td>
+                            <td>Reliable data delivery with acknowledgments</td>
+                            <td><span class="status-indicator status-success"></span>Active</td>
+                        </tr>
+                        <tr>
+                            <td>Application</td>
+                            <td>WIA-DSE-APP</td>
+                            <td>Mission control, data collection, telemetry</td>
+                            <td><span class="status-indicator status-success"></span>Active</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>Protocol Message Builder</h3>
+
+                <div class="input-group">
+                    <label>Message Type</label>
+                    <select id="protocol-msg-type">
+                        <option value="TELEMETRY">Telemetry Update</option>
+                        <option value="COMMAND">Vehicle Command</option>
+                        <option value="DATA">Sensor Data</option>
+                        <option value="EMERGENCY">Emergency Alert</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Priority</label>
+                    <select id="protocol-priority">
+                        <option value="LOW">Low</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="HIGH">High</option>
+                        <option value="CRITICAL">Critical</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Payload (JSON)</label>
+                    <textarea id="protocol-payload">{"vehicleId": "ROV-001", "depth": 3500, "status": "operational"}</textarea>
+                </div>
+
+                <button class="btn" onclick="buildProtocolMessage()">Build Protocol Message</button>
+
+                <div class="output" id="protocol-output">Configure message parameters...</div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div id="integration" class="tab-content">
+            <div class="card">
+                <h3>Research Network Integration</h3>
+                <p style="color: var(--text-dim); margin-bottom: 20px;">
+                    Connect to global oceanographic research networks and data repositories.
+                </p>
+
+                <div class="sensor-grid">
+                    <div class="sensor-card">
+                        <div class="sensor-label">OOI Network</div>
+                        <div class="sensor-value">✓</div>
+                        <div class="sensor-label">Connected</div>
+                    </div>
+                    <div class="sensor-card">
+                        <div class="sensor-label">NOAA Database</div>
+                        <div class="sensor-value">✓</div>
+                        <div class="sensor-label">Synced</div>
+                    </div>
+                    <div class="sensor-card">
+                        <div class="sensor-label">MBARI Repository</div>
+                        <div class="sensor-value">✓</div>
+                        <div class="sensor-label">Available</div>
+                    </div>
+                    <div class="sensor-card">
+                        <div class="sensor-label">IODP Data Portal</div>
+                        <div class="sensor-value">✓</div>
+                        <div class="sensor-label">Active</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>API Integration Test</h3>
+
+                <div class="input-group">
+                    <label>API Endpoint</label>
+                    <select id="api-endpoint">
+                        <option value="vehicle-status">GET /api/v1/vehicle/status</option>
+                        <option value="mission-data">GET /api/v1/mission/data</option>
+                        <option value="submit-sample">POST /api/v1/samples/submit</option>
+                        <option value="telemetry-stream">WS /api/v1/telemetry/stream</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Request Headers (JSON)</label>
+                    <textarea id="api-headers">{"Authorization": "Bearer WIA-TOKEN-123", "Content-Type": "application/json"}</textarea>
+                </div>
+
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="api-body">{"vehicleId": "ROV-001", "depth": 3500}</textarea>
+                </div>
+
+                <button class="btn" onclick="testAPIIntegration()">Send API Request</button>
+
+                <div class="output" id="integration-output">Configure API request parameters...</div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Test -->
+        <div id="test" class="tab-content">
+            <div class="card">
+                <h3>System Test Suite</h3>
+                <p style="color: var(--text-dim); margin-bottom: 20px;">
+                    Run comprehensive tests to validate WIA Deep Sea Exploration Standard compliance.
+                </p>
+
+                <button class="btn" onclick="runAllTests()" style="width: 100%; margin-bottom: 20px;">
+                    🧪 Run All Tests
+                </button>
+
+                <div class="output" id="test-output">Click "Run All Tests" to begin validation...</div>
+            </div>
+
+            <div class="card">
+                <h3>Test Results Summary</h3>
+                <div class="sensor-grid" id="test-summary">
+                    <div class="sensor-card">
+                        <div class="sensor-label">Data Format</div>
+                        <div class="sensor-value" style="color: var(--text-dim);">-</div>
+                        <div class="sensor-label">Not Run</div>
+                    </div>
+                    <div class="sensor-card">
+                        <div class="sensor-label">Protocol</div>
+                        <div class="sensor-value" style="color: var(--text-dim);">-</div>
+                        <div class="sensor-label">Not Run</div>
+                    </div>
+                    <div class="sensor-card">
+                        <div class="sensor-label">API Integration</div>
+                        <div class="sensor-value" style="color: var(--text-dim);">-</div>
+                        <div class="sensor-label">Not Run</div>
+                    </div>
+                    <div class="sensor-card">
+                        <div class="sensor-label">Compliance</div>
+                        <div class="sensor-value" style="color: var(--text-dim);">-</div>
+                        <div class="sensor-label">Not Run</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Language change
+        function changeLanguage() {
+            const lang = document.getElementById('language').value;
+            console.log('Language changed to:', lang);
+            // In a real implementation, this would reload content in the selected language
+        }
+
+        // Data Format Tab
+        function generateDataFormat() {
+            const vehicleType = document.getElementById('vehicle-type').value;
+            const missionType = document.getElementById('mission-type').value;
+            const depth = document.getElementById('depth').value;
+            const temperature = document.getElementById('temperature').value;
+            const pressure = document.getElementById('pressure').value;
+            const salinity = document.getElementById('salinity').value;
+
+            const dataPacket = {
+                version: "WIA-DSE-v1.0",
+                timestamp: new Date().toISOString(),
+                vehicle: {
+                    type: vehicleType,
+                    id: `${vehicleType}-${Math.floor(Math.random() * 1000)}`,
+                    mission: missionType
+                },
+                location: {
+                    latitude: (Math.random() * 180 - 90).toFixed(6),
+                    longitude: (Math.random() * 360 - 180).toFixed(6),
+                    depth: parseFloat(depth)
+                },
+                environment: {
+                    temperature: parseFloat(temperature),
+                    pressure: parseFloat(pressure),
+                    salinity: parseFloat(salinity),
+                    oxygen: (Math.random() * 10).toFixed(2),
+                    ph: (7 + Math.random() * 2).toFixed(2)
+                },
+                sensors: {
+                    camera: "operational",
+                    sonar: "operational",
+                    lidar: "operational",
+                    magnetometer: "operational"
+                },
+                checksum: Math.random().toString(36).substring(2, 15)
+            };
+
+            document.getElementById('data-output').textContent = JSON.stringify(dataPacket, null, 2);
+        }
+
+        // Algorithm Tab - Depth Simulation
+        function updateDepthDisplay() {
+            const depth = document.getElementById('target-depth').value;
+            document.getElementById('target-depth-value').textContent = depth;
+        }
+
+        function simulateDescent() {
+            const targetDepth = parseInt(document.getElementById('target-depth').value);
+            let currentDepth = 0;
+            const steps = 20;
+            const increment = targetDepth / steps;
+
+            const interval = setInterval(() => {
+                currentDepth += increment;
+                if (currentDepth >= targetDepth) {
+                    currentDepth = targetDepth;
+                    clearInterval(interval);
+                }
+
+                const percentage = (currentDepth / 11000 * 100).toFixed(1);
+                document.getElementById('current-depth').textContent = Math.floor(currentDepth) + 'm';
+                document.getElementById('depth-fill').style.width = percentage + '%';
+                document.getElementById('depth-fill').textContent = percentage + '%';
+
+                const energyUsed = (currentDepth / targetDepth * 30).toFixed(1);
+                document.getElementById('energy-level').textContent = (100 - energyUsed) + '%';
+
+                if (currentDepth >= targetDepth) {
+                    document.getElementById('vehicle-status').textContent = 'Target Depth Reached';
+                    updateAlgorithmOutput(targetDepth);
+                } else {
+                    document.getElementById('vehicle-status').textContent = 'Descending...';
+                }
+            }, 100);
+        }
+
+        function updateAlgorithmOutput(targetDepth) {
+            const output = `Path Planning Algorithm Results:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Target Depth: ${targetDepth}m
+Descent Rate: 0.5 m/s
+Energy Efficiency: 87%
+Obstacle Avoidance: Active
+Path Segments: ${Math.floor(targetDepth / 500)}
+
+Waypoints Generated:
+${Array.from({length: Math.min(5, Math.floor(targetDepth / 1000))}, (_, i) =>
+  `  ${(i + 1) * 1000}m - Check sensors, adjust ballast`
+).join('\n')}
+
+Status: ✓ Mission profile optimized
+Estimated Mission Time: ${(targetDepth / 0.5 / 60).toFixed(1)} minutes
+`;
+            document.getElementById('algorithm-output').textContent = output;
+        }
+
+        function resetVehicle() {
+            document.getElementById('target-depth').value = 0;
+            document.getElementById('target-depth-value').textContent = 0;
+            document.getElementById('current-depth').textContent = '0m';
+            document.getElementById('energy-level').textContent = '100%';
+            document.getElementById('vehicle-status').textContent = 'Ready';
+            document.getElementById('depth-fill').style.width = '0%';
+            document.getElementById('depth-fill').textContent = '0%';
+            document.getElementById('algorithm-output').textContent = 'Configure target depth and click "Simulate Descent"...';
+        }
+
+        // Acoustic Communication
+        function updateAcousticDistance() {
+            const distance = document.getElementById('acoustic-distance').value;
+            document.getElementById('acoustic-distance-value').textContent = parseFloat(distance).toFixed(1);
+        }
+
+        function simulateAcousticTransmission() {
+            const message = document.getElementById('acoustic-message').value;
+            const distance = parseFloat(document.getElementById('acoustic-distance').value);
+            const packetLoss = Math.min(distance * 5, 30);
+            const latency = distance * 1.5;
+
+            const output = `Acoustic Transmission Simulation:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Original Message: "${message}"
+Distance: ${distance} km
+Frequency: 12 kHz
+Bandwidth: 2 kbps
+
+Transmission Metrics:
+  • Latency: ${latency.toFixed(2)} seconds
+  • Packet Loss: ${packetLoss.toFixed(1)}%
+  • SNR: ${(20 - distance * 2).toFixed(1)} dB
+  • Error Correction: Reed-Solomon (255,223)
+
+Received Message: "${message}"
+Status: ✓ Message delivered successfully
+Retransmissions: ${Math.floor(packetLoss / 10)}
+`;
+            document.getElementById('acoustic-output').textContent = output;
+        }
+
+        // Protocol Tab
+        function buildProtocolMessage() {
+            const msgType = document.getElementById('protocol-msg-type').value;
+            const priority = document.getElementById('protocol-priority').value;
+            let payload;
+
+            try {
+                payload = JSON.parse(document.getElementById('protocol-payload').value);
+            } catch (e) {
+                document.getElementById('protocol-output').textContent = 'Error: Invalid JSON in payload';
+                return;
+            }
+
+            const protocolMessage = {
+                header: {
+                    version: "WIA-DSE-v1.0",
+                    messageType: msgType,
+                    priority: priority,
+                    timestamp: new Date().toISOString(),
+                    sequenceNumber: Math.floor(Math.random() * 10000),
+                    sourceId: "SURFACE-STATION-01",
+                    destinationId: payload.vehicleId || "VEHICLE-001"
+                },
+                payload: payload,
+                footer: {
+                    checksum: "CRC32-" + Math.random().toString(36).substring(2, 10),
+                    signature: "SHA256-" + Math.random().toString(36).substring(2, 18)
+                }
+            };
+
+            const output = `WIA Deep Sea Protocol Message:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${JSON.stringify(protocolMessage, null, 2)}
+
+Protocol Stack:
+  └─ Application Layer: ${msgType}
+     └─ Transport Layer: WIA-DSE-TP (Reliable)
+        └─ Network Layer: WIA-DSE-NET (Routed)
+           └─ Data Link Layer: WIA-DSE-DL (Error Corrected)
+              └─ Physical Layer: Acoustic Modem
+
+Status: ✓ Message ready for transmission
+`;
+            document.getElementById('protocol-output').textContent = output;
+        }
+
+        // Integration Tab
+        function testAPIIntegration() {
+            const endpoint = document.getElementById('api-endpoint').value;
+            let headers, body;
+
+            try {
+                headers = JSON.parse(document.getElementById('api-headers').value);
+                body = JSON.parse(document.getElementById('api-body').value);
+            } catch (e) {
+                document.getElementById('integration-output').textContent = 'Error: Invalid JSON';
+                return;
+            }
+
+            const responses = {
+                'vehicle-status': {
+                    vehicleId: body.vehicleId,
+                    status: "operational",
+                    depth: body.depth,
+                    battery: 87,
+                    lastUpdate: new Date().toISOString()
+                },
+                'mission-data': {
+                    missionId: "MISSION-" + Math.floor(Math.random() * 1000),
+                    samplesCollected: 42,
+                    dataSizeMB: 1247,
+                    missionDuration: "6h 23m"
+                },
+                'submit-sample': {
+                    sampleId: "SAMPLE-" + Math.floor(Math.random() * 10000),
+                    status: "received",
+                    queuePosition: 3
+                },
+                'telemetry-stream': {
+                    streamId: "STREAM-" + Math.floor(Math.random() * 100),
+                    status: "connected",
+                    dataRate: "10 Hz"
+                }
+            };
+
+            const output = `API Integration Test Results:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Request:
+  Endpoint: ${document.getElementById('api-endpoint').options[document.getElementById('api-endpoint').selectedIndex].text}
+  Headers: ${JSON.stringify(headers, null, 2)}
+  Body: ${JSON.stringify(body, null, 2)}
+
+Response:
+  Status: 200 OK
+  Time: ${Math.floor(Math.random() * 200 + 50)}ms
+
+${JSON.stringify(responses[endpoint], null, 2)}
+
+✓ API integration successful
+✓ WIA standard compliance verified
+`;
+            document.getElementById('integration-output').textContent = output;
+        }
+
+        // Test Tab
+        function runAllTests() {
+            const output = document.getElementById('test-output');
+            output.textContent = 'Running tests...\n\n';
+
+            const tests = [
+                { name: 'Data Format Validation', delay: 500 },
+                { name: 'Protocol Compliance', delay: 1000 },
+                { name: 'API Integration', delay: 1500 },
+                { name: 'Acoustic Communication', delay: 2000 },
+                { name: 'Vehicle Control', delay: 2500 },
+                { name: 'Sensor Data Collection', delay: 3000 },
+                { name: 'Error Correction', delay: 3500 },
+                { name: 'Network Integration', delay: 4000 },
+                { name: 'Security & Authentication', delay: 4500 },
+                { name: 'WIA Standard Compliance', delay: 5000 }
+            ];
+
+            tests.forEach((test, index) => {
+                setTimeout(() => {
+                    const passed = Math.random() > 0.1;
+                    output.textContent += `[${index + 1}/10] ${test.name}... ${passed ? '✓ PASS' : '✗ FAIL'}\n`;
+
+                    if (index === tests.length - 1) {
+                        const passCount = 9 + Math.floor(Math.random() * 2);
+                        output.textContent += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                        output.textContent += `Tests Complete: ${passCount}/10 passed\n`;
+                        output.textContent += `Compliance Level: ${passCount * 10}%\n`;
+                        output.textContent += passCount >= 9 ? '✓ WIA CERTIFIED\n' : '⚠ Improvements needed\n';
+
+                        updateTestSummary(passCount);
+                    }
+                }, test.delay);
+            });
+        }
+
+        function updateTestSummary(passCount) {
+            const summary = document.getElementById('test-summary');
+            const results = [
+                { label: 'Data Format', passed: true },
+                { label: 'Protocol', passed: true },
+                { label: 'API Integration', passed: passCount >= 9 },
+                { label: 'Compliance', passed: passCount === 10 }
+            ];
+
+            summary.innerHTML = results.map(r => `
+                <div class="sensor-card">
+                    <div class="sensor-label">${r.label}</div>
+                    <div class="sensor-value" style="color: ${r.passed ? 'var(--success)' : 'var(--warning)'};">
+                        ${r.passed ? '✓' : '⚠'}
+                    </div>
+                    <div class="sensor-label">${r.passed ? 'Passed' : 'Warning'}</div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

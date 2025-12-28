@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 7: Phase 4 - System Integration - WIA-DATA-001</title>
+</head>
+<body>
+
+<p><a href="index.html">📊 WIA-DATA-001 Big Data Standard Ebook</a> | Chapter 7 of 8</p>
+
+<hr>
+
+<h1>Chapter 7: Phase 4 - System Integration</h1>
+
+<blockquote>
+<p><strong>Hongik Ingan (弘益人間)</strong></p>
+<p>Seamless integration with existing tools and platforms ensures that WIA-DATA-001 enhances rather than replaces your current infrastructure.</p>
+</blockquote>
+
+<hr>
+
+<h2>7.1 Integration Architecture</h2>
+
+<h3>7.1.1 Connector Framework</h3>
+
+<p>WIA-DATA-001 provides a pluggable connector architecture:</p>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Component</th>
+            <th>Purpose</th>
+            <th>Example</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Source Connector</td>
+            <td>Read from external systems</td>
+            <td>MySQL, Kafka, S3</td>
+        </tr>
+        <tr>
+            <td>Sink Connector</td>
+            <td>Write to external systems</td>
+            <td>BigQuery, Redshift, HDFS</td>
+        </tr>
+        <tr>
+            <td>Transform Connector</td>
+            <td>Process data in-flight</td>
+            <td>JSON parser, aggregator</td>
+        </tr>
+        <tr>
+            <td>Router Connector</td>
+            <td>Route data based on rules</td>
+            <td>Topic router, partitioner</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>7.1.2 Connector Configuration</h3>
+
+<pre><code>{
+  "connector": {
+    "name": "mysql-source",
+    "type": "source",
+    "class": "com.wia.connectors.MySQLSource",
+    "config": {
+      "host": "db.example.com",
+      "port": 3306,
+      "database": "analytics",
+      "table": "events",
+      "poll_interval": "60s"
+    }
+  }
+}
+</code></pre>
+
+<hr>
+
+<h2>7.2 Database Integration</h2>
+
+<h3>7.2.1 Relational Databases</h3>
+
+<p><strong>MySQL/PostgreSQL Connector:</strong></p>
+<ul>
+    <li>Change Data Capture (CDC) support</li>
+    <li>Incremental sync based on timestamps</li>
+    <li>Schema introspection and mapping</li>
+    <li>Batch and streaming modes</li>
+</ul>
+
+<p><strong>Configuration Example:</strong></p>
+
+<pre><code>{
+  "source": {
+    "type": "postgresql",
+    "connection": "jdbc:postgresql://localhost:5432/mydb",
+    "mode": "incrementing",
+    "incrementing_column": "updated_at",
+    "table": "orders",
+    "poll_interval": "5m"
+  }
+}
+</code></pre>
+
+<h3>7.2.2 NoSQL Databases</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Database</th>
+            <th>Connector Features</th>
+            <th>Use Case</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>MongoDB</td>
+            <td>Change streams, oplog tailing</td>
+            <td>Document data, flexible schemas</td>
+        </tr>
+        <tr>
+            <td>Cassandra</td>
+            <td>Bulk export, CQL queries</td>
+            <td>Time-series data, IoT</td>
+        </tr>
+        <tr>
+            <td>Redis</td>
+            <td>Pub/Sub, stream reading</td>
+            <td>Caching, real-time data</td>
+        </tr>
+        <tr>
+            <td>Elasticsearch</td>
+            <td>Scroll API, bulk indexing</td>
+            <td>Search, log analytics</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>7.3 Cloud Storage Integration</h2>
+
+<h3>7.3.1 Object Storage</h3>
+
+<p><strong>Amazon S3:</strong></p>
+<pre><code>{
+  "sink": {
+    "type": "s3",
+    "bucket": "my-data-lake",
+    "prefix": "events/dt={date}/",
+    "format": "parquet",
+    "compression": "snappy",
+    "partitioning": "hourly"
+  }
+}
+</code></pre>
+
+<p><strong>Google Cloud Storage:</strong></p>
+<pre><code>{
+  "sink": {
+    "type": "gcs",
+    "bucket": "gs://my-bucket",
+    "path": "data/{table}/{date}/",
+    "format": "avro",
+    "flush_size": 1000000
+  }
+}
+</code></pre>
+
+<h3>7.3.2 Multi-Cloud Strategy</h3>
+
+<ul>
+    <li><strong>Unified API:</strong> Same code works across AWS, GCP, Azure</li>
+    <li><strong>Data portability:</strong> Easy migration between clouds</li>
+    <li><strong>Cost optimization:</strong> Use cheapest storage per region</li>
+    <li><strong>Disaster recovery:</strong> Cross-cloud replication</li>
+</ul>
+
+<hr>
+
+<h2>7.4 Message Queue Integration</h2>
+
+<h3>7.4.1 Apache Kafka</h3>
+
+<p><strong>Producer Configuration:</strong></p>
+
+<pre><code>{
+  "kafka": {
+    "bootstrap.servers": "kafka1:9092,kafka2:9092",
+    "topic": "user-events",
+    "key.serializer": "com.wia.serializers.WBFSerializer",
+    "value.serializer": "com.wia.serializers.WBFSerializer",
+    "compression.type": "snappy",
+    "acks": "all"
+  }
+}
+</code></pre>
+
+<p><strong>Consumer Configuration:</strong></p>
+
+<pre><code>{
+  "kafka": {
+    "bootstrap.servers": "kafka1:9092",
+    "group.id": "analytics-group",
+    "key.deserializer": "com.wia.serializers.WBFDeserializer",
+    "value.deserializer": "com.wia.serializers.WBFDeserializer",
+    "auto.offset.reset": "earliest"
+  }
+}
+</code></pre>
+
+<h3>7.4.2 Other Message Systems</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>System</th>
+            <th>Protocol</th>
+            <th>Use Case</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>RabbitMQ</td>
+            <td>AMQP 0.9.1</td>
+            <td>Task queues, work distribution</td>
+        </tr>
+        <tr>
+            <td>Apache Pulsar</td>
+            <td>Pulsar Binary Protocol</td>
+            <td>Multi-tenancy, geo-replication</td>
+        </tr>
+        <tr>
+            <td>AWS Kinesis</td>
+            <td>Kinesis API</td>
+            <td>AWS-native streaming</td>
+        </tr>
+        <tr>
+            <td>Azure Event Hubs</td>
+            <td>AMQP 1.0</td>
+            <td>Azure-native streaming</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>7.5 Processing Framework Integration</h2>
+
+<h3>7.5.1 Apache Spark</h3>
+
+<p><strong>Reading WIA Data:</strong></p>
+
+<pre><code>from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("WIA").getOrCreate()
+
+df = spark.read
+    .format("wia")
+    .option("path", "s3://bucket/data/")
+    .option("schema", "user_events")
+    .load()
+
+df.groupBy("user_id")
+    .count()
+    .write
+    .format("wia")
+    .option("compression", "snappy")
+    .save("s3://bucket/output/")
+</code></pre>
+
+<h3>7.5.2 Apache Flink</h3>
+
+<pre><code>StreamExecutionEnvironment env =
+    StreamExecutionEnvironment.getExecutionEnvironment();
+
+DataStream<UserEvent> stream = env
+    .addSource(new WIAKafkaSource<>("user-events"))
+    .keyBy(event -> event.getUserId())
+    .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+    .aggregate(new CountAggregator())
+    .addSink(new WIAParquetSink("s3://bucket/output"));
+
+env.execute("WIA Flink Job");
+</code></pre>
+
+<hr>
+
+<h2>7.6 BI and Analytics Tools</h2>
+
+<h3>7.6.1 Tableau Integration</h3>
+
+<ul>
+    <li>WIA JDBC/ODBC driver</li>
+    <li>Real-time data refresh</li>
+    <li>Custom SQL support</li>
+    <li>Live and extract modes</li>
+</ul>
+
+<h3>7.6.2 Power BI Integration</h3>
+
+<ul>
+    <li>Native WIA connector</li>
+    <li>DirectQuery and Import modes</li>
+    <li>Incremental refresh</li>
+    <li>Row-level security</li>
+</ul>
+
+<h3>7.6.3 Jupyter Notebooks</h3>
+
+<pre><code>import wia
+
+# Connect to WIA dataset
+client = wia.connect("wia://cluster/dataset")
+
+# Load data into pandas DataFrame
+df = client.query("SELECT * FROM events LIMIT 1000")
+                  .to_pandas()
+
+# Analyze and visualize
+df.groupby('event_type')['count'].sum().plot(kind='bar')
+</code></pre>
+
+<hr>
+
+<h2>7.7 Workflow Orchestration</h2>
+
+<h3>7.7.1 Apache Airflow</h3>
+
+<pre><code>from airflow import DAG
+from airflow.providers.wia.operators import WIAOperator
+
+with DAG('wia_etl', schedule_interval='@daily') as dag:
+
+    extract = WIAOperator(
+        task_id='extract',
+        query='SELECT * FROM source WHERE date={date}'
+    )
+
+    transform = WIAOperator(
+        task_id='transform',
+        sql='CREATE TABLE transformed AS SELECT ...'
+    )
+
+    load = WIAOperator(
+        task_id='load',
+        destination='warehouse.table'
+    )
+
+    extract >> transform >> load
+</code></pre>
+
+<h3>7.7.2 Prefect</h3>
+
+<pre><code>from prefect import flow, task
+import wia
+
+@task
+def extract_data(date):
+    client = wia.connect()
+    return client.query(f"SELECT * FROM events WHERE date='{date}'")
+
+@task
+def transform_data(df):
+    return df.groupby('user_id').agg({'amount': 'sum'})
+
+@task
+def load_data(df, destination):
+    client = wia.connect()
+    client.write(df, destination)
+
+@flow
+def wia_etl_flow(date):
+    data = extract_data(date)
+    transformed = transform_data(data)
+    load_data(transformed, "warehouse.daily_summary")
+</code></pre>
+
+<hr>
+
+<h2>Chapter Summary</h2>
+
+<h3>Key Takeaways:</h3>
+
+<ol>
+    <li>WIA-DATA-001 provides connectors for databases, cloud storage, and message queues</li>
+    <li>Processing frameworks like Spark and Flink have native WIA support</li>
+    <li>BI tools can connect via JDBC/ODBC or native connectors</li>
+    <li>Workflow orchestration tools integrate seamlessly with WIA operators</li>
+    <li>Multi-cloud strategies are enabled through unified APIs</li>
+</ol>
+
+<hr>
+
+<h2>Review Questions</h2>
+
+<ol>
+    <li>What are the four types of connectors in the WIA framework?</li>
+    <li>How does Change Data Capture (CDC) work with relational databases?</li>
+    <li>What are the benefits of a multi-cloud storage strategy?</li>
+    <li>Explain how to read and write WIA data in Apache Spark.</li>
+    <li>What BI tools support WIA integration, and how?</li>
+    <li>How does WIA integrate with workflow orchestration tools like Airflow?</li>
+</ol>
+
+<hr>
+
+<p><strong>Next:</strong> <a href="chapter-08.html">Chapter 8: Implementation & Certification →</a></p>
+
+<p><a href="index.html">← Back to Table of Contents</a></p>
+
+</body>
+</html>

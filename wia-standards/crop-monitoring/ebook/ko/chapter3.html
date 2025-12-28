@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>챕터 3: IoT 센서 및 현장 장비 - WIA-AGRI-006</title>
+    <style>
+        body {font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background: #0f172a; color: #f8fafc; line-height: 1.8; max-width: 900px; margin: 0 auto; padding: 40px 20px;}
+        h1, h2, h3 { color: #84CC16; margin-top: 2em; }
+        h1 { border-bottom: 3px solid #84CC16; padding-bottom: 10px; }
+        code { background: #1e293b; padding: 2px 6px; border-radius: 4px; }
+        pre { background: #1e293b; padding: 20px; border-radius: 8px; overflow-x: auto; border-left: 4px solid #84CC16; }
+        .info-box { background: #1e293b; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #60a5fa; }
+        .nav-links { display: flex; justify-content: space-between; margin: 40px 0; padding: 20px 0; border-top: 1px solid #334155; }
+        footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid #334155; text-align: center; color: #94a3b8; }
+        a { color: #60a5fa; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <nav><a href="index.html">← 목차로 돌아가기</a></nav>
+    <h1>챕터 3: IoT 센서 및 현장 장비</h1>
+
+    <h2>3.1 센서 유형</h2>
+    <h3>토양 수분 센서</h3>
+    <p>체적 수분 함량 측정 (0-100%). 관개 일정에 중요.</p>
+    <ul>
+        <li><strong>정전용량 센서:</strong> 가장 일반적, 저렴 (2~5만원)</li>
+        <li><strong>TDR 센서:</strong> 고정확도, 비쌈 (20~50만원)</li>
+        <li><strong>설치:</strong> 헥타르당 3개 센서, 깊이 15cm, 30cm, 60cm</li>
+    </ul>
+
+    <h3>기상 관측소</h3>
+    <p>온도, 습도, 바람, 강수량, 일사량 측정.</p>
+    <pre><code>기상 관측소 데이터:
+{
+  "temperature": {"value": 25.5, "unit": "°C"},
+  "humidity": {"value": 70, "unit": "%"},
+  "windSpeed": {"value": 12, "unit": "km/h"},
+  "rainfall": {"value": 5.2, "unit": "mm"}
+}</code></pre>
+
+    <h3>카메라 및 드론</h3>
+    <p>AI 분석을 위한 시각 데이터 캡처. 병해 감지용 RGB 카메라, NDVI용 다중분광 카메라.</p>
+
+    <h2>3.2 통신 프로토콜</h2>
+    <h3>센서용 MQTT</h3>
+    <pre><code>const mqtt = require('mqtt');
+const client = mqtt.connect('mqtt://crop-monitoring.wiastandards.com');
+
+client.publish('wia/crop/FARM-001/soil-moisture/SM-001', JSON.stringify({
+  sensorId: 'SM-001',
+  timestamp: new Date().toISOString(),
+  measurements: {
+    soilMoisture: { value: 85, unit: '%' }
+  }
+}));</code></pre>
+
+    <h3>원격 현장용 LoRaWAN</h3>
+    <p>저전력, 장거리(5-15km) 통신으로 WiFi/모바일 통신이 없는 원격 지역에 적합.</p>
+
+    <div class="info-box">
+        <h3>전력 관리</h3>
+        <p>태양광 센서는 수년간 작동 가능. 정상 모드에서 5분마다, 경보 시 30초마다 전송, 야간에는 절전 모드로 전력 절약.</p>
+    </div>
+
+    <h2>3.3 설치 가이드</h2>
+    <ol>
+        <li><strong>현장 조사:</strong> 현장 지도화, 다른 토양 유형 구역 식별</li>
+        <li><strong>센서 배치:</strong> 헥타르당 수분 센서 3개, 중앙에 기상 관측소</li>
+        <li><strong>교정:</strong> 알려진 수분 조건에서 센서 테스트</li>
+        <li><strong>네트워크 설정:</strong> WiFi/LoRaWAN 게이트웨이 구성</li>
+        <li><strong>클라우드 연결:</strong> 센서 등록, 데이터 전송 확인</li>
+    </ol>
+
+    <h2>3.4 실시간 데이터 수집</h2>
+    <pre><code># Python 센서 읽기 스크립트
+import time
+from sensors import SoilMoistureSensor
+from mqtt import MQTTClient
+
+sensor = SoilMoistureSensor(pin=17)
+client = MQTTClient('mqtt://crop-monitoring.wiastandards.com')
+
+while True:
+    moisture = sensor.read_moisture()
+    client.publish('wia/crop/FARM-001/soil', {
+        'value': moisture,
+        'timestamp': time.time()
+    })
+    time.sleep(300)  # 5분마다
+</code></pre>
+
+    <div class="nav-links">
+        <a href="chapter2.html">← 챕터 2</a>
+        <a href="chapter4.html">챕터 4 →</a>
+    </div>
+
+    <footer>
+        <p>弘益人間 (널리 인간을 이롭게 하라)</p>
+        <p>WIA-AGRI-006 작물 모니터링 표준 | © 2025 MIT 라이선스</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 06: 드론 자율 비행 | WIA-SPACE-017</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+            background: #1a1a2e; color: #eee; line-height: 1.8; padding: 2rem;
+        }
+        .container {
+            max-width: 900px; margin: 0 auto; background: rgba(255, 255, 255, 0.03);
+            padding: 3rem; border-radius: 12px; border: 1px solid rgba(233, 69, 96, 0.2);
+        }
+        .chapter-header { border-bottom: 3px solid #e94560; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #e94560; font-size: 1rem; font-weight: 600; letter-spacing: 2px; margin-bottom: 0.5rem; }
+        h1 { color: #fff; font-size: 2.5rem; margin-bottom: 1rem; }
+        .chapter-intro { color: #aaa; font-size: 1.1rem; line-height: 1.8; }
+        h2 {
+            color: #e94560; font-size: 1.8rem; margin-top: 3rem; margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem; border-bottom: 2px solid rgba(233, 69, 96, 0.3);
+        }
+        h3 { color: #4ecca3; font-size: 1.4rem; margin-top: 2rem; margin-bottom: 1rem; }
+        p { margin-bottom: 1.5rem; color: #ccc; font-size: 1.05rem; }
+        ul, ol { margin-bottom: 1.5rem; padding-left: 2rem; }
+        li { margin-bottom: 0.8rem; color: #ccc; }
+        .info-box {
+            background: rgba(78, 204, 163, 0.1); border-left: 4px solid #4ecca3;
+            padding: 1.5rem; margin: 2rem 0; border-radius: 6px;
+        }
+        .info-box h4 { color: #4ecca3; margin-bottom: 1rem; font-size: 1.2rem; }
+        .warning-box {
+            background: rgba(233, 69, 96, 0.1); border-left: 4px solid #e94560;
+            padding: 1.5rem; margin: 2rem 0; border-radius: 6px;
+        }
+        .warning-box h4 { color: #e94560; margin-bottom: 1rem; font-size: 1.2rem; }
+        table {
+            width: 100%; border-collapse: collapse; margin: 2rem 0;
+            background: rgba(15, 52, 96, 0.3); border-radius: 6px; overflow: hidden;
+        }
+        th { background: #0f3460; color: #e94560; padding: 1rem; text-align: left; font-weight: 600; }
+        td { padding: 1rem; border-top: 1px solid rgba(233, 69, 96, 0.2); color: #ccc; }
+        tr:hover { background: rgba(233, 69, 96, 0.1); }
+        .nav-buttons {
+            margin-top: 4rem; padding-top: 2rem; border-top: 2px solid rgba(233, 69, 96, 0.3);
+            display: flex; justify-content: space-between; gap: 1rem;
+        }
+        .btn {
+            display: inline-block; background: #e94560; color: white; padding: 1rem 2rem;
+            border-radius: 6px; text-decoration: none; font-weight: 600; transition: all 0.3s ease;
+        }
+        .btn:hover { background: #d63651; transform: translateY(-2px); }
+        .btn-secondary { background: #0f3460; }
+        .btn-secondary:hover { background: #16213e; }
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .container { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            .nav-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-number">CHAPTER 06</div>
+            <h1>🤖 드론 자율 비행</h1>
+            <p class="chapter-intro">
+                드론의 자율 비행 기술을 탐구합니다.
+                웨이포인트 네비게이션, SLAM, 장애물 회피, 그리고 AI 기반 비행 계획을 이해합니다.
+            </p>
+        </div>
+
+        <h2>6.1 자율 비행의 수준</h2>
+
+        <p>
+            자율 비행은 여러 단계로 구분할 수 있습니다:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>레벨</th>
+                    <th>명칭</th>
+                    <th>설명</th>
+                    <th>예시</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>0</strong></td>
+                    <td>수동 비행</td>
+                    <td>조종자가 모든 제어</td>
+                    <td>Acro 모드</td>
+                </tr>
+                <tr>
+                    <td><strong>1</strong></td>
+                    <td>자세 안정화</td>
+                    <td>자동 수평 유지</td>
+                    <td>Angle 모드</td>
+                </tr>
+                <tr>
+                    <td><strong>2</strong></td>
+                    <td>위치 유지</td>
+                    <td>GPS로 위치 고정</td>
+                    <td>Loiter, Altitude Hold</td>
+                </tr>
+                <tr>
+                    <td><strong>3</strong></td>
+                    <td>웨이포인트 비행</td>
+                    <td>사전 정의 경로 자동 비행</td>
+                    <td>측량 드론</td>
+                </tr>
+                <tr>
+                    <td><strong>4</strong></td>
+                    <td>장애물 회피</td>
+                    <td>센서로 장애물 감지 및 회피</td>
+                    <td>DJI Mavic 시리즈</td>
+                </tr>
+                <tr>
+                    <td><strong>5</strong></td>
+                    <td>완전 자율</td>
+                    <td>AI 기반 의사결정, 임무 수행</td>
+                    <td>Skydio, 군사 드론</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>6.2 웨이포인트 네비게이션</h2>
+
+        <p>
+            웨이포인트는 드론이 자동으로 비행할 3D 좌표(위도, 경도, 고도)입니다.
+        </p>
+
+        <h3>6.2.1 웨이포인트 미션 구성</h3>
+
+        <ul>
+            <li><strong>이륙 지점</strong>: Home position, RTH 귀환점</li>
+            <li><strong>웨이포인트 1~N</strong>: 순차적으로 방문할 좌표</li>
+            <li><strong>각 웨이포인트 속성</strong>:
+                <ul>
+                    <li>위치 (위도/경도/고도)</li>
+                    <li>속도</li>
+                    <li>체류 시간 (hovering duration)</li>
+                    <li>카메라 액션 (사진 촬영, 녹화 시작/중지)</li>
+                    <li>짐벌 각도</li>
+                </ul>
+            </li>
+            <li><strong>귀환 동작</strong>: RTH 또는 착륙</li>
+        </ul>
+
+        <h3>6.2.2 미션 계획 소프트웨어</h3>
+
+        <ul>
+            <li><strong>Mission Planner</strong>: ArduPilot, 직선/곡선 경로, 측량 패턴</li>
+            <li><strong>QGroundControl</strong>: PX4/ArduPilot, 간편한 UI</li>
+            <li><strong>DJI GS Pro</strong>: DJI 드론, 포토그래메트리 자동 계획</li>
+            <li><strong>UgCS</strong>: 상업용, 지형 추종 비행</li>
+            <li><strong>Litchi</strong>: 소비자용, 모바일 앱</li>
+        </ul>
+
+        <h3>6.2.3 측량 비행 패턴</h3>
+
+        <p>
+            측량 및 매핑을 위한 자동 비행 패턴:
+        </p>
+
+        <ul>
+            <li><strong>그리드 패턴 (Grid)</strong>: 평행선으로 지역 커버, 가장 일반적</li>
+            <li><strong>이중 그리드 (Double Grid)</strong>: 직교하는 두 방향, 정확도 향상</li>
+            <li><strong>원형 패턴 (Circular)</strong>: 중심 지점 주변 원형 비행</li>
+            <li><strong>지형 추종 (Terrain Following)</strong>: 지형에 따라 고도 자동 조절</li>
+            <li><strong>복도 매핑 (Corridor)</strong>: 도로, 송전선 등 선형 구조물</li>
+        </ul>
+
+        <div class="info-box">
+            <h4>💡 오버랩 (Overlap)</h4>
+            <p>
+                포토그래메트리를 위해서는 사진 간 겹침이 필요합니다:
+                <br><strong>전방 오버랩</strong>: 70~80% (비행 방향)
+                <br><strong>측방 오버랩</strong>: 60~70% (비행 경로 간)
+                <br>높은 오버랩은 더 정확한 3D 모델을 만들지만 비행 시간이 증가합니다.
+            </p>
+        </div>
+
+        <h2>6.3 SLAM (Simultaneous Localization and Mapping)</h2>
+
+        <p>
+            SLAM은 드론이 알려지지 않은 환경에서 지도를 만들면서 동시에 자신의 위치를 추정하는 기술입니다.
+        </p>
+
+        <h3>6.3.1 SLAM의 필요성</h3>
+
+        <ul>
+            <li><strong>GPS 없는 환경</strong>: 실내, 터널, 지하</li>
+            <li><strong>정밀 위치 추정</strong>: GPS보다 높은 정확도 (cm 단위)</li>
+            <li><strong>3D 맵 생성</strong>: 미지의 환경 탐색 및 매핑</li>
+        </ul>
+
+        <h3>6.3.2 SLAM 센서</h3>
+
+        <ul>
+            <li><strong>Visual SLAM (VSLAM)</strong>:
+                <ul>
+                    <li>카메라 사용 (모노, 스테레오, RGB-D)</li>
+                    <li>특징점 추출 및 매칭</li>
+                    <li>ORB-SLAM, LSD-SLAM, SVO</li>
+                </ul>
+            </li>
+            <li><strong>LiDAR SLAM</strong>:
+                <ul>
+                    <li>2D/3D LiDAR 사용</li>
+                    <li>포인트 클라우드 매칭</li>
+                    <li>Hector SLAM, LOAM, LeGO-LOAM</li>
+                </ul>
+            </li>
+            <li><strong>Visual-Inertial SLAM (VI-SLAM)</strong>:
+                <ul>
+                    <li>카메라 + IMU 융합</li>
+                    <li>더 강건한 추정</li>
+                    <li>VINS-Mono, OKVIS</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>6.3.3 SLAM 응용</h3>
+
+        <ul>
+            <li><strong>실내 비행</strong>: GPS 없이 창고, 건물 내부 탐색</li>
+            <li><strong>구조 임무</strong>: 재난 현장 3D 맵 생성</li>
+            <li><strong>검사</strong>: 교량 아래, 터널 내부 점검</li>
+            <li><strong>자율 배송</strong>: 실내 배송 드론</li>
+        </ul>
+
+        <h2>6.4 장애물 감지 및 회피</h2>
+
+        <p>
+            안전한 자율 비행을 위해 드론은 장애물을 감지하고 회피해야 합니다.
+        </p>
+
+        <h3>6.4.1 장애물 감지 센서</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>센서</th>
+                    <th>범위</th>
+                    <th>장점</th>
+                    <th>단점</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>초음파</strong></td>
+                    <td>0.2~5m</td>
+                    <td>저렴, 단순</td>
+                    <td>짧은 범위, 날씨 영향</td>
+                </tr>
+                <tr>
+                    <td><strong>적외선 (ToF)</strong></td>
+                    <td>0.1~10m</td>
+                    <td>빠름, 정확</td>
+                    <td>햇빛 간섭</td>
+                </tr>
+                <tr>
+                    <td><strong>스테레오 카메라</strong></td>
+                    <td>0.5~20m</td>
+                    <td>3D 인식, 텍스처 정보</td>
+                    <td>계산 부하, 조명 의존</td>
+                </tr>
+                <tr>
+                    <td><strong>LiDAR</strong></td>
+                    <td>0.5~100m+</td>
+                    <td>정밀, 날씨 강건</td>
+                    <td>비싸고 무거움</td>
+                </tr>
+                <tr>
+                    <td><strong>레이더</strong></td>
+                    <td>1~200m</td>
+                    <td>장거리, 날씨 무관</td>
+                    <td>낮은 해상도</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>6.4.2 회피 전략</h3>
+
+        <ul>
+            <li><strong>정지 (Stop)</strong>: 장애물 감지 시 즉시 호버링</li>
+            <li><strong>우회 (Go Around)</strong>: 장애물을 돌아 목표 지점 도달</li>
+            <li><strong>상승/하강</strong>: 수직 회피</li>
+            <li><strong>경로 재계획 (Replan)</strong>: 전체 경로 재계산</li>
+        </ul>
+
+        <h3>6.4.3 상용 장애물 회피 드론</h3>
+
+        <ul>
+            <li><strong>DJI Mavic 3</strong>: 전방위 장애물 감지 (전/후/좌/우/상/하)</li>
+            <li><strong>Skydio 2+</strong>: 6개 4K 카메라, AI 기반 회피</li>
+            <li><strong>Autel EVO II</strong>: 12방향 장애물 센서</li>
+        </ul>
+
+        <h2>6.5 경로 계획 알고리즘</h2>
+
+        <p>
+            효율적이고 안전한 비행 경로를 계산하는 알고리즘입니다.
+        </p>
+
+        <h3>6.5.1 고전적 경로 계획</h3>
+
+        <ul>
+            <li><strong>Dijkstra / A* 알고리즘</strong>:
+                <ul>
+                    <li>그래프 기반 최단 경로 탐색</li>
+                    <li>A*는 휴리스틱으로 탐색 가속</li>
+                    <li>2D/3D 그리드 맵에서 사용</li>
+                </ul>
+            </li>
+            <li><strong>RRT (Rapidly-exploring Random Tree)</strong>:
+                <ul>
+                    <li>랜덤 샘플링으로 트리 확장</li>
+                    <li>고차원 공간에서 효과적</li>
+                    <li>RRT*, RRT-Connect 변형</li>
+                </ul>
+            </li>
+            <li><strong>Potential Field</strong>:
+                <ul>
+                    <li>목표는 인력, 장애물은 척력</li>
+                    <li>실시간 반응형 회피</li>
+                    <li>지역 최소값 문제 존재</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>6.5.2 최신 경로 계획</h3>
+
+        <ul>
+            <li><strong>Model Predictive Control (MPC)</strong>:
+                <ul>
+                    <li>미래 경로 예측 및 최적화</li>
+                    <li>제약 조건 고려 (속도, 가속도 제한)</li>
+                    <li>부드러운 궤적 생성</li>
+                </ul>
+            </li>
+            <li><strong>Learning-based Planning</strong>:
+                <ul>
+                    <li>강화학습 (Reinforcement Learning)</li>
+                    <li>모방학습 (Imitation Learning)</li>
+                    <li>딥러닝 기반 end-to-end 제어</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>6.6 자율 착륙</h2>
+
+        <p>
+            정밀한 자율 착륙은 배송, 이착륙장이 제한된 환경에서 중요합니다.
+        </p>
+
+        <h3>6.6.1 GPS 기반 착륙</h3>
+
+        <ul>
+            <li><strong>일반 GPS</strong>: ±1m 오차, 넓은 공간 필요</li>
+            <li><strong>RTK GPS</strong>: ±2cm 정확도, 정밀 착륙 가능</li>
+        </ul>
+
+        <h3>6.6.2 Vision 기반 착륙</h3>
+
+        <ul>
+            <li><strong>AprilTag / ArUco 마커</strong>:
+                <ul>
+                    <li>착륙 패드에 마커 배치</li>
+                    <li>카메라로 마커 감지 및 위치 추정</li>
+                    <li>cm 단위 정확도</li>
+                </ul>
+            </li>
+            <li><strong>LED 패턴 인식</strong>: 야간 착륙</li>
+            <li><strong>지면 텍스처 매칭</strong>: 마커 없는 착륙</li>
+        </ul>
+
+        <h3>6.6.3 고급 착륙 기술</h3>
+
+        <ul>
+            <li><strong>움직이는 플랫폼 착륙</strong>:
+                <ul>
+                    <li>선박, 차량 위 착륙</li>
+                    <li>상대 속도 추정 및 매칭</li>
+                </ul>
+            </li>
+            <li><strong>협소 공간 착륙</strong>:
+                <ul>
+                    <li>초정밀 제어</li>
+                    <li>Vision + LiDAR 융합</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>6.7 AI 및 머신러닝 응용</h2>
+
+        <h3>6.7.1 객체 인식 및 추적</h3>
+
+        <ul>
+            <li><strong>사람 추적</strong>: Follow-me 모드, Active Track (DJI)</li>
+            <li><strong>차량 추적</strong>: 교통 모니터링</li>
+            <li><strong>동물 추적</strong>: 야생동물 연구</li>
+            <li><strong>딥러닝 모델</strong>: YOLO, SSD, Faster R-CNN</li>
+        </ul>
+
+        <h3>6.7.2 의미론적 분할 (Semantic Segmentation)</h3>
+
+        <ul>
+            <li>픽셀 단위 분류: 도로, 건물, 나무, 하늘 등</li>
+            <li>안전한 착륙 지점 탐지</li>
+            <li>비행 가능 공간 인식</li>
+        </ul>
+
+        <h3>6.7.3 End-to-End 학습</h3>
+
+        <ul>
+            <li><strong>입력</strong>: 카메라 이미지, LiDAR 데이터</li>
+            <li><strong>출력</strong>: 조종 명령 (Throttle, Roll, Pitch, Yaw)</li>
+            <li><strong>학습</strong>: 전문가 시연 데이터로 모방학습</li>
+            <li><strong>예시</strong>: DroNet (도시 환경 자율 비행)</li>
+        </ul>
+
+        <h2>6.8 군집 비행 (Swarm)</h2>
+
+        <p>
+            여러 대의 드론이 협력하여 임무를 수행하는 기술입니다.
+        </p>
+
+        <h3>6.8.1 군집 알고리즘</h3>
+
+        <ul>
+            <li><strong>Boid 알고리즘</strong>:
+                <ul>
+                    <li>분리 (Separation): 충돌 회피</li>
+                    <li>정렬 (Alignment): 방향 일치</li>
+                    <li>응집 (Cohesion): 군집 유지</li>
+                </ul>
+            </li>
+            <li><strong>리더-팔로워 (Leader-Follower)</strong>: 한 드론이 경로 결정</li>
+            <li><strong>분산 제어 (Distributed Control)</strong>: 중앙 통제 없이 개별 의사결정</li>
+        </ul>
+
+        <h3>6.8.2 군집 비행 응용</h3>
+
+        <ul>
+            <li><strong>드론 쇼</strong>: Intel, Verge Aero 라이트 쇼</li>
+            <li><strong>수색 구조</strong>: 넓은 지역 동시 탐색</li>
+            <li><strong>농업</strong>: 대규모 농지 동시 살포</li>
+            <li><strong>군사</strong>: 협동 정찰, 공격</li>
+        </ul>
+
+        <div class="warning-box">
+            <h4>⚠️ 군집 비행의 도전과제</h4>
+            <p>
+                <strong>통신 지연</strong>: 실시간 동기화 필요<br>
+                <strong>충돌 방지</strong>: 다수 드론 간 안전 거리 유지<br>
+                <strong>규제</strong>: 대부분 국가에서 군집 비행 규제<br>
+                <strong>단일 장애점</strong>: 중앙 제어 시스템 고장 시 전체 군집 영향
+            </p>
+        </div>
+
+        <h2>6.9 시뮬레이션 및 테스트</h2>
+
+        <h3>6.9.1 드론 시뮬레이터</h3>
+
+        <ul>
+            <li><strong>Gazebo + ROS</strong>: 로봇 시뮬레이션 표준, PX4 SITL 지원</li>
+            <li><strong>AirSim (Microsoft)</strong>: Unreal Engine 기반, 사실적 환경</li>
+            <li><strong>jMAVSim</strong>: PX4 경량 시뮬레이터</li>
+            <li><strong>DJI Flight Simulator</strong>: DJI 드론 전용</li>
+        </ul>
+
+        <h3>6.9.2 Hardware-in-the-Loop (HITL)</h3>
+
+        <ul>
+            <li>실제 비행 컨트롤러를 시뮬레이터와 연결</li>
+            <li>센서 입력은 시뮬레이션, FC는 실제 하드웨어</li>
+            <li>펌웨어 테스트에 유용</li>
+        </ul>
+
+        <h3>6.9.3 Software-in-the-Loop (SITL)</h3>
+
+        <ul>
+            <li>FC 펌웨어를 PC에서 실행</li>
+            <li>하드웨어 없이 알고리즘 개발 가능</li>
+            <li>ArduPilot, PX4 모두 SITL 지원</li>
+        </ul>
+
+        <h2>6.10 요약</h2>
+
+        <p>
+            자율 비행 기술은 웨이포인트 네비게이션에서 완전 자율 AI 제어까지 다양한 수준으로 발전하고 있습니다.
+            SLAM은 GPS 없는 환경에서 위치 추정을 가능하게 하고,
+            장애물 감지 및 회피는 안전한 비행을 보장합니다.
+        </p>
+
+        <p>
+            경로 계획 알고리즘은 효율적인 비행 궤적을 생성하며,
+            AI와 머신러닝은 객체 인식, 추적, end-to-end 제어를 실현합니다.
+            군집 비행은 다수 드론의 협력을 통해 복잡한 임무 수행을 가능하게 합니다.
+        </p>
+
+        <p>
+            다음 챕터에서는 드론 산업의 규제와 인증 체계를 살펴보겠습니다.
+        </p>
+
+        <div class="nav-buttons">
+            <a href="chapter-05.html" class="btn btn-secondary">← 이전: 통신 시스템</a>
+            <a href="chapter-07.html" class="btn">다음: 규제 및 인증 →</a>
+        </div>
+    </div>
+</body>
+</html>

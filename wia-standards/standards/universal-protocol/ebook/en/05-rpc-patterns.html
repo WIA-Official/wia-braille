@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: RPC Patterns | WIA-CORE-007</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f1f5f9; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 3rem; border-radius: 15px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #10b981; border-bottom: 3px solid #6B7280; padding-bottom: 1rem; }
+        h2 { font-size: 2rem; margin: 2rem 0 1rem; color: #6B7280; }
+        h3 { font-size: 1.5rem; margin: 1.5rem 0 1rem; color: #10b981; }
+        p { margin: 1rem 0; font-size: 1.1rem; }
+        code { background: #0f172a; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: Monaco, monospace; color: #10b981; }
+        pre { background: #0f172a; padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; border-left: 4px solid #6B7280; }
+        pre code { background: none; padding: 0; }
+        .nav { margin: 2rem 0; display: flex; justify-content: space-between; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #10b981; text-decoration: none; font-weight: 600; padding: 0.5rem 1rem; border: 2px solid #6B7280; border-radius: 5px; transition: all 0.3s; }
+        .nav a:hover { background: #6B7280; color: white; }
+        .highlight { background: #334155; padding: 1.5rem; border-left: 4px solid #10b981; border-radius: 5px; margin: 1.5rem 0; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; font-size: 1.1rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 1rem; text-align: left; border: 1px solid #334155; }
+        th { background: #0f172a; color: #10b981; }
+        td { background: #1e293b; }
+        .emoji { font-size: 1.5em; margin-right: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">⚡</span>Chapter 5: RPC Patterns</h1>
+
+        <h2>5.1 Remote Procedure Call Basics</h2>
+        <p>RPC (Remote Procedure Call) allows you to call functions on remote servers as if they were local. The Universal Protocol makes RPC simple and transport-agnostic.</p>
+
+        <h3>5.1.1 Simple RPC Call</h3>
+        <pre><code>// Client
+const result = await protocol.call('math.add', {
+  a: 10,
+  b: 20
+});
+
+console.log(result); // { sum: 30 }
+
+// Server
+protocol.handle('math.add', async (params) => {
+  return {
+    sum: params.a + params.b
+  };
+});</code></pre>
+
+        <h2>5.2 Method Naming Conventions</h2>
+        <p>Use hierarchical naming for clarity and organization:</p>
+
+        <pre><code>// Resource-oriented naming
+await protocol.call('users.get', { id: '123' });
+await protocol.call('users.create', { name: 'John' });
+await protocol.call('users.update', { id: '123', name: 'Jane' });
+await protocol.call('users.delete', { id: '123' });
+
+// Domain-oriented naming
+await protocol.call('auth.login', { email, password });
+await protocol.call('auth.logout', { sessionId });
+await protocol.call('auth.refreshToken', { refreshToken });
+
+// Action-oriented naming
+await protocol.call('orders.place', { items, address });
+await protocol.call('orders.cancel', { orderId });
+await protocol.call('orders.refund', { orderId, amount });</code></pre>
+
+        <h2>5.3 Request Validation</h2>
+        <p>Validate inputs before processing:</p>
+
+        <pre><code>import { z } from 'zod';
+
+// Define validation schema
+const createUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(2).max(100),
+  age: z.number().int().min(18).max(120),
+  roles: z.array(z.enum(['user', 'admin', 'moderator'])).optional()
+});
+
+protocol.handle('users.create', async (params) => {
+  // Validate params
+  const validated = createUserSchema.parse(params);
+
+  // Validation passed, create user
+  const user = await database.users.create(validated);
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name
+  };
+});
+
+// Client automatically gets validation errors
+try {
+  await protocol.call('users.create', {
+    email: 'invalid-email', // Invalid email format
+    name: 'J', // Too short
+    age: 15 // Too young
+  });
+} catch (error) {
+  console.error('Validation failed:', error.details);
+  // Shows which fields failed and why
+}</code></pre>
+
+        <h2>5.4 Timeouts and Deadlines</h2>
+        <p>Prevent hanging requests with timeouts:</p>
+
+        <pre><code>// Client-side timeout
+const result = await protocol.call('slowOperation', params, {
+  timeout: 5000 // 5 seconds
+});
+
+// Server-side deadline
+protocol.handle('slowOperation', async (params, context) => {
+  const deadline = context.deadline; // Deadline timestamp
+
+  const data = await fetchLargeDataset();
+
+  // Check if we're running out of time
+  if (Date.now() &gt; deadline) {
+    throw new DeadlineExceededError('Operation took too long');
+  }
+
+  const processed = await processData(data);
+  return processed;
+});
+
+// Cascading timeouts in microservices
+protocol.handle('orchestrator', async (params, context) => {
+  const remainingTime = context.deadline - Date.now();
+
+  // Leave some buffer for processing
+  const serviceTimeout = remainingTime - 1000;
+
+  const results = await Promise.all([
+    protocol.call('service1.getData', params, {
+      timeout: serviceTimeout,
+      metadata: { deadline: context.deadline }
+    }),
+    protocol.call('service2.getData', params, {
+      timeout: serviceTimeout,
+      metadata: { deadline: context.deadline }
+    })
+  ]);
+
+  return combineResults(results);
+});</code></pre>
+
+        <h2>5.5 Retry Strategies</h2>
+        <p>Handle transient failures with retries:</p>
+
+        <pre><code>// Automatic retry with exponential backoff
+const result = await protocol.call('unreliableService', params, {
+  retry: {
+    maxAttempts: 5,
+    initialDelay: 1000, // 1 second
+    maxDelay: 30000, // 30 seconds
+    backoff: 'exponential', // or 'linear', 'constant'
+    jitter: true, // Add randomness to prevent thundering herd
+
+    // Only retry on specific errors
+    retryableErrors: ['TIMEOUT', 'SERVICE_UNAVAILABLE', 'NETWORK_ERROR'],
+
+    // Custom retry condition
+    shouldRetry: (error, attempt) => {
+      if (error.code === 'RATE_LIMIT') {
+        // Wait longer for rate limits
+        return attempt &lt; 3;
+      }
+      return error.isTransient && attempt &lt; 5;
+    }
+  }
+});
+
+// Retry with idempotency key
+await protocol.call('payment.charge', {
+  amount: 99.99,
+  currency: 'USD',
+  idempotencyKey: 'charge_' + transactionId // Prevents duplicate charges
+}, {
+  retry: { maxAttempts: 3 }
+});</code></pre>
+
+        <h2>5.6 Batching Requests</h2>
+        <p>Reduce network overhead by batching multiple calls:</p>
+
+        <pre><code>// Individual calls (6 round trips)
+const user1 = await protocol.call('users.get', { id: '1' });
+const user2 = await protocol.call('users.get', { id: '2' });
+const user3 = await protocol.call('users.get', { id: '3' });
+
+// Batched call (1 round trip)
+const users = await protocol.batch([
+  { method: 'users.get', params: { id: '1' } },
+  { method: 'users.get', params: { id: '2' } },
+  { method: 'users.get', params: { id: '3' } }
+]);
+
+// Server handles batch
+protocol.handleBatch(async (requests) => {
+  return await Promise.all(
+    requests.map(req => handleRequest(req.method, req.params))
+  );
+});
+
+// Advanced: DataLoader pattern for automatic batching
+const userLoader = new DataLoader(async (ids) => {
+  return await protocol.call('users.getMany', { ids });
+});
+
+// These are automatically batched within the same tick
+const [user1, user2, user3] = await Promise.all([
+  userLoader.load('1'),
+  userLoader.load('2'),
+  userLoader.load('3')
+]);</code></pre>
+
+        <h2>5.7 Caching</h2>
+        <p>Cache responses to reduce load and improve performance:</p>
+
+        <pre><code>// Client-side caching
+const cache = new LRUCache({ max: 1000, ttl: 60000 }); // 1 minute TTL
+
+const result = await protocol.call('expensiveOperation', params, {
+  cache: {
+    enabled: true,
+    key: 'operation:' + JSON.stringify(params),
+    ttl: 60000,
+    storage: cache
+  }
+});
+
+// Server-side caching with headers
+protocol.handle('users.get', async (params) => {
+  const user = await database.users.findById(params.id);
+
+  return {
+    data: user,
+    metadata: {
+      'cache-control': 'public, max-age=300', // Cache for 5 minutes
+      'etag': generateETag(user)
+    }
+  };
+});
+
+// Conditional requests (304 Not Modified)
+const result = await protocol.call('users.get', { id: '123' }, {
+  metadata: {
+    'if-none-match': previousETag
+  }
+});
+
+if (result.status === 304) {
+  // Use cached data
+  return cachedUser;
+}</code></pre>
+
+        <h2>5.8 Circuit Breaker Pattern</h2>
+        <p>Protect your system from cascading failures:</p>
+
+        <pre><code>class CircuitBreaker {
+  constructor(options) {
+    this.failureThreshold = options.failureThreshold || 5;
+    this.resetTimeout = options.resetTimeout || 60000;
+    this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
+    this.failures = 0;
+    this.nextAttempt = Date.now();
+  }
+
+  async execute(fn) {
+    if (this.state === 'OPEN') {
+      if (Date.now() &lt; this.nextAttempt) {
+        throw new Error('Circuit breaker is OPEN');
+      }
+      this.state = 'HALF_OPEN';
+    }
+
+    try {
+      const result = await fn();
+
+      if (this.state === 'HALF_OPEN') {
+        this.state = 'CLOSED';
+        this.failures = 0;
+      }
+
+      return result;
+    } catch (error) {
+      this.failures++;
+
+      if (this.failures >= this.failureThreshold) {
+        this.state = 'OPEN';
+        this.nextAttempt = Date.now() + this.resetTimeout;
+      }
+
+      throw error;
+    }
+  }
+}
+
+// Usage
+const breaker = new CircuitBreaker({
+  failureThreshold: 5,
+  resetTimeout: 60000
+});
+
+const result = await breaker.execute(() =>
+  protocol.call('external.api', params)
+);</code></pre>
+
+        <h2>5.9 Rate Limiting</h2>
+        <p>Control request rates to protect resources:</p>
+
+        <pre><code>// Server-side rate limiting
+import { RateLimiter } from '@wia/universal-protocol';
+
+const limiter = new RateLimiter({
+  windowMs: 60000, // 1 minute
+  max: 100, // 100 requests per minute
+  keyGenerator: (context) => context.metadata['x-user-id']
+});
+
+protocol.use(limiter.middleware());
+
+protocol.handle('api.endpoint', async (params, context) => {
+  // Rate limit checked automatically
+  return processRequest(params);
+});
+
+// Client-side rate limiting
+const clientLimiter = new RateLimiter({
+  windowMs: 1000,
+  max: 10 // 10 requests per second
+});
+
+for (const item of largeDataset) {
+  await clientLimiter.acquire();
+  await protocol.call('api.process', item);
+}</code></pre>
+
+        <h2>5.10 Authentication & Authorization</h2>
+        <p>Secure your RPC endpoints:</p>
+
+        <pre><code>// Client sends credentials
+const result = await protocol.call('secure.endpoint', params, {
+  metadata: {
+    authorization: 'Bearer ' + accessToken
+  }
+});
+
+// Server validates
+protocol.use(async (context, next) => {
+  const token = context.metadata.authorization?.replace('Bearer ', '');
+
+  if (!token) {
+    throw new UnauthorizedError('Missing token');
+  }
+
+  try {
+    const user = await validateToken(token);
+    context.user = user;
+    await next();
+  } catch (error) {
+    throw new UnauthorizedError('Invalid token');
+  }
+});
+
+protocol.handle('secure.endpoint', async (params, context) => {
+  // Check permissions
+  if (!context.user.hasPermission('endpoint.access')) {
+    throw new ForbiddenError('Insufficient permissions');
+  }
+
+  return processSecureRequest(params, context.user);
+});</code></pre>
+
+        <div class="highlight">
+            <h3>RPC Best Practices</h3>
+            <ul>
+                <li>Use descriptive method names following a consistent convention</li>
+                <li>Always validate input parameters</li>
+                <li>Set appropriate timeouts for all calls</li>
+                <li>Implement retry logic for transient failures</li>
+                <li>Use idempotency keys for non-idempotent operations</li>
+                <li>Cache aggressively where appropriate</li>
+                <li>Implement circuit breakers for external dependencies</li>
+                <li>Rate limit to protect your services</li>
+                <li>Always authenticate and authorize requests</li>
+                <li>Monitor RPC metrics (latency, error rates, throughput)</li>
+            </ul>
+        </div>
+
+        <div class="nav">
+            <a href="04-encoding-serialization.html">← Previous: Encoding</a>
+            <a href="06-event-streaming.html">Next: Event Streaming →</a>
+        </div>
+
+        <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; opacity: 0.7; text-align: center;">
+            <p>&copy; 2025 SmileStory Inc. / WIA | 弘益人間 · Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Streaming Architecture Patterns - WIA-DATA-013</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        h1, h2, h3 { color: #10B981; margin-top: 40px; }
+        h1 { font-size: 2.5em; border-bottom: 3px solid #10B981; padding-bottom: 15px; }
+        h2 { font-size: 2em; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        h3 { font-size: 1.5em; }
+        code {
+            background: #1e293b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #10B981;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background: #1e293b;
+            border-left: 4px solid #10B981;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: #1e293b;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #334155;
+        }
+        th {
+            background: #10B981;
+            color: #0f172a;
+            font-weight: bold;
+        }
+        .highlight {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid #10B981;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .note {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        ul, ol { margin: 15px 0; padding-left: 30px; }
+        li { margin: 10px 0; }
+        .architecture-box {
+            background: rgba(16, 185, 129, 0.05);
+            border: 2px solid #10B981;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chapter 2: Streaming Architecture Patterns</h1>
+
+    <h2>2.1 Overview of Streaming Architectures</h2>
+
+    <p>
+        Streaming architectures define how data flows through a system, from ingestion to processing to storage and serving. The choice of architecture significantly impacts system performance, complexity, and maintainability. This chapter explores the most common and effective patterns for building streaming data systems.
+    </p>
+
+    <h2>2.2 Lambda Architecture</h2>
+
+    <p>
+        Introduced by Nathan Marz, Lambda Architecture is a data-processing architecture designed to handle massive quantities of data by taking advantage of both batch and stream processing methods.
+    </p>
+
+    <h3>2.2.1 Architecture Components</h3>
+
+    <div class="architecture-box">
+        <strong>Three-Layer Design:</strong>
+        <ol>
+            <li><strong>Batch Layer:</strong> Manages the master dataset (immutable, append-only) and pre-computes batch views</li>
+            <li><strong>Speed Layer:</strong> Processes data in real-time, computing real-time views from recent data</li>
+            <li><strong>Serving Layer:</strong> Indexes and serves batch and real-time views for fast querying</li>
+        </ol>
+    </div>
+
+    <pre><code>// Lambda Architecture Flow
+Data Sources
+    ↓
+    ├─→ Batch Layer (Hadoop/Spark)
+    │   ├─→ Master Dataset (HDFS)
+    │   └─→ Batch Views (Pre-computed)
+    │
+    └─→ Speed Layer (Storm/Flink)
+        └─→ Real-time Views (Recent data)
+            ↓
+        Serving Layer (HBase/Cassandra)
+            ↓
+        Query API
+</code></pre>
+
+    <h3>2.2.2 Advantages</h3>
+    <ul>
+        <li><strong>Accuracy:</strong> Batch layer ensures accurate results from complete data</li>
+        <li><strong>Low latency:</strong> Speed layer provides immediate results</li>
+        <li><strong>Fault tolerance:</strong> Batch layer can recompute from master dataset if speed layer fails</li>
+        <li><strong>Scalability:</strong> Each layer can scale independently</li>
+    </ul>
+
+    <h3>2.2.3 Disadvantages</h3>
+    <ul>
+        <li><strong>Complexity:</strong> Maintaining two separate code paths for batch and stream</li>
+        <li><strong>Operational overhead:</strong> Running and monitoring two processing systems</li>
+        <li><strong>Resource intensive:</strong> Requires infrastructure for both batch and streaming</li>
+        <li><strong>Code duplication:</strong> Same logic often written twice</li>
+    </ul>
+
+    <div class="note">
+        <strong>Use Case:</strong> Lambda Architecture is ideal when you need both real-time and accurate historical views, such as financial reporting systems that require immediate alerts but also precise monthly reconciliation.
+    </div>
+
+    <h2>2.3 Kappa Architecture</h2>
+
+    <p>
+        Proposed by Jay Kreps as a simplification of Lambda Architecture, Kappa Architecture eliminates the batch layer, using only stream processing for both real-time and historical data.
+    </p>
+
+    <h3>2.3.1 Core Principles</h3>
+
+    <div class="architecture-box">
+        <strong>Stream-First Design:</strong>
+        <ul>
+            <li>Everything is a stream – both real-time and historical data</li>
+            <li>Single code path for all processing</li>
+            <li>Reprocessing handled by replaying event streams</li>
+            <li>Stream storage (Kafka) acts as the source of truth</li>
+        </ul>
+    </div>
+
+    <pre><code>// Kappa Architecture Flow
+Data Sources
+    ↓
+Event Stream (Kafka)
+    ↓
+Stream Processing Layer (Flink/Kafka Streams)
+    ↓
+Materialized Views / State Stores
+    ↓
+Query API / Applications
+</code></pre>
+
+    <h3>2.3.2 Reprocessing Strategy</h3>
+    <p>
+        When logic changes or bugs are fixed, Kappa Architecture handles reprocessing through:
+    </p>
+    <ol>
+        <li>Deploy new version of stream processor alongside old one</li>
+        <li>New processor reads from beginning of event log</li>
+        <li>Once caught up, switch queries to new processor</li>
+        <li>Deprecate old processor</li>
+    </ol>
+
+    <h3>2.3.3 Advantages</h3>
+    <ul>
+        <li><strong>Simplicity:</strong> Single processing framework and codebase</li>
+        <li><strong>Lower operational overhead:</strong> One system to maintain</li>
+        <li><strong>Real-time by default:</strong> All data processed as streams</li>
+        <li><strong>Flexible reprocessing:</strong> Easy to replay and recompute</li>
+    </ul>
+
+    <h3>2.3.4 Disadvantages</h3>
+    <ul>
+        <li><strong>Stream storage requirements:</strong> Must retain all historical data in event log</li>
+        <li><strong>Reprocessing time:</strong> Can be slow for large datasets</li>
+        <li><strong>Limited to stream-friendly operations:</strong> Some batch operations don't translate well</li>
+    </ul>
+
+    <h2>2.4 Lambda vs Kappa: Comparison</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Lambda Architecture</th>
+                <th>Kappa Architecture</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Processing Layers</strong></td>
+                <td>Batch + Speed + Serving</td>
+                <td>Stream + Serving</td>
+            </tr>
+            <tr>
+                <td><strong>Code Complexity</strong></td>
+                <td>High (duplicate logic)</td>
+                <td>Low (single codebase)</td>
+            </tr>
+            <tr>
+                <td><strong>Latency</strong></td>
+                <td>Mixed (instant + delayed)</td>
+                <td>Consistently low</td>
+            </tr>
+            <tr>
+                <td><strong>Accuracy</strong></td>
+                <td>Eventual (batch reconciles)</td>
+                <td>Depends on stream processing</td>
+            </tr>
+            <tr>
+                <td><strong>Reprocessing</strong></td>
+                <td>Batch layer reruns</td>
+                <td>Replay event streams</td>
+            </tr>
+            <tr>
+                <td><strong>Storage</strong></td>
+                <td>Data lake + stream buffer</td>
+                <td>Event log (Kafka)</td>
+            </tr>
+            <tr>
+                <td><strong>Best For</strong></td>
+                <td>Complex analytics, reporting</td>
+                <td>Event-driven systems, real-time apps</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>2.5 Event-Driven Architecture (EDA)</h2>
+
+    <p>
+        Event-Driven Architecture is a software design pattern where system components communicate through the production, detection, consumption, and reaction to events.
+    </p>
+
+    <h3>2.5.1 Core Components</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Role</th>
+                <th>Example</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Event Producers</strong></td>
+                <td>Generate and publish events</td>
+                <td>User service emits "UserRegistered" event</td>
+            </tr>
+            <tr>
+                <td><strong>Event Broker</strong></td>
+                <td>Route events to consumers</td>
+                <td>Kafka, Pulsar, RabbitMQ</td>
+            </tr>
+            <tr>
+                <td><strong>Event Consumers</strong></td>
+                <td>React to events</td>
+                <td>Email service sends welcome email</td>
+            </tr>
+            <tr>
+                <td><strong>Event Store</strong></td>
+                <td>Persist event history</td>
+                <td>Event sourcing database</td>
+            </tr>
+        </tbody>
+        </table>
+
+    <h3>2.5.2 EDA Patterns</h3>
+
+    <h4>Event Notification</h4>
+    <pre><code>// Producer notifies consumers of state changes
+userService.register(user) {
+    saveUser(user);
+    eventBus.publish('UserRegistered', {
+        userId: user.id,
+        email: user.email,
+        timestamp: new Date()
+    });
+}
+
+// Consumers react independently
+emailService.on('UserRegistered', async (event) => {
+    await sendWelcomeEmail(event.email);
+});
+
+analyticsService.on('UserRegistered', async (event) => {
+    await trackNewUser(event.userId);
+});
+</code></pre>
+
+    <h4>Event-Carried State Transfer</h4>
+    <pre><code>// Events carry full state, reducing need for queries
+orderService.publish('OrderPlaced', {
+    orderId: 'order-123',
+    userId: 'user-456',
+    items: [...],
+    totalAmount: 299.99,
+    shippingAddress: {...},
+    // Full order details included
+});
+
+// Consumers don't need to query order service
+shippingService.on('OrderPlaced', (event) => {
+    // Has all info needed to ship
+    createShipment(event.items, event.shippingAddress);
+});
+</code></pre>
+
+    <h4>Event Sourcing</h4>
+    <pre><code>// Store all state changes as events
+const events = [
+    { type: 'OrderCreated', data: {...} },
+    { type: 'ItemAdded', data: {...} },
+    { type: 'ItemRemoved', data: {...} },
+    { type: 'OrderPaid', data: {...} }
+];
+
+// Rebuild current state by replaying events
+function getCurrentState(orderId) {
+    const events = eventStore.getEvents(orderId);
+    return events.reduce((state, event) => {
+        return applyEvent(state, event);
+    }, initialState);
+}
+</code></pre>
+
+    <h2>2.6 Microservices with Event Streaming</h2>
+
+    <p>
+        Event streaming provides an ideal communication mechanism for microservices architectures, enabling loose coupling and asynchronous processing.
+    </p>
+
+    <h3>2.6.1 Benefits</h3>
+    <ul>
+        <li><strong>Loose coupling:</strong> Services don't need to know about each other</li>
+        <li><strong>Scalability:</strong> Each service scales independently</li>
+        <li><strong>Resilience:</strong> Service failures don't propagate</li>
+        <li><strong>Evolution:</strong> Easy to add new services and features</li>
+    </ul>
+
+    <h3>2.6.2 Communication Patterns</h3>
+
+    <div class="architecture-box">
+        <strong>Choreography:</strong> Services react to events autonomously
+        <pre><code>Order Service → "OrderPlaced" → Kafka
+                          ↓
+    ┌──────────────────┼──────────────────┐
+    ↓                  ↓                  ↓
+Payment Service   Inventory Service   Notification Service
+</code></pre>
+    </div>
+
+    <div class="architecture-box">
+        <strong>Orchestration:</strong> Central coordinator manages workflow
+        <pre><code>Order Orchestrator
+    ↓ (command)
+Payment Service
+    ↓ (event: PaymentCompleted)
+Order Orchestrator
+    ↓ (command)
+Inventory Service
+    ↓ (event: InventoryReserved)
+Order Orchestrator
+    ↓ (command)
+Shipping Service
+</code></pre>
+    </div>
+
+    <h2>2.7 CQRS (Command Query Responsibility Segregation)</h2>
+
+    <p>
+        CQRS separates read and write operations into different models, often combined with event sourcing for powerful streaming architectures.
+    </p>
+
+    <h3>2.7.1 Architecture</h3>
+    <pre><code>// Write side (Commands)
+Command → Command Handler → Aggregate → Events → Event Store
+                                              ↓
+                                        Event Bus
+                                              ↓
+// Read side (Queries)
+Event Handlers → Update Read Models → Query API
+</code></pre>
+
+    <h3>2.7.2 Implementation Example</h3>
+    <pre><code>// Command side
+class OrderService {
+    async placeOrder(command: PlaceOrderCommand) {
+        const order = new Order(command.items);
+        order.validate();
+
+        const event = {
+            type: 'OrderPlaced',
+            data: order.toJSON(),
+            timestamp: new Date()
+        };
+
+        await eventStore.append('orders', event);
+        await eventBus.publish('OrderPlaced', event);
+    }
+}
+
+// Query side - Multiple read models
+class OrderQueryService {
+    // Optimized for order history
+    async getOrderHistory(userId) {
+        return orderHistoryDb.find({ userId });
+    }
+
+    // Optimized for analytics
+    async getSalesMetrics() {
+        return metricsDb.aggregate([...]);
+    }
+}
+
+// Event handler keeps read models in sync
+eventBus.on('OrderPlaced', async (event) => {
+    await orderHistoryDb.insert(event.data);
+    await metricsDb.incrementSales(event.data.amount);
+});
+</code></pre>
+
+    <h3>2.7.3 Advantages</h3>
+    <ul>
+        <li><strong>Optimized reads and writes:</strong> Each side optimized for its purpose</li>
+        <li><strong>Scalability:</strong> Scale read and write sides independently</li>
+        <li><strong>Multiple views:</strong> Create specialized read models for different use cases</li>
+        <li><strong>Event sourcing synergy:</strong> Natural fit with event-driven systems</li>
+    </ul>
+
+    <h2>2.8 Data Mesh Architecture</h2>
+
+    <p>
+        Data Mesh is a decentralized approach to data architecture, treating data as a product owned by domain teams, with streaming playing a key role in data distribution.
+    </p>
+
+    <h3>2.8.1 Principles</h3>
+    <ol>
+        <li><strong>Domain-oriented decentralization:</strong> Each domain owns its data products</li>
+        <li><strong>Data as a product:</strong> Treat data with product thinking</li>
+        <li><strong>Self-serve data infrastructure:</strong> Platform enables autonomous domain teams</li>
+        <li><strong>Federated computational governance:</strong> Balance autonomy with standards</li>
+    </ol>
+
+    <h3>2.8.2 Streaming in Data Mesh</h3>
+    <pre><code>// Each domain publishes data products as streams
+User Domain → user-events stream (Kafka topic)
+Order Domain → order-events stream
+Product Domain → product-events stream
+
+// Domains consume from other domains
+Recommendation Domain subscribes to:
+    - user-events (behavioral data)
+    - order-events (purchase history)
+    - product-events (catalog updates)
+</code></pre>
+
+    <h2>2.9 Hybrid Architectures</h2>
+
+    <p>
+        Real-world systems often combine multiple patterns to balance requirements:
+    </p>
+
+    <h3>2.9.1 Lambda + Event Sourcing</h3>
+    <ul>
+        <li>Event sourcing for write model</li>
+        <li>Speed layer for real-time aggregations</li>
+        <li>Batch layer for complex analytics</li>
+    </ul>
+
+    <h3>2.9.2 Kappa + CQRS</h3>
+    <ul>
+        <li>Stream processing for all data flows</li>
+        <li>Separate read/write models</li>
+        <li>Multiple specialized read models from same event stream</li>
+    </ul>
+
+    <h2>2.10 Choosing the Right Architecture</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Requirement</th>
+                <th>Recommended Architecture</th>
+                <th>Why</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Real-time + complex batch analytics</td>
+                <td>Lambda</td>
+                <td>Leverages strengths of both batch and stream</td>
+            </tr>
+            <tr>
+                <td>Pure real-time, event-driven</td>
+                <td>Kappa</td>
+                <td>Simplicity, single codebase</td>
+            </tr>
+            <tr>
+                <td>Microservices communication</td>
+                <td>Event-Driven</td>
+                <td>Loose coupling, scalability</td>
+            </tr>
+            <tr>
+                <td>Audit trail, temporal queries</td>
+                <td>Event Sourcing</td>
+                <td>Complete history, replayability</td>
+            </tr>
+            <tr>
+                <td>Read/write performance optimization</td>
+                <td>CQRS</td>
+                <td>Separate optimization of each side</td>
+            </tr>
+            <tr>
+                <td>Large organization, domain autonomy</td>
+                <td>Data Mesh</td>
+                <td>Decentralization, domain ownership</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>2.11 Summary</h2>
+
+    <p>
+        Streaming architecture patterns provide proven blueprints for building scalable, maintainable data systems. Key takeaways:
+    </p>
+
+    <ul>
+        <li><strong>Lambda Architecture:</strong> Combines batch and stream for accuracy and low latency</li>
+        <li><strong>Kappa Architecture:</strong> Stream-only simplification of Lambda</li>
+        <li><strong>Event-Driven Architecture:</strong> Enables loose coupling through event communication</li>
+        <li><strong>CQRS:</strong> Separates reads and writes for optimization</li>
+        <li><strong>Data Mesh:</strong> Decentralizes data ownership across domains</li>
+    </ul>
+
+    <div class="highlight">
+        <strong>Looking Ahead:</strong> Chapter 3 dives deep into Apache Kafka, the most widely-used streaming platform, exploring its architecture, features, and best practices.
+    </div>
+
+    <p style="text-align: center; margin-top: 50px; color: #64748b;">
+        © 2025 SmileStory Inc. / WIA · 弘익人間 (홍익인간) · Benefit All Humanity
+    </p>
+</body>
+</html>

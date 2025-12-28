@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 03: Archival Standards and Long-Term Preservation - WIA-SOC-013</title>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #0f172a;
+    color: #f8fafc;
+    line-height: 1.8;
+}
+h1, h2, h3 { color: #10B981; }
+h2 { margin-top: 40px; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+pre {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    border: 1px solid #334155;
+}
+code { color: #34D399; }
+.nav { margin-bottom: 30px; }
+.nav a { color: #10B981; text-decoration: none; margin-right: 20px; }
+.highlight {
+    background: rgba(16, 185, 129, 0.1);
+    padding: 20px;
+    border-left: 4px solid #10B981;
+    margin: 20px 0;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #334155;
+}
+th { background: #1e293b; color: #10B981; }
+ul, ol { margin: 15px 0; padding-left: 30px; }
+li { margin: 8px 0; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+<a href="index.html">← Table of Contents</a>
+<a href="chapter-02.html">← Previous</a>
+<a href="chapter-04.html">Next →</a>
+</div>
+
+<h1>Chapter 03: Archival Standards and Long-Term Preservation</h1>
+
+<blockquote class="highlight">
+<strong>弘益人間</strong> - "Today's documents must remain accessible for generations to come."
+</blockquote>
+
+<h2>03.1 The Challenge of Digital Preservation</h2>
+
+<p>Unlike paper documents that can last centuries when properly stored, digital formats face unique preservation challenges: format obsolescence, media degradation, software dependencies, and technological change. A birth certificate issued in 2025 must remain readable in 2125 and beyond.</p>
+
+<p>Key preservation challenges include:</p>
+<ul>
+<li><strong>Format Obsolescence</strong>: Proprietary formats become unreadable as software evolves (e.g., WordPerfect, Lotus 1-2-3)</li>
+<li><strong>Media Degradation</strong>: Hard drives fail, optical discs degrade, magnetic tape deteriorates</li>
+<li><strong>Bit Rot</strong>: Silent data corruption accumulates over time in storage systems</li>
+<li><strong>Migration Complexity</strong>: Moving archives between storage technologies risks data loss</li>
+<li><strong>Metadata Loss</strong>: Context and provenance information may not survive format migrations</li>
+</ul>
+
+<h2>03.2 PDF/A: The Archival Standard</h2>
+
+<p>PDF/A (ISO 19005) is specifically designed for long-term archival preservation. WIA-SOC-013 mandates PDF/A-2b or PDF/A-3b for all public documents.</p>
+
+<h3>PDF/A Versions Comparison</h3>
+<table>
+<tr><th>Version</th><th>ISO Standard</th><th>Key Features</th><th>WIA-SOC-013 Support</th></tr>
+<tr><td>PDF/A-1</td><td>ISO 19005-1:2005</td><td>Based on PDF 1.4</td><td>Legacy only</td></tr>
+<tr><td>PDF/A-2</td><td>ISO 19005-2:2011</td><td>JPEG2000, layers, transparency</td><td>✓ Recommended</td></tr>
+<tr><td>PDF/A-3</td><td>ISO 19005-3:2012</td><td>Embedded files (XML, JSON)</td><td>✓ Recommended</td></tr>
+<tr><td>PDF/A-4</td><td>ISO 19005-4:2020</td><td>PDF 2.0 features, encryption</td><td>✓ Future-ready</td></tr>
+</table>
+
+<h3>PDF/A Conformance Levels</h3>
+<ul>
+<li><strong>Level A (Accessible)</strong>: Full Unicode mapping, tagged PDF structure for screen readers</li>
+<li><strong>Level B (Basic)</strong>: Visual appearance preservation, minimum requirement</li>
+<li><strong>Level U (Unicode)</strong>: All text has Unicode mapping for text extraction</li>
+</ul>
+
+<p>WIA-SOC-013 requires PDF/A-2b as minimum, PDF/A-3b for documents with embedded metadata.</p>
+
+<h3>Creating PDF/A Documents</h3>
+<pre><code>import { PDFAConverter } from 'wia-soc-013';
+
+const converter = new PDFAConverter({
+  version: 'PDF/A-3b',
+  embedFonts: true,
+  colorSpace: 'sRGB',
+  compression: {
+    images: 'jpeg2000',
+    quality: 85
+  }
+});
+
+const pdfA = await converter.create({
+  images: scannedPages,
+  ocrText: ocrResults,
+  metadata: {
+    title: 'Birth Certificate - John Doe',
+    author: 'California Registry Office',
+    subject: 'Vital Record',
+    keywords: ['birth', 'certificate', 'vital record'],
+    creator: 'WIA-SOC-013 Document Processor v1.0',
+    producer: 'wia-soc-013-pdf-lib',
+    created: new Date('2025-01-15'),
+    modified: new Date('2025-01-15')
+  },
+  xmpMetadata: dublinCoreMetadata,
+  embedFiles: [
+    { filename: 'metadata.json', data: structuredMetadata }
+  ]
+});
+
+// Validate PDF/A conformance
+const validation = await pdfA.validate();
+if (!validation.isValid) {
+  console.error('PDF/A validation failed:', validation.errors);
+}
+</code></pre>
+
+<h2>03.3 TIFF Format for Master Archives</h2>
+
+<p>TIFF (Tagged Image File Format) serves as the uncompressed master format from which derivative formats are generated.</p>
+
+<h3>TIFF Specifications for Archival</h3>
+<table>
+<tr><th>Parameter</th><th>Value</th><th>Rationale</th></tr>
+<tr><td>Compression</td><td>LZW or Uncompressed</td><td>Lossless preservation</td></tr>
+<tr><td>Color Depth</td><td>8-bit grayscale or 24-bit RGB</td><td>Full tonal range</td></tr>
+<tr><td>Resolution</td><td>600-1200 DPI</td><td>Archival quality</td></tr>
+<tr><td>Byte Order</td><td>Little Endian (Intel)</td><td>Platform compatibility</td></tr>
+<tr><td>Photometric</td><td>Min-is-White for grayscale</td><td>Standard interpretation</td></tr>
+</table>
+
+<h3>Multi-Page TIFF Creation</h3>
+<pre><code>import { TIFFArchiver } from 'wia-soc-013';
+
+const archiver = new TIFFArchiver({
+  compression: 'lzw',
+  colorDepth: 24,
+  resolution: 600
+});
+
+const masterTIFF = await archiver.createMultiPage({
+  pages: scanResults,
+  metadata: {
+    documentDescription: 'Birth Certificate - 3 pages',
+    software: 'WIA-SOC-013 Scanner v1.0',
+    copyright: '© 2025 Government Agency',
+    dateTime: new Date().toISOString()
+  }
+});
+
+// Generate derivatives
+const derivatives = await archiver.createDerivatives(masterTIFF, [
+  { format: 'PDF/A-2b', resolution: 300 },
+  { format: 'JPEG', resolution: 150, quality: 85 },
+  { format: 'PNG', resolution: 300 }
+]);
+</code></pre>
+
+<h2>03.4 Long-Term Storage Strategies</h2>
+
+<p>WIA-SOC-013 requires redundant storage with geographic distribution to protect against disasters:</p>
+
+<h3>Storage Architecture</h3>
+<ul>
+<li><strong>Primary Storage</strong>: High-performance SSD/NVMe for active access</li>
+<li><strong>Secondary Storage</strong>: HDD RAID arrays for recent archives (0-5 years)</li>
+<li><strong>Tertiary Storage</strong>: Tape libraries for long-term cold storage (5+ years)</li>
+<li><strong>Cloud Replication</strong>: Multi-region cloud backup (AWS S3 Glacier, Azure Archive)</li>
+</ul>
+
+<h3>Geographic Redundancy</h3>
+<p>Documents must be replicated across at least 3 geographically diverse locations:</p>
+<pre><code>const storagePolicy = {
+  replication: {
+    primary: 'us-west-datacenter',
+    secondary: 'us-east-datacenter',
+    tertiary: 'eu-datacenter',
+    cloud: ['aws-us-east-1', 'azure-eu-west']
+  },
+  checksumAlgorithm: 'SHA-256',
+  integrityCheck: 'monthly',
+  migrationSchedule: '5 years'
+};
+
+await archiveStorage.store({
+  documentId: 'doc:wia:soc013:abc123',
+  masterFile: tiffArchive,
+  derivatives: derivativeFiles,
+  policy: storagePolicy
+});
+</code></pre>
+
+<h2>03.5 Integrity Monitoring and Fixity Checks</h2>
+
+<p>Regularly verify file integrity to detect bit rot and corruption:</p>
+
+<h3>Checksum Verification</h3>
+<pre><code>import { IntegrityMonitor } from 'wia-soc-013';
+
+const monitor = new IntegrityMonitor({
+  algorithm: 'SHA-256',
+  schedule: 'monthly'
+});
+
+const result = await monitor.verify({
+  documentId: 'doc:wia:soc013:abc123',
+  expectedChecksum: '7f8a9b2c3d4e5f6a7b8c9d0e1f2a3b4c'
+});
+
+if (!result.valid) {
+  // Corruption detected - restore from replica
+  await monitor.restoreFromReplica({
+    documentId: 'doc:wia:soc013:abc123',
+    sourceReplica: 'secondary'
+  });
+
+  // Alert administrators
+  alertService.send({
+    severity: 'high',
+    message: 'Document corruption detected and restored',
+    documentId: 'doc:wia:soc013:abc123'
+  });
+}
+</code></pre>
+
+<h3>Automated Fixity Monitoring</h3>
+<table>
+<tr><th>Check Frequency</th><th>Scope</th><th>Action on Failure</th></tr>
+<tr><td>Daily</td><td>Recently added documents (0-30 days)</td><td>Immediate restoration</td></tr>
+<tr><td>Weekly</td><td>Active documents (0-1 year)</td><td>Restore and log</td></tr>
+<tr><td>Monthly</td><td>All documents (full archive)</td><td>Restore, log, investigate</td></tr>
+</table>
+
+<h2>03.6 Migration and Format Normalization</h2>
+
+<p>As technology evolves, documents must migrate to newer formats without information loss.</p>
+
+<h3>Migration Workflow</h3>
+<pre><code>import { MigrationService } from 'wia-soc-013';
+
+const migrator = new MigrationService({
+  sourceFormat: 'PDF/A-2b',
+  targetFormat: 'PDF/A-4',
+  validateOutput: true,
+  preserveMetadata: true
+});
+
+const migrationJob = await migrator.createJob({
+  documentQuery: {
+    format: 'PDF/A-2b',
+    olderThan: '2020-01-01'
+  },
+  batchSize: 1000,
+  schedule: 'off-peak-hours'
+});
+
+migrator.on('documentMigrated', (doc) => {
+  console.log(`Migrated: ${doc.id}`);
+});
+
+migrator.on('complete', (summary) => {
+  console.log(`Migrated ${summary.total} documents`);
+  console.log(`Success: ${summary.success}, Failed: ${summary.failed}`);
+});
+
+await migrationJob.start();
+</code></pre>
+
+<h3>Migration Best Practices</h3>
+<ul>
+<li><strong>Preserve Originals</strong>: Keep original format for at least 2 migration cycles</li>
+<li><strong>Validate Output</strong>: Compare visual rendering and extracted text</li>
+<li><strong>Test Representative Sample</strong>: Manually review 1% of migrated documents</li>
+<li><strong>Incremental Rollout</strong>: Migrate in batches, not all-at-once</li>
+<li><strong>Rollback Plan</strong>: Maintain ability to revert if issues discovered</li>
+</ul>
+
+<h2>03.7 Metadata Preservation</h2>
+
+<p>Metadata is as important as the document content itself. WIA-SOC-013 embeds metadata in multiple locations:</p>
+
+<h3>XMP (Extensible Metadata Platform)</h3>
+<p>Embed Dublin Core metadata directly in PDF files:</p>
+<pre><code>const xmpMetadata = {
+  'dc:title': 'Birth Certificate - John Doe',
+  'dc:creator': 'California Registry Office',
+  'dc:subject': 'Vital Record',
+  'dc:description': 'Official birth certificate issued 2025-01-15',
+  'dc:date': '2025-01-15',
+  'dc:identifier': 'doc:wia:soc013:birth:CA:2025:abc123',
+  'dc:rights': '© 2025 State of California'
+};
+
+await pdfA.embedXMP(xmpMetadata);
+</code></pre>
+
+<h3>Sidecar Metadata Files</h3>
+<p>Store additional metadata in companion files:</p>
+<pre><code>// metadata.json (stored alongside PDF)
+{
+  "documentId": "doc:wia:soc013:abc123",
+  "premis": {
+    "objectIdentifier": "doc:wia:soc013:abc123",
+    "preservationLevel": "full",
+    "significantProperties": ["authenticity", "integrity"],
+    "environment": {
+      "software": "WIA-SOC-013 v1.0",
+      "hardware": "Fujitsu fi-7600 Scanner"
+    },
+    "events": [
+      {
+        "type": "creation",
+        "dateTime": "2025-01-15T10:30:00Z",
+        "agent": "scanner-operator-123"
+      },
+      {
+        "type": "migration",
+        "dateTime": "2030-06-01T14:00:00Z",
+        "agent": "migration-service-v2",
+        "outcome": "success"
+      }
+    ]
+  }
+}
+</code></pre>
+
+<h2>03.8 Disaster Recovery and Business Continuity</h2>
+
+<p>Archives must withstand natural disasters, cyberattacks, and system failures.</p>
+
+<h3>Recovery Time Objectives</h3>
+<table>
+<tr><th>Priority</th><th>Document Type</th><th>RTO</th><th>RPO</th></tr>
+<tr><td>Critical</td><td>Active passports, IDs</td><td>1 hour</td><td>0 (synchronous replication)</td></tr>
+<tr><td>High</td><td>Birth/death certificates</td><td>4 hours</td><td>1 hour</td></tr>
+<tr><td>Medium</td><td>Property deeds</td><td>24 hours</td><td>24 hours</td></tr>
+<tr><td>Low</td><td>Historical archives</td><td>7 days</td><td>7 days</td></tr>
+</table>
+
+<h3>Disaster Recovery Plan</h3>
+<pre><code>import { DisasterRecovery } from 'wia-soc-013';
+
+const dr = new DisasterRecovery({
+  primarySite: 'datacenter-1',
+  drSite: 'datacenter-2',
+  replicationMode: 'synchronous',
+  failoverPolicy: 'automatic'
+});
+
+// Simulate disaster (for testing)
+await dr.simulateFailover({
+  scenario: 'primary-site-outage',
+  affectedSystems: ['storage', 'database', 'api'],
+  duration: '4 hours'
+});
+
+// Actual failover (in production)
+dr.on('primaryFailure', async () => {
+  console.log('Primary site failure detected');
+  await dr.initiateFailover();
+  alertService.sendCritical('DR failover initiated');
+});
+</code></pre>
+
+<h2>03.9 Compliance and Audit Requirements</h2>
+
+<p>Government archives must comply with regulations and support audits:</p>
+
+<h3>Regulatory Frameworks</h3>
+<ul>
+<li><strong>ISO 15489</strong>: Records management requirements</li>
+<li><strong>ISO 27001</strong>: Information security management</li>
+<li><strong>NARA</strong>: U.S. National Archives and Records Administration standards</li>
+<li><strong>GDPR Article 5</strong>: Storage limitation and integrity principles</li>
+<li><strong>SOC 2 Type II</strong>: Third-party audits of controls</li>
+</ul>
+
+<h3>Audit Trail Requirements</h3>
+<pre><code>const auditLog = {
+  documentId: 'doc:wia:soc013:abc123',
+  events: [
+    {
+      timestamp: '2025-01-15T10:30:00Z',
+      event: 'document.created',
+      actor: 'user:operator-123',
+      ipAddress: '192.168.1.100',
+      details: { scannerID: 'scanner-05', resolution: 600 }
+    },
+    {
+      timestamp: '2025-01-15T10:32:15Z',
+      event: 'signature.applied',
+      actor: 'system:signing-service',
+      details: { algorithm: 'ECDSA', keyID: 'gov-key-2025' }
+    },
+    {
+      timestamp: '2025-01-15T14:20:00Z',
+      event: 'document.accessed',
+      actor: 'user:citizen-456',
+      purpose: 'passport-application',
+      consentID: 'consent-789'
+    }
+  ]
+};
+</code></pre>
+
+<h2>03.10 Emulation and Virtual Environments</h2>
+
+<p>For truly long-term preservation (50+ years), emulation may be necessary to run obsolete software.</p>
+
+<h3>Emulation Strategy</h3>
+<ul>
+<li><strong>Preserve Software</strong>: Archive operating systems, applications, drivers</li>
+<li><strong>Document Dependencies</strong>: Record all software versions and configurations</li>
+<li><strong>Virtual Machines</strong>: Containerize legacy environments (Docker, VirtualBox)</li>
+<li><strong>Hardware Specifications</strong>: Document minimum system requirements</li>
+</ul>
+
+<p>Example: A PDF created in 2025 should remain readable in 2125, even if PDF readers no longer exist. Emulation allows running a 2025-era PDF reader in a virtual environment.</p>
+
+<h2>03.11 Conclusion</h2>
+
+<p>Archival preservation is not a one-time task but an ongoing commitment. WIA-SOC-013 provides the technical standards, storage architecture, and operational procedures to ensure public documents remain accessible and authentic for decades or centuries. By adopting PDF/A formats, implementing redundant storage, monitoring file integrity, and planning for migration, governments can build archives that serve current and future generations.</p>
+
+<p>In the next chapter, we will explore metadata schemas and classification systems that make archived documents discoverable and manageable.</p>
+
+<div class="nav" style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #334155;">
+<a href="chapter-02.html">← Previous: Chapter 02</a>
+<a href="index.html">Table of Contents</a>
+<a href="chapter-04.html">Next: Chapter 04 →</a>
+</div>
+
+</body>
+</html>

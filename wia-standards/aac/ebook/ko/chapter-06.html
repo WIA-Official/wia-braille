@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제6장: Phase 3 통신 프로토콜 - WIA AAC 표준 전자책</title>
+</head>
+<body>
+
+<p><a href="index.html">[AAC] WIA AAC 표준 전자책</a> | 제6장 (총 8장)</p>
+
+<hr>
+
+<h1>[AAC] 제6장: Phase 3 - 통신 프로토콜</h1>
+
+<blockquote>
+<p><strong>홍익인간 (弘益人間)</strong></p>
+<p>"모든 연결이 중요합니다."</p>
+<p>Phase 3는 모든 전송 방법에서 센서와 소프트웨어 간의 신뢰할 수 있는 통신을 보장합니다.</p>
+</blockquote>
+
+<hr>
+
+<h2>6.1 Phase 3 개요</h2>
+
+<h3>6.1.1 목적</h3>
+
+<p>Phase 3는 통신 프로토콜을 정의합니다 - AAC 센서가 호스트 시스템에 물리적으로 연결하고 데이터를 전송하는 방법에 대한 사양입니다. 이 계층은 사용되는 전송 방법에 관계없이 일관되고 신뢰할 수 있는 통신을 보장합니다.</p>
+
+<h3>6.1.2 지원 전송 방식</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>전송 방식</th>
+            <th>사용 사례</th>
+            <th>일반적인 센서</th>
+            <th>지연 시간</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Bluetooth LE</strong></td>
+            <td>무선 센서</td>
+            <td>스위치, EMG, BCI 헤드셋</td>
+            <td>10-50ms</td>
+        </tr>
+        <tr>
+            <td><strong>USB HID</strong></td>
+            <td>유선 센서</td>
+            <td>시선 추적기, 헤드 마우스</td>
+            <td>1-10ms</td>
+        </tr>
+        <tr>
+            <td><strong>WiFi/TCP</strong></td>
+            <td>네트워크 센서</td>
+            <td>네트워크 장치, 카메라</td>
+            <td>5-100ms</td>
+        </tr>
+        <tr>
+            <td><strong>Serial</strong></td>
+            <td>레거시 센서</td>
+            <td>구형 AAC 장비</td>
+            <td>5-50ms</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>6.2 Bluetooth LE 프로토콜</h2>
+
+<h3>6.2.1 GATT 프로필 개요</h3>
+
+<pre>
+WIA AAC Bluetooth LE GATT 프로필:
+
+서비스: WIA AAC Service
+UUID: 0000AAC0-0000-1000-8000-00805F9B34FB
+
+Characteristics:
+  +-- Signal Characteristic (알림)
+  |   UUID: 0000AAC1-0000-1000-8000-00805F9B34FB
+  |   속성: Notify
+  |   설명: 센서 신호 스트리밍
+  |
+  +-- Command Characteristic (쓰기)
+  |   UUID: 0000AAC2-0000-1000-8000-00805F9B34FB
+  |   속성: Write, Write Without Response
+  |   설명: 호스트로부터 명령 수신
+  |
+  +-- Status Characteristic (읽기, 알림)
+  |   UUID: 0000AAC3-0000-1000-8000-00805F9B34FB
+  |   속성: Read, Notify
+  |   설명: 장치 상태 정보
+  |
+  +-- Config Characteristic (읽기, 쓰기)
+      UUID: 0000AAC4-0000-1000-8000-00805F9B34FB
+      속성: Read, Write
+      설명: 설정 매개변수
+</pre>
+
+<h3>6.2.2 신호 특성 형식</h3>
+
+<pre>
+신호 알림 패킷 형식:
+
+바이트 0: 패킷 유형
+  0x01 = 신호 데이터
+  0x02 = 신호 계속
+  0x03 = 하트비트
+  0x04 = 오류
+
+바이트 1-2: 시퀀스 번호 (uint16, little-endian)
+
+바이트 3: 센서 유형
+  0x01 = eye_tracker
+  0x02 = switch
+  0x03 = emg
+  0x04 = eeg_bci
+  0x05 = breath
+  0x06 = head_movement
+
+바이트 4: 페이로드 길이
+
+바이트 5-N: 페이로드 (신호 데이터)
+
+예시 (스위치 누름):
+[0x01, 0x2A, 0x00, 0x02, 0x04, 0x01, 0x01, 0x96, 0x00]
+ 유형  시퀀스#       스위치 길이 ID  상태  지속시간(150ms)
+</pre>
+
+<h3>6.2.3 연결 절차</h3>
+
+<pre>
+BLE 연결 흐름:
+
+1. 검색
+   - WIA AAC Service UUID를 광고하는 장치 스캔
+   - 서비스 데이터 또는 제조사 데이터로 필터링
+
+2. 연결
+   - 주변 장치에 연결
+   - 서비스 및 특성 검색
+   - Signal 특성에서 알림 활성화
+
+3. 설정
+   - Status 특성에서 장치 정보 읽기
+   - Config 특성을 통해 설정 로드/적용
+
+4. 스트리밍
+   - Start Streaming 명령 전송
+   - Signal 알림 처리
+   - 연결 해제 시 재연결 처리
+
+5. 종료
+   - Stop Streaming 명령 전송
+   - 정상적으로 연결 해제
+
+연결 매개변수 (권장):
+  - 연결 간격: 7.5ms - 30ms
+  - 슬레이브 지연: 0
+  - 감독 타임아웃: 4000ms
+  - MTU: 최대 요청 (최대 517바이트)
+</pre>
+
+<hr>
+
+<h2>6.3 USB HID 프로토콜</h2>
+
+<h3>6.3.1 HID 리포트 디스크립터</h3>
+
+<pre>
+WIA AAC USB HID 리포트 디스크립터:
+
+Usage Page (Vendor Defined)    0x06, 0x00, 0xFF
+Usage (AAC Device)             0x09, 0x01
+Collection (Application)       0xA1, 0x01
+
+  // Input Report (센서 데이터)
+  Report ID (1)                0x85, 0x01
+  Usage (Signal Data)          0x09, 0x20
+  Report Size (8)              0x75, 0x08
+  Report Count (63)            0x95, 0x3F
+  Input (Data, Variable)       0x81, 0x02
+
+  // Output Report (명령)
+  Report ID (2)                0x85, 0x02
+  Usage (Command Data)         0x09, 0x21
+  Report Size (8)              0x75, 0x08
+  Report Count (63)            0x95, 0x3F
+  Output (Data, Variable)      0x91, 0x02
+
+  // Feature Report (설정)
+  Report ID (3)                0x85, 0x03
+  Usage (Config Data)          0x09, 0x22
+  Report Size (8)              0x75, 0x08
+  Report Count (63)            0x95, 0x3F
+  Feature (Data, Variable)     0xB1, 0x02
+
+End Collection                 0xC0
+</pre>
+
+<hr>
+
+<h2>6.4 WiFi/TCP 프로토콜</h2>
+
+<h3>6.4.1 WebSocket 연결</h3>
+
+<pre>
+WebSocket 엔드포인트:
+
+URL: ws://[device-ip]:8080/wia-aac
+프로토콜: wia-aac-v1
+
+연결 헤더:
+  Sec-WebSocket-Protocol: wia-aac-v1
+  X-WIA-Client-ID: [client-uuid]
+  X-WIA-Client-Version: [sdk-version]
+
+메시지 형식: JSON
+
+예시 연결 (JavaScript):
+const ws = new WebSocket('ws://192.168.1.100:8080/wia-aac', 'wia-aac-v1');
+
+ws.onopen = () =&gt; {
+    // 식별 전송
+    ws.send(JSON.stringify({
+        type: 'identify',
+        clientId: 'client-uuid-here',
+        version: '1.0.0'
+    }));
+};
+
+ws.onmessage = (event) =&gt; {
+    const message = JSON.parse(event.data);
+    handleMessage(message);
+};
+</pre>
+
+<h3>6.4.2 메시지 유형</h3>
+
+<pre>
+WebSocket 메시지 유형:
+
+1. 신호 메시지 (장치 → 호스트)
+{
+    "type": "signal",
+    "timestamp": 1702468800000,
+    "sequence": 12345,
+    "signal": {
+        // WIA AAC 신호 형식 (Phase 1)
+    }
+}
+
+2. 명령 메시지 (호스트 → 장치)
+{
+    "type": "command",
+    "command": "start_streaming",
+    "params": {
+        "sensorTypes": ["eye_tracker"],
+        "sampleRate": 60
+    },
+    "requestId": "req-uuid-001"
+}
+
+3. 응답 메시지 (장치 → 호스트)
+{
+    "type": "response",
+    "requestId": "req-uuid-001",
+    "success": true,
+    "data": { }
+}
+
+4. 오류 메시지
+{
+    "type": "error",
+    "code": "E001",
+    "message": "연결 타임아웃",
+    "requestId": "req-uuid-001"
+}
+
+5. 상태 메시지
+{
+    "type": "status",
+    "device": {
+        "connected": true,
+        "battery": 85,
+        "signalQuality": 0.92
+    }
+}
+</pre>
+
+<hr>
+
+<h2>6.5 Serial 프로토콜</h2>
+
+<h3>6.5.1 연결 매개변수</h3>
+
+<pre>
+시리얼 포트 설정:
+
+보레이트: 115200 (기본), 9600-921600 설정 가능
+데이터 비트: 8
+패리티: 없음
+스톱 비트: 1
+흐름 제어: 없음 (기본), RTS/CTS 선택적
+
+연결 감지:
+  - 전송: "WIA-AAC-PING\r\n"
+  - 예상: "WIA-AAC-PONG [device-id]\r\n"
+  - 타임아웃: 1000ms
+</pre>
+
+<h3>6.5.2 패킷 형식</h3>
+
+<pre>
+시리얼 패킷 구조:
+
++--------+--------+--------+--------+--------+--------+
+| 헤더   | 길이   | 유형   | 시퀀스 | 데이터 | CRC16  |
+| (2)    | (2)    | (1)    | (2)    | (N)    | (2)    |
++--------+--------+--------+--------+--------+--------+
+
+헤더: 0xAA 0x55 (매직 바이트)
+길이: 총 패킷 길이 (little-endian)
+유형: 패킷 유형 코드
+시퀀스: 시퀀스 번호 (little-endian)
+데이터: 페이로드 바이트
+CRC16: CRC-16-CCITT 체크섬
+
+패킷 유형:
+  0x01 = 신호 데이터
+  0x02 = 명령
+  0x03 = 응답
+  0x04 = 상태
+  0x05 = 오류
+  0x06 = 하트비트
+  0x0F = 리셋
+</pre>
+
+<hr>
+
+<h2>6.6 프로토콜 선택 가이드라인</h2>
+
+<h3>6.6.1 선택 매트릭스</h3>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>요소</th>
+            <th>BLE</th>
+            <th>USB</th>
+            <th>WiFi</th>
+            <th>Serial</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>지연 시간</td>
+            <td>중간</td>
+            <td>최고</td>
+            <td>가변</td>
+            <td>양호</td>
+        </tr>
+        <tr>
+            <td>처리량</td>
+            <td>낮음</td>
+            <td>높음</td>
+            <td>높음</td>
+            <td>중간</td>
+        </tr>
+        <tr>
+            <td>전력</td>
+            <td>최고</td>
+            <td>해당없음</td>
+            <td>낮음</td>
+            <td>양호</td>
+        </tr>
+        <tr>
+            <td>범위</td>
+            <td>10m</td>
+            <td>케이블</td>
+            <td>네트워크</td>
+            <td>케이블</td>
+        </tr>
+        <tr>
+            <td>복잡성</td>
+            <td>중간</td>
+            <td>낮음</td>
+            <td>높음</td>
+            <td>낮음</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>6.6.2 센서별 권장사항</h3>
+
+<pre>
+센서 유형별 권장 프로토콜:
+
+시선 추적기:
+  주요: USB HID (최저 지연)
+  대안: WiFi/TCP (원격 설정)
+
+스위치:
+  주요: Bluetooth LE (이동성)
+  대안: USB HID (신뢰성)
+
+EMG:
+  주요: Bluetooth LE (착용형)
+  대안: USB HID (고정형)
+
+BCI/EEG:
+  주요: USB HID (데이터 처리량)
+  대안: Bluetooth LE (소비자용 장치)
+
+호흡 센서:
+  주요: Bluetooth LE (이동성)
+  대안: USB HID (의료용)
+
+머리 움직임:
+  주요: USB HID (지연 중요)
+  대안: Bluetooth LE (무선 장착)
+</pre>
+
+<hr>
+
+<h2>6.7 보안 고려사항</h2>
+
+<h3>6.7.1 전송 보안</h3>
+
+<pre>
+전송별 보안:
+
+Bluetooth LE:
+  - Secure Connections 사용 (LE Secure Connections)
+  - 영구 페어링을 위한 본딩 활성화
+  - 가능한 경우 MITM 보호 사용
+  - 광고 주소 무작위화
+
+USB:
+  - 본질적으로 안전 (물리적 연결)
+  - 장치 디스크립터 검증
+  - 장치 변조 확인
+
+WiFi/TCP:
+  - TLS 1.3 사용 (WebSocket은 wss://)
+  - 인증서 고정 권장
+  - 토큰 기반 인증
+  - REST API 호출 암호화 (HTTPS)
+
+Serial:
+  - 물리적 보안만
+  - 민감한 데이터에는 권장하지 않음
+  - 통제된 환경에서 사용
+</pre>
+
+<hr>
+
+<h2>6.8 장 요약</h2>
+
+<p>[OK] <strong>핵심 내용:</strong></p>
+
+<ol>
+    <li><strong>4가지 전송 방식:</strong> Bluetooth LE, USB HID, WiFi/TCP, Serial</li>
+    <li><strong>BLE GATT:</strong> 신호, 명령, 상태, 설정 특성이 있는 커스텀 서비스</li>
+    <li><strong>USB HID:</strong> 입력/출력/기능 리포트가 있는 벤더 정의 사용 페이지</li>
+    <li><strong>WiFi/TCP:</strong> 스트리밍용 WebSocket, 설정용 REST</li>
+    <li><strong>Serial:</strong> 레거시 지원을 위한 간단한 패킷 형식</li>
+    <li><strong>보안:</strong> 전송에 적합한 암호화 및 인증</li>
+</ol>
+
+<hr>
+
+<h2>6.9 복습 문제</h2>
+
+<ol>
+    <li>WIA AAC에서 지원하는 네 가지 전송 유형은 무엇입니까?</li>
+    <li>BLE GATT 프로필의 네 가지 특성을 설명하세요.</li>
+    <li>USB HID 디스크립터에 정의된 리포트 유형은 무엇입니까?</li>
+    <li>WiFi 프로토콜은 실시간 데이터와 설정을 어떻게 분리합니까?</li>
+    <li>시리얼 통신의 패킷 구조는 무엇입니까?</li>
+    <li>왜 시선 추적 데이터가 생체 정보로 간주되고 민감합니까?</li>
+</ol>
+
+<hr>
+
+<p><strong>제6장 완료</strong> | 예상 페이지: 14</p>
+
+<p><a href="chapter-05.html">이전: 제5장</a> | <a href="chapter-07.html">다음: 제7장 - Phase 4: 생태계 통합</a></p>
+
+<hr>
+
+<p><strong>WIA - 세계인증산업협회</strong></p>
+<p>홍익인간 - 널리 인간을 이롭게</p>
+<p><a href="https://wia.live">https://wia.live</a></p>
+
+</body>
+</html>

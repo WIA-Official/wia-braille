@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA-SPACE-013 Simulator | Interplanetary Travel</title>
+    <style>
+        :root { --primary: #06B6D4; --bg: #0f172a; --bg-card: #1e293b; --text: #f8fafc; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+        .header { background: var(--bg-card); padding: 20px; border-bottom: 2px solid var(--primary); }
+        .header h1 { color: var(--primary); text-align: center; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .tabs { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+        .tab { background: var(--bg-card); padding: 12px 24px; border-radius: 6px 6px 0 0; cursor: pointer; border: 1px solid var(--border); }
+        .tab.active { background: var(--primary); color: var(--bg); }
+        .tab-content { display: none; background: var(--bg-card); padding: 30px; border-radius: 8px; }
+        .tab-content.active { display: block; }
+        .card { background: rgba(6, 182, 212, 0.1); border: 1px solid var(--primary); border-radius: 8px; padding: 20px; margin: 15px 0; }
+        .json-viewer { background: #1a1a2e; padding: 15px; border-radius: 4px; font-family: monospace; overflow-x: auto; }
+        button { background: var(--primary); color: var(--bg); border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; margin: 10px 5px; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--border); }
+        th { background: rgba(6, 182, 212, 0.2); color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="header"><h1>🚀 WIA-SPACE-013 Interplanetary Travel Simulator</h1></div>
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">📊 Data Format</div>
+            <div class="tab" onclick="switchTab(1)">🔢 Algorithms</div>
+            <div class="tab" onclick="switchTab(2)">📡 Protocol</div>
+            <div class="tab" onclick="switchTab(3)">🔗 Integration</div>
+            <div class="tab" onclick="switchTab(4)">🧪 Test</div>
+        </div>
+
+        <div class="tab-content active" id="tab0">
+            <div class="card">
+                <h2>Interplanetary Flight Plan Schema</h2>
+                <div class="json-viewer"><pre>{
+  "flight_plan": {
+    "id": "IP-2035-001",
+    "origin": "Earth",
+    "destination": "Jupiter",
+    "trajectory": {
+      "type": "GRAVITY_ASSIST",
+      "waypoints": ["Earth", "Mars", "Jupiter"],
+      "total_duration_years": 6.2
+    },
+    "propulsion": {
+      "type": "ION_DRIVE",
+      "delta_v_kmps": 12.5,
+      "fuel_mass_kg": 3500
+    },
+    "mission_profile": {
+      "type": "SCIENCE",
+      "crew": false,
+      "payload_kg": 8000
+    }
+  }
+}</pre></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab1">
+            <div class="card">
+                <h2>Gravity Assist Calculator</h2>
+                <label>Origin Planet:</label>
+                <select id="origin">
+                    <option value="Earth">Earth</option>
+                    <option value="Mars">Mars</option>
+                    <option value="Jupiter">Jupiter</option>
+                </select>
+                <label>Destination:</label>
+                <select id="destination">
+                    <option value="Mars">Mars</option>
+                    <option value="Jupiter">Jupiter</option>
+                    <option value="Saturn">Saturn</option>
+                </select>
+                <button onclick="calculateGravityAssist()">Calculate Route</button>
+                <div id="gravityResult"></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab2">
+            <div class="card">
+                <h2>Interplanetary Navigation API</h2>
+                <div class="json-viewer"><pre>GET /api/v1/interplanetary/routes
+Response: { "routes": [...], "optimal": {...} }</pre></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab3">
+            <div class="card">
+                <h2>Navigation Systems</h2>
+                <table>
+                    <tr><th>System</th><th>Status</th></tr>
+                    <tr><td>Star Tracker</td><td>✅ Active</td></tr>
+                    <tr><td>Deep Space Network</td><td>✅ Connected</td></tr>
+                    <tr><td>Ion Drive</td><td>✅ Operational</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab4">
+            <div class="card">
+                <h2>Flight Plan QR</h2>
+                <button onclick="generateQR()">Generate QR Code</button>
+                <div id="qrcode" style="text-align: center; margin: 20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        function switchTab(i) {
+            document.querySelectorAll('.tab').forEach((t, idx) => t.classList.toggle('active', idx === i));
+            document.querySelectorAll('.tab-content').forEach((t, idx) => t.classList.toggle('active', idx === i));
+        }
+        function calculateGravityAssist() {
+            const origin = document.getElementById('origin').value;
+            const dest = document.getElementById('destination').value;
+            const durations = {
+                'Earth-Mars': 0.7,
+                'Earth-Jupiter': 6.2,
+                'Mars-Jupiter': 5.8,
+                'Earth-Saturn': 7.0
+            };
+            const key = `${origin}-${dest}`;
+            const duration = durations[key] || 5.0;
+            document.getElementById('gravityResult').innerHTML = `
+                <div style="background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 6px; margin-top: 15px;">
+                    <h3>Optimal Route</h3>
+                    <p>Route: ${origin} → ${dest}</p>
+                    <p>Duration: ${duration} years</p>
+                    <p>Delta-V: ${(duration * 2).toFixed(1)} km/s</p>
+                </div>
+            `;
+        }
+        function generateQR() {
+            const data = JSON.stringify({ standard: 'WIA-SPACE-013', route: 'Earth-Jupiter', duration: '6.2 years', timestamp: new Date().toISOString() });
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById('qrcode'), { text: data, width: 200, height: 200, colorDark: '#06B6D4' });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: Implementation Guide | WIA-EDU-006</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; }
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+        header { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-bottom: 3px solid #8B5CF6; padding: 2rem; margin-bottom: 3rem; border-radius: 10px; }
+        .chapter-title { color: #8B5CF6; font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .chapter-subtitle { color: #94a3b8; font-size: 1.2rem; }
+        nav { background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        nav a { color: #8B5CF6; text-decoration: none; padding: 0.5rem 1rem; border: 2px solid #8B5CF6; border-radius: 5px; transition: all 0.3s ease; }
+        nav a:hover { background: #8B5CF6; color: white; }
+        .content { background: #1e293b; padding: 3rem; border-radius: 10px; margin-bottom: 2rem; }
+        h1, h2, h3 { color: #8B5CF6; margin-top: 2rem; margin-bottom: 1rem; }
+        h1 { font-size: 2rem; border-bottom: 2px solid #334155; padding-bottom: 0.5rem; }
+        h2 { font-size: 1.6rem; }
+        h3 { font-size: 1.3rem; color: #a78bfa; }
+        p { margin-bottom: 1rem; color: #cbd5e1; }
+        ul, ol { margin-left: 2rem; margin-bottom: 1rem; color: #cbd5e1; }
+        li { margin-bottom: 0.5rem; }
+        .highlight { background: #334155; padding: 1.5rem; border-left: 4px solid #8B5CF6; border-radius: 5px; margin: 1.5rem 0; }
+        code { background: #0a0f1e; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Courier New', monospace; color: #10b981; }
+        pre { background: #0a0f1e; padding: 1.5rem; border-radius: 5px; overflow-x: auto; margin: 1rem 0; color: #e2e8f0; }
+        pre code { padding: 0; }
+        .note { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 1rem; margin: 1rem 0; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #334155; color: #8B5CF6; font-weight: bold; }
+        footer { background: #1e293b; padding: 2rem; border-radius: 8px; text-align: center; border-top: 3px solid #8B5CF6; }
+        .philosophy { color: #8B5CF6; font-size: 1.2rem; font-weight: bold; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-title">Chapter 4</div>
+            <div class="chapter-subtitle">Implementation Guide</div>
+        </header>
+
+        <nav>
+            <a href="ch3.html">← Previous</a>
+            <span style="color: #94a3b8;">WIA-EDU-006 eBook</span>
+            <a href="ch5.html">Next Chapter →</a>
+        </nav>
+
+        <div class="content">
+            <h1>Implementation Guide</h1>
+
+            <p>
+                This chapter provides practical, step-by-step guidance for implementing WIA-EDU-006 compliant
+                virtual classroom systems. From initial setup through production deployment, you'll find code
+                examples, configuration templates, and best practices for each component.
+            </p>
+
+            <h2>4.1 Development Environment Setup</h2>
+
+            <h3>4.1.1 Prerequisites</h3>
+
+            <p>Before beginning implementation, ensure your development environment includes:</p>
+
+            <ul>
+                <li><strong>Node.js:</strong> Version 18+ or latest LTS</li>
+                <li><strong>Package Manager:</strong> npm, yarn, or pnpm</li>
+                <li><strong>Database:</strong> PostgreSQL 14+ or MongoDB 6+</li>
+                <li><strong>Redis:</strong> Version 7+ for caching and session management</li>
+                <li><strong>Git:</strong> For version control</li>
+                <li><strong>Docker:</strong> Optional but recommended for containerization</li>
+                <li><strong>Code Editor:</strong> VS Code, WebStorm, or similar with TypeScript support</li>
+            </ul>
+
+            <h3>4.1.2 Project Initialization</h3>
+
+            <p>Create a new WIA-EDU-006 virtual classroom project:</p>
+
+            <pre><code># Create project directory
+mkdir virtual-classroom && cd virtual-classroom
+
+# Initialize Node.js project
+npm init -y
+
+# Install core dependencies
+npm install express socket.io webrtc pg redis
+npm install @types/express @types/node typescript tsx -D
+
+# Initialize TypeScript
+npx tsc --init
+
+# Create directory structure
+mkdir -p src/{api,media,models,services,utils}
+mkdir -p public/{css,js,assets}
+mkdir -p config</code></pre>
+
+            <h3>4.1.3 TypeScript Configuration</h3>
+
+            <p>Configure <code>tsconfig.json</code> for optimal development:</p>
+
+            <pre><code>{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}</code></pre>
+
+            <h2>4.2 Core SDK Implementation</h2>
+
+            <h3>4.2.1 Type Definitions</h3>
+
+            <p>Create comprehensive type definitions in <code>src/types.ts</code>:</p>
+
+            <pre><code>// src/types.ts
+export interface VirtualClassroomConfig {
+  name: string;
+  maxParticipants: number;
+  sessionType: 'live' | 'webinar' | 'hybrid' | 'recorded';
+  features: ClassroomFeatures;
+  security: SecurityConfig;
+}
+
+export interface ClassroomFeatures {
+  chat: boolean;
+  whiteboard: boolean;
+  screenShare: boolean;
+  breakoutRooms: boolean;
+  recording: boolean;
+  polls: boolean;
+  qa: boolean;
+}
+
+export interface SecurityConfig {
+  authentication: 'oauth' | 'saml' | 'sso' | 'password';
+  encryption: boolean;
+  waitingRoom: boolean;
+  passwordProtected: boolean;
+}
+
+export interface Participant {
+  id: string;
+  name: string;
+  email: string;
+  role: 'instructor' | 'student' | 'ta' | 'observer';
+  audioEnabled: boolean;
+  videoEnabled: boolean;
+  screenSharing: boolean;
+  joinedAt: Date;
+}
+
+export interface Session {
+  id: string;
+  name: string;
+  startTime: Date;
+  endTime?: Date;
+  status: 'scheduled' | 'active' | 'ended';
+  participants: Participant[];
+  config: VirtualClassroomConfig;
+  createdBy: string;
+}
+
+export interface Message {
+  id: string;
+  sessionId: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  timestamp: Date;
+  type: 'text' | 'file' | 'system';
+}
+
+export interface Poll {
+  id: string;
+  question: string;
+  options: string[];
+  responses: Map<string, number>;
+  createdAt: Date;
+  expiresAt?: Date;
+}
+
+export interface Analytics {
+  sessionId: string;
+  duration: number;
+  peakParticipants: number;
+  averageParticipants: number;
+  messagesCount: number;
+  pollsCount: number;
+  engagementScore: number;
+}</code></pre>
+
+            <h3>4.2.2 Main SDK Class</h3>
+
+            <p>Implement the core VirtualClassroom SDK:</p>
+
+            <pre><code>// src/index.ts
+import { EventEmitter } from 'events';
+import { VirtualClassroomConfig, Session, Participant } from './types';
+
+export class VirtualClassroom extends EventEmitter {
+  private config: VirtualClassroomConfig;
+  private session: Session | null = null;
+  private participants: Map<string, Participant> = new Map();
+
+  constructor(config: VirtualClassroomConfig) {
+    super();
+    this.config = config;
+  }
+
+  async createSession(name: string, createdBy: string): Promise<Session> {
+    this.session = {
+      id: this.generateId(),
+      name,
+      startTime: new Date(),
+      status: 'active',
+      participants: [],
+      config: this.config,
+      createdBy
+    };
+
+    this.emit('session:created', this.session);
+    return this.session;
+  }
+
+  async joinSession(participant: Omit<Participant, 'id' | 'joinedAt'>): Promise<Participant> {
+    if (!this.session) {
+      throw new Error('No active session');
+    }
+
+    if (this.participants.size >= this.config.maxParticipants) {
+      throw new Error('Session is full');
+    }
+
+    const fullParticipant: Participant = {
+      ...participant,
+      id: this.generateId(),
+      joinedAt: new Date()
+    };
+
+    this.participants.set(fullParticipant.id, fullParticipant);
+    this.session.participants.push(fullParticipant);
+
+    this.emit('participant:joined', fullParticipant);
+    return fullParticipant;
+  }
+
+  async leaveSession(participantId: string): Promise<void> {
+    const participant = this.participants.get(participantId);
+    if (!participant) {
+      throw new Error('Participant not found');
+    }
+
+    this.participants.delete(participantId);
+    if (this.session) {
+      this.session.participants = this.session.participants.filter(
+        p => p.id !== participantId
+      );
+    }
+
+    this.emit('participant:left', participant);
+  }
+
+  async toggleAudio(participantId: string, enabled: boolean): Promise<void> {
+    const participant = this.participants.get(participantId);
+    if (!participant) {
+      throw new Error('Participant not found');
+    }
+
+    participant.audioEnabled = enabled;
+    this.emit('participant:audio:toggled', { participantId, enabled });
+  }
+
+  async toggleVideo(participantId: string, enabled: boolean): Promise<void> {
+    const participant = this.participants.get(participantId);
+    if (!participant) {
+      throw new Error('Participant not found');
+    }
+
+    participant.videoEnabled = enabled;
+    this.emit('participant:video:toggled', { participantId, enabled });
+  }
+
+  async sendMessage(senderId: string, content: string): Promise<void> {
+    if (!this.config.features.chat) {
+      throw new Error('Chat is disabled');
+    }
+
+    const sender = this.participants.get(senderId);
+    if (!sender) {
+      throw new Error('Participant not found');
+    }
+
+    const message = {
+      id: this.generateId(),
+      sessionId: this.session!.id,
+      senderId,
+      senderName: sender.name,
+      content,
+      timestamp: new Date(),
+      type: 'text' as const
+    };
+
+    this.emit('message:received', message);
+  }
+
+  async endSession(): Promise<void> {
+    if (!this.session) {
+      throw new Error('No active session');
+    }
+
+    this.session.status = 'ended';
+    this.session.endTime = new Date();
+
+    this.emit('session:ended', this.session);
+    this.participants.clear();
+  }
+
+  getSession(): Session | null {
+    return this.session;
+  }
+
+  getParticipants(): Participant[] {
+    return Array.from(this.participants.values());
+  }
+
+  getParticipant(id: string): Participant | undefined {
+    return this.participants.get(id);
+  }
+
+  private generateId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+}
+
+export * from './types';</code></pre>
+
+            <h2>4.3 WebRTC Implementation</h2>
+
+            <h3>4.3.1 Client-Side WebRTC Setup</h3>
+
+            <p>Implement WebRTC peer connection management:</p>
+
+            <pre><code>// public/js/webrtc-client.js
+class WebRTCClient {
+  constructor(signallingServerUrl) {
+    this.peerConnection = null;
+    this.localStream = null;
+    this.remoteStreams = new Map();
+    this.socket = io(signallingServerUrl);
+
+    this.setupSocketListeners();
+  }
+
+  async startLocalStream(constraints = { video: true, audio: true }) {
+    try {
+      this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      return this.localStream;
+    } catch (error) {
+      console.error('Error accessing media devices:', error);
+      throw error;
+    }
+  }
+
+  async createPeerConnection(iceServers) {
+    const config = {
+      iceServers: iceServers || [
+        { urls: 'stun:stun.l.google.com:19302' }
+      ]
+    };
+
+    this.peerConnection = new RTCPeerConnection(config);
+
+    // Add local stream tracks
+    if (this.localStream) {
+      this.localStream.getTracks().forEach(track => {
+        this.peerConnection.addTrack(track, this.localStream);
+      });
+    }
+
+    // Handle ICE candidates
+    this.peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        this.socket.emit('ice-candidate', event.candidate);
+      }
+    };
+
+    // Handle remote stream
+    this.peerConnection.ontrack = (event) => {
+      const [remoteStream] = event.streams;
+      this.emit('remote-stream', remoteStream);
+    };
+
+    return this.peerConnection;
+  }
+
+  async createOffer() {
+    const offer = await this.peerConnection.createOffer();
+    await this.peerConnection.setLocalDescription(offer);
+    return offer;
+  }
+
+  async createAnswer(offer) {
+    await this.peerConnection.setRemoteDescription(
+      new RTCSessionDescription(offer)
+    );
+    const answer = await this.peerConnection.createAnswer();
+    await this.peerConnection.setLocalDescription(answer);
+    return answer;
+  }
+
+  async handleAnswer(answer) {
+    await this.peerConnection.setRemoteDescription(
+      new RTCSessionDescription(answer)
+    );
+  }
+
+  async addIceCandidate(candidate) {
+    await this.peerConnection.addIceCandidate(
+      new RTCIceCandidate(candidate)
+    );
+  }
+
+  toggleAudio(enabled) {
+    if (this.localStream) {
+      this.localStream.getAudioTracks().forEach(track => {
+        track.enabled = enabled;
+      });
+    }
+  }
+
+  toggleVideo(enabled) {
+    if (this.localStream) {
+      this.localStream.getVideoTracks().forEach(track => {
+        track.enabled = enabled;
+      });
+    }
+  }
+
+  async shareScreen() {
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true
+      });
+
+      const screenTrack = screenStream.getVideoTracks()[0];
+      const sender = this.peerConnection.getSenders().find(
+        s => s.track.kind === 'video'
+      );
+
+      if (sender) {
+        sender.replaceTrack(screenTrack);
+      }
+
+      screenTrack.onended = () => {
+        this.stopScreenShare();
+      };
+
+      return screenStream;
+    } catch (error) {
+      console.error('Error sharing screen:', error);
+      throw error;
+    }
+  }
+
+  stopScreenShare() {
+    const videoTrack = this.localStream.getVideoTracks()[0];
+    const sender = this.peerConnection.getSenders().find(
+      s => s.track.kind === 'video'
+    );
+
+    if (sender && videoTrack) {
+      sender.replaceTrack(videoTrack);
+    }
+  }
+
+  disconnect() {
+    if (this.localStream) {
+      this.localStream.getTracks().forEach(track => track.stop());
+    }
+
+    if (this.peerConnection) {
+      this.peerConnection.close();
+    }
+
+    this.socket.disconnect();
+  }
+
+  setupSocketListeners() {
+    this.socket.on('offer', async (offer) => {
+      const answer = await this.createAnswer(offer);
+      this.socket.emit('answer', answer);
+    });
+
+    this.socket.on('answer', async (answer) => {
+      await this.handleAnswer(answer);
+    });
+
+    this.socket.on('ice-candidate', async (candidate) => {
+      await this.addIceCandidate(candidate);
+    });
+  }
+}</code></pre>
+
+            <h2>4.4 Database Models</h2>
+
+            <h3>4.4.1 PostgreSQL Schema</h3>
+
+            <p>Database schema for session and user management:</p>
+
+            <pre><code>-- Create tables
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  role VARCHAR(50) NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  created_by UUID REFERENCES users(id),
+  start_time TIMESTAMP NOT NULL,
+  end_time TIMESTAMP,
+  status VARCHAR(50) NOT NULL,
+  max_participants INTEGER DEFAULT 100,
+  config JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE participants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id),
+  joined_at TIMESTAMP DEFAULT NOW(),
+  left_at TIMESTAMP,
+  audio_enabled BOOLEAN DEFAULT TRUE,
+  video_enabled BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+  sender_id UUID REFERENCES users(id),
+  content TEXT NOT NULL,
+  message_type VARCHAR(50) DEFAULT 'text',
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE analytics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+  metric_name VARCHAR(100) NOT NULL,
+  metric_value NUMERIC,
+  recorded_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create indexes
+CREATE INDEX idx_sessions_status ON sessions(status);
+CREATE INDEX idx_participants_session ON participants(session_id);
+CREATE INDEX idx_messages_session ON messages(session_id);
+CREATE INDEX idx_analytics_session ON analytics(session_id);</code></pre>
+
+            <h2>4.5 Authentication Implementation</h2>
+
+            <h3>4.5.1 OAuth 2.0 Integration</h3>
+
+            <p>Implement OAuth 2.0 authentication with popular providers:</p>
+
+            <pre><code>// src/services/auth.ts
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
+
+export function configureAuth() {
+  // Google OAuth
+  passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    callbackURL: '/auth/google/callback'
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      const user = await findOrCreateUser({
+        email: profile.emails[0].value,
+        name: profile.displayName,
+        provider: 'google',
+        providerId: profile.id
+      });
+      done(null, user);
+    } catch (error) {
+      done(error);
+    }
+  }));
+
+  // Microsoft OAuth
+  passport.use(new MicrosoftStrategy({
+    clientID: process.env.MICROSOFT_CLIENT_ID!,
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+    callbackURL: '/auth/microsoft/callback'
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      const user = await findOrCreateUser({
+        email: profile.emails[0].value,
+        name: profile.displayName,
+        provider: 'microsoft',
+        providerId: profile.id
+      });
+      done(null, user);
+    } catch (error) {
+      done(error);
+    }
+  }));
+
+  passport.serializeUser((user: any, done) => {
+    done(null, user.id);
+  });
+
+  passport.deserializeUser(async (id: string, done) => {
+    try {
+      const user = await findUserById(id);
+      done(null, user);
+    } catch (error) {
+      done(error);
+    }
+  });
+}</code></pre>
+
+            <h2>4.6 REST API Implementation</h2>
+
+            <h3>4.6.1 Express Server Setup</h3>
+
+            <pre><code>// src/api/server.ts
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import sessionRoutes from './routes/sessions';
+import userRoutes from './routes/users';
+
+const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CLIENT_URL,
+    credentials: true
+  }
+});
+
+// Middleware
+app.use(express.json());
+app.use(express.static('public'));
+
+// Routes
+app.use('/api/v1/sessions', sessionRoutes);
+app.use('/api/v1/users', userRoutes);
+
+// WebSocket handling
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  socket.on('join-session', async (sessionId) => {
+    socket.join(sessionId);
+    socket.to(sessionId).emit('participant-joined', socket.id);
+  });
+
+  socket.on('leave-session', async (sessionId) => {
+    socket.leave(sessionId);
+    socket.to(sessionId).emit('participant-left', socket.id);
+  });
+
+  socket.on('send-message', async (data) => {
+    io.to(data.sessionId).emit('message-received', data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+httpServer.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});</code></pre>
+
+            <h2>4.7 Testing</h2>
+
+            <h3>4.7.1 Unit Testing</h3>
+
+            <pre><code>// tests/virtual-classroom.test.ts
+import { VirtualClassroom } from '../src';
+
+describe('VirtualClassroom', () => {
+  let classroom: VirtualClassroom;
+
+  beforeEach(() => {
+    classroom = new VirtualClassroom({
+      name: 'Test Classroom',
+      maxParticipants: 10,
+      sessionType: 'live',
+      features: {
+        chat: true,
+        whiteboard: true,
+        screenShare: true,
+        breakoutRooms: false,
+        recording: false,
+        polls: true,
+        qa: true
+      },
+      security: {
+        authentication: 'oauth',
+        encryption: true,
+        waitingRoom: false,
+        passwordProtected: false
+      }
+    });
+  });
+
+  it('should create a session', async () => {
+    const session = await classroom.createSession('Math 101', 'user-123');
+    expect(session.name).toBe('Math 101');
+    expect(session.status).toBe('active');
+  });
+
+  it('should allow participants to join', async () => {
+    await classroom.createSession('Math 101', 'user-123');
+
+    const participant = await classroom.joinSession({
+      name: 'John Doe',
+      email: 'john@example.com',
+      role: 'student',
+      audioEnabled: true,
+      videoEnabled: true,
+      screenSharing: false
+    });
+
+    expect(participant.name).toBe('John Doe');
+    expect(classroom.getParticipants().length).toBe(1);
+  });
+
+  it('should enforce max participants limit', async () => {
+    await classroom.createSession('Math 101', 'user-123');
+
+    for (let i = 0; i < 10; i++) {
+      await classroom.joinSession({
+        name: `Student ${i}`,
+        email: `student${i}@example.com`,
+        role: 'student',
+        audioEnabled: true,
+        videoEnabled: true,
+        screenSharing: false
+      });
+    }
+
+    await expect(classroom.joinSession({
+      name: 'Extra Student',
+      email: 'extra@example.com',
+      role: 'student',
+      audioEnabled: true,
+      videoEnabled: true,
+      screenSharing: false
+    })).rejects.toThrow('Session is full');
+  });
+});</code></pre>
+
+            <h2>4.8 Deployment</h2>
+
+            <h3>4.8.1 Docker Configuration</h3>
+
+            <pre><code># Dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["node", "dist/index.js"]</code></pre>
+
+            <pre><code># docker-compose.yml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/classroom
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: classroom
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:</code></pre>
+
+            <h2>4.9 Summary</h2>
+
+            <p>
+                This implementation guide has covered the essential components for building a WIA-EDU-006 compliant
+                virtual classroom system. From project setup and TypeScript configuration to WebRTC implementation,
+                database design, authentication, and deployment, you now have a comprehensive blueprint for
+                development.
+            </p>
+
+            <div class="note">
+                <strong>Next Steps:</strong>
+                <ul style="margin-top: 0.5rem;">
+                    <li>Customize the implementation to your specific requirements</li>
+                    <li>Add additional features like breakout rooms and whiteboard</li>
+                    <li>Implement comprehensive error handling and logging</li>
+                    <li>Set up CI/CD pipelines for automated testing and deployment</li>
+                    <li>Configure monitoring and alerting</li>
+                </ul>
+            </div>
+
+            <p style="margin-top: 2rem;">
+                In the next chapter, we'll explore best practices for virtual classroom design, pedagogy,
+                and user experience to ensure your implementation delivers maximum educational value.
+            </p>
+        </div>
+
+        <nav>
+            <a href="ch3.html">← Previous</a>
+            <span style="color: #94a3b8;">Chapter 4 of 8</span>
+            <a href="ch5.html">Next Chapter →</a>
+        </nav>
+
+        <footer>
+            <p>&copy; 2025 SmileStory Inc. / WIA (World Certification Industry Association)</p>
+            <p>WIA-EDU-006: Virtual Classroom Standard</p>
+            <p class="philosophy">弘益人間 · Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

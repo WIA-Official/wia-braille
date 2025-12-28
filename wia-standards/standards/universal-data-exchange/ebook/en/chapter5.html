@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Cross-System Integration Patterns - WIA-CORE-003</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 3rem; border-radius: 15px; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #6B7280; text-decoration: none; padding: 0.75rem 1.5rem; background: #0f172a; border-radius: 8px; }
+        .back-link:hover { background: #334155; }
+        .chapter-header { border-bottom: 3px solid #6B7280; padding-bottom: 2rem; margin-bottom: 3rem; }
+        .chapter-number { color: #6B7280; font-size: 1.2rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        h1 { font-size: 2.5rem; color: #e2e8f0; margin-top: 0.5rem; line-height: 1.3; }
+        h2 { color: #6B7280; margin: 2.5rem 0 1.5rem; font-size: 1.8rem; }
+        h3 { color: #94a3b8; margin: 2rem 0 1rem; font-size: 1.4rem; }
+        p { margin-bottom: 1.5rem; font-size: 1.1rem; }
+        .highlight-box { background: #0f172a; padding: 2rem; border-radius: 10px; border-left: 4px solid #6B7280; margin: 2rem 0; }
+        .code-block { background: #0f172a; padding: 1.5rem; border-radius: 8px; font-family: 'Monaco', monospace; overflow-x: auto; margin: 1.5rem 0; font-size: 0.95rem; }
+        ul, ol { margin: 1.5rem 0 1.5rem 2rem; }
+        li { margin-bottom: 0.75rem; font-size: 1.05rem; }
+        .navigation { display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav-button { padding: 1rem 2rem; background: #6B7280; color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s; }
+        .nav-button:hover { background: #4B5563; transform: translateY(-2px); }
+        .pattern-box { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1.5rem; border-radius: 10px; margin: 1.5rem 0; border-left: 4px solid #6B7280; }
+        .pattern-box h4 { color: #6B7280; margin-bottom: 0.75rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Table of Contents</a>
+        <div class="chapter-header">
+            <div class="chapter-number">Chapter 5</div>
+            <h1>Cross-System Integration Patterns</h1>
+        </div>
+
+        <p>Universal data exchange isn't just about format conversion—it's about connecting diverse systems that communicate through different protocols, operate on different timescales, and have different reliability guarantees. This chapter explores proven integration patterns and how WIA-CORE-003 implements them to enable seamless system-to-system communication.</p>
+
+        <h2>Integration Pattern Catalog</h2>
+
+        <div class="pattern-box">
+            <h4>Pattern 1: API Gateway with Format Negotiation</h4>
+            <p>An API gateway sits at the system boundary, accepting requests in multiple formats and translating them to the internal format. Clients can send JSON, XML, Protocol Buffers, or any supported format, and receive responses in their preferred format.</p>
+        </div>
+
+        <div class="code-block">
+// API Gateway with Content Negotiation
+
+// Client sends JSON, wants XML response
+POST /api/users
+Content-Type: application/json
+Accept: application/xml
+
+{"name": "Alice", "email": "alice@example.com"}
+
+// Gateway converts to internal format (e.g., Protobuf)
+// Processes request
+// Converts response to XML
+
+HTTP/1.1 201 Created
+Content-Type: application/xml
+
+&lt;?xml version="1.0"?&gt;
+&lt;user&gt;
+  &lt;id&gt;12345&lt;/id&gt;
+  &lt;name&gt;Alice&lt;/name&gt;
+  &lt;email&gt;alice@example.com&lt;/email&gt;
+&lt;/user&gt;
+        </div>
+
+        <div class="pattern-box">
+            <h4>Pattern 2: Message Transformation Middleware</h4>
+            <p>Message queues and event streams often contain messages in heterogeneous formats. Transformation middleware sits between producers and consumers, converting messages to each consumer's preferred format.</p>
+        </div>
+
+        <div class="code-block">
+// Kafka with Multi-Format Support
+
+// Producer publishes in JSON
+producer.send(topic="orders", value={
+    "order_id": "ORD-123",
+    "amount": 99.99
+}, format="json")
+
+// Middleware converts and republishes
+// Consumer A receives Avro
+consumer_a.subscribe(topic="orders", format="avro")
+
+// Consumer B receives Protobuf
+consumer_b.subscribe(topic="orders", format="protobuf")
+
+// Consumer C receives original JSON
+consumer_c.subscribe(topic="orders", format="json")
+        </div>
+
+        <div class="pattern-box">
+            <h4>Pattern 3: Database Change Data Capture (CDC)</h4>
+            <p>Capture changes from databases and stream them to other systems in their native formats. A PostgreSQL change can be transformed into a Kafka Avro message, an Elasticsearch JSON document, or a REST API call.</p>
+        </div>
+
+        <div class="pattern-box">
+            <h4>Pattern 4: Legacy System Adapter</h4>
+            <p>Wrap legacy systems (mainframes, COBOL systems, EDI) with modern APIs that handle format translation bidirectionally, enabling gradual modernization without rewriting the core system.</p>
+        </div>
+
+        <div class="pattern-box">
+            <h4>Pattern 5: Schema-Based Routing</h4>
+            <p>Route messages to different consumers based on schema version or structure. This enables A/B testing of new schema versions and gradual rollout of breaking changes.</p>
+        </div>
+
+        <h2>Protocol Adapters</h2>
+
+        <p>WIA-CORE-003 provides protocol adapters that abstract communication mechanisms, allowing format transformation to work across diverse transport layers.</p>
+
+        <h3>HTTP/REST Adapter</h3>
+        <div class="code-block">
+// REST Adapter Configuration
+
+RestAdapter::new()
+    .endpoint("https://api.example.com/v1/users")
+    .method(HttpMethod::POST)
+    .input_format(JsonFormat)  // Accept JSON from client
+    .output_format(XmlFormat)  // Send XML to backend
+    .response_format(JsonFormat)  // Convert XML response to JSON
+    .schema_mapping(user_mapping)
+    .auth(BearerToken::from_env("API_TOKEN"))
+    .timeout(Duration::seconds(30))
+    .retry_policy(ExponentialBackoff::new())
+    .build()
+        </div>
+
+        <h3>gRPC Adapter</h3>
+        <p>gRPC uses Protocol Buffers natively, but the adapter can expose gRPC services that accept multiple formats, converting them to Protobuf internally.</p>
+
+        <h3>Message Queue Adapters</h3>
+        <p>Support for Kafka, RabbitMQ, AWS SQS, Azure Service Bus, and Google Pub/Sub. Messages are deserialized from their native format, transformed, and serialized to the target format before delivery.</p>
+
+        <h3>Database Adapters</h3>
+        <p>Connect to relational databases (PostgreSQL, MySQL, Oracle), NoSQL stores (MongoDB, Cassandra, DynamoDB), and data warehouses (Snowflake, BigQuery, Redshift). Query results are automatically converted to requested formats.</p>
+
+        <div class="code-block">
+// Database Query with Format Conversion
+
+let db_adapter = PostgresAdapter::new(connection_string)?;
+
+// Execute SQL query
+let rows = db_adapter.query("
+    SELECT user_id, name, email, created_at
+    FROM users
+    WHERE status = 'active'
+").await?;
+
+// Convert result to JSON
+let json_output = db_adapter
+    .convert_to_format(rows, JsonFormat, user_schema)?;
+
+// Or convert to Parquet for data lake
+let parquet_output = db_adapter
+    .convert_to_format(rows, ParquetFormat, user_schema)?;
+write_to_s3("s3://datalake/users.parquet", parquet_output)?;
+        </div>
+
+        <h2>Real-World Integration Scenarios</h2>
+
+        <h3>Scenario 1: E-Commerce Order Processing</h3>
+        <p>An online retailer receives orders through multiple channels: web (JSON), mobile app (Protobuf), B2B partners (EDI X12), and call center (XML). All orders must be processed through the same fulfillment system.</p>
+
+        <div class="code-block">
+// Order Integration Pipeline
+
+pipeline OrderIntegration {
+    // Multiple input sources
+    sources {
+        web: HttpEndpoint("/api/orders", format=JSON)
+        mobile: GrpcService("OrderService", format=Protobuf)
+        b2b: FileWatcher("/incoming/edi/*.x12", format=EDI_X12)
+        callcenter: SoapService("OrderSoapService", format=XML)
+    }
+
+    // Normalize all to canonical order schema
+    transform {
+        use schema CanonicalOrder@2.0
+        mapping {
+            web -> CanonicalOrder: WebOrderMapping
+            mobile -> CanonicalOrder: MobileOrderMapping
+            b2b -> CanonicalOrder: EdiOrderMapping
+            callcenter -> CanonicalOrder: XmlOrderMapping
+        }
+    }
+
+    // Validate and enrich
+    validate {
+        schema: CanonicalOrder@2.0
+        business_rules: OrderValidationRules
+    }
+
+    enrich {
+        customer_data: lookup_customer(order.customer_id)
+        inventory_status: check_inventory(order.items)
+        pricing: calculate_pricing(order.items, customer_data)
+    }
+
+    // Route to fulfillment system
+    destination {
+        kafka: KafkaTopic("orders.validated", format=Avro)
+        database: PostgresTable("orders", format=SQL)
+        warehouse: RestApi("https://wms.example.com/orders", format=JSON)
+    }
+}
+        </div>
+
+        <h3>Scenario 2: Multi-Cloud Data Synchronization</h3>
+        <p>A company runs workloads across AWS, Azure, and Google Cloud. Data must be synchronized between cloud providers, each using different native formats and APIs.</p>
+
+        <div class="code-block">
+// Multi-Cloud Sync Configuration
+
+sync_job CloudDataSync {
+    source {
+        aws_s3: {
+            bucket: "prod-data-lake",
+            format: Parquet,
+            schema: DataLakeSchema@3.1
+        }
+    }
+
+    destinations {
+        azure_blob: {
+            container: "analytics-data",
+            format: Avro,
+            schema: AnalyticsSchema@2.0,
+            mapping: DataLakeToAnalytics
+        }
+
+        gcp_bigquery: {
+            dataset: "enterprise_analytics",
+            table: "fact_events",
+            format: BigQueryJSON,
+            schema: BigQueryEventSchema@1.5,
+            mapping: DataLakeToAnalytics,
+            partition_by: "event_date"
+        }
+    }
+
+    schedule: "0 */4 * * *"  // Every 4 hours
+    incremental: true
+    checkpoint: S3("s3://sync-state/checkpoints/")
+}
+        </div>
+
+        <h3>Scenario 3: Microservices Data Mesh</h3>
+        <p>In a microservices architecture, each service owns its data and schema. Services need to exchange data without tight coupling or shared database dependencies.</p>
+
+        <div class="code-block">
+// Service Mesh Data Exchange
+
+service UserService {
+    publishes {
+        event UserCreated {
+            schema: User@1.0
+            formats: [Protobuf, JSON, Avro]
+            topic: "users.created"
+        }
+
+        event UserUpdated {
+            schema: UserUpdate@1.0
+            formats: [Protobuf, JSON]
+            topic: "users.updated"
+        }
+    }
+
+    consumes {
+        event OrderPlaced from OrderService {
+            schema: Order@2.0
+            preferred_format: Protobuf
+            mapping: OrderToUserActivity
+        }
+    }
+}
+
+service NotificationService {
+    consumes {
+        event UserCreated from UserService {
+            schema: User@1.0
+            preferred_format: JSON  // Different from publisher!
+            mapping: UserToNotificationContext
+        }
+    }
+
+    // Transformation happens automatically in service mesh
+}
+        </div>
+
+        <h2>Error Handling and Resilience</h2>
+
+        <p>Cross-system integration must handle failures gracefully. WIA-CORE-003 implements several resilience patterns:</p>
+
+        <h3>Circuit Breaker Pattern</h3>
+        <p>When a downstream system becomes unresponsive, the circuit breaker stops sending requests temporarily, preventing cascade failures and allowing time for recovery.</p>
+
+        <h3>Retry with Exponential Backoff</h3>
+        <p>Transient errors (network glitches, temporary unavailability) are retried automatically with increasing delays between attempts.</p>
+
+        <h3>Dead Letter Queues</h3>
+        <p>Messages that can't be processed after multiple retries are routed to a dead letter queue for manual investigation, preventing data loss.</p>
+
+        <h3>Bulkhead Pattern</h3>
+        <p>Integration points are isolated from each other using separate thread pools and resource limits, so one failing integration doesn't exhaust resources for others.</p>
+
+        <div class="code-block">
+// Resilience Configuration
+
+adapter.configure_resilience(
+    CircuitBreaker {
+        failure_threshold: 5,
+        timeout: Duration::seconds(60),
+        half_open_after: Duration::minutes(5)
+    },
+
+    RetryPolicy {
+        max_attempts: 3,
+        backoff: Exponential {
+            initial: Duration::seconds(1),
+            max: Duration::seconds(30),
+            multiplier: 2.0
+        },
+        retryable_errors: [NetworkError, Timeout, ServiceUnavailable]
+    },
+
+    DeadLetterQueue {
+        queue: "dlq.failed_transformations",
+        max_message_age: Duration::days(7)
+    },
+
+    Bulkhead {
+        max_concurrent_requests: 100,
+        max_queue_size: 1000,
+        thread_pool_size: 10
+    }
+)
+        </div>
+
+        <h2>Monitoring and Observability</h2>
+
+        <p>Integration pipelines must be observable to detect issues, measure performance, and ensure SLAs are met.</p>
+
+        <h3>Key Metrics</h3>
+        <ul>
+            <li><strong>Throughput:</strong> Messages/records processed per second</li>
+            <li><strong>Latency:</strong> Time from source to destination (p50, p95, p99)</li>
+            <li><strong>Error Rate:</strong> Percentage of failed transformations</li>
+            <li><strong>Format Distribution:</strong> Which formats are most commonly used</li>
+            <li><strong>Schema Version Distribution:</strong> Track schema version adoption</li>
+            <li><strong>Transformation Time:</strong> Time spent in format conversion</li>
+        </ul>
+
+        <div class="highlight-box">
+            <h3>Integration Best Practices</h3>
+            <ul>
+                <li>Design for failure: assume downstream systems will be unavailable</li>
+                <li>Use idempotent operations: retries shouldn't cause duplicate side effects</li>
+                <li>Implement comprehensive logging: capture input, output, and transformation details</li>
+                <li>Set appropriate timeouts: balance responsiveness with completion rates</li>
+                <li>Monitor continuously: alert on error rates, latency spikes, and throughput degradation</li>
+                <li>Version APIs and schemas: enable gradual rollout of changes</li>
+                <li>Document integration contracts: clear schemas and SLAs for all interfaces</li>
+                <li>Test with production-like data volumes: integration issues often emerge at scale</li>
+            </ul>
+        </div>
+
+        <p>Cross-system integration is where universal data exchange delivers its greatest value, enabling systems to communicate seamlessly despite differences in technology, format, and design philosophy. In the next chapter, we'll explore how to build real-time streaming pipelines that process continuous data flows at internet scale.</p>
+
+        <div class="navigation">
+            <a href="chapter4.html" class="nav-button">← Previous Chapter</a>
+            <a href="chapter6.html" class="nav-button">Next Chapter →</a>
+        </div>
+    </div>
+</body>
+</html>

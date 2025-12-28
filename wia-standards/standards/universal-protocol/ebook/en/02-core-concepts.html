@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Core Concepts | WIA-CORE-007</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9;
+            line-height: 1.8;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #1e293b;
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #10b981; border-bottom: 3px solid #6B7280; padding-bottom: 1rem; }
+        h2 { font-size: 2rem; margin: 2rem 0 1rem; color: #6B7280; }
+        h3 { font-size: 1.5rem; margin: 1.5rem 0 1rem; color: #10b981; }
+        p { margin: 1rem 0; font-size: 1.1rem; }
+        code { background: #0f172a; padding: 0.2rem 0.5rem; border-radius: 3px; font-family: 'Monaco', 'Courier New', monospace; color: #10b981; }
+        pre { background: #0f172a; padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; border-left: 4px solid #6B7280; }
+        pre code { background: none; padding: 0; }
+        .nav { margin: 2rem 0; display: flex; justify-content: space-between; padding-top: 2rem; border-top: 2px solid #334155; }
+        .nav a { color: #10b981; text-decoration: none; font-weight: 600; padding: 0.5rem 1rem; border: 2px solid #6B7280; border-radius: 5px; transition: all 0.3s ease; }
+        .nav a:hover { background: #6B7280; color: white; }
+        .highlight { background: #334155; padding: 1.5rem; border-left: 4px solid #10b981; border-radius: 5px; margin: 1.5rem 0; }
+        ul, ol { margin: 1rem 0 1rem 2rem; }
+        li { margin: 0.5rem 0; font-size: 1.1rem; }
+        .chapter-meta { opacity: 0.7; font-size: 0.9rem; margin-bottom: 2rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 1rem; text-align: left; border: 1px solid #334155; }
+        th { background: #0f172a; color: #10b981; font-weight: 600; }
+        td { background: #1e293b; }
+        .emoji { font-size: 1.5em; margin-right: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">🧠</span>Chapter 2: Core Concepts</h1>
+        <div class="chapter-meta">WIA-CORE-007 | Understanding the Fundamentals</div>
+
+        <h2>2.1 Message Types</h2>
+
+        <p>The Universal Protocol defines four fundamental message types that cover all communication patterns. Understanding these types is essential to effectively using the protocol.</p>
+
+        <h3>2.1.1 Request Messages</h3>
+
+        <p>Request messages initiate a communication exchange. They expect a response and are used in RPC (Remote Procedure Call) patterns.</p>
+
+        <pre><code>{
+  "id": "req_1234567890",
+  "type": "request",
+  "method": "users.getProfile",
+  "payload": {
+    "userId": "user_abc123",
+    "fields": ["name", "email", "avatar", "preferences"]
+  },
+  "metadata": {
+    "timestamp": "2025-12-27T10:30:00.000Z",
+    "version": "1.0",
+    "timeout": 5000,
+    "retryPolicy": {
+      "maxRetries": 3,
+      "backoff": "exponential"
+    }
+  }
+}</code></pre>
+
+        <p>Key characteristics of request messages:</p>
+        <ul>
+            <li>Must have a unique <code>id</code> to correlate with responses</li>
+            <li>Require a <code>method</code> that identifies what operation to perform</li>
+            <li>May include a <code>timeout</code> to prevent indefinite waiting</li>
+            <li>Can specify retry policies for handling failures</li>
+            <li>Always expect exactly one response message</li>
+        </ul>
+
+        <h3>2.1.2 Response Messages</h3>
+
+        <p>Response messages are sent in reply to request messages. They contain either the result of the operation or error information.</p>
+
+        <pre><code>// Success Response
+{
+  "id": "req_1234567890",
+  "type": "response",
+  "payload": {
+    "userId": "user_abc123",
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "avatar": "https://cdn.example.com/avatars/jane.jpg",
+    "preferences": {
+      "theme": "dark",
+      "language": "en",
+      "notifications": true
+    }
+  },
+  "metadata": {
+    "timestamp": "2025-12-27T10:30:00.150Z",
+    "processingTime": 45,
+    "cacheHit": false
+  }
+}
+
+// Error Response
+{
+  "id": "req_1234567890",
+  "type": "response",
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User with ID 'user_abc123' does not exist",
+    "details": {
+      "requestedId": "user_abc123",
+      "suggestions": ["Check user ID format", "Verify user exists"]
+    }
+  },
+  "metadata": {
+    "timestamp": "2025-12-27T10:30:00.050Z",
+    "processingTime": 15
+  }
+}</code></pre>
+
+        <h3>2.1.3 Stream Messages</h3>
+
+        <p>Stream messages represent a continuous flow of data. They can flow in one direction (client-to-server or server-to-client) or bidirectionally.</p>
+
+        <pre><code>{
+  "id": "stream_sensor_data",
+  "type": "stream",
+  "sequence": 42,
+  "payload": {
+    "sensorId": "temp_sensor_01",
+    "temperature": 23.5,
+    "humidity": 65.2,
+    "pressure": 1013.25,
+    "timestamp": "2025-12-27T10:30:00.500Z"
+  },
+  "metadata": {
+    "streamId": "stream_sensor_data",
+    "isComplete": false,
+    "totalMessages": null
+  }
+}</code></pre>
+
+        <p>Stream characteristics:</p>
+        <ul>
+            <li>Include a <code>sequence</code> number for ordering</li>
+            <li>May be infinite or have a defined end</li>
+            <li>Support backpressure mechanisms</li>
+            <li>Can be paused, resumed, or cancelled</li>
+            <li>Maintain ordering guarantees (configurable)</li>
+        </ul>
+
+        <h3>2.1.4 Event Messages</h3>
+
+        <p>Event messages are fire-and-forget notifications. They don't expect responses and are used in pub/sub patterns.</p>
+
+        <pre><code>{
+  "id": "evt_order_placed_7890",
+  "type": "event",
+  "topic": "orders.placed",
+  "payload": {
+    "orderId": "order_xyz789",
+    "customerId": "user_abc123",
+    "totalAmount": 149.99,
+    "items": [
+      {
+        "productId": "prod_001",
+        "quantity": 2,
+        "price": 49.99
+      },
+      {
+        "productId": "prod_045",
+        "quantity": 1,
+        "price": 49.99
+      }
+    ]
+  },
+  "metadata": {
+    "timestamp": "2025-12-27T10:30:00.000Z",
+    "source": "order-service",
+    "priority": "normal"
+  }
+}</code></pre>
+
+        <h2>2.2 Communication Patterns</h2>
+
+        <h3>2.2.1 Request-Response (RPC)</h3>
+
+        <p>The most common pattern where a client sends a request and waits for a response. This is analogous to function calls in programming.</p>
+
+        <pre><code>// Client code
+const result = await protocol.call('calculateTax', {
+  amount: 100.00,
+  country: 'US',
+  state: 'CA'
+});
+
+console.log('Tax:', result.tax); // Tax: 8.25
+
+// Server handler
+protocol.handle('calculateTax', async (params) => {
+  const taxRate = await getTaxRate(params.country, params.state);
+  return {
+    amount: params.amount,
+    taxRate: taxRate,
+    tax: params.amount * taxRate
+  };
+});</code></pre>
+
+        <h3>2.2.2 Server Streaming</h3>
+
+        <p>The server sends multiple messages in response to a single client request. Useful for large result sets or real-time updates.</p>
+
+        <pre><code>// Client code
+for await (const transaction of protocol.stream('getTransactionHistory', { userId: 'user123' })) {
+  console.log('Transaction:', transaction);
+  updateUI(transaction);
+}
+
+// Server handler
+protocol.streamHandler('getTransactionHistory', async function* (params) {
+  const transactions = await database.streamTransactions(params.userId);
+
+  for await (const tx of transactions) {
+    yield {
+      id: tx.id,
+      amount: tx.amount,
+      date: tx.date,
+      description: tx.description
+    };
+  }
+});</code></pre>
+
+        <h3>2.2.3 Client Streaming</h3>
+
+        <p>The client sends multiple messages and receives a single response. Ideal for uploading large datasets or batch operations.</p>
+
+        <pre><code>// Client code
+const uploadStream = protocol.createClientStream('uploadSensorData');
+
+// Send multiple readings
+for (let i = 0; i < 1000; i++) {
+  await uploadStream.send({
+    timestamp: new Date(),
+    temperature: 20 + Math.random() * 10,
+    humidity: 50 + Math.random() * 20
+  });
+}
+
+// Complete and get summary
+const summary = await uploadStream.complete();
+console.log('Uploaded:', summary.count, 'readings');</code></pre>
+
+        <h3>2.2.4 Bidirectional Streaming</h3>
+
+        <p>Both client and server can send multiple messages. Perfect for real-time collaborative applications or gaming.</p>
+
+        <pre><code>// Client code
+const chatStream = protocol.createBidirectionalStream('chat.room123');
+
+// Send messages
+chatStream.send({ message: 'Hello everyone!' });
+
+// Receive messages
+chatStream.on('message', (data) => {
+  console.log(data.user + ':', data.message);
+  displayMessage(data);
+});
+
+// Server handler
+protocol.bidirectionalHandler('chat.room123', async (stream) => {
+  const room = await joinChatRoom('room123');
+
+  // Forward client messages to room
+  stream.on('message', (data) => {
+    room.broadcast(data);
+  });
+
+  // Send room messages to client
+  room.on('message', (data) => {
+    stream.send(data);
+  });
+});</code></pre>
+
+        <h3>2.2.5 Publish-Subscribe</h3>
+
+        <p>Decoupled event-driven communication where publishers don't know about subscribers.</p>
+
+        <pre><code>// Publisher
+protocol.publish('user.login', {
+  userId: 'user123',
+  timestamp: new Date(),
+  ipAddress: '192.168.1.100'
+});
+
+// Subscriber 1: Analytics Service
+protocol.subscribe('user.login', (event) => {
+  analytics.track('user_login', event);
+});
+
+// Subscriber 2: Email Service
+protocol.subscribe('user.login', (event) => {
+  sendWelcomeEmail(event.userId);
+});
+
+// Subscriber 3: Security Service
+protocol.subscribe('user.login', (event) => {
+  checkForSuspiciousActivity(event);
+});</code></pre>
+
+        <h2>2.3 Protocol Lifecycle</h2>
+
+        <h3>2.3.1 Connection Lifecycle</h3>
+
+        <pre><code>const protocol = new UniversalProtocol(config);
+
+// Lifecycle hooks
+protocol.on('connecting', () => {
+  console.log('Establishing connection...');
+});
+
+protocol.on('connected', () => {
+  console.log('Connected successfully');
+  initializeApp();
+});
+
+protocol.on('disconnected', (reason) => {
+  console.log('Disconnected:', reason);
+  showOfflineUI();
+});
+
+protocol.on('reconnecting', (attempt) => {
+  console.log('Reconnection attempt:', attempt);
+});
+
+protocol.on('error', (error) => {
+  console.error('Protocol error:', error);
+  handleError(error);
+});
+
+// Connect
+await protocol.connect();</code></pre>
+
+        <h3>2.3.2 Message Lifecycle</h3>
+
+        <p>Every message goes through several stages from creation to completion:</p>
+
+        <ol>
+            <li><strong>Creation:</strong> Message is created with unique ID and metadata</li>
+            <li><strong>Serialization:</strong> Payload is encoded using chosen format (JSON, Protobuf, etc.)</li>
+            <li><strong>Transmission:</strong> Encoded message is sent over transport layer</li>
+            <li><strong>Reception:</strong> Message is received on the other end</li>
+            <li><strong>Deserialization:</strong> Message is decoded back to original format</li>
+            <li><strong>Processing:</strong> Application handler processes the message</li>
+            <li><strong>Response/Acknowledgment:</strong> Response is sent back (if applicable)</li>
+        </ol>
+
+        <h2>2.4 Error Handling</h2>
+
+        <h3>2.4.1 Error Categories</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Example Codes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Transport Errors</strong></td>
+                    <td>Issues with underlying connection</td>
+                    <td>CONNECTION_FAILED, TIMEOUT, NETWORK_ERROR</td>
+                </tr>
+                <tr>
+                    <td><strong>Protocol Errors</strong></td>
+                    <td>Malformed messages or violations</td>
+                    <td>INVALID_MESSAGE, UNSUPPORTED_VERSION, ENCODING_ERROR</td>
+                </tr>
+                <tr>
+                    <td><strong>Application Errors</strong></td>
+                    <td>Business logic failures</td>
+                    <td>VALIDATION_FAILED, NOT_FOUND, PERMISSION_DENIED</td>
+                </tr>
+                <tr>
+                    <td><strong>System Errors</strong></td>
+                    <td>Infrastructure or resource issues</td>
+                    <td>OUT_OF_MEMORY, RATE_LIMIT_EXCEEDED, SERVICE_UNAVAILABLE</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.4.2 Error Handling Strategies</h3>
+
+        <pre><code>// Automatic retry with exponential backoff
+const result = await protocol.call('unreliableService', params, {
+  retry: {
+    maxAttempts: 5,
+    backoff: 'exponential',
+    maxBackoff: 30000,
+    retryableErrors: ['TIMEOUT', 'SERVICE_UNAVAILABLE']
+  }
+});
+
+// Circuit breaker pattern
+const circuitBreaker = new CircuitBreaker({
+  failureThreshold: 5,
+  resetTimeout: 60000
+});
+
+try {
+  const result = await circuitBreaker.execute(() =>
+    protocol.call('externalAPI', params)
+  );
+} catch (error) {
+  if (error.code === 'CIRCUIT_OPEN') {
+    return cachedResult;
+  }
+  throw error;
+}
+
+// Fallback handling
+try {
+  return await protocol.call('primaryService', params);
+} catch (error) {
+  console.warn('Primary service failed, using fallback');
+  return await protocol.call('fallbackService', params);
+}</code></pre>
+
+        <h2>2.5 Metadata and Context</h2>
+
+        <p>Metadata allows passing additional information without changing the core payload. This is crucial for cross-cutting concerns like authentication, tracing, and logging.</p>
+
+        <pre><code>// Adding metadata to requests
+const result = await protocol.call('securedEndpoint', payload, {
+  metadata: {
+    authorization: 'Bearer eyJ0eXAiOiJKV1QiLCJhbGc...',
+    'x-request-id': 'req_xyz789',
+    'x-user-id': 'user_abc123',
+    'x-trace-id': 'trace_001',
+    'x-client-version': '2.1.0'
+  }
+});
+
+// Accessing metadata in handlers
+protocol.handle('securedEndpoint', async (payload, context) => {
+  const token = context.metadata.authorization;
+  const userId = await validateToken(token);
+
+  if (!userId) {
+    throw new UnauthorizedError('Invalid token');
+  }
+
+  // Use trace ID for logging
+  logger.info('Processing request', {
+    traceId: context.metadata['x-trace-id'],
+    userId: userId
+  });
+
+  return processRequest(payload, userId);
+});</code></pre>
+
+        <h2>2.6 Versioning</h2>
+
+        <p>The Universal Protocol supports multiple versioning strategies to enable smooth evolution of your APIs.</p>
+
+        <h3>2.6.1 Protocol Version</h3>
+
+        <p>The protocol itself has a version (currently 1.0). Different versions may have different message formats or capabilities.</p>
+
+        <h3>2.6.2 API Version</h3>
+
+        <p>Your application can support multiple API versions simultaneously:</p>
+
+        <pre><code>// Version in method name
+await protocol.call('users.v2.getProfile', params);
+
+// Version in metadata
+await protocol.call('users.getProfile', params, {
+  metadata: { 'api-version': '2.0' }
+});
+
+// Version negotiation
+protocol.handle('users.getProfile', async (params, context) => {
+  const version = context.metadata['api-version'] || '1.0';
+
+  switch (version) {
+    case '1.0':
+      return handleV1(params);
+    case '2.0':
+      return handleV2(params);
+    default:
+      throw new UnsupportedVersionError(version);
+  }
+});</code></pre>
+
+        <h2>2.7 Type Safety</h2>
+
+        <p>The Universal Protocol provides strong typing support for TypeScript and other statically-typed languages:</p>
+
+        <pre><code>// Define your message types
+interface GetProfileRequest {
+  userId: string;
+  fields: ('name' | 'email' | 'avatar' | 'preferences')[];
+}
+
+interface GetProfileResponse {
+  userId: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  preferences?: UserPreferences;
+}
+
+// Type-safe RPC call
+const result = await protocol.call&lt;GetProfileRequest, GetProfileResponse&gt;(
+  'users.getProfile',
+  {
+    userId: 'user123',
+    fields: ['name', 'email']
+  }
+);
+
+// result is strongly typed as GetProfileResponse
+console.log(result.name); // ✓ OK
+console.log(result.invalidField); // ✗ Compile error
+
+// Type-safe handler
+protocol.handle&lt;GetProfileRequest, GetProfileResponse&gt;(
+  'users.getProfile',
+  async (params) => {
+    // params is strongly typed as GetProfileRequest
+    return {
+      userId: params.userId,
+      name: 'John Doe',
+      email: 'john@example.com'
+    };
+  }
+);</code></pre>
+
+        <div class="highlight">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>Four message types: Request, Response, Stream, Event</li>
+                <li>Five main patterns: RPC, Server Streaming, Client Streaming, Bidirectional Streaming, Pub/Sub</li>
+                <li>Robust error handling with retries, circuit breakers, and fallbacks</li>
+                <li>Rich metadata support for cross-cutting concerns</li>
+                <li>Flexible versioning strategies for API evolution</li>
+                <li>Strong type safety in supported languages</li>
+            </ul>
+        </div>
+
+        <div class="nav">
+            <a href="01-introduction.html">← Previous: Introduction</a>
+            <a href="03-transport-layer.html">Next: Transport Layer →</a>
+        </div>
+
+        <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #334155; opacity: 0.7; text-align: center;">
+            <p>&copy; 2025 SmileStory Inc. / WIA</p>
+            <p>弘益人間 (홍익인간) · Benefit All Humanity</p>
+        </footer>
+    </div>
+</body>
+</html>

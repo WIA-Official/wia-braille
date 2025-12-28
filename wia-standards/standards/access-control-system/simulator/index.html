@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA Access Control System - Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --primary: #EF4444;
+            --primary-dark: #DC2626;
+            --text: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --accent: #F87171;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            background: var(--bg-secondary);
+            padding: 1.5rem 0;
+            border-bottom: 2px solid var(--primary);
+            margin-bottom: 2rem;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        select, button {
+            background: var(--bg-tertiary);
+            color: var(--text);
+            border: 1px solid var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        select:hover, button:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--bg-tertiary);
+        }
+
+        .tab {
+            background: var(--bg-secondary);
+            border: none;
+            color: var(--text-secondary);
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            color: var(--text);
+            background: var(--bg-tertiary);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Content Area */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .panel h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        textarea, input {
+            width: 100%;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--bg-tertiary);
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 0.5rem 0;
+        }
+
+        textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .output {
+            background: var(--bg);
+            border: 1px solid var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            color: var(--success);
+        }
+
+        .error {
+            color: var(--primary);
+        }
+
+        .label {
+            display: block;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .info-box {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .code-block {
+            background: var(--bg);
+            border: 1px solid var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 0.5rem 0;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        input[type="checkbox"] {
+            width: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border: 1px solid var(--bg-tertiary);
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: var(--bg-tertiary);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">🔐 WIA-ACS Simulator</div>
+                <div class="header-controls">
+                    <select id="languageSelect" onchange="changeLanguage()">
+                        <option value="en">English</option>
+                        <option value="ko">한국어</option>
+                        <option value="es">Español</option>
+                        <option value="fr">Français</option>
+                        <option value="de">Deutsch</option>
+                        <option value="ja">日本語</option>
+                        <option value="zh">中文</option>
+                        <option value="ar">العربية</option>
+                        <option value="hi">हिन्दी</option>
+                        <option value="ru">Русский</option>
+                        <option value="pt">Português</option>
+                        <option value="it">Italiano</option>
+                        <option value="nl">Nederlands</option>
+                        <option value="pl">Polski</option>
+                        <option value="tr">Türkçe</option>
+                        <option value="vi">Tiếng Việt</option>
+                        <option value="th">ไทย</option>
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="ms">Bahasa Melayu</option>
+                        <option value="fil">Filipino</option>
+                        <option value="sv">Svenska</option>
+                        <option value="no">Norsk</option>
+                        <option value="da">Dansk</option>
+                        <option value="fi">Suomi</option>
+                        <option value="cs">Čeština</option>
+                        <option value="hu">Magyar</option>
+                        <option value="ro">Română</option>
+                        <option value="el">Ελληνικά</option>
+                        <option value="he">עברית</option>
+                        <option value="fa">فارسی</option>
+                        <option value="ur">اردو</option>
+                        <option value="bn">বাংলা</option>
+                        <option value="ta">தமிழ்</option>
+                        <option value="te">తెలుగు</option>
+                        <option value="mr">मराठी</option>
+                        <option value="gu">ગુજરાતી</option>
+                        <option value="kn">ಕನ್ನಡ</option>
+                        <option value="ml">മലയാളം</option>
+                        <option value="pa">ਪੰਜਾਬੀ</option>
+                        <option value="si">සිංහල</option>
+                        <option value="my">မြန်မာ</option>
+                        <option value="km">ខ្មែរ</option>
+                        <option value="lo">ລາວ</option>
+                        <option value="am">አማርኛ</option>
+                        <option value="sw">Kiswahili</option>
+                        <option value="zu">isiZulu</option>
+                        <option value="af">Afrikaans</option>
+                        <option value="sq">Shqip</option>
+                        <option value="hy">Հայերեն</option>
+                        <option value="az">Azərbaycan</option>
+                        <option value="eu">Euskara</option>
+                        <option value="be">Беларуская</option>
+                        <option value="bs">Bosanski</option>
+                        <option value="bg">Български</option>
+                        <option value="ca">Català</option>
+                        <option value="hr">Hrvatski</option>
+                        <option value="et">Eesti</option>
+                        <option value="gl">Galego</option>
+                        <option value="ka">ქართული</option>
+                        <option value="is">Íslenska</option>
+                        <option value="kk">Қазақ</option>
+                        <option value="lv">Latviešu</option>
+                        <option value="lt">Lietuvių</option>
+                        <option value="mk">Македонски</option>
+                        <option value="mt">Malti</option>
+                        <option value="mn">Монгол</option>
+                        <option value="ne">नेपाली</option>
+                        <option value="sr">Српски</option>
+                        <option value="sk">Slovenčina</option>
+                        <option value="sl">Slovenščina</option>
+                        <option value="uk">Українська</option>
+                        <option value="uz">O'zbek</option>
+                        <option value="cy">Cymraeg</option>
+                        <option value="yi">ייִדיש</option>
+                        <option value="eo">Esperanto</option>
+                        <option value="la">Latina</option>
+                        <option value="jv">Basa Jawa</option>
+                        <option value="su">Basa Sunda</option>
+                        <option value="ceb">Cebuano</option>
+                        <option value="hmn">Hmong</option>
+                        <option value="haw">ʻŌlelo Hawaiʻi</option>
+                        <option value="sm">Gagana Samoa</option>
+                        <option value="mi">Te Reo Māori</option>
+                        <option value="ny">Chichewa</option>
+                        <option value="sn">ChiShona</option>
+                        <option value="st">Sesotho</option>
+                        <option value="so">Soomaali</option>
+                        <option value="tg">Тоҷикӣ</option>
+                        <option value="tk">Türkmen</option>
+                        <option value="ps">پښتو</option>
+                        <option value="ku">Kurdî</option>
+                        <option value="ky">Кыргызча</option>
+                        <option value="sd">سنڌي</option>
+                        <option value="ig">Igbo</option>
+                        <option value="yo">Yorùbá</option>
+                        <option value="ha">Hausa</option>
+                        <option value="mg">Malagasy</option>
+                    </select>
+                    <button onclick="window.location.href='../index.html'">← Back Home</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('data-format')">1. Data Format</button>
+            <button class="tab" onclick="showTab('algorithms')">2. Algorithms</button>
+            <button class="tab" onclick="showTab('protocol')">3. Protocol</button>
+            <button class="tab" onclick="showTab('integration')">4. Integration</button>
+            <button class="tab" onclick="showTab('test')">5. Test</button>
+        </div>
+
+        <!-- Tab 1: Data Format -->
+        <div id="data-format" class="tab-content active">
+            <div class="grid-2">
+                <div class="panel">
+                    <h3>🔐 Credential Schema Builder</h3>
+                    <div class="form-group">
+                        <label class="label">User Information</label>
+                        <input type="text" id="userId" placeholder="User ID (e.g., user-12345)" value="user-12345">
+                        <input type="text" id="userName" placeholder="Full Name" value="John Doe">
+                        <input type="email" id="userEmail" placeholder="Email" value="john.doe@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Credential Type</label>
+                        <select id="credentialType">
+                            <option value="badge">Badge Card</option>
+                            <option value="biometric">Biometric</option>
+                            <option value="smart-card">Smart Card</option>
+                            <option value="rfid">RFID Tag</option>
+                            <option value="nfc">NFC Token</option>
+                            <option value="mobile">Mobile App</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Access Level</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" value="building-entry" checked> Building Entry</label>
+                            <label><input type="checkbox" value="office"> Office Areas</label>
+                            <label><input type="checkbox" value="server-room"> Server Room</label>
+                            <label><input type="checkbox" value="executive"> Executive Floor</label>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="generateCredential()">Generate Credential</button>
+                </div>
+                <div class="panel">
+                    <h3>📄 Generated JSON</h3>
+                    <div class="code-block">
+                        <pre id="credentialOutput">{
+  "credential_id": "cred-xyz789",
+  "user": {
+    "id": "user-12345",
+    "name": "John Doe",
+    "email": "john.doe@example.com"
+  },
+  "type": "badge",
+  "access_levels": ["building-entry"],
+  "issued_at": "2025-12-26T10:00:00Z",
+  "expires_at": "2026-12-26T10:00:00Z",
+  "status": "active"
+}</pre>
+                    </div>
+                    <div class="info-box">
+                        <strong>🔍 Schema Validation:</strong> All credentials follow WIA-ACS v1.0 schema with required fields: credential_id, user, type, access_levels, issued_at, and expires_at.
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 2rem;">
+                <h3>📊 Permission Models</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Description</th>
+                            <th>Use Case</th>
+                            <th>Complexity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>RBAC</strong></td>
+                            <td>Role-Based Access Control</td>
+                            <td>Standard enterprise access</td>
+                            <td>Low</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ABAC</strong></td>
+                            <td>Attribute-Based Access Control</td>
+                            <td>Dynamic, context-aware access</td>
+                            <td>Medium</td>
+                        </tr>
+                        <tr>
+                            <td><strong>MAC</strong></td>
+                            <td>Mandatory Access Control</td>
+                            <td>Government, high-security</td>
+                            <td>High</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DAC</strong></td>
+                            <td>Discretionary Access Control</td>
+                            <td>User-managed permissions</td>
+                            <td>Low</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 2: Algorithms -->
+        <div id="algorithms" class="tab-content">
+            <div class="grid-2">
+                <div class="panel">
+                    <h3>🔒 Authentication Algorithm</h3>
+                    <div class="form-group">
+                        <label class="label">Credential ID</label>
+                        <input type="text" id="authCredId" placeholder="Enter credential ID" value="cred-xyz789">
+                    </div>
+                    <div class="form-group">
+                        <label class="label">PIN / Password</label>
+                        <input type="password" id="authPin" placeholder="Enter PIN" value="1234">
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Biometric Data (Optional)</label>
+                        <input type="text" id="biometricHash" placeholder="Fingerprint hash" value="SHA256:abc123...">
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Multi-Factor Options</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="mfaSMS"> SMS Code</label>
+                            <label><input type="checkbox" id="mfaTOTP" checked> TOTP App</label>
+                            <label><input type="checkbox" id="mfaBio"> Biometric</label>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="authenticateUser()">Authenticate</button>
+                </div>
+                <div class="panel">
+                    <h3>✅ Authentication Result</h3>
+                    <div id="authOutput" class="output success">
+Ready to authenticate...
+                    </div>
+                    <div class="info-box">
+                        <strong>🔐 Algorithm Steps:</strong><br>
+                        1. Validate credential exists and is active<br>
+                        2. Verify PIN/password hash (bcrypt/argon2)<br>
+                        3. Check biometric data (if provided)<br>
+                        4. Validate MFA token (TOTP/SMS)<br>
+                        5. Generate session token (JWT)<br>
+                        6. Log authentication event<br>
+                        7. Return access token with expiry
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 2rem;">
+                <h3>🧮 Authorization Decision Engine</h3>
+                <div class="grid-2">
+                    <div>
+                        <label class="label">User Role</label>
+                        <select id="userRole">
+                            <option value="employee">Employee</option>
+                            <option value="manager">Manager</option>
+                            <option value="admin">Administrator</option>
+                            <option value="security">Security Officer</option>
+                            <option value="visitor">Visitor</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">Requested Resource</label>
+                        <select id="resource">
+                            <option value="lobby">Lobby</option>
+                            <option value="office">Office Floor</option>
+                            <option value="server-room">Server Room</option>
+                            <option value="executive">Executive Suite</option>
+                            <option value="parking">Parking Garage</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid-2" style="margin-top: 1rem;">
+                    <div>
+                        <label class="label">Time of Access</label>
+                        <input type="time" id="accessTime" value="09:00">
+                    </div>
+                    <div>
+                        <label class="label">Day of Week</label>
+                        <select id="dayOfWeek">
+                            <option value="monday">Monday</option>
+                            <option value="tuesday">Tuesday</option>
+                            <option value="wednesday">Wednesday</option>
+                            <option value="thursday">Thursday</option>
+                            <option value="friday">Friday</option>
+                            <option value="saturday">Saturday</option>
+                            <option value="sunday">Sunday</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn" onclick="checkAuthorization()">Check Authorization</button>
+                <div id="authzOutput" class="output">Authorization decision will appear here...</div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocol -->
+        <div id="protocol" class="tab-content">
+            <div class="panel">
+                <h3>🌐 Secure Communication Protocol</h3>
+                <div class="info-box">
+                    <strong>Protocol Stack:</strong> TLS 1.3 → OAuth 2.0 / OpenID Connect → WIA-ACS API
+                </div>
+
+                <h4 style="margin-top: 2rem; color: var(--primary);">OAuth 2.0 Flow Simulator</h4>
+                <div class="grid-2">
+                    <div>
+                        <label class="label">Client ID</label>
+                        <input type="text" id="clientId" value="wia-client-001" readonly>
+
+                        <label class="label">Grant Type</label>
+                        <select id="grantType">
+                            <option value="authorization_code">Authorization Code</option>
+                            <option value="client_credentials">Client Credentials</option>
+                            <option value="password">Resource Owner Password</option>
+                            <option value="refresh_token">Refresh Token</option>
+                        </select>
+
+                        <label class="label">Scope</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" checked> read:credentials</label>
+                            <label><input type="checkbox" checked> write:credentials</label>
+                            <label><input type="checkbox"> admin:users</label>
+                            <label><input type="checkbox"> audit:logs</label>
+                        </div>
+
+                        <button class="btn" onclick="generateOAuthToken()">Generate Token</button>
+                    </div>
+                    <div>
+                        <label class="label">Access Token</label>
+                        <textarea id="accessToken" readonly>eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMzQ1Iiwic2NvcGUiOlsicmVhZDpjcmVkZW50aWFscyIsIndyaXRlOmNyZWRlbnRpYWxzIl0sImlhdCI6MTczNTA0NDAwMCwiZXhwIjoxNzM1MTMwNDAwfQ.signature</textarea>
+
+                        <label class="label">Token Type</label>
+                        <input type="text" value="Bearer" readonly>
+
+                        <label class="label">Expires In</label>
+                        <input type="text" value="86400 seconds (24 hours)" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 2rem;">
+                <h3>🔐 SAML 2.0 Assertion</h3>
+                <div class="code-block">
+                    <pre>&lt;saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+    ID="id-abc123" IssueInstant="2025-12-26T10:00:00Z"&gt;
+    &lt;saml:Issuer&gt;https://idp.example.com&lt;/saml:Issuer&gt;
+    &lt;saml:Subject&gt;
+        &lt;saml:NameID&gt;john.doe@example.com&lt;/saml:NameID&gt;
+    &lt;/saml:Subject&gt;
+    &lt;saml:Conditions NotBefore="2025-12-26T10:00:00Z"
+        NotOnOrAfter="2025-12-26T11:00:00Z"&gt;
+        &lt;saml:AudienceRestriction&gt;
+            &lt;saml:Audience&gt;https://acs.example.com&lt;/saml:Audience&gt;
+        &lt;/saml:AudienceRestriction&gt;
+    &lt;/saml:Conditions&gt;
+    &lt;saml:AttributeStatement&gt;
+        &lt;saml:Attribute Name="role"&gt;
+            &lt;saml:AttributeValue&gt;manager&lt;/saml:AttributeValue&gt;
+        &lt;/saml:Attribute&gt;
+        &lt;saml:Attribute Name="department"&gt;
+            &lt;saml:AttributeValue&gt;engineering&lt;/saml:AttributeValue&gt;
+        &lt;/saml:Attribute&gt;
+    &lt;/saml:AttributeStatement&gt;
+&lt;/saml:Assertion&gt;</pre>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 2rem;">
+                <h3>📡 API Request/Response Examples</h3>
+                <h4 style="color: var(--accent);">POST /api/v1/authenticate</h4>
+                <div class="code-block">
+                    <pre>// Request
+{
+  "credential_id": "cred-xyz789",
+  "pin": "****",
+  "mfa_token": "123456"
+}
+
+// Response (200 OK)
+{
+  "access_token": "eyJhbGci...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "user": {
+    "id": "user-12345",
+    "name": "John Doe",
+    "roles": ["employee"]
+  }
+}</pre>
+                </div>
+
+                <h4 style="color: var(--accent); margin-top: 1rem;">POST /api/v1/authorize</h4>
+                <div class="code-block">
+                    <pre>// Request
+{
+  "user_id": "user-12345",
+  "resource": "server-room",
+  "action": "entry"
+}
+
+// Response (200 OK)
+{
+  "decision": "permit",
+  "reason": "User has required role and time constraints met",
+  "valid_until": "2025-12-26T17:00:00Z"
+}</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Integration -->
+        <div id="integration" class="tab-content">
+            <div class="panel">
+                <h3>🔌 System Integration Wizard</h3>
+                <div class="form-group">
+                    <label class="label">Integration Type</label>
+                    <select id="integrationType" onchange="updateIntegrationForm()">
+                        <option value="ldap">LDAP / Active Directory</option>
+                        <option value="pacs">Physical Access Control System</option>
+                        <option value="smart-card">Smart Card System</option>
+                        <option value="biometric">Biometric Device</option>
+                        <option value="rfid">RFID/NFC Reader</option>
+                        <option value="sso">SSO Provider (SAML/OAuth)</option>
+                    </select>
+                </div>
+
+                <div id="ldapConfig" class="integration-config">
+                    <h4 style="color: var(--accent);">LDAP Configuration</h4>
+                    <div class="grid-2">
+                        <div>
+                            <label class="label">LDAP Server</label>
+                            <input type="text" placeholder="ldap://ldap.example.com:389" value="ldap://ldap.example.com:389">
+
+                            <label class="label">Base DN</label>
+                            <input type="text" placeholder="dc=example,dc=com" value="dc=example,dc=com">
+
+                            <label class="label">Bind DN</label>
+                            <input type="text" placeholder="cn=admin,dc=example,dc=com" value="cn=admin,dc=example,dc=com">
+                        </div>
+                        <div>
+                            <label class="label">Bind Password</label>
+                            <input type="password" placeholder="********" value="password123">
+
+                            <label class="label">User Filter</label>
+                            <input type="text" placeholder="(uid={username})" value="(uid={username})">
+
+                            <label class="label">Group Filter</label>
+                            <input type="text" placeholder="(member={dn})" value="(member={dn})">
+                        </div>
+                    </div>
+                    <button class="btn" onclick="testIntegration('ldap')">Test Connection</button>
+                    <div id="ldapOutput" class="output" style="display:none;"></div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 2rem;">
+                <h3>🏢 Integration Architecture</h3>
+                <div class="code-block">
+                    <pre>┌─────────────────────────────────────────────────────────┐
+│                    WIA-ACS Core                         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐             │
+│  │ Auth API │  │ User Mgmt│  │ Audit Log│             │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘             │
+└───────┼─────────────┼─────────────┼───────────────────┘
+        │             │             │
+    ┌───┴─────────────┴─────────────┴───┐
+    │      Integration Adapters          │
+    └───┬─────┬─────┬─────┬─────┬───────┘
+        │     │     │     │     │
+   ┌────▼┐ ┌─▼──┐ ┌▼───┐ ┌▼──┐ ┌▼────┐
+   │LDAP │ │PACS│ │Card│ │Bio│ │RFID │
+   └─────┘ └────┘ └────┘ └───┘ └─────┘</pre>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 2rem;">
+                <h3>📋 Supported Integrations</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>System</th>
+                            <th>Protocol</th>
+                            <th>Features</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Active Directory</td>
+                            <td>LDAP, Kerberos</td>
+                            <td>User sync, Group mapping</td>
+                            <td class="success">✓ Ready</td>
+                        </tr>
+                        <tr>
+                            <td>HID PACS</td>
+                            <td>OSDP, Wiegand</td>
+                            <td>Door control, Event sync</td>
+                            <td class="success">✓ Ready</td>
+                        </tr>
+                        <tr>
+                            <td>Smart Cards</td>
+                            <td>ISO 7816, PC/SC</td>
+                            <td>PKI, Certificate auth</td>
+                            <td class="success">✓ Ready</td>
+                        </tr>
+                        <tr>
+                            <td>Biometric</td>
+                            <td>BioAPI, ANSI 378</td>
+                            <td>Fingerprint, Face, Iris</td>
+                            <td class="success">✓ Ready</td>
+                        </tr>
+                        <tr>
+                            <td>RFID/NFC</td>
+                            <td>ISO 14443, 15693</td>
+                            <td>Tag read, Proximity</td>
+                            <td class="success">✓ Ready</td>
+                        </tr>
+                        <tr>
+                            <td>Azure AD</td>
+                            <td>OAuth 2.0, SAML</td>
+                            <td>SSO, MFA</td>
+                            <td class="success">✓ Ready</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 5: Test -->
+        <div id="test" class="tab-content">
+            <div class="panel">
+                <h3>🧪 End-to-End Test Scenarios</h3>
+
+                <div class="form-group">
+                    <label class="label">Test Scenario</label>
+                    <select id="testScenario">
+                        <option value="employee-entry">Employee Building Entry</option>
+                        <option value="visitor-checkin">Visitor Check-in</option>
+                        <option value="emergency-override">Emergency Override</option>
+                        <option value="mfa-auth">Multi-Factor Authentication</option>
+                        <option value="biometric-fail">Biometric Failure Fallback</option>
+                        <option value="time-restriction">Time-Based Access</option>
+                        <option value="revoke-credential">Credential Revocation</option>
+                        <option value="bulk-provision">Bulk User Provisioning</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="runTest()">Run Test</button>
+
+                <div id="testOutput" class="output">
+Select a test scenario and click "Run Test"...
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 2rem;">
+                <h3>📊 Test Results Summary</h3>
+                <table id="testResultsTable">
+                    <thead>
+                        <tr>
+                            <th>Test Case</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-secondary);">
+                                No tests run yet
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="panel" style="margin-top: 2rem;">
+                <h3>🔍 Performance Metrics</h3>
+                <div class="grid-2">
+                    <div class="info-box">
+                        <strong>Authentication Time:</strong> &lt; 100ms<br>
+                        <strong>Authorization Time:</strong> &lt; 50ms<br>
+                        <strong>Token Generation:</strong> &lt; 20ms
+                    </div>
+                    <div class="info-box">
+                        <strong>Throughput:</strong> 10,000 req/sec<br>
+                        <strong>Concurrent Users:</strong> 100,000+<br>
+                        <strong>Uptime:</strong> 99.99%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Language change
+        function changeLanguage() {
+            const lang = document.getElementById('languageSelect').value;
+            alert(`Language changed to: ${lang}\n(Full i18n implementation would be here)`);
+        }
+
+        // Data Format: Generate Credential
+        function generateCredential() {
+            const userId = document.getElementById('userId').value;
+            const userName = document.getElementById('userName').value;
+            const userEmail = document.getElementById('userEmail').value;
+            const credType = document.getElementById('credentialType').value;
+
+            const accessLevels = [];
+            document.querySelectorAll('.checkbox-group input:checked').forEach(cb => {
+                accessLevels.push(cb.value);
+            });
+
+            const credential = {
+                credential_id: 'cred-' + Math.random().toString(36).substr(2, 9),
+                user: {
+                    id: userId,
+                    name: userName,
+                    email: userEmail
+                },
+                type: credType,
+                access_levels: accessLevels,
+                issued_at: new Date().toISOString(),
+                expires_at: new Date(Date.now() + 365*24*60*60*1000).toISOString(),
+                status: 'active'
+            };
+
+            document.getElementById('credentialOutput').textContent = JSON.stringify(credential, null, 2);
+        }
+
+        // Algorithms: Authenticate
+        function authenticateUser() {
+            const credId = document.getElementById('authCredId').value;
+            const pin = document.getElementById('authPin').value;
+            const bio = document.getElementById('biometricHash').value;
+            const mfaTOTP = document.getElementById('mfaTOTP').checked;
+
+            let output = '🔄 Authentication Process:\n\n';
+            output += '✓ Step 1: Credential validated (ID: ' + credId + ')\n';
+            output += '✓ Step 2: PIN verified (bcrypt hash match)\n';
+
+            if (bio) {
+                output += '✓ Step 3: Biometric verified (fingerprint match 98.5%)\n';
+            }
+
+            if (mfaTOTP) {
+                output += '✓ Step 4: TOTP token validated (6-digit code)\n';
+            }
+
+            output += '✓ Step 5: Session token generated (JWT)\n';
+            output += '✓ Step 6: Audit log recorded\n\n';
+            output += '✅ AUTHENTICATION SUCCESSFUL\n\n';
+            output += 'Access Token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...\n';
+            output += 'Expires: ' + new Date(Date.now() + 3600*1000).toISOString() + '\n';
+            output += 'Roles: [employee, building-access]\n';
+
+            document.getElementById('authOutput').innerHTML = '<span class="success">' + output + '</span>';
+        }
+
+        // Algorithms: Authorization Check
+        function checkAuthorization() {
+            const role = document.getElementById('userRole').value;
+            const resource = document.getElementById('resource').value;
+            const time = document.getElementById('accessTime').value;
+            const day = document.getElementById('dayOfWeek').value;
+
+            // Simple authorization logic
+            const authRules = {
+                'visitor': ['lobby'],
+                'employee': ['lobby', 'office', 'parking'],
+                'manager': ['lobby', 'office', 'parking', 'executive'],
+                'admin': ['lobby', 'office', 'parking', 'executive', 'server-room'],
+                'security': ['lobby', 'office', 'parking', 'executive', 'server-room']
+            };
+
+            const allowed = authRules[role] && authRules[role].includes(resource);
+
+            let output = '🔍 Authorization Decision:\n\n';
+            output += 'User Role: ' + role + '\n';
+            output += 'Resource: ' + resource + '\n';
+            output += 'Time: ' + time + ' on ' + day + '\n\n';
+
+            if (allowed) {
+                output += '✅ DECISION: PERMIT\n\n';
+                output += 'Reason: User role "' + role + '" has access to "' + resource + '"\n';
+                output += 'Valid until: End of business day\n';
+                output += 'Conditions: Must badge out when leaving\n';
+                document.getElementById('authzOutput').innerHTML = '<span class="success">' + output + '</span>';
+            } else {
+                output += '❌ DECISION: DENY\n\n';
+                output += 'Reason: User role "' + role + '" does not have access to "' + resource + '"\n';
+                output += 'Required roles: ' + Object.keys(authRules).filter(r => authRules[r].includes(resource)).join(', ') + '\n';
+                document.getElementById('authzOutput').innerHTML = '<span class="error">' + output + '</span>';
+            }
+        }
+
+        // Protocol: Generate OAuth Token
+        function generateOAuthToken() {
+            const grantType = document.getElementById('grantType').value;
+            const scopes = [];
+            document.querySelectorAll('#protocol .checkbox-group input:checked').forEach(cb => {
+                scopes.push(cb.parentElement.textContent.trim());
+            });
+
+            const token = {
+                alg: 'RS256',
+                typ: 'JWT'
+            };
+            const payload = {
+                sub: 'user-12345',
+                scope: scopes,
+                grant_type: grantType,
+                iat: Math.floor(Date.now() / 1000),
+                exp: Math.floor(Date.now() / 1000) + 86400
+            };
+
+            const tokenStr = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.' +
+                           btoa(JSON.stringify(payload)) + '.signature_hash';
+
+            document.getElementById('accessToken').value = tokenStr;
+        }
+
+        // Integration: Update Form
+        function updateIntegrationForm() {
+            const type = document.getElementById('integrationType').value;
+            document.querySelectorAll('.integration-config').forEach(el => el.style.display = 'none');
+            const config = document.getElementById(type + 'Config');
+            if (config) config.style.display = 'block';
+        }
+
+        // Integration: Test
+        function testIntegration(type) {
+            const output = document.getElementById(type + 'Output');
+            output.style.display = 'block';
+            output.innerHTML = '<span class="success">✓ Connecting to ' + type.toUpperCase() + ' server...\n' +
+                             '✓ Authentication successful\n' +
+                             '✓ Retrieved 247 users\n' +
+                             '✓ Retrieved 15 groups\n' +
+                             '✅ Integration test PASSED</span>';
+        }
+
+        // Test: Run scenario
+        function runTest() {
+            const scenario = document.getElementById('testScenario').value;
+            const scenarios = {
+                'employee-entry': {
+                    name: 'Employee Building Entry',
+                    steps: [
+                        'User badges at entrance reader',
+                        'System reads RFID credential',
+                        'Authenticates against database',
+                        'Checks time-based access rules',
+                        'Verifies no restrictions',
+                        'Sends unlock signal to door',
+                        'Logs entry event'
+                    ],
+                    result: 'PASS',
+                    duration: '87ms'
+                },
+                'visitor-checkin': {
+                    name: 'Visitor Check-in',
+                    steps: [
+                        'Security creates temporary credential',
+                        'Visitor receives QR code badge',
+                        'System scans QR at entrance',
+                        'Validates time-limited access',
+                        'Escorts visitor to lobby',
+                        'Restricts to lobby area only'
+                    ],
+                    result: 'PASS',
+                    duration: '124ms'
+                },
+                'mfa-auth': {
+                    name: 'Multi-Factor Authentication',
+                    steps: [
+                        'User enters username/password',
+                        'System validates credentials',
+                        'Prompts for TOTP code',
+                        'User enters 6-digit code from app',
+                        'System validates TOTP',
+                        'Generates session token',
+                        'Grants access'
+                    ],
+                    result: 'PASS',
+                    duration: '156ms'
+                }
+            };
+
+            const test = scenarios[scenario] || scenarios['employee-entry'];
+
+            let output = '🧪 Running Test: ' + test.name + '\n\n';
+            test.steps.forEach((step, i) => {
+                output += `${i+1}. ${step}\n`;
+            });
+            output += '\n✅ Result: ' + test.result + '\n';
+            output += '⏱️ Duration: ' + test.duration + '\n';
+
+            document.getElementById('testOutput').innerHTML = '<span class="success">' + output + '</span>';
+
+            // Add to results table
+            const table = document.getElementById('testResultsTable').querySelector('tbody');
+            if (table.rows[0].cells[0].getAttribute('colspan')) {
+                table.innerHTML = '';
+            }
+
+            const row = table.insertRow(0);
+            row.innerHTML = `
+                <td>${test.name}</td>
+                <td class="success">✓ ${test.result}</td>
+                <td>${test.duration}</td>
+                <td>${test.steps.length} steps completed</td>
+            `;
+        }
+
+        // Initialize
+        updateIntegrationForm();
+    </script>
+</body>
+</html>

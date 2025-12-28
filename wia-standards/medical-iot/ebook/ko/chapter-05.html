@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제5장: 엣지 컴퓨팅 - WIA MED-005</title>
+    <link rel="icon" href="/favicon.ico">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #0f172a; color: #e2e8f0; line-height: 1.8;">
+
+<nav style="margin-bottom: 30px; padding: 15px; background: #1e293b; border-radius: 8px;">
+    <a href="chapter-04.html" style="color: #10b981; text-decoration: none;">← 이전</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="index.html" style="color: #10b981; text-decoration: none;">📚 목차</a>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <span style="color: #64748b;">제5장 / 8장</span>
+    <span style="color: #475569; margin: 0 10px;">|</span>
+    <a href="chapter-06.html" style="color: #10b981; text-decoration: none;">다음 →</a>
+</nav>
+
+<h1 style="color: #10b981;">제5장: 엣지 컴퓨팅</h1>
+
+<blockquote style="background: #1e293b; padding: 20px; border-left: 4px solid #fbbf24; margin: 20px 0;">
+<p style="color: #fbbf24; font-style: italic;">"의료 환경에서 1초의 지연은 생명과 죽음의 차이를 만들 수 있습니다. 엣지 컴퓨팅은 바로 그 지연을 없애는 기술입니다."</p>
+</blockquote>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">5.1 엣지 컴퓨팅이란?</h2>
+
+<p>엣지 컴퓨팅은 데이터 소스(센서, 기기) 근처에서 데이터를 처리하는 분산 컴퓨팅 패러다임입니다.</p>
+
+<h3 style="color: #10b981;">☁️ 클라우드 vs 엣지</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #10b981;">특성</th>
+        <th style="border: 1px solid #475569; color: #10b981;">클라우드 컴퓨팅</th>
+        <th style="border: 1px solid #475569; color: #10b981;">엣지 컴퓨팅</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>지연시간</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">50-200ms</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1-10ms</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>대역폭</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">높은 사용량</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">낮은 사용량</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>개인정보</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">데이터 전송 필요</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">로컬 처리 가능</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>연산 능력</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">무제한</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">제한적</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>비용</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">높은 전송 비용</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">낮은 전송 비용</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>오프라인 작동</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">불가능</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">가능</td>
+    </tr>
+</table>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">5.2 의료 엣지 아키텍처</h2>
+
+<pre style="background: #1e293b; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #334155;">
+<code style="color: #10b981;">
+┌────────────────────────────────────────────────┐
+│               클라우드 계층                     │
+│  장기 저장, 빅데이터 분석, AI 학습, EMR         │
+└────────────────┬───────────────────────────────┘
+                 │ (집계된 데이터, 비실시간)
+                 ▼
+┌────────────────────────────────────────────────┐
+│            포그/엣지 게이트웨이                  │
+│  데이터 전처리, 로컬 분석, 필터링, 캐싱         │
+└────────────────┬───────────────────────────────┘
+                 │ (실시간 데이터)
+                 ▼
+┌────────────────────────────────────────────────┐
+│              엣지 디바이스                      │
+│  센서 융합, 즉각 응답, 로컬 AI 추론             │
+└────────────────┬───────────────────────────────┘
+                 │
+                 ▼
+┌────────────────────────────────────────────────┐
+│            의료 센서/기기                       │
+│  ECG, SpO2, 혈압, 온도, 활동량 등               │
+└────────────────────────────────────────────────┘
+</code>
+</pre>
+
+<h3 style="color: #10b981;">🔧 엣지 디바이스 예시</h3>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">스마트 게이트웨이</strong>
+        <ul>
+            <li>Raspberry Pi 4 (4-8GB RAM)</li>
+            <li>NVIDIA Jetson Nano (AI 가속)</li>
+            <li>Intel NUC (x86 컴퓨팅)</li>
+        </ul>
+    </li>
+    <li><strong style="color: #e2e8f0;">병원 내 엣지 서버</strong>
+        <ul>
+            <li>Dell Edge Gateway 5000</li>
+            <li>HPE Edgeline EL300</li>
+            <li>병동별 로컬 서버</li>
+        </ul>
+    </li>
+    <li><strong style="color: #e2e8f0;">웨어러블 엣지</strong>
+        <ul>
+            <li>ARM Cortex-M4 마이크로컨트롤러</li>
+            <li>온디바이스 ML 칩</li>
+            <li>로컬 신호 처리</li>
+        </ul>
+    </li>
+</ul>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">5.3 엣지 AI 응용</h2>
+
+<p>엣지에서 AI 모델을 실행하여 실시간 분석:</p>
+
+<h3 style="color: #10b981;">🧠 엣지 AI 사용 사례</h3>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #10b981;">응용 분야</th>
+        <th style="border: 1px solid #475569; color: #10b981;">모델</th>
+        <th style="border: 1px solid #475569; color: #10b981;">지연시간</th>
+        <th style="border: 1px solid #475569; color: #10b981;">정확도</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">부정맥 감지</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">1D CNN</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">&lt;100ms</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">95%</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">낙상 감지</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">Random Forest</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">&lt;50ms</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">92%</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">발작 예측</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">LSTM</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">&lt;200ms</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">88%</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">수면 단계 분류</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">ResNet</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">&lt;500ms</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">90%</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">혈당 예측</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">XGBoost</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">&lt;100ms</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">MARD 12%</td>
+    </tr>
+</table>
+
+<h3 style="color: #10b981;">⚡ 모델 최적화</h3>
+
+<p>엣지 디바이스의 제한된 리소스에 맞춘 최적화:</p>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">양자화 (Quantization)</strong>
+        <ul>
+            <li>FP32 → INT8 변환</li>
+            <li>모델 크기 75% 감소</li>
+            <li>추론 속도 2-4배 향상</li>
+        </ul>
+    </li>
+    <li><strong style="color: #e2e8f0;">프루닝 (Pruning)</strong>
+        <ul>
+            <li>불필요한 가중치 제거</li>
+            <li>모델 압축 50-90%</li>
+            <li>정확도 손실 &lt;2%</li>
+        </ul>
+    </li>
+    <li><strong style="color: #e2e8f0;">지식 증류 (Knowledge Distillation)</strong>
+        <ul>
+            <li>큰 모델 → 작은 모델</li>
+            <li>성능 유지하며 크기 축소</li>
+        </ul>
+    </li>
+</ul>
+
+<pre style="background: #1e293b; padding: 15px; border-radius: 8px; overflow-x: auto; border: 1px solid #334155;">
+<code style="color: #10b981;">// 엣지 AI 추론 예제
+{
+  "edgeInference": {
+    "modelId": "arrhythmia_detector_v2.1",
+    "modelSize": "2.3 MB",
+    "inputData": {
+      "ecg": [...],  // 5초 ECG 데이터
+      "samplingRate": 250
+    },
+    "inference": {
+      "timestamp": "2025-12-26T10:00:05.123Z",
+      "latency": 85,  // ms
+      "result": {
+        "rhythm": "atrial_fibrillation",
+        "confidence": 0.94,
+        "risk": "high"
+      }
+    },
+    "action": {
+      "alert": true,
+      "notify": ["patient", "cardiologist"],
+      "cloudSync": true
+    }
+  }
+}
+</code>
+</pre>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">5.4 실시간 처리</h2>
+
+<p>엣지에서의 스트림 처리:</p>
+
+<h3 style="color: #10b981;">🌊 스트림 처리 패턴</h3>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">이벤트 기반 처리</strong>
+        <ul>
+            <li>이상치 감지 시 즉시 처리</li>
+            <li>낮은 지연시간 (&lt;10ms)</li>
+        </ul>
+    </li>
+    <li><strong style="color: #e2e8f0;">윈도우 기반 처리</strong>
+        <ul>
+            <li>슬라이딩 윈도우 (예: 5분 평균)</li>
+            <li>텀블링 윈도우 (예: 시간당 요약)</li>
+        </ul>
+    </li>
+    <li><strong style="color: #e2e8f0;">상태 기반 처리</strong>
+        <ul>
+            <li>환자 상태 추적</li>
+            <li>트렌드 분석</li>
+        </ul>
+    </li>
+</ul>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">5.5 오프라인 작동</h2>
+
+<p>네트워크 연결이 끊어져도 계속 작동:</p>
+
+<h3 style="color: #10b981;">📴 오프라인 모드</h3>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">로컬 저장</strong>
+        <ul>
+            <li>연결 복구 시까지 데이터 버퍼링</li>
+            <li>최대 72시간 분량</li>
+        </ul>
+    </li>
+    <li><strong style="color: #e2e8f0;">로컬 의사 결정</strong>
+        <ul>
+            <li>긴급 알림 계속 작동</li>
+            <li>클라우드 없이 기본 기능</li>
+        </ul>
+    </li>
+    <li><strong style="color: #e2e8f0;">동기화</strong>
+        <ul>
+            <li>연결 복구 시 자동 동기화</li>
+            <li>충돌 해결 메커니즘</li>
+        </ul>
+    </li>
+</ul>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">5.6 보안 및 개인정보</h2>
+
+<p>엣지에서의 데이터 보호:</p>
+
+<h3 style="color: #10b981;">🔒 엣지 보안</h3>
+
+<table border="1" cellpadding="10" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #10b981;">보안 계층</th>
+        <th style="border: 1px solid #475569; color: #10b981;">기술</th>
+        <th style="border: 1px solid #475569; color: #10b981;">목적</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">물리적 보안</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">TPM, Secure Boot</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">변조 방지</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">데이터 암호화</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">AES-256, TLS 1.3</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">전송 중 보호</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;">접근 제어</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">RBAC, 인증서</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">권한 관리</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;">보안 업데이트</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">OTA, 서명 검증</td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">취약점 패치</td>
+    </tr>
+</table>
+
+<h3 style="color: #10b981;">🕵️ 개인정보 보호</h3>
+
+<ul style="color: #94a3b8;">
+    <li><strong style="color: #e2e8f0;">로컬 익명화</strong> — 개인 식별 정보 제거</li>
+    <li><strong style="color: #e2e8f0;">차등 프라이버시</strong> — 통계적 노이즈 추가</li>
+    <li><strong style="color: #e2e8f0;">연합 학습</strong> — 데이터 이동 없이 모델 학습</li>
+    <li><strong style="color: #e2e8f0;">동형 암호화</strong> — 암호화 상태에서 연산</li>
+</ul>
+
+<hr style="border-color: #334155;">
+
+<h2 style="color: #34d399;">장 요약</h2>
+
+<table border="1" cellpadding="12" style="border-collapse: collapse; width: 100%; background: #1e293b; margin: 20px 0;">
+    <tr style="background: #334155;">
+        <th style="border: 1px solid #475569; color: #10b981;">핵심 포인트</th>
+        <th style="border: 1px solid #475569; color: #10b981;">요약</th>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>정의</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">데이터 소스 근처 실시간 처리</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>이점</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">저지연, 대역폭 절감, 개인정보 보호</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>엣지 AI</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">실시간 부정맥, 낙상, 발작 감지</td>
+    </tr>
+    <tr style="background: #334155;">
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>오프라인</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">네트워크 없이도 작동</td>
+    </tr>
+    <tr>
+        <td style="border: 1px solid #475569; color: #e2e8f0;"><strong>보안</strong></td>
+        <td style="border: 1px solid #475569; color: #94a3b8;">TPM, AES-256, 연합 학습</td>
+    </tr>
+</table>
+
+<nav style="margin-top: 30px; padding: 15px; background: #1e293b; border-radius: 8px; display: flex; justify-content: space-between;">
+    <a href="chapter-04.html" style="color: #10b981; text-decoration: none;">← 제4장: 데이터 집계</a>
+    <a href="chapter-06.html" style="color: #10b981; text-decoration: none;">제6장: 기기 보안 →</a>
+</nav>
+
+<p style="text-align: center; color: #fbbf24; margin-top: 40px;">弘益人間 · 널리 인간을 이롭게 하라</p>
+<p style="text-align: center; color: #64748b;">© 2025 WIA - World Certification Industry Association</p>
+
+</body>
+</html>

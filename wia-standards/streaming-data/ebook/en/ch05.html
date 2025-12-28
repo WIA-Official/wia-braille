@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 5: Event Sourcing and CQRS - WIA-DATA-013</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; line-height: 1.8; max-width: 1000px; margin: 0 auto; padding: 40px 20px; background: #0f172a; color: #e2e8f0; }
+        h1, h2, h3 { color: #10B981; margin-top: 40px; }
+        h1 { font-size: 2.5em; border-bottom: 3px solid #10B981; padding-bottom: 15px; }
+        h2 { font-size: 2em; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        code { background: #1e293b; padding: 2px 6px; border-radius: 4px; color: #10B981; font-family: 'Courier New', monospace; }
+        pre { background: #1e293b; border-left: 4px solid #10B981; padding: 20px; border-radius: 8px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #1e293b; }
+        th, td { padding: 12px; text-align: left; border: 1px solid #334155; }
+        th { background: #10B981; color: #0f172a; font-weight: bold; }
+        .highlight { background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10B981; padding: 15px; margin: 20px 0; border-radius: 8px; }
+        ul, ol { margin: 15px 0; padding-left: 30px; }
+        li { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Chapter 5: Event Sourcing and CQRS</h1>
+
+    <h2>5.1 Event Sourcing Fundamentals</h2>
+    <p>Event Sourcing is a pattern where state changes are stored as a sequence of events rather than updating current state directly.</p>
+
+    <h3>5.1.1 Traditional vs Event Sourcing</h3>
+    <table>
+        <tr><th>Aspect</th><th>Traditional (CRUD)</th><th>Event Sourcing</th></tr>
+        <tr><td>Storage</td><td>Current state only</td><td>All events (history)</td></tr>
+        <tr><td>Updates</td><td>UPDATE query</td><td>Append event</td></tr>
+        <tr><td>History</td><td>Lost or separate audit log</td><td>Built-in complete audit trail</td></tr>
+        <tr><td>Debugging</td><td>Difficult to reproduce</td><td>Replay events to any point in time</td></tr>
+    </table>
+
+    <h3>5.1.2 Event Sourcing Example</h3>
+    <pre><code>// Traditional approach
+UPDATE orders SET status = 'shipped' WHERE id = 123;
+// Previous status lost!
+
+// Event Sourcing approach
+Event Stream for Order 123:
+1. OrderCreated { items: [...], total: 99.99 }
+2. PaymentReceived { amount: 99.99, method: 'card' }
+3. OrderShipped { carrier: 'UPS', tracking: 'ABC123' }
+// Complete history preserved!</code></pre>
+
+    <h2>5.2 Implementing Event Sourcing</h2>
+    <h3>5.2.1 Event Store</h3>
+    <pre><code>class EventStore {
+    async append(streamId, event) {
+        const record = {
+            streamId,
+            eventType: event.type,
+            eventData: event.data,
+            timestamp: new Date(),
+            version: await this.getNextVersion(streamId)
+        };
+        await db.events.insert(record);
+        await eventBus.publish(event);
+    }
+
+    async getEvents(streamId, fromVersion = 0) {
+        return await db.events.find({
+            streamId,
+            version: { $gte: fromVersion }
+        }).sort({ version: 1 });
+    }
+
+    async replayTo(streamId, targetVersion) {
+        const events = await this.getEvents(streamId);
+        return events
+            .filter(e => e.version <= targetVersion)
+            .reduce((state, event) => applyEvent(state, event), {});
+    }
+}</code></pre>
+
+    <h3>5.2.2 Aggregate Pattern</h3>
+    <pre><code>class OrderAggregate {
+    constructor(orderId) {
+        this.orderId = orderId;
+        this.uncommittedEvents = [];
+        this.version = 0;
+    }
+
+    // Command handlers (business logic)
+    createOrder(items, customerId) {
+        if (this.version > 0) throw new Error('Order already exists');
+        
+        this.applyEvent({
+            type: 'OrderCreated',
+            data: { orderId: this.orderId, items, customerId }
+        });
+    }
+
+    shipOrder(carrier, trackingNumber) {
+        if (this.status !== 'paid') throw new Error('Order not paid');
+        
+        this.applyEvent({
+            type: 'OrderShipped',
+            data: { carrier, trackingNumber }
+        });
+    }
+
+    // Event application (state changes)
+    applyEvent(event) {
+        switch (event.type) {
+            case 'OrderCreated':
+                this.status = 'created';
+                this.items = event.data.items;
+                break;
+            case 'OrderShipped':
+                this.status = 'shipped';
+                this.tracking = event.data.trackingNumber;
+                break;
+        }
+        this.version++;
+        this.uncommittedEvents.push(event);
+    }
+
+    async save(eventStore) {
+        for (const event of this.uncommittedEvents) {
+            await eventStore.append(this.orderId, event);
+        }
+        this.uncommittedEvents = [];
+    }
+}</code></pre>
+
+    <h2>5.3 Benefits of Event Sourcing</h2>
+    <ul>
+        <li><strong>Complete Audit Trail:</strong> Every state change is recorded</li>
+        <li><strong>Temporal Queries:</strong> View system state at any point in time</li>
+        <li><strong>Event Replay:</strong> Reprocess events to fix bugs or add features</li>
+        <li><strong>Event-Driven Architecture:</strong> Natural fit for microservices</li>
+        <li><strong>Debugging:</strong> Reproduce exact sequence of events</li>
+        <li><strong>Analytics:</strong> Rich data for business intelligence</li>
+    </ul>
+
+    <h2>5.4 CQRS (Command Query Responsibility Segregation)</h2>
+    <p>CQRS separates read and write operations into different models, optimizing each for its specific purpose.</p>
+
+    <h3>5.4.1 CQRS Architecture</h3>
+    <pre><code>// Write side (Commands)
+User → Command → Command Handler → Aggregate → Events → Event Store
+                                                           ↓
+                                                      Event Bus
+                                                           ↓
+// Read side (Queries)
+                                Event Handlers → Projections (Read Models)
+                                                           ↓
+User ← Query Results ← Query Handlers ← Read Database (optimized views)</code></pre>
+
+    <h3>5.4.2 Implementation</h3>
+    <pre><code>// Command side
+class PlaceOrderCommand {
+    constructor(orderId, items, customerId) {
+        this.orderId = orderId;
+        this.items = items;
+        this.customerId = customerId;
+    }
+}
+
+class OrderCommandHandler {
+    async handle(command) {
+        const order = new OrderAggregate(command.orderId);
+        order.createOrder(command.items, command.customerId);
+        await eventStore.save(order);
+    }
+}
+
+// Query side - Projection 1: Order History
+class OrderHistoryProjection {
+    async on(event) {
+        if (event.type === 'OrderCreated') {
+            await orderHistoryDb.insert({
+                orderId: event.data.orderId,
+                customerId: event.data.customerId,
+                items: event.data.items,
+                createdAt: event.timestamp,
+                status: 'created'
+            });
+        }
+        else if (event.type === 'OrderShipped') {
+            await orderHistoryDb.update(
+                { orderId: event.data.orderId },
+                { $set: { status: 'shipped', shippedAt: event.timestamp } }
+            );
+        }
+    }
+}
+
+// Query side - Projection 2: Sales Analytics
+class SalesAnalyticsProjection {
+    async on(event) {
+        if (event.type === 'OrderCreated') {
+            const total = calculateTotal(event.data.items);
+            await analyticsDb.incrementDailySales(event.timestamp, total);
+            await analyticsDb.incrementProductSales(event.data.items);
+        }
+    }
+}</code></pre>
+
+    <h2>5.5 Read Model Strategies</h2>
+    <table>
+        <tr><th>Strategy</th><th>Description</th><th>Use Case</th></tr>
+        <tr><td>Single Table</td><td>Denormalized view</td><td>Simple queries</td></tr>
+        <tr><td>Multiple Tables</td><td>Different optimization targets</td><td>Complex domain</td></tr>
+        <tr><td>Materialized Views</td><td>Database-managed</td><td>SQL databases</td></tr>
+        <tr><td>Search Index</td><td>ElasticSearch, Solr</td><td>Full-text search</td></tr>
+        <tr><td>Cache</td><td>Redis, Memcached</td><td>Hot data, high read load</td></tr>
+        <tr><td>Graph DB</td><td>Neo4j</td><td>Relationship queries</td></tr>
+    </table>
+
+    <h2>5.6 Event Sourcing + CQRS Pattern</h2>
+    <pre><code>// Combined pattern workflow
+1. User submits command (PlaceOrder)
+2. Command handler validates and creates events
+3. Events appended to event store
+4. Events published to event bus
+5. Projections consume events and update read models
+6. User queries read models (not event store)
+
+Benefits:
+- Write model optimized for consistency
+- Read models optimized for queries
+- Can have multiple specialized read models
+- Eventual consistency between write and read sides</code></pre>
+
+    <h2>5.7 Handling Complexity</h2>
+    <h3>5.7.1 Snapshotting</h3>
+    <pre><code>// Problem: Replaying 1 million events is slow
+// Solution: Periodic snapshots
+
+class SnapshotStore {
+    async createSnapshot(streamId, state, version) {
+        await db.snapshots.insert({
+            streamId,
+            state,
+            version,
+            timestamp: new Date()
+        });
+    }
+
+    async getLatestSnapshot(streamId) {
+        return await db.snapshots.findOne(
+            { streamId },
+            { sort: { version: -1 } }
+        );
+    }
+}
+
+async function loadAggregate(streamId) {
+    const snapshot = await snapshotStore.getLatestSnapshot(streamId);
+    const events = await eventStore.getEvents(streamId, snapshot.version + 1);
+    
+    let state = snapshot ? snapshot.state : {};
+    return events.reduce((state, event) => applyEvent(state, event), state);
+}</code></pre>
+
+    <h3>5.7.2 Event Versioning</h3>
+    <pre><code>// V1 event
+{
+    type: 'OrderCreated',
+    version: 1,
+    data: {
+        orderId: '123',
+        items: [...]
+    }
+}
+
+// V2 event (added customer info)
+{
+    type: 'OrderCreated',
+    version: 2,
+    data: {
+        orderId: '123',
+        customerId: '456',  // new field
+        items: [...]
+    }
+}
+
+// Upcaster pattern
+class EventUpcaster {
+    upcast(event) {
+        if (event.type === 'OrderCreated' && event.version === 1) {
+            return {
+                ...event,
+                version: 2,
+                data: {
+                    ...event.data,
+                    customerId: 'UNKNOWN'  // default for old events
+                }
+            };
+        }
+        return event;
+    }
+}</code></pre>
+
+    <h2>5.8 Saga Pattern for Distributed Transactions</h2>
+    <pre><code>// Orchestration-based saga
+class OrderSaga {
+    async execute(orderId) {
+        try {
+            // Step 1: Reserve inventory
+            await inventoryService.reserve(orderId);
+            
+            // Step 2: Process payment
+            await paymentService.charge(orderId);
+            
+            // Step 3: Ship order
+            await shippingService.ship(orderId);
+            
+            await this.complete(orderId);
+        } catch (error) {
+            await this.compensate(orderId, error);
+        }
+    }
+
+    async compensate(orderId, error) {
+        // Rollback in reverse order
+        await shippingService.cancelShipment(orderId);
+        await paymentService.refund(orderId);
+        await inventoryService.release(orderId);
+        await this.fail(orderId, error);
+    }
+}
+
+// Choreography-based saga (event-driven)
+inventoryService.on('InventoryReserved', async (event) => {
+    await paymentService.processPayment(event.orderId);
+});
+
+paymentService.on('PaymentProcessed', async (event) => {
+    await shippingService.shipOrder(event.orderId);
+});
+
+paymentService.on('PaymentFailed', async (event) => {
+    await inventoryService.releaseInventory(event.orderId);
+});</code></pre>
+
+    <h2>5.9 Real-World Use Cases</h2>
+    <table>
+        <tr><th>Industry</th><th>Application</th><th>Why Event Sourcing</th></tr>
+        <tr><td>Finance</td><td>Trading systems</td><td>Complete audit trail, regulatory compliance</td></tr>
+        <tr><td>E-commerce</td><td>Order management</td><td>Track order lifecycle, analytics</td></tr>
+        <tr><td>Healthcare</td><td>Patient records</td><td>Medical history, legal requirements</td></tr>
+        <tr><td>Gaming</td><td>Player state</td><td>Replay, anti-cheat, analytics</td></tr>
+        <tr><td>IoT</td><td>Device telemetry</td><td>Historical analysis, debugging</td></tr>
+    </table>
+
+    <h2>5.10 Challenges and Solutions</h2>
+    <table>
+        <tr><th>Challenge</th><th>Solution</th></tr>
+        <tr><td>Eventual consistency</td><td>Design UI for it, use sagas for critical flows</td></tr>
+        <tr><td>Event store growth</td><td>Snapshotting, archival strategies</td></tr>
+        <tr><td>Schema evolution</td><td>Event upcasting, versioning</td></tr>
+        <tr><td>Debugging complexity</td><td>Event visualization tools, tracing</td></tr>
+        <tr><td>Learning curve</td><td>Start simple, gradual adoption</td></tr>
+    </table>
+
+    <h2>5.11 Best Practices</h2>
+    <ol>
+        <li>Events should be past tense (OrderCreated, not CreateOrder)</li>
+        <li>Events are immutable - never modify published events</li>
+        <li>Use snapshots for aggregates with many events</li>
+        <li>Version events from day one</li>
+        <li>Keep events small and focused</li>
+        <li>Use correlation IDs for tracing</li>
+        <li>Monitor projection lag</li>
+        <li>Test event replay scenarios</li>
+    </ol>
+
+    <div class="highlight">
+        <strong>Looking Ahead:</strong> Chapter 6 covers streaming data quality, including validation, cleansing, and monitoring for reliable data pipelines.
+    </div>
+
+    <p style="text-align: center; margin-top: 50px; color: #64748b;">
+        © 2025 SmileStory Inc. / WIA · 弘익人間 (홍익인간) · Benefit All Humanity
+    </p>
+</body>
+</html>

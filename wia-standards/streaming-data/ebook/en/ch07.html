@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chapter 7: Streaming Analytics and CEP - WIA-DATA-013</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; line-height: 1.8; max-width: 1000px; margin: 0 auto; padding: 40px 20px; background: #0f172a; color: #e2e8f0; }
+        h1, h2, h3 { color: #10B981; margin-top: 40px; }
+        h1 { font-size: 2.5em; border-bottom: 3px solid #10B981; padding-bottom: 15px; }
+        h2 { font-size: 2em; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        code { background: #1e293b; padding: 2px 6px; border-radius: 4px; color: #10B981; font-family: 'Courier New', monospace; }
+        pre { background: #1e293b; border-left: 4px solid #10B981; padding: 20px; border-radius: 8px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #1e293b; }
+        th, td { padding: 12px; text-align: left; border: 1px solid #334155; }
+        th { background: #10B981; color: #0f172a; font-weight: bold; }
+        .highlight { background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10B981; padding: 15px; margin: 20px 0; border-radius: 8px; }
+        ul, ol { margin: 15px 0; padding-left: 30px; }
+        li { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Chapter 7: Streaming Analytics and CEP</h1>
+
+    <h2>7.1 Introduction to Streaming Analytics</h2>
+    <p>Streaming analytics processes data in motion to extract insights, detect patterns, and trigger actions in real-time.</p>
+
+    <table>
+        <tr><th>Analytics Type</th><th>Description</th><th>Latency</th><th>Example</th></tr>
+        <tr><td>Real-time</td><td>Immediate processing</td><td>&lt; 1 second</td><td>Fraud detection</td></tr>
+        <tr><td>Near real-time</td><td>Short delay acceptable</td><td>1-60 seconds</td><td>Dashboard updates</td></tr>
+        <tr><td>Micro-batch</td><td>Small batch windows</td><td>1-5 minutes</td><td>Trend analysis</td></tr>
+        <tr><td>Batch</td><td>Large windows</td><td>Hours/days</td><td>Historical reports</td></tr>
+    </table>
+
+    <h2>7.2 Aggregations and Windowing</h2>
+    <h3>7.2.1 Time-based Aggregations</h3>
+    <pre><code>// Tumbling window aggregation
+SELECT 
+    userId,
+    COUNT(*) as eventCount,
+    SUM(amount) as totalAmount,
+    AVG(amount) as avgAmount
+FROM events
+GROUP BY 
+    userId,
+    TUMBLE(eventTime, INTERVAL '5' MINUTE);</code></pre>
+
+    <h3>7.2.2 Sliding Window Analytics</h3>
+    <pre><code>// 10-minute window, sliding every 1 minute
+const slidingWindow = stream
+    .keyBy(event => event.userId)
+    .window(SlidingEventTimeWindows.of(
+        Time.minutes(10),
+        Time.minutes(1)
+    ))
+    .aggregate(new MovingAverageAggregator());
+
+class MovingAverageAggregator {
+    add(accumulator, value) {
+        return {
+            sum: accumulator.sum + value.amount,
+            count: accumulator.count + 1,
+            avg: (accumulator.sum + value.amount) / (accumulator.count + 1)
+        };
+    }
+
+    getResult(accumulator) {
+        return accumulator.avg;
+    }
+}</code></pre>
+
+    <h2>7.3 Complex Event Processing (CEP)</h2>
+    <p>CEP detects patterns and relationships among multiple events to identify complex situations.</p>
+
+    <h3>7.3.1 Pattern Detection with Flink CEP</h3>
+    <pre><code>import org.apache.flink.cep.CEP;
+import org.apache.flink.cep.pattern.Pattern;
+
+// Detect login failure followed by success within 5 minutes
+Pattern<LoginEvent, ?> pattern = Pattern.<LoginEvent>begin("failed")
+    .where(event -> event.getStatus().equals("FAILED"))
+    .times(3).consecutive()
+    .next("success")
+    .where(event -> event.getStatus().equals("SUCCESS"))
+    .within(Time.minutes(5));
+
+PatternStream<LoginEvent> patternStream = CEP.pattern(loginEvents, pattern);
+
+patternStream.select((Map<String, List<LoginEvent>> pattern) -> {
+    List<LoginEvent> failures = pattern.get("failed");
+    LoginEvent success = pattern.get("success").get(0);
+    
+    return new Alert(
+        "Suspicious login pattern",
+        success.getUserId(),
+        failures.size() + " failures before success"
+    );
+});</code></pre>
+
+    <h3>7.3.2 Sequence Detection</h3>
+    <pre><code>// E-commerce funnel analysis
+Pattern<Event, ?> purchaseFunnel = Pattern.<Event>begin("view")
+    .where(e -> e.getType().equals("PRODUCT_VIEW"))
+    .next("addCart")
+    .where(e -> e.getType().equals("ADD_TO_CART"))
+    .next("checkout")
+    .where(e -> e.getType().equals("CHECKOUT"))
+    .next("purchase")
+    .where(e => e.getType().equals("PURCHASE"))
+    .within(Time.hours(24));
+
+// Analyze drop-off points
+patternStream.flatSelect(
+    // Partial matches (dropped off)
+    (Map<String, List<Event>> pattern, Collector<String> out) -> {
+        if (!pattern.containsKey("purchase")) {
+            String lastStep = getLastStep(pattern);
+            out.collect("Drop-off at: " + lastStep);
+        }
+    },
+    // Complete matches (converted)
+    (Map<String, List<Event>> pattern) -> {
+        return "Conversion: " + pattern.get("view").get(0).getUserId();
+    }
+);</code></pre>
+
+    <h2>7.4 Real-time Metrics and KPIs</h2>
+    <h3>7.4.1 Computing KPIs</h3>
+    <pre><code>class KPICalculator {
+    async computeMetrics(eventStream) {
+        return eventStream
+            .keyBy('eventType')
+            .window(TumblingWindow.of(Time.minutes(1)))
+            .aggregate({
+                // Events per second
+                eventsPerSecond: count() / 60,
+                
+                // P95 latency
+                p95Latency: percentile('latency', 0.95),
+                
+                // Error rate
+                errorRate: (countIf(e => e.error) / count()) * 100,
+                
+                // Unique users
+                uniqueUsers: countDistinct('userId'),
+                
+                // Average order value
+                avgOrderValue: sum('amount') / count(),
+                
+                // Conversion rate
+                conversionRate: (
+                    countIf(e => e.type === 'PURCHASE') /
+                    countIf(e => e.type === 'VISIT')
+                ) * 100
+            });
+    }
+}</code></pre>
+
+    <h3>7.4.2 Real-time Dashboard Updates</h3>
+    <pre><code>// Stream to WebSocket for live dashboard
+const dashboardStream = kpiStream
+    .map(kpi => ({
+        timestamp: new Date(),
+        metrics: kpi,
+        alerts: generateAlerts(kpi)
+    }))
+    .forEach(data => {
+        // Push to all connected clients
+        websocketServer.broadcast(JSON.stringify(data));
+    });
+
+// Alert generation
+function generateAlerts(kpi) {
+    const alerts = [];
+    
+    if (kpi.errorRate > 5) {
+        alerts.push({
+            severity: 'ERROR',
+            message: `High error rate: ${kpi.errorRate.toFixed(2)}%`
+        });
+    }
+    
+    if (kpi.p95Latency > 1000) {
+        alerts.push({
+            severity: 'WARNING',
+            message: `High latency: ${kpi.p95Latency}ms`
+        });
+    }
+    
+    return alerts;
+}</code></pre>
+
+    <h2>7.5 Anomaly Detection</h2>
+    <h3>7.5.1 Statistical Anomaly Detection</h3>
+    <pre><code>class AnomalyDetector {
+    constructor() {
+        this.window = [];
+        this.windowSize = 100;
+    }
+
+    detect(value) {
+        this.window.push(value);
+        if (this.window.length > this.windowSize) {
+            this.window.shift();
+        }
+
+        const mean = this.calculateMean(this.window);
+        const stdDev = this.calculateStdDev(this.window, mean);
+        
+        // Z-score method
+        const zScore = (value - mean) / stdDev;
+        const isAnomaly = Math.abs(zScore) > 3;  // 3 sigma
+
+        return {
+            isAnomaly,
+            zScore,
+            mean,
+            stdDev,
+            value
+        };
+    }
+
+    calculateMean(data) {
+        return data.reduce((sum, val) => sum + val, 0) / data.length;
+    }
+
+    calculateStdDev(data, mean) {
+        const variance = data.reduce((sum, val) => 
+            sum + Math.pow(val - mean, 2), 0
+        ) / data.length;
+        return Math.sqrt(variance);
+    }
+}</code></pre>
+
+    <h3>7.5.2 Machine Learning-based Detection</h3>
+    <pre><code>// Online learning for anomaly detection
+class OnlineAnomalyDetector {
+    constructor() {
+        this.model = new IsolationForest();
+        this.buffer = [];
+        this.retrainInterval = 1000;
+    }
+
+    async detect(features) {
+        // Get prediction from current model
+        const score = await this.model.predict(features);
+        const isAnomaly = score > 0.6;  // Threshold
+
+        // Add to training buffer
+        this.buffer.push({ features, score });
+
+        // Periodically retrain
+        if (this.buffer.length >= this.retrainInterval) {
+            await this.retrain();
+        }
+
+        return {
+            isAnomaly,
+            anomalyScore: score,
+            features
+        };
+    }
+
+    async retrain() {
+        const trainingData = this.buffer.map(d => d.features);
+        await this.model.fit(trainingData);
+        this.buffer = [];
+    }
+}</code></pre>
+
+    <h2>7.6 Stream Joins</h2>
+    <h3>7.6.1 Stream-Stream Join</h3>
+    <pre><code>// Join clicks with impressions
+const clicks = ...;  // Click events
+const impressions = ...;  // Impression events
+
+const joined = clicks.join(impressions)
+    .where(click => click.adId)
+    .equalTo(impression => impression.adId)
+    .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+    .apply((click, impression) => ({
+        adId: click.adId,
+        clickTime: click.timestamp,
+        impressionTime: impression.timestamp,
+        timeDiff: click.timestamp - impression.timestamp,
+        userId: click.userId
+    }));</code></pre>
+
+    <h3>7.6.2 Stream-Table Join (Enrichment)</h3>
+    <pre><code>// Enrich events with user profile
+const events = ...;  // Event stream
+const userProfiles = ...;  // KTable (user data)
+
+const enriched = events.join(userProfiles,
+    (event, profile) => ({
+        ...event,
+        userName: profile.name,
+        userTier: profile.tier,
+        userCountry: profile.country
+    })
+);
+
+// Example: Personalized recommendations
+enriched
+    .filter(event => event.userTier === 'PREMIUM')
+    .map(event => generateRecommendation(event))
+    .to('recommendations');</code></pre>
+
+    <h2>7.7 sessionization</h2>
+    <pre><code>// Session window: gap of 30 minutes
+const sessions = events
+    .keyBy(event => event.userId)
+    .window(EventTimeSessionWindows.withGap(Time.minutes(30)))
+    .aggregate(new SessionAggregator());
+
+class SessionAggregator {
+    createAccumulator() {
+        return {
+            sessionId: generateId(),
+            events: [],
+            startTime: null,
+            endTime: null,
+            pageViews: 0,
+            actions: []
+        };
+    }
+
+    add(session, event) {
+        session.events.push(event);
+        session.startTime = session.startTime || event.timestamp;
+        session.endTime = event.timestamp;
+        
+        if (event.type === 'PAGE_VIEW') {
+            session.pageViews++;
+        }
+        
+        session.actions.push(event.action);
+        
+        return session;
+    }
+
+    getResult(session) {
+        return {
+            sessionId: session.sessionId,
+            duration: session.endTime - session.startTime,
+            eventCount: session.events.length,
+            pageViews: session.pageViews,
+            bounceRate: session.pageViews === 1 ? 1 : 0
+        };
+    }
+}</code></pre>
+
+    <h2>7.8 Use Cases</h2>
+    <table>
+        <tr><th>Use Case</th><th>Pattern</th><th>Action</th></tr>
+        <tr><td>Fraud Detection</td><td>Multiple failed transactions</td><td>Block account</td></tr>
+        <tr><td>System Monitoring</td><td>High error rate</td><td>Auto-scale, alert</td></tr>
+        <tr><td>Recommendation</td><td>User behavior pattern</td><td>Show personalized content</td></tr>
+        <tr><td>Predictive Maintenance</td><td>Sensor anomaly</td><td>Schedule maintenance</td></tr>
+        <tr><td>Trading</td><td>Price pattern</td><td>Execute trade</td></tr>
+        <tr><td>Marketing</td><td>User engagement drop</td><td>Send re-engagement email</td></tr>
+    </table>
+
+    <h2>7.9 Performance Optimization</h2>
+    <ul>
+        <li><strong>State management:</strong> Use RocksDB for large state</li>
+        <li><strong>Watermarks:</strong> Balance latency vs completeness</li>
+        <li><strong>Parallelism:</strong> Scale based on throughput needs</li>
+        <li><strong>Caching:</strong> Cache dimension data for enrichment</li>
+        <li><strong>Sampling:</strong> Use sampling for high-cardinality metrics</li>
+    </ul>
+
+    <div class="highlight">
+        <strong>Looking Ahead:</strong> Chapter 8 explores future trends including edge streaming, serverless processing, and AI-powered stream analytics.
+    </div>
+
+    <p style="text-align: center; margin-top: 50px; color: #64748b;">
+        © 2025 SmileStory Inc. / WIA · 弘益人間 (홍익인간) · Benefit All Humanity
+    </p>
+</body>
+</html>
