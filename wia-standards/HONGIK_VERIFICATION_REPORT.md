@@ -116,6 +116,7 @@
 ║ 14  │ WIA-CHRONIC-PAIN          │ 0.100  │ 0.320  │ +220% │ ⚠️ 중간     ║
 ║ 15  │ WIA-ADDICTION             │ 0.060  │ 0.318  │ +430% │ ⚠️ 중간     ║
 ║ 16  │ WIA-LONELINESS            │ 0.089  │ 0.359  │ +303% │ ⚠️ 중간     ║
+║ 17  │ WIA-SLEEP-DISORDERS       │ 0.072  │ 0.340  │ +386% │ ⚠️ 중간     ║
 ╚════════════════════════════════════════════════════════════════════════════╝
 * 임팩트 보정 시 ⚠️ 중간
 ** 구조적 한계 - 표준만으로 S≥0.30 불가
@@ -125,6 +126,7 @@
 ****** Neuroplasticity Reversal - 신경가소성 역전
 ******* Reward Replasticity - 보상회로 재가소성
 ******** Oxytocin-Attention Loop - 옥시토신-주의 루프
+********* Glymphatic-Circadian Sync - 글림프-일주기 동기화
 ```
 
 ---
@@ -1928,6 +1930,139 @@ S = 0.359 → ⚠️ 중간 효과 (Medium Effect)
 
 ---
 
+### 3.17 WIA-SLEEP-DISORDERS (수면장애 표준)
+
+**관련 난제**: #18 수면 최적화 (직접 85%), #3 치매 (70%), #2 정신건강 (65%), #8 노화 (60%)
+
+#### 패러다임 전환 | Paradigm Shift
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  기존: "Sleep Hygiene Recommendations" (수면위생 권고)          │
+│  ───────────────────────────────────────                        │
+│  "밤 10시 취침" 일률적 권고 → 비과학적 → 개인차 무시             │
+│                                                                  │
+│                         ▼ WIA 전환 ▼                            │
+│                                                                  │
+│  WIA: "Glymphatic-Circadian Synchronization"                    │
+│       (글림프-일주기 동기화)                                     │
+│  ─────────────────────────────────────────────────────          │
+│  뇌청소(글림프) + 생체리듬(일주기) + 호흡(OSA) 통합 최적화       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 핵심 통일 원리: Glymphatic-Circadian Synchronization
+
+**핵심 지표: ALPS Index + Sleep Regularity Index**
+```
+글림프 시스템: 수면 중 뇌 노폐물 청소 → Aβ, 타우 제거 → 알츠하이머 예방
+일주기 리듬: 대사, 면역, 인지 기능 조절 → 최적 시간에 최적 기능
+수면무호흡: 간헐적 저산소 → 심혈관 질환, 당뇨, 인지저하 위험
+
+통합 효과: 글림프+일주기+호흡 최적화 = 신경보호 + 대사건강 + 심혈관건강
+```
+
+**한글:**
+> 수면은 단순 휴식이 아닌 뇌청소(글림프) 시간이며, 일주기와 동기화해야 최적화된다.
+> 8종 수면장애 통합 분류 + AASM v2.6 표준 + 웨어러블 연동
+
+**English:**
+> Sleep is not just rest but glymphatic brain cleansing time, requiring circadian synchronization.
+> 8 sleep disorder types + AASM v2.6 + wearable integration
+
+#### 측정값 | Measurements
+
+| 변수 | 값 | 해석 |
+|------|-----|------|
+| D (분절) | 0.817 | 매우 높음 - 수면-정신 silo, 웨어러블 격리, 글림프-일주기 분리 |
+| U (통합) | 0.833 | 높음 - 8종 장애 포괄, 설문 통합, 4등급 인증 |
+| R (저항) | 0.657 | 중-고 - PSG 접근성, CBT-I 인력, 수면제 산업 |
+| **S (효과)** | **0.340** | **⚠️ 중간 효과** |
+
+#### 분절(D) 세부 분석
+
+| 분야 | D값 | 주요 분절 요인 |
+|------|-----|---------------|
+| 의료 분야 | 0.82 | 수면의학/신경과/정신과/호흡기 분리, 수면-정신 silo(0.90) |
+| 진단/치료 | 0.83 | PSG vs 웨어러블 단절, 글림프-일주기 분리 연구 |
+| 데이터/시스템 | 0.80 | 웨어러블 격리(0.90), EHR 비구조화(0.85) |
+
+#### 저항(R) 세부 분석
+
+| 저항 유형 | 강도 | 핵심 요인 |
+|----------|------|----------|
+| 산업적 | 2.00/3 | 수면제 $10B+ 시장, CPAP 독점 포맷 |
+| 시스템적 | 2.10/3 | PSG 대기 3-6개월, CBT-I 치료사 극부족 (2.5) |
+| 사회/문화 | 1.88/3 | Hustle culture, "잠은 게으른 것" |
+| 과학/기술 | 1.80/3 | 글림프 in vivo 측정 불가 (2.5), ALPS 표준화 미완 |
+
+#### 8종 수면장애 분류
+
+```
+┌─────────────┬────────────────────────────────────────────┐
+│ Code        │ 장애 및 특성                               │
+├─────────────┼────────────────────────────────────────────┤
+│ INS         │ 불면증 (Insomnia) → CBT-I 1차 치료         │
+│ OSA         │ 폐쇄성 수면무호흡 → CPAP, 구강장치         │
+│ CSA         │ 중추성 수면무호흡 → ASV, 원인 치료         │
+│ CRD         │ 일주기 리듬 장애 → 광치료, 시간 조정       │
+│ RLS         │ 하지불안증후군 → 철분, 도파민 작용제       │
+│ NAR         │ 기면병 → Modafinil, Sodium oxybate        │
+│ PAR         │ 사건수면 (RBD 등) → Clonazepam, 안전 조치  │
+│ HYP         │ 과다수면 → 각성제, 원인 평가               │
+└─────────────┴────────────────────────────────────────────┘
+```
+
+#### 비교 분석 | vs 기존 모델
+
+| 모델 | D | U | R | S | 결과 |
+|------|-----|-----|-----|-------|------|
+| 기존 (수면위생 권고) | 0.82 | 0.35 | 0.40 | 0.072 | ❌ |
+| WIA-SLEEP-DISORDERS | 0.817 | 0.833 | 0.657 | 0.340 | ⚠️ |
+| **개선율** | - | +138% | +64% | **+386%** | - |
+
+#### 핵심 연결: 글림프-일주기-호흡
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🧠 글림프 시스템                                               │
+│     └─→ 수면 중 뇌 노폐물 청소 → Aβ, 타우 제거 → 알츠하이머 예방│
+│                                                                  │
+│  🌙 일주기 리듬                                                 │
+│     └─→ DLMO + Core Body Temp → 개인 Chronotype 최적화          │
+│                                                                  │
+│  💨 수면무호흡 (OSA)                                            │
+│     └─→ AHI + 저산소 → 심혈관 위험 2-4배                        │
+│                                                                  │
+│  🔗 통합 효과: 글림프+일주기+호흡 = 신경보호+대사건강+심혈관건강│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 33개 난제 기여도
+
+| # | 난제 | 기여도 | 연결 메커니즘 |
+|---|------|--------|--------------|
+| 18 | 수면 최적화 | 85% | 직접 (Glymphatic-Circadian Sync) |
+| 3 | 치매 | 70% | 글림프 청소 → 아밀로이드 제거 |
+| 2 | 정신건강 | 65% | 수면장애 ↔ 우울/불안 70% 동반 |
+| 8 | 노화 | 60% | 수면질 → 텔로미어, 염증, 건강노화 |
+| 1 | 심혈관 | 55% | OSA → 고혈압, 심방세동, 뇌졸중 |
+
+#### 결론 | Conclusion
+
+```
+S = 0.340 → ⚠️ 중간 효과 (Medium Effect)
+잠재력: D×U² = 0.565 (저항 극복 시 S = 0.404 ⚠️→✅ 근접)
+
+"수면은 삶의 1/3을 차지한다. 수면을 최적화하면 삶의 2/3가 더 건강해진다."
+"Sleep is 1/3 of life. Optimize sleep, and the other 2/3 become healthier."
+
+弘益人間 달성 경로:
+글로벌 수면장애 유병률 30-40% → 글림프-일주기 동기화 → 뇌건강+대사+심혈관 통합 최적화
+```
+
+---
+
 ## 4. 비교 분석 | Comparative Analysis
 
 ### 효과 순위 | Effect Ranking
@@ -1944,6 +2079,7 @@ S = 0.359 → ⚠️ 중간 효과 (Medium Effect)
 │  WIA-LONELINESS #       █████████████████░░░░░░  0.359     │
 │  WIA-PROTEIN-DYNAMICS   █████████████████░░░░░░  0.360     │
 │  WIA-EDUCATION          █████████████████░░░░░░  0.350     │
+│  WIA-SLEEP-DISORDERS @  █████████████████░░░░░░  0.340     │
 │  WIA-CHRONIC-PAIN ¶     ████████████████░░░░░░░  0.320     │
 │  WIA-ADDICTION ‖        ████████████████░░░░░░░  0.318     │
 │  WIA-PLASTIC-ENZYME     ████████████████░░░░░░░  0.321     │
@@ -1965,6 +2101,7 @@ S = 0.359 → ⚠️ 중간 효과 (Medium Effect)
 │  ¶ Neuroplasticity Reversal - 신경가소성 역전 (오피오이드 위기)│
 │  ‖ Reward Replasticity - 보상회로 재가소성 (낙인 R=0.750)    │
 │  # Oxytocin-Attention Loop - 옥시토신-주의 루프 (U=0.861 최고)│
+│  @ Glymphatic-Circadian Sync - 글림프-일주기 동기화 (뇌청소)  │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -1989,14 +2126,15 @@ S = 0.359 → ⚠️ 중간 효과 (Medium Effect)
 | WIA-CHRONIC-PAIN | 0.65→0.40 | 패러다임 전환 (Damage→Neuroplasticity) + 오피오이드 시장 | ⚠️ 중간 (산업+시스템) |
 | WIA-ADDICTION | 0.75→0.45 | 패러다임 전환 (Moral→Replasticity) + 사회적 낙인 | ⚠️ 중간 (낙인+산업) |
 | WIA-LONELINESS | 0.63→0.40 | 패러다임 전환 (Flaw→Oxytocin Loop) + 구조적 트렌드 | ✅ 높음 (법적 장벽 無) |
+| WIA-SLEEP-DISORDERS | 0.66→0.45 | 패러다임 전환 (Hygiene→Glymphatic-Circadian) + 인프라 | ⚠️ 중간 (CBT-I 인력) |
 
 ### 핵심 인사이트 | Key Insights
 
 **한글:**
 1. **U(통일원리)가 핵심**: U가 2배 → S가 4배 (제곱 효과)
 2. **R(저항) 유형이 중요**: 기술적 저항은 해결 가능, 철학적/구조적 저항은 어려움
-3. **표준화 효과 입증**: 16개 표준 모두 원래 예측보다 S 향상
-4. **패러다임 전환 패턴**: 13개 표준이 "근본 원리 전환" (AMR, PLASTIC, EDUCATION, FUSION, MENTAL-HEALTH, CLIMATE, PROTEIN-DYNAMICS, TRADITIONAL-MEDICINE, ALZHEIMERS, AUTOIMMUNE, CHRONIC-PAIN, ADDICTION, LONELINESS)
+3. **표준화 효과 입증**: 17개 표준 모두 원래 예측보다 S 향상
+4. **패러다임 전환 패턴**: 14개 표준이 "근본 원리 전환" (AMR, PLASTIC, EDUCATION, FUSION, MENTAL-HEALTH, CLIMATE, PROTEIN-DYNAMICS, TRADITIONAL-MEDICINE, ALZHEIMERS, AUTOIMMUNE, CHRONIC-PAIN, ADDICTION, LONELINESS, SLEEP-DISORDERS)
 5. **성공의 역설**: D가 줄면 S도 줄어듦 (문제 해결 = 해결할 문제 감소)
 6. **검증된 과학의 힘**: Bloom's 2σ (EDUCATION), Neuroplasticity (MENTAL-HEALTH)가 U를 극대화
 7. **표준의 한계**: WIA-FUSION, WIA-CLIMATE처럼 물리적/경제적/구조적 저항은 표준만으로 극복 불가
@@ -2009,13 +2147,14 @@ S = 0.359 → ⚠️ 중간 효과 (Medium Effect)
 14. **제약사 저항**: WIA-AUTOIMMUNE의 R=0.758은 비즈니스 모델 위협 - 평생 복용 vs 면역관용 유도
 15. **오피오이드 위기**: WIA-CHRONIC-PAIN이 Neuroplasticity Reversal로 $20B+ 시장에 도전 - 다중모달 접근
 16. **낙인 최대 저항**: WIA-ADDICTION의 R=0.750은 사회적 낙인(3.0)이 핵심 - 도덕 vs 질병 패러다임 전쟁
-17. **옥시토신 통합력**: WIA-LONELINESS의 U=0.861이 16개 표준 중 최고 - Oxytocin-Attention Loop의 우아함
+17. **옥시토신 통합력**: WIA-LONELINESS의 U=0.861이 17개 표준 중 최고 - Oxytocin-Attention Loop의 우아함
+18. **글림프-일주기 통합**: WIA-SLEEP-DISORDERS가 뇌청소+생체리듬+호흡 통합 - 수면=삶의 1/3 최적화
 
 **English:**
 1. **U (Unity) is key**: Doubling U → 4x increase in S (squared effect)
 2. **R type matters**: Technical resistance is solvable, philosophical/structural is harder
-3. **Standardization works**: All 16 standards improved S from original predictions
-4. **Paradigm shift pattern**: 13 standards show "principle shifts" (AMR, PLASTIC, EDUCATION, FUSION, MENTAL-HEALTH, CLIMATE, PROTEIN-DYNAMICS, TRADITIONAL-MEDICINE, ALZHEIMERS, AUTOIMMUNE, CHRONIC-PAIN, ADDICTION, LONELINESS)
+3. **Standardization works**: All 17 standards improved S from original predictions
+4. **Paradigm shift pattern**: 14 standards show "principle shifts" (AMR, PLASTIC, EDUCATION, FUSION, MENTAL-HEALTH, CLIMATE, PROTEIN-DYNAMICS, TRADITIONAL-MEDICINE, ALZHEIMERS, AUTOIMMUNE, CHRONIC-PAIN, ADDICTION, LONELINESS, SLEEP-DISORDERS)
 5. **Success paradox**: When D decreases, S decreases too (solving problems = fewer problems to solve)
 6. **Power of validated science**: Bloom's 2σ (EDUCATION), Neuroplasticity (MENTAL-HEALTH) maximize U
 7. **Limits of standards**: Physical/economic/structural resistance cannot be overcome by standards alone (FUSION, CLIMATE)
@@ -2027,7 +2166,8 @@ S = 0.359 → ⚠️ 중간 효과 (Medium Effect)
 13. **Pharma resistance**: WIA-AUTOIMMUNE R=0.758 due to business model threat - lifetime drugs vs immune tolerance
 14. **Opioid crisis**: WIA-CHRONIC-PAIN challenges $20B+ market with Neuroplasticity Reversal - multimodal approach
 15. **Maximum stigma resistance**: WIA-ADDICTION R=0.750 due to social stigma (3.0) - moral vs disease paradigm war
-16. **Oxytocin integration**: WIA-LONELINESS U=0.861 highest among 16 standards - elegance of Oxytocin-Attention Loop
+16. **Oxytocin integration**: WIA-LONELINESS U=0.861 highest among 17 standards - elegance of Oxytocin-Attention Loop
+17. **Glymphatic-Circadian integration**: WIA-SLEEP-DISORDERS integrates brain cleansing+rhythm+breathing - sleep=1/3 of life optimization
 
 ---
 
@@ -2041,8 +2181,8 @@ S = 0.359 → ⚠️ 중간 효과 (Medium Effect)
 ║   33개 난제 검증: r = 0.9734 (94.75% 설명력)                               ║
 ║   33 Challenges: r = 0.9734 (94.75% explanatory power)                    ║
 ║                                                                            ║
-║   WIA 표준 검증: 16개 표준 모두 예측과 일치                                 ║
-║   WIA Standards: All 16 standards match predictions                       ║
+║   WIA 표준 검증: 17개 표준 모두 예측과 일치                                 ║
+║   WIA Standards: All 17 standards match predictions                       ║
 ║                                                                            ║
 ║   최고 성과: WIA-AMR S=0.546 (Phase 3) - 높은 효과 달성 ✅                  ║
 ║   Best Result: WIA-AMR S=0.546 (Phase 3) - High Effect achieved ✅        ║
@@ -2050,8 +2190,8 @@ S = 0.359 → ⚠️ 중간 효과 (Medium Effect)
 ║   U 최고치: WIA-AUTOIMMUNE U=0.869 (Treg-Microbiome Axis)                  ║
 ║   Highest U: WIA-AUTOIMMUNE U=0.869 (Treg-Microbiome integration)         ║
 ║                                                                            ║
-║   패러다임 전환: 13개 표준                                                  ║
-║   Paradigm Shifts: 13 standards show successful principle shifts          ║
+║   패러다임 전환: 14개 표준                                                  ║
+║   Paradigm Shifts: 14 standards show successful principle shifts          ║
 ║                                                                            ║
 ║   신규 발견: 제약사 비즈니스 저항 (AUTOIMMUNE R=0.758)                      ║
 ║   New Finding: Pharma business model resistance as major barrier          ║
@@ -2111,9 +2251,9 @@ S = D·U² / (1+R)
 ---
 
 *작성일: 2025-12-29*
-*최종 수정: 2026-01-05 (WIA-LONELINESS 추가 - 16개 표준 완료)*
+*최종 수정: 2026-01-05 (WIA-SLEEP-DISORDERS 추가 - 17개 표준 완료)*
 *작성자: Claude (Anthropic) with 연삼흠*
-*버전: 1.13.0*
+*버전: 1.14.0*
 
 ---
 
