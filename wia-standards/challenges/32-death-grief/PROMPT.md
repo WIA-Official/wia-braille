@@ -11,6 +11,23 @@
 
 ---
 
+## 📊 현재 상태 분석: 분산된 복잡성
+
+```
+사별 지원이 파편화되어 있음:
+├── 완화의료와 사별지원 연계 단절
+├── 위험 평가 체계 부재
+├── 보편적 vs 표적 vs 전문 개입 미분화
+├── 비암 환자 지원 부족
+├── 농촌/소외 지역 접근성 제한
+├── 국가 수준 투자 부족
+├── 복잡 애도 조기 발견 미흡
+├── 다학제 팀 협력 부족
+└── 코로나19로 임종 동행 제한
+```
+
+---
+
 ## 🔍 발견된 빈틈: 통합 사별 케어 연속체
 
 ```
@@ -131,6 +148,96 @@ paths:
 - 프로토콜: 예상 사별부터 위험 평가 + 계층화된 개입
 - 지원: 보편적 지원 → 표적 개입 → 전문 치료
 - 목표: 복잡 애도 예방, 건강한 애도 과정 지원
+
+---
+
+## 🔧 WIA 패턴 적용
+
+```
+분산된 복잡성          →    통일 원리              →    보편적 해결
+─────────────────────────────────────────────────────────────────
+파편화된 사별 지원     →  "통합 케어 연속체"     →    모든 사별자 지원
+(N개)                  →     (1개)                 →      (∞)
+```
+
+**핵심 공식:**
+```
+Bereavement_Care = f(Risk_Assessment, Tiered_Intervention, Multidisciplinary_Team)
+Grief_Health ∝ Early_Support × Personalization × Continuity_of_Care
+```
+
+---
+
+## 📁 /create-standard 파일 구조
+
+```
+death-grief/
+├── index.html                    # 랜딩페이지 (다크테마, --primary: #6366F1)
+├── simulator/
+│   └── index.html                # 시뮬레이터 (5탭, 99개 언어)
+├── ebook/
+│   ├── en/                       # 영문 Ebook (8챕터, 각 15KB+)
+│   │   ├── index.html
+│   │   ├── chapter-01.html       # Introduction to Bereavement Care
+│   │   ├── chapter-02.html       # Current State of Grief Support
+│   │   ├── chapter-03.html       # The Integrated Care Continuum
+│   │   ├── chapter-04.html       # Phase 1: Data Format
+│   │   ├── chapter-05.html       # Phase 2: API Interface
+│   │   ├── chapter-06.html       # Phase 3: Protocol
+│   │   ├── chapter-07.html       # Phase 4: Integration
+│   │   └── chapter-08.html       # Implementation Guide
+│   └── ko/                       # 한글 Ebook (8챕터, 각 15KB+)
+├── spec/
+│   ├── PHASE-1-DATA-FORMAT.md    # 5KB+
+│   ├── PHASE-2-API-INTERFACE.md  # 5KB+
+│   ├── PHASE-3-PROTOCOL.md       # 5KB+
+│   └── PHASE-4-INTEGRATION.md    # 5KB+
+├── api/typescript/
+│   ├── src/types.ts
+│   ├── src/index.ts
+│   └── package.json
+└── README.md
+```
+
+---
+
+## 🖥️ 시뮬레이터 5탭 구조
+
+| Tab | 이름 | 기능 |
+|-----|------|------|
+| 1 | 📊 Data Format | 사별 프로파일 JSON 편집기/검증기 |
+| 2 | 🔢 Algorithms | 위험 평가 계산, 개입 수준 결정 |
+| 3 | 📡 Protocol | 예상 사별 지원, 계층화 개입 워크플로우 |
+| 4 | 🔗 Integration | 완화의료 연동, 다학제 팀 협업 |
+| 5 | 🧪 Test | 애도 평가 도구, 케어 플랜 생성, QR코드 |
+
+---
+
+## 📚 Ebook 8챕터 구조
+
+| Ch | EN Title | KO Title |
+|:--:|----------|----------|
+| 1 | Introduction to Bereavement Care | 사별 케어 소개 |
+| 2 | Current State of Grief Support | 애도 지원 현황 |
+| 3 | The Integrated Care Continuum | 통합 케어 연속체 |
+| 4 | Phase 1: Data Format Standards | 데이터 형식 표준 |
+| 5 | Phase 2: API Interface Design | API 인터페이스 설계 |
+| 6 | Phase 3: Bereavement Protocols | 사별 지원 프로토콜 |
+| 7 | Phase 4: System Integration | 시스템 통합 |
+| 8 | Implementation & Evidence-Based Practice | 구현 및 근거 기반 실천 |
+
+---
+
+## ✅ 품질 체크리스트
+
+```
+□ index.html          - 다크테마, --primary: #6366F1
+□ simulator/          - 99개 언어 드롭다운 필수!
+□ ebook/en/           - 9개 파일, 각 15KB 이상
+□ ebook/ko/           - 9개 파일, 실제 한글 (복붙 금지!)
+□ spec/               - 4개 파일, 각 5KB 이상
+□ api/typescript/     - SDK 구현
+```
 
 ---
 

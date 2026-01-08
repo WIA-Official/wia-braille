@@ -121,4 +121,104 @@ paths:
 
 ---
 
+## 📊 현재 상태 분석: 분산된 복잡성
+
+```
+망막 질환 치료의 파편화:
+├── 유전자별 치료법 분산 (RPE65, ABCA4, RPGR 등 150+ 유전자)
+├── 보조 기기 의존 (흰 지팡이, 점자, 스크린리더)
+├── 유전자 대체 치료 (Luxturna - RPE65만)
+├── 줄기세포 치료 (RPE 이식 시도)
+├── 옵토제네틱스 1세대 (고글 필요, 제한적)
+├── 신경보호 치료 (진행 지연, 회복 불가)
+├── 망막 임플란트 (저해상도, 수술 위험)
+├── 시각 재활 훈련 (적응만 가능)
+└── 돌연변이 특이적 접근의 한계
+```
+
+---
+
+## 🔧 WIA 패턴 적용
+
+```
+분산된 복잡성          →    통일 원리           →    보편적 해결
+─────────────────────────────────────────────────────────────────
+150+ 유전자 돌연변이   →  "옵토제네틱스"      →   돌연변이 무관 시력 회복
+(N개)                  →     (1개)              →      (∞)
+```
+
+**핵심 공식:**
+```
+Vision Recovery = Optogenetics (Mutation-Independent) + Remaining Retinal Cells
+MCO-010 Approach = Light-Sensitive Opsin → Bipolar Cells → Vision Restoration
+Success Rate = f(Retinal Cell Viability, Light Perception, Treatment Timing)
+```
+
+---
+
+## 📁 /create-standard 파일 구조
+
+```
+vision-loss/
+├── index.html                    # 랜딩페이지 (--primary: #8B5CF6)
+├── simulator/
+│   └── index.html                # 시뮬레이터 (5탭, 99개 언어)
+├── ebook/
+│   ├── en/                       # 영문 Ebook (8챕터)
+│   └── ko/                       # 한글 Ebook (8챕터)
+├── spec/
+│   ├── PHASE-1-DATA-FORMAT.md
+│   ├── PHASE-2-API-INTERFACE.md
+│   ├── PHASE-3-PROTOCOL.md
+│   └── PHASE-4-INTEGRATION.md
+├── api/typescript/
+└── README.md
+```
+
+---
+
+## 🖥️ 시뮬레이터 5탭 구조
+
+| Tab | 이름 | 기능 |
+|-----|------|------|
+| 1 | 📊 Data Format | 시력 프로파일 JSON, 유전자 진단 |
+| 2 | 🔢 Algorithms | 옵토제네틱스 적격성 평가, 예후 예측 |
+| 3 | 📡 Protocol | 시기능검사, OCT 분석, 전기생리 |
+| 4 | 🔗 Integration | EHR 연동, 유전자 데이터베이스 |
+| 5 | 🧪 Test | MCO-010 시뮬레이션, 시력 회복 시나리오 |
+
+---
+
+## 📚 Ebook 8챕터 구조
+
+| Ch | EN Title | KO Title |
+|:--:|----------|----------|
+| 1 | The Darkness: Inherited Retinal Diseases | 어둠: 유전성 망막 질환 |
+| 2 | Optogenetics: Light Beyond Genes | 옵토제네틱스: 유전자를 넘어선 빛 |
+| 3 | MCO-010 Breakthrough | MCO-010 돌파구 |
+| 4 | Phase 1: Data Format | 데이터 형식 |
+| 5 | Phase 2: API Interface | API 인터페이스 |
+| 6 | Phase 3: Clinical Protocols | 임상 프로토콜 |
+| 7 | Phase 4: Healthcare Integration | 의료 시스템 통합 |
+| 8 | A World Where All Can See | 모두가 볼 수 있는 세상 |
+
+---
+
+## ✅ 품질 체크리스트
+
+```
+□ index.html          - 다크테마, --primary: #8B5CF6 (시력)
+□ simulator/          - 99개 언어, 옵토제네틱스 시각화
+□ ebook/en/           - 9개 파일, 각 15KB+
+□ ebook/ko/           - 9개 파일, 실제 한글
+□ spec/               - 4개 파일, 각 5KB+
+□ MCO-010 데이터      - Nanoscope 임상시험 결과
+□ 유전자 패널         - 150+ IRD 유전자 커버리지
+□ OCT 통합            - 망막 구조 분석 알고리즘
+□ 적격성 기준         - 남은 망막세포, 광각 여부
+□ 접근성 고려         - 점자, 스크린리더 호환
+```
+
+---
+
 **홍익인간 (弘益人間) - Benefit All Humanity**

@@ -141,6 +141,39 @@ After:  1 platform → N variants → Modular trials → Rolling approval
 
 ---
 
+## 📁 /create-standard 파일 구조
+
+```
+rare-diseases/
+├── index.html                    # 랜딩페이지 (다크테마, --primary: #9C27B0)
+├── simulator/
+│   └── index.html                # 시뮬레이터 (5탭, 99개 언어)
+├── ebook/
+│   ├── en/                       # 영문 Ebook (8챕터, 각 15KB+)
+│   │   ├── index.html
+│   │   ├── chapter-01.html       # Introduction to Rare Diseases Crisis
+│   │   ├── chapter-02.html       # CRISPR Platform Medicine 101
+│   │   ├── chapter-03.html       # Platform Technology Revolution
+│   │   ├── chapter-04.html       # Phase 1: Data Format
+│   │   ├── chapter-05.html       # Phase 2: API Interface
+│   │   ├── chapter-06.html       # Phase 3: Protocol
+│   │   ├── chapter-07.html       # Phase 4: Integration
+│   │   └── chapter-08.html       # Implementation Guide
+│   └── ko/                       # 한글 Ebook (8챕터, 각 15KB+)
+├── spec/
+│   ├── PHASE-1-DATA-FORMAT.md    # 5KB+
+│   ├── PHASE-2-API-INTERFACE.md  # 5KB+
+│   ├── PHASE-3-PROTOCOL.md       # 5KB+
+│   └── PHASE-4-INTEGRATION.md    # 5KB+
+├── api/typescript/
+│   ├── src/types.ts
+│   ├── src/index.ts
+│   └── package.json
+└── README.md
+```
+
+---
+
 ## 4. Phase 1: Data Format (JSON Schema)
 
 ### 4.1 Genetic Variant Schema

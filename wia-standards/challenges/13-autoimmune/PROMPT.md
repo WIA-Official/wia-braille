@@ -103,4 +103,112 @@ paths:
 
 ---
 
+## 📊 현재 상태 분석: 분산된 복잡성
+
+```
+수십 가지 자가면역질환이 각각 따로 연구됨:
+├── 류마티스 관절염 (RA)
+├── 전신홍반루푸스 (SLE)
+├── 다발성경화증 (MS)
+├── 제1형 당뇨병 (T1D)
+├── 염증성 장질환 (IBD)
+├── 건선 (Psoriasis)
+├── 하시모토 갑상선염
+├── 그레이브스병
+├── 쇼그렌 증후군
+└── 강직성 척추염
+```
+
+---
+
+## 🔧 WIA 패턴 적용
+
+```
+분산된 복잡성          →    통일 원리           →    보편적 해결
+─────────────────────────────────────────────────────────────────
+수십 자가면역질환       →  "Treg-마이크로바이옴 축"  →  모든 환자 면역 관용 회복
+(N개)                  →     (1개)              →      (∞)
+```
+
+**핵심 공식:**
+```
+Immune Tolerance = f(Treg Function, Microbiome Balance, SCFA Production)
+Disease Activity ∝ 1 / (Treg Suppression × SCFA Level)
+```
+
+---
+
+## 📁 /create-standard 파일 구조
+
+```
+autoimmune/
+├── index.html                    # 랜딩페이지 (다크테마, --primary: #E11D48)
+├── simulator/
+│   └── index.html                # 시뮬레이터 (5탭, 99개 언어)
+├── ebook/
+│   ├── en/                       # 영문 Ebook (8챕터, 각 15KB+)
+│   │   ├── index.html
+│   │   ├── chapter-01.html       # Introduction to Autoimmune Diseases
+│   │   ├── chapter-02.html       # Current Challenges in Treatment
+│   │   ├── chapter-03.html       # The Treg-Microbiome Axis
+│   │   ├── chapter-04.html       # Phase 1: Data Format
+│   │   ├── chapter-05.html       # Phase 2: API Interface
+│   │   ├── chapter-06.html       # Phase 3: Protocol
+│   │   ├── chapter-07.html       # Phase 4: Integration
+│   │   └── chapter-08.html       # Implementation Guide
+│   └── ko/                       # 한글 Ebook (8챕터, 각 15KB+)
+├── spec/
+│   ├── PHASE-1-DATA-FORMAT.md    # 5KB+
+│   ├── PHASE-2-API-INTERFACE.md  # 5KB+
+│   ├── PHASE-3-PROTOCOL.md       # 5KB+
+│   └── PHASE-4-INTEGRATION.md    # 5KB+
+├── api/typescript/
+│   ├── src/types.ts
+│   ├── src/index.ts
+│   └── package.json
+└── README.md
+```
+
+---
+
+## 🖥️ 시뮬레이터 5탭 구조
+
+| Tab | 이름 | 기능 |
+|-----|------|------|
+| 1 | 📊 Data Format | 자가면역 프로파일 JSON 편집기/검증기 |
+| 2 | 🔢 Algorithms | Treg 기능 계산기, Th17/Treg 비율 분석 |
+| 3 | 📡 Protocol | API 테스트, Treg 평가 프로토콜 시뮬레이션 |
+| 4 | 🔗 Integration | FHIR 변환, 장내 미생물 분석 연동 데모 |
+| 5 | 🧪 Test | 치료 반응 시뮬레이션, QR코드 생성 |
+
+---
+
+## 📚 Ebook 8챕터 구조
+
+| Ch | EN Title | KO Title |
+|:--:|----------|----------|
+| 1 | Introduction to Autoimmune Diseases | 자가면역질환 소개 |
+| 2 | Current Treatment Challenges | 현재 치료의 과제 |
+| 3 | The Treg-Microbiome Axis Principle | Treg-마이크로바이옴 축 원리 |
+| 4 | Phase 1: Data Format Standards | 데이터 형식 표준 |
+| 5 | Phase 2: API Interface Design | API 인터페이스 설계 |
+| 6 | Phase 3: Clinical Protocols | 임상 프로토콜 |
+| 7 | Phase 4: System Integration | 시스템 통합 |
+| 8 | Implementation & Treatment Guide | 구현 및 치료 가이드 |
+
+---
+
+## ✅ 품질 체크리스트
+
+```
+□ index.html          - 다크테마, --primary: #E11D48
+□ simulator/          - 99개 언어 드롭다운 필수!
+□ ebook/en/           - 9개 파일, 각 15KB 이상
+□ ebook/ko/           - 9개 파일, 실제 한글 (복붙 금지!)
+□ spec/               - 4개 파일, 각 5KB 이상
+□ api/typescript/     - SDK 구현
+```
+
+---
+
 **홍익인간 (弘益人間) - Benefit All Humanity**

@@ -113,4 +113,112 @@ paths:
 
 ---
 
+## 📊 현재 상태 분석: 분산된 복잡성
+
+```
+다양한 중독이 각각 따로 치료됨:
+├── 알코올 중독
+├── 오피오이드 중독
+├── 코카인/암페타민 중독
+├── 니코틴 중독
+├── 대마 중독
+├── 도박 중독
+├── 게임 중독
+├── 인터넷 중독
+├── 음식 중독
+└── 쇼핑 중독
+```
+
+---
+
+## 🔧 WIA 패턴 적용
+
+```
+분산된 복잡성          →    통일 원리           →    보편적 해결
+─────────────────────────────────────────────────────────────────
+다양한 중독            →  "보상회로 재가소성"   →    모든 환자 회복
+(N개)                  →     (1개)              →      (∞)
+```
+
+**핵심 공식:**
+```
+Recovery Potential = f(Reward Circuit Plasticity, Dopamine Balance, Craving Control)
+Relapse Risk ∝ 1 / (Neuroplasticity × Recovery Capital)
+```
+
+---
+
+## 📁 /create-standard 파일 구조
+
+```
+addiction/
+├── index.html                    # 랜딩페이지 (다크테마, --primary: #7C3AED)
+├── simulator/
+│   └── index.html                # 시뮬레이터 (5탭, 99개 언어)
+├── ebook/
+│   ├── en/                       # 영문 Ebook (8챕터, 각 15KB+)
+│   │   ├── index.html
+│   │   ├── chapter-01.html       # Introduction to Addiction Science
+│   │   ├── chapter-02.html       # Current Treatment Challenges
+│   │   ├── chapter-03.html       # The Reward Circuit Principle
+│   │   ├── chapter-04.html       # Phase 1: Data Format
+│   │   ├── chapter-05.html       # Phase 2: API Interface
+│   │   ├── chapter-06.html       # Phase 3: Protocol
+│   │   ├── chapter-07.html       # Phase 4: Integration
+│   │   └── chapter-08.html       # Implementation Guide
+│   └── ko/                       # 한글 Ebook (8챕터, 각 15KB+)
+├── spec/
+│   ├── PHASE-1-DATA-FORMAT.md    # 5KB+
+│   ├── PHASE-2-API-INTERFACE.md  # 5KB+
+│   ├── PHASE-3-PROTOCOL.md       # 5KB+
+│   └── PHASE-4-INTEGRATION.md    # 5KB+
+├── api/typescript/
+│   ├── src/types.ts
+│   ├── src/index.ts
+│   └── package.json
+└── README.md
+```
+
+---
+
+## 🖥️ 시뮬레이터 5탭 구조
+
+| Tab | 이름 | 기능 |
+|-----|------|------|
+| 1 | 📊 Data Format | 중독 프로파일 JSON 편집기/검증기 |
+| 2 | 🔢 Algorithms | 갈망 강도 계산기, 재발 위험 평가 |
+| 3 | 📡 Protocol | API 테스트, 회복 프로토콜 시뮬레이션 |
+| 4 | 🔗 Integration | FHIR 변환, MAT 모니터링 연동 데모 |
+| 5 | 🧪 Test | 치료 반응 시뮬레이션, QR코드 생성 |
+
+---
+
+## 📚 Ebook 8챕터 구조
+
+| Ch | EN Title | KO Title |
+|:--:|----------|----------|
+| 1 | Introduction to Addiction Science | 중독 과학 소개 |
+| 2 | Current Treatment Challenges | 현재 치료의 과제 |
+| 3 | The Reward Circuit Plasticity Principle | 보상회로 재가소성 원리 |
+| 4 | Phase 1: Data Format Standards | 데이터 형식 표준 |
+| 5 | Phase 2: API Interface Design | API 인터페이스 설계 |
+| 6 | Phase 3: Recovery Protocols | 회복 프로토콜 |
+| 7 | Phase 4: System Integration | 시스템 통합 |
+| 8 | Implementation & Recovery Guide | 구현 및 회복 가이드 |
+
+---
+
+## ✅ 품질 체크리스트
+
+```
+□ index.html          - 다크테마, --primary: #7C3AED
+□ simulator/          - 99개 언어 드롭다운 필수!
+□ ebook/en/           - 9개 파일, 각 15KB 이상
+□ ebook/ko/           - 9개 파일, 실제 한글 (복붙 금지!)
+□ spec/               - 4개 파일, 각 5KB 이상
+□ api/typescript/     - SDK 구현
+```
+
+---
+
 **홍익인간 (弘益人間) - Benefit All Humanity**

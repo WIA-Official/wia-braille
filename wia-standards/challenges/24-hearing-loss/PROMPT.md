@@ -253,6 +253,27 @@ WIA 접근: 유모세포 재생 → 근본 치료
 
 ---
 
+## 📁 /create-standard 파일 구조
+
+```
+hearing-loss/
+├── index.html                    # 랜딩페이지 (--primary: #3B82F6)
+├── simulator/
+│   └── index.html                # 시뮬레이터 (5탭, 99개 언어)
+├── ebook/
+│   ├── en/                       # 영문 Ebook (8챕터)
+│   └── ko/                       # 한글 Ebook (8챕터)
+├── spec/
+│   ├── PHASE-1-DATA-FORMAT.md
+│   ├── PHASE-2-API-INTERFACE.md
+│   ├── PHASE-3-PROTOCOL.md
+│   └── PHASE-4-INTEGRATION.md
+├── api/typescript/
+└── README.md
+```
+
+---
+
 ## 5. Phase 1-4 Specifications
 
 ### Phase 1: Data Format (JSON Schemas)
